@@ -90,15 +90,18 @@ strategy_lesson_inventory:
   review: 8:50; player opened and selected frames sampled; no complete spoken review
 - lesson: Entry & Poi
   url: https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8
-  review: 10:25; player/diagram at 03:31 inspected; no complete spoken-content review
+  review: 'K6: selected line sketches and chart frames inspected through 09:01; 07:30–07:31 bearish
+    gap wick boundaries independently checked. Full POI/P endpoint and complete spoken review remain
+    unresolved.'
 - lesson: Tradingplan
   url: https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83
   review: 18:19; selected written slides verified, not complete spoken-content review
 analysis_lesson_inventory:
 - lesson: €8.000 verdiend binnen één uur.
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
-  review: K3 continuous public playback captions through 4:05 end; selected 4H/1m frames; 02:34 drawing
-    corrected in later commentary; no final trade expectations
+  review: K3 continuous public playback captions through 4:05 end; selected chart frames now include
+    corrected 02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone
+    and complete fixture remain unresolved.
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
   review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
@@ -124,6 +127,8 @@ media_limits:
   or UTC interval.
 - Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option
   in the inspected menus.
+- Entry & Poi video-element media export produced no downloadable file; no unseen audio or transcript
+  was attributed.
 academy_screenshots_in_pr: false
 publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially
   private source material. All raw academy screenshots were excluded from the PR; only requested
@@ -221,3 +226,14 @@ library_lesson_inventory:
   duration: '19:21'
   review: page/resource inventoried; spoken content not reviewed; external Drive resource blocked
     as recorded separately
+focused_followup: ../../DORUS_FOCUSED_AUDIT.md
+focused_followup_date: '2026-09-30'
+focused_followup_results:
+  gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target
+    price/timezone still obscured; no complete fixture
+  entry_poi: 00:55–03:33 sketches and 06:01–09:01 selected chart frames inspected; 07:30–07:31 bearish
+    gap wick boundaries distinguishable; full POI/P boundaries not established
+  bs: Opposing balance concept and close requirement supported in A examples; exact universal far-edge/latest-gap
+    algorithm unresolved
+  priority_video_access: Independent primary-source search found no verified creator-published readable
+    transcript/mirror for 81LThMAtj5o or F5ciF74Uzr8; no YouTube retry or workaround used

@@ -33,3 +33,9 @@ audio was not independently verified. At 00:37–00:47 he qualifies this scalp a
 different from his normal approach. At 03:24–03:51 he explains a second short
 after liquidity and a shift. Two described trades do not prove a second entry
 on the same formally defined, previously visited POI.
+
+## Focused correction check — 2026-09-30
+
+At **02:40**, the corrected drawing directly shows entry **4624.53**, stop **4639.55**, stop distance **15.02**, target distance **29.55**, and RR **1.97**. These labels received an independent second visual check (medium confidence). The target axis price and chart timezone remain behind the recorded webcam; only `17:23…` of the recording clock is readable. That clock is not an execution timestamp. The separate **4629.48** label is the crosshair.
+
+Later frames at 02:43, 02:57, 03:08, 03:20 did not resolve the missing target price/timezone. The latest corrected state is now preserved alongside the earlier, superseded states; no expected target price is invented from subtraction. See [the focused audit](../../DORUS_FOCUSED_AUDIT.md). The fixture remains incomplete.

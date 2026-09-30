@@ -15,8 +15,16 @@ Status legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 **Partial source audit. Every question is addressed, but this is not a completed
 review of every YouTube video, every academy lesson, or five complete test cases.**
-No strategy code or execution defaults have been changed. The original questions
-and decision log are retained.
+This source-review update changes no runtime code. Claude’s subsequent code
+recalibration is preserved in the decision log. The original questions remain.
+
+**Focused follow-up:** [four requested source checks](DORUS_FOCUSED_AUDIT.md).
+K3’s corrected drawing now supplies entry 4624.53 and stop 4639.55 at 02:40;
+the final target-price label and chart timezone remain obscured. K6 confirms
+the illustrated bearish gap uses wick tips, but not the full POI endpoint.
+A explicitly uses a close for BS entries; the precise universal boundary and
+gap-selection algorithm remain provisional. Both priority videos remain unread.
+Complete regression fixtures: **0**.
 
 Skool sign-in succeeded. Its academy is now accessible. The earlier access-block
 assessment is superseded. This update adds direct inspection of the **Tradingplan**
@@ -56,9 +64,10 @@ are evidence notes, not a complete verbatim transcript.
 | C | [Hoe Start Je Met Traden In 2026 (A-Z Uitleg)](https://www.youtube.com/watch?v=R07fGFejJ5w) | Publication date unverified. All 1,266 available timestamped Dutch automatic captions reviewed, 00:00–47:05; no independent audio or full visual verification. |
 | K1 | [2. De strategie leren → Tradingplan](https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83), 18:19 | Publication date not displayed. Written slides inspected at 02:17, 03:54, 04:30, 06:30, 06:37, 06:49 and 06:55. |
 | K2 | [Analyses → Bitcoin analyse ∣ 27-09-2026](https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd), Loom title *Mijn Bitcoin visie en weekly kansen*, 2:57 | Lesson date 2026-09-27. Public playback captions reviewed continuously through the 02:57 end; selected monthly/weekly frames; no independent audio verification. |
-| K3 | [Analyses → €8.000 verdiend binnen één uur.](https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411), Loom title *Goud scalps, liquiditeitsruns en twee shorts*, 4:05 | Chart date 2026-08-26. Public playback captions reviewed continuously through the 04:05 end; selected 4H/1m frames, including the 02:34 drawing and later correction at 02:35–02:41; no independent audio verification. |
+| K3 | [Analyses → €8.000 verdiend binnen één uur.](https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411), Loom title *Goud scalps, liquiditeitsruns en twee shorts*, 4:05 | Chart date 2026-08-26. Public playback captions reviewed continuously through the 04:05 end; selected 4H/1m frames, including the corrected 02:40 entry/stop, distance and RR labels, independently checked; later frames through 03:20 did not resolve target-price label or timezone. No independent audio verification. |
 | K4 | [Analyses → €21.000 verdiend met bitcoin](https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf), Loom title *Zo verdiende ik 21.000 euro met liquiditeit*, 2:27 | Displayed 11 days ago on 2026-09-30; exact publication timestamp unverified. Public playback captions reviewed continuously through the 02:27 end; selected daily/4H frames; no independent audio verification. |
 | K5 | [Analyses → Bitcoin analyse ∣ 7-09-2026](https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950), Loom title *Bitcoin koersverwachting, scenario’s en koopmomenten*, 7:45 | Date explicitly captioned at 00:03–00:08. Public playback captions reviewed through the end (player 07:46; poster 07:45); selected daily charts; no independent audio verification. |
+| K6 | [2. De strategie leren → Entry & Poi](https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8), player title *5-0 Entries*, 10:25 | Publication date not displayed. Selected line sketches and chart frames inspected; bearish gap at 07:30–07:31 independently checked. No complete spoken-content review. |
 | S1 | [EURUSD Short (DXY Long)](https://www.skool.com/dorusview/eurusd-short-dxy-long), Dorus replying to Jelle Engels | Reply Aug 19; attached student chart dated 2026-08-19. |
 | S2 | [Long trade USDJPY](https://www.skool.com/dorusview/long-trade-usdjpy), Dorus replying to Jelle Engels | Reply Aug 19; student chart shows August 2026. |
 | S3 | [Platform](https://www.skool.com/dorusview/platform), Dorus replying to Mees Vriends | Reply Aug 20; year not printed in the inspected comment. |
@@ -70,8 +79,10 @@ are evidence notes, not a complete verbatim transcript.
 ### Part 2 — Fifteen questions
 
 The **Now** assumptions are the implementation described in `docs/STRATEGY.md`
-and Max’s brief. “Unverified” does not mean “false.” No missing rule is converted
-into a Dorus-attributed default.
+and Max’s original brief; they preserve the questions as asked, rather than
+asserting that every original default still matches the latest code. Claude’s
+subsequent changes are in the decision log. “Unverified” does not mean “false.”
+No missing rule is converted into a Dorus-attributed default.
 
 - [~] **Q1 - Balance.** How does Dorus define *balance* on a timeframe? Is it the order block of the last break (what the code does), the equilibrium of the current range (premium/discount), or something else?
   > **Answer:** Object definition contradicted; the proposed close-through → 50/50 transition is **not stated**. Balance is the gap, while P is its originating/protecting candle. See Part 1, items 3–4.
@@ -171,10 +182,10 @@ into a Dorus-attributed default.
 |---|---|---|---|
 | 1 | Liquidity | C 15:07: “Liquiditeit is eigenlijk het liquideren van het aantal orders.” C identifies structure highs/lows (18:21), consolidation edges (19:03), patterns (19:46), trendlines (20:31) and multiple timeframes (21:05). A also names Asia-session liquidity at 01:09:15. | High for named categories. Swing lengths, equal-high tolerance, previous-day/week/month hierarchy, a complete session taxonomy and internal/external definitions: **not stated** as complete algorithms. |
 | 2 | Sweep | No complete wick/close/minimum-penetration definition was verified. A 46:58–48:22 distinguishes a structural break from its liquidity interpretation without supplying a wick-only algorithm. K2 00:26 is a weekly-close condition, not a universal sweep predicate. | **Not assessed.** A line marked X does not alone establish whether a body close beyond is permitted. |
-| 3 | Balance | B 03:44–03:47: “dit gat noemen wij dus het balance level.” B’s three-candle gap (03:21–03:47); C’s wick-to-wick drawing description (27:04–27:18). | High for definition; medium for geometry pending independent diagram inspection. Gap is distinct from the originating candle. No deterministic active-gap selection/reset rule verified. |
-| 4 | Protected zone / POI | B 05:29–05:40: “De beschermde zone is de candle die de balance level heeft gecreëerd.” K1’s POI notation is in the plan table. | High for wording. Exact wick/body endpoints, invalidating timeframe/close condition and first-return-only: **not stated** as complete rules. |
-| 5 | BOS / BMS / BS | A 14:06–16:44 explicitly teaches BOS as continuation and BMS/CHoCH as reversal through the prior opposing swing. A 55:18 defines BS as balance shift; 01:29:29–01:30:22 distinguishes it from a plain structural break by the opposing balance level. C 12:14–12:18: “wij nog steeds in dezelfde trend bevinden”. C 12:37–13:02 also calls a prior-low break/reversal BOS. | High for the stated terminology, which varies across passages. A 42:52 and B 08:54 use looser BOS/BMS language when explaining balance shift. The deterministic swing/gap detector and universal closure predicate remain unspecified. |
-| 6 | Confirmation | Q5 plus the verified K1 matrix below. | High for explicit options/matrix. Required independent LTF sweep and precise universal candle predicate: **not stated**. A close beyond and the entire body beyond are different tests. |
+| 3 | Balance | B 03:44–03:47: “dit gat noemen wij dus het balance level.” B’s three-candle gap (03:21–03:47); C’s wick-to-wick drawing description (27:04–27:18). K6 07:30–07:31 visually shows a bearish gap from candle 3’s upper wick to candle 1’s lower wick. | High for definition; medium for this independently checked diagram geometry. Gap is distinct from the originating candle. No deterministic active-gap selection/reset rule verified. |
+| 4 | Protected zone / POI | B 05:29–05:40: “De beschermde zone is de candle die de balance level heeft gecreëerd.” K1’s POI notation is in the plan table. | High for wording. The gap’s wick boundaries in K6 do not determine the full POI or P boundaries. `gap_bottom` remains unverified; so does the opposite endpoint’s use of the sweep extreme rather than the liquidity line. Invalidating timeframe/close condition and first-return-only: **not stated** as complete rules. |
+| 5 | BOS / BMS / BS | A 14:06–16:44 explicitly teaches BOS as continuation and BMS/CHoCH as reversal through the prior opposing swing. A 55:18 defines BS as balance shift; 01:29:29–01:30:22 distinguishes it from a plain structural break by the opposing balance level. C 12:14–12:18: “wij nog steeds in dezelfde trend bevinden”. C 12:37–13:02 also calls a prior-low break/reversal BOS. | High for the stated terminology, which varies across passages. A 42:52 and B 08:54 use looser BOS/BMS language when explaining balance shift. A 02:25:40–02:26:15 and 02:30:39–02:30:56 explicitly wait for a close in BS entry examples. The universal price boundary and gap-selection algorithm remain unspecified; A 01:07:49–01:08:30 also refers to the candle that caused the gap. See the focused audit. |
+| 6 | Confirmation | Q5 plus the verified K1 matrix below. | High for explicit options/matrix. Close-based BS entry is explicitly demonstrated (item 5). Required independent LTF sweep and a stricter full-body-beyond predicate: **not stated** as universal requirements. A close beyond and the entire body beyond are different tests. |
 | 7 | Stop / invalidation | K1 06:30: “SL ALTIJD op minimale 1H P”. B 05:25–05:46 connects protection with the origin candle in item 4. | High for wording. A stop based solely on a smaller confirmation swing is not supported as a blanket rule. Exact extra distance is **not stated**. |
 | 8 | Target | Q6; K1 06:30: “TP ALTIJD op x”. B 09:23–09:45 returns to 1H for protection/target context. A 01:54:49–01:55:16 prefers more substantial high/low liquidity over nearby local liquidity in that example. | High for object; medium for application. A deterministic candidate tie-break and universal target-timeframe floor: **not stated**. |
 | 9 | Other concepts | FVG geometry is used (item 3); C’s FVG indicator is in Q14. | High for FVG use. Mandatory premium/discount, equilibrium or breaker-block filters were **not found**. This is not proof of absence from all lessons. |
@@ -215,7 +226,7 @@ allowed POI/confirmation combination for a restricted bias state.
 | Replay capital | C 32:07–32:16 says simulated starting balance does not matter and chooses 100K. A 02:18:29–02:18:55 requires realistic intended capital. | High for the differing instructions. Do not silently resolve the variation; C’s date is unavailable. |
 | B example direction | B 09:11–09:20 describes a bullish-candle entry; 10:08–10:12 describes a downward move reaching the target. | Caption-only direction ambiguity. Require visual/audio verification before turning this example into trade expectations. |
 | Scalp context | K3 00:39–00:43, chart dated 2026-08-26: “de monthly, weekly, daily keek ik minder naar.” | At 00:47 he adds “iets anders wat ik dan normaliter doe”. Special emphasis differs from the baseline’s automatic voting model. It does not specify a replacement Boolean rule. 4H context and 1m entry drawings are shown; their relationship to K1’s minimum-BS table needs resolution. |
-| Gold drawing correction | K3 02:34 shows an initial position drawing. At 02:35–02:41 he extends its target and says “stoploss had ik ook iets hoger”. Chart date 2026-08-26. | High for the captioned correction; medium for the visible labels. The initial entry/SL/TP labels are not final execution expectations. |
+| Gold drawing correction | K3 02:34 shows an initial position drawing. At 02:35–02:41 he extends its target and says “stoploss had ik ook iets hoger”. Chart date 2026-08-26. | High for the captioned correction; medium for the visible labels. The initial labels are superseded: corrected 02:40 entry 4624.53, stop 4639.55, target distance 29.55 and RR 1.97 are readable. Final TP axis label and chart timezone remain obscured. Neither drawing state is a verified broker fill. |
 | Readiness | C 38:28–38:35: 5–10% monthly backtest; 39:42–39:53: 5% forward test. A 04:23:53–04:24:26: 1–5% for both. | Captioned thresholds differ. A is dated 2026-02-18; C date unavailable. These are stated thresholds, not independently verified results. |
 | Practice-count ambiguity | A 02:49:33–02:50:06 alternates captioned three/five practice challenges; 03:47:57–03:48:05 says three consecutive challenges. | Possible speech/caption inconsistency; do not silently erase it. Audio verification is still needed. |
 | Practice-route sequence | A 02:49:25–02:50:06 presents practice challenges as an alternative to the three-month demo route. The recap at 03:47:47–03:48:05 places practice challenges after forward readiness. | High for the stated routes; their required sequencing remains unresolved. Do not silently require both routes or declare either optional everywhere. |
@@ -269,9 +280,9 @@ allowed POI/confirmation combination for a restricted bias state.
 
 **Five Dorus-authored chart records, two student-chart critiques and three caption
 leads; zero complete regression fixtures.** The requested five fully worked
-CSV/YAML pairs are still incomplete. No OHLC export was obtained. Gold has three
-readable intermediate drawing labels, subsequently corrected by Dorus; final
-execution prices and UTC execution time are unverified. A daily,
+CSV/YAML pairs are still incomplete. No OHLC export was obtained. Gold has preserved intermediate states and the corrected 02:40 drawing’s entry,
+stop, distances and RR. Its corrected target-price label, verified execution prices
+and UTC execution time remain unresolved. A daily,
 weekly or 4H chart on screen does not by itself establish the POI timeframe.
 
 Raw academy screenshots are excluded from the PR following automatic approval
@@ -285,7 +296,7 @@ coverage manifest, not an example fixture.
 
 | Record | Files relative to `docs/` | Evidence / gap |
 |---|---|---|
-| Gold scalp / 4H context | [YAML](examples/research/xauusd_2026-08-26_public_recap.yaml) · [handoff](examples/research/xauusd_2026-08-26_public_recap.md) | K3 extends S5: 4H context and intermediate 1m position drawing, corrected in later commentary. Final trade, POI classification and UTC timing incomplete. |
+| Gold scalp / 4H context | [YAML](examples/research/xauusd_2026-08-26_public_recap.yaml) · [handoff](examples/research/xauusd_2026-08-26_public_recap.md) | K3 02:40 corrected 1m drawing: entry 4624.53, stop 4639.55, target distance 29.55, RR 1.97. Final target-price label, verified fills, POI classification and UTC timing incomplete. |
 | BTC loss, H1 | [YAML](examples/research/btcusd_undated_1h_loss.yaml) · [handoff](examples/research/btcusd_undated_1h_loss.md) | Dorus’s loss assessment; year/feed/timezone and exact order labels missing. |
 | BTC trade recap, 4H chart | [YAML](examples/research/btcusd_2026-09_4h_recap.yaml) · [handoff](examples/research/btcusd_2026-09_4h_recap.md) | K4 marks a purchase area. Selected candle label is not proven entry time. |
 | BTC daily scenarios | [YAML](examples/research/btcusd_2026-09-07_daily_scenarios.yaml) · [handoff](examples/research/btcusd_2026-09-07_daily_scenarios.md) | K5 chart annotation, not a documented completed trade. |
@@ -303,6 +314,11 @@ been presented as something Dorus showed, and no surrounding candles have been
 invented from one screenshot.
 
 ### Continuation queue
+
+The four-priority follow-up is recorded in [DORUS_FOCUSED_AUDIT.md](DORUS_FOCUSED_AUDIT.md).
+The priority videos still require accessible recordings/captions or resolution of
+the existing browser block. For gold, obtain an unobscured corrected target and
+chart timezone; for POI/BS, verify the full-zone endpoint and precise BS threshold.
 
 1. A’s full available caption text is now reviewed; unreadable chart frames and
    audio remain unverified. Review remaining academy spoken content using reliable Dutch transcripts or
@@ -368,3 +384,4 @@ invented from one screenshot.
 | 2026-09-30 | Expanded B/C and academy public-caption review; retained source variations and removed intermediate gold drawing prices from final trade expectations. No runtime rules changed. | Codex/Astra |
 | 2026-09-30 | Code recalibrated to the audit: balance level = the gap, P = the candle that created it (B 03:44, 05:29); balance view flips when P breaks (A 01:41:49); confirmation options BS / BMS / first candle per K1 06:30, BS = close through the opposing balance level; TP on liquidity only (A 01:50:40); stop at minimum the 1H P (K1 06:30); Amsterdam entry windows (A 02:24:03); local lookbacks (S1). Wick-only sweep, 1-pip buffer and 1:3 stay as Max's rules pending his decision. | Claude |
 | 2026-09-30 | M+D+4H combination kept available but off (`bias.extra_combos_enabled`) because K1's written table omits it. | Claude |
+| 2026-09-30 | Focused follow-up: independently checked K3 corrected entry/stop/distance/RR and K6 wick-to-wick bearish gap; rechecked A’s explicit close-based BS examples. Full POI boundary, universal BS threshold, gold target/clock and priority-video access remain unresolved. No runtime change or completed fixture claimed. | Codex/Astra |

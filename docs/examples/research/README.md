@@ -6,9 +6,10 @@ caption-only research leads. No complete OHLC export or five complete cases exis
 
 The example loader scans only `docs/examples/*.yaml` and requires a matching CSV.
 This subdirectory prevents partial records from producing apparent passing tests.
-All records omit `expect`. Gold's readable prices are preserved as an intermediate
-drawing state: later commentary corrects the target and stop, so those earlier
-labels cannot stand in for the final trade.
+All records omit `expect`. Gold preserves its intermediate drawing states and the
+corrected 02:40 entry/stop/distance/RR labels. The corrected target-price label and
+chart timezone remain obscured, so it is still incomplete. See the
+[focused follow-up](../../DORUS_FOCUSED_AUDIT.md).
 
 Keep this directory outside the test-fixture scan until POI timeframe, feed, UTC
 interval, real candles and actual shown expectations are verified. Student price
