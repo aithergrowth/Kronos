@@ -1,0 +1,44 @@
+import pandas as pd
+import pytest
+
+from kronos_trader.core import BIAS_TIMEFRAMES, Timeframe
+
+
+def test_parse_is_case_sensitive_for_minute_vs_month():
+    assert Timeframe.parse("1m") is Timeframe.MIN_1
+    assert Timeframe.parse("1M") is Timeframe.MN_1
+    assert Timeframe.parse("4h") is Timeframe.H_4
+    assert Timeframe.parse("4H") is Timeframe.H_4
+    assert Timeframe.parse("1D") is Timeframe.D_1
+    assert Timeframe.parse("1w") is Timeframe.W_1
+    assert Timeframe.parse("monthly") is Timeframe.MN_1
+    assert Timeframe.parse(Timeframe.H_1) is Timeframe.H_1
+    with pytest.raises(ValueError):
+        Timeframe.parse("3h")
+
+
+def test_ordering_and_bias_timeframes():
+    assert Timeframe.MIN_1 < Timeframe.MIN_5 < Timeframe.MIN_15 < Timeframe.H_1 < Timeframe.H_4 < Timeframe.D_1 < Timeframe.W_1 < Timeframe.MN_1
+    assert [tf.label for tf in BIAS_TIMEFRAMES] == ["1M", "1W", "1D", "4H", "1H"]
+    assert max(BIAS_TIMEFRAMES) is Timeframe.MN_1
+
+
+def test_floor_and_close_time():
+    ts = pd.Timestamp("2024-03-13 10:37")  # a Wednesday
+    assert Timeframe.MIN_15.floor(ts) == pd.Timestamp("2024-03-13 10:30")
+    assert Timeframe.H_4.floor(ts) == pd.Timestamp("2024-03-13 08:00")
+    assert Timeframe.D_1.floor(ts) == pd.Timestamp("2024-03-13")
+    assert Timeframe.W_1.floor(ts) == pd.Timestamp("2024-03-11")
+    assert Timeframe.MN_1.floor(ts) == pd.Timestamp("2024-03-01")
+    assert Timeframe.H_4.close_time(pd.Timestamp("2024-03-13 08:00")) == pd.Timestamp("2024-03-13 12:00")
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2024-01-01")) == pd.Timestamp("2024-02-01")
+
+
+def test_future_timestamps_skip_weekends():
+    fri = pd.Timestamp("2024-03-15")  # Friday
+    daily = Timeframe.D_1.future_timestamps(fri, 3).tolist()
+    assert daily == [pd.Timestamp("2024-03-18"), pd.Timestamp("2024-03-19"), pd.Timestamp("2024-03-20")]
+    hourly = Timeframe.H_1.future_timestamps(pd.Timestamp("2024-03-15 22:00"), 3).tolist()
+    assert hourly == [pd.Timestamp("2024-03-15 23:00"), pd.Timestamp("2024-03-18 00:00"), pd.Timestamp("2024-03-18 01:00")]
+    monthly = Timeframe.MN_1.future_timestamps(pd.Timestamp("2024-03-01"), 2).tolist()
+    assert monthly == [pd.Timestamp("2024-04-01"), pd.Timestamp("2024-05-01")]

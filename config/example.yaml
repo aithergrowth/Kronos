@@ -1,0 +1,57 @@
+# kronos_trader configuration (copy to config/local.yaml and point KRONOS_TRADER_CONFIG at it).
+# Secrets never go here: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TRADINGVIEW_MCP_TOKEN,
+# MT5_LOGIN / MT5_PASSWORD / MT5_SERVER are read from the environment.
+
+account_size: 100000      # prop-firm account size in account currency
+account_currency: USD
+
+symbols:
+  EURUSD:
+    pip_value_per_lot: 10.0      # VERIFY with the broker
+    typical_spread_pips: 0.9
+    tradingview_symbol: OANDA:EURUSD
+    mt5_symbol: EURUSD
+
+structure:
+  swing_left: 2
+  swing_right: 2
+  lookback: 400
+  full_body_break: false          # ASSUMPTION - see docs/STRATEGY.md
+  max_bars_sweep_to_break: 40
+
+bias:
+  liquidity_lookback: 80
+
+confirmation:
+  allow_first_candle: true
+  allow_retest: false
+  max_extension_zones: 1.5
+
+risk:
+  risk_pct: 1.0
+  min_rr: 3.0
+  spread_buffer_pips: 1.0
+  sl_offset_pips: 1.0
+  tp_policy: nearest              # nearest | liquidity_first | balance_first
+
+exits:
+  breakeven_r_swing: 2.0
+  breakeven_r_intraday: 4.0
+  partials: false
+
+kronos:
+  mode: advisory                  # off | advisory | filter
+  model: NeoQuasar/Kronos-small
+  tokenizer: NeoQuasar/Kronos-Tokenizer-base
+  horizon: 12
+  n_paths: 5
+  forecast_timeframes: [4H, 1H]
+
+prop_firm:
+  max_open_trades: 1
+  daily_loss_limit_pct: 4.0
+  max_drawdown_pct: 8.0
+  news_blackout_minutes: 30
+
+telegram:
+  enabled: false

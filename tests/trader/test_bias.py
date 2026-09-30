@@ -1,0 +1,60 @@
+from kronos_trader.config import BiasParams
+from kronos_trader.core import Bias, CandleSeries, Timeframe, TradeMode
+from kronos_trader.strategy import analyze_structure, combine_biases, timeframe_bias
+
+T = Timeframe
+
+
+def test_liquidity_and_balance_aligned_is_bullish(scenario):
+    tb = timeframe_bias(analyze_structure(scenario))
+    assert tb.liquidity_view is Bias.BULLISH and tb.balance_view is Bias.BULLISH and tb.bias is Bias.BULLISH
+    assert tb.timeframe is T.H_1
+
+
+def test_conflicting_views_are_fifty_fifty(scenario_rows):
+    rows = list(scenario_rows) + [
+        (112.5, 113, 111, 112),      # 16
+        (112, 112.5, 110.5, 111),    # 17 -> swing high 113 at idx 15 confirmed
+        (111, 113.5, 110.8, 112),    # 18 wick above 113, body inside -> buy-side sweep
+    ]
+    st = analyze_structure(CandleSeries.from_records(rows, T.H_1))
+    tb = timeframe_bias(st)
+    assert tb.liquidity_view is Bias.BEARISH   # buy-side liquidity taken
+    assert tb.balance_view is Bias.BULLISH     # structure still bullish
+    assert tb.bias is Bias.NEUTRAL
+
+
+def test_stale_liquidity_event_is_neutral(scenario):
+    tb = timeframe_bias(analyze_structure(scenario), BiasParams(liquidity_lookback=1))
+    assert tb.liquidity_view is Bias.NEUTRAL and tb.bias is Bias.NEUTRAL
+
+
+def test_no_structure_is_neutral():
+    flat = CandleSeries.from_records([(1, 1.1, 0.9, 1)] * 10, T.D_1)
+    tb = timeframe_bias(analyze_structure(flat))
+    assert tb.bias is Bias.NEUTRAL
+
+
+def test_valid_full_combinations():
+    for combo in [(T.MN_1, T.W_1, T.D_1), (T.W_1, T.D_1, T.H_4), (T.MN_1, T.D_1, T.H_1)]:
+        biases = {tf: (Bias.BULLISH if tf in combo else Bias.NEUTRAL) for tf in [T.MN_1, T.W_1, T.D_1, T.H_4, T.H_1]}
+        d = combine_biases(biases)
+        assert d.mode is TradeMode.FULL and d.direction is Bias.BULLISH and d.matched_combo == combo and d.tradable
+
+
+def test_scalp_only_combination():
+    d = combine_biases({T.MN_1: Bias.NEUTRAL, T.W_1: Bias.BULLISH, T.D_1: Bias.BEARISH, T.H_4: Bias.BEARISH, T.H_1: Bias.BEARISH})
+    assert d.mode is TradeMode.SCALP and d.direction is Bias.BEARISH
+    assert d.conflicting == (T.W_1,)
+
+
+def test_invalid_combination_and_too_few_votes():
+    d = combine_biases({T.MN_1: Bias.BULLISH, T.W_1: Bias.BULLISH, T.D_1: Bias.NEUTRAL, T.H_4: Bias.BULLISH, T.H_1: Bias.NEUTRAL})
+    assert d.mode is TradeMode.NONE and not d.tradable and "not a valid combination" in d.reason
+    d = combine_biases({T.MN_1: Bias.BULLISH, T.W_1: Bias.BULLISH, T.D_1: Bias.NEUTRAL, T.H_4: Bias.NEUTRAL, T.H_1: Bias.BEARISH})
+    assert d.mode is TradeMode.NONE and d.direction is Bias.NEUTRAL
+
+
+def test_four_of_five_still_matches_a_combo_and_opposing_votes_allowed():
+    d = combine_biases({T.MN_1: Bias.BEARISH, T.W_1: Bias.BEARISH, T.D_1: Bias.BEARISH, T.H_4: Bias.BULLISH, T.H_1: Bias.BULLISH})
+    assert d.mode is TradeMode.FULL and d.direction is Bias.BEARISH and d.conflicting == (T.H_4, T.H_1)

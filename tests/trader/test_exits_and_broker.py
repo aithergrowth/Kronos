@@ -1,0 +1,73 @@
+import pandas as pd
+import pytest
+
+from kronos_trader.config import Settings
+from kronos_trader.core import Candle, Direction, Timeframe
+from kronos_trader.execution import PaperBroker, RiskGuard
+from kronos_trader.strategy import breakeven_reached, breakeven_trigger_r, r_multiple
+
+T = Timeframe
+
+
+def test_breakeven_rules():
+    assert breakeven_trigger_r(T.MN_1) == 2.0 and breakeven_trigger_r(T.W_1) == 2.0
+    for tf in (T.D_1, T.H_4, T.H_1):
+        assert breakeven_trigger_r(tf) == 4.0
+    assert r_multiple(Direction.LONG, 1.10, 0.005, 1.12) == pytest.approx(4.0)
+    assert r_multiple(Direction.SHORT, 1.10, 0.005, 1.12) == pytest.approx(-4.0)
+    assert breakeven_reached(Direction.LONG, 1.10, 0.005, 1.1201, 4.0)
+    assert not breakeven_reached(Direction.LONG, 1.10, 0.005, 1.1199, 4.0)
+
+
+def _candle(o, h, l, c, ts="2024-01-02 10:00"):
+    return Candle(0, pd.Timestamp(ts), o, h, l, c)
+
+
+def _long(broker):
+    return broker.place_market_order("EURUSD", Direction.LONG, 1.96, 1.0950, 1.1200, 1000.0, 0.0051, 4.0,
+                                     price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
+
+
+def test_paper_broker_fills_with_spread_and_hits_take_profit():
+    broker = PaperBroker(Settings())
+    pos = _long(broker)
+    assert pos.entry == pytest.approx(1.10005)  # 1 pip spread -> half a pip worse
+    closed = broker.on_candle("EURUSD", _candle(1.1000, 1.1250, 1.0990, 1.1240))
+    assert len(closed) == 1 and closed[0].reason == "take_profit"
+    assert closed[0].pnl == pytest.approx((1.1200 - 1.10005) / 0.0001 * 10 * 1.96)
+    assert broker.balance() == pytest.approx(100_000 + closed[0].pnl)
+
+
+def test_paper_broker_stop_wins_when_both_hit():
+    broker = PaperBroker(Settings())
+    _long(broker)
+    closed = broker.on_candle("EURUSD", _candle(1.1000, 1.1300, 1.0900, 1.1000))
+    assert closed[0].reason == "stop" and closed[0].exit == 1.0950 and closed[0].r == pytest.approx(-1.0, abs=0.02)
+
+
+def test_paper_broker_moves_to_breakeven_after_4r():
+    broker = PaperBroker(Settings())
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1300, 1000.0, 0.0051, 4.0,
+                                    price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
+    assert broker.on_candle("EURUSD", _candle(1.1000, 1.1210, 1.0999, 1.1205)) == []
+    assert pos.breakeven_done and pos.stop == pytest.approx(pos.entry)
+    closed = broker.on_candle("EURUSD", _candle(1.1205, 1.1210, 1.0999, 1.1000, "2024-01-02 11:00"))
+    assert closed[0].reason == "breakeven" and closed[0].pnl == pytest.approx(0.0)
+
+
+def test_risk_guard_limits():
+    settings = Settings()
+    broker = PaperBroker(settings)
+    guard = RiskGuard(settings.prop_firm, settings.account_size)
+    ts = pd.Timestamp("2024-01-02 09:00")
+    assert guard.can_open(broker, ts)[0]
+    _long(broker)
+    ok, reason = guard.can_open(broker, ts)
+    assert not ok and "open trade" in reason
+    broker.close_position(broker.open_positions()[0].id, "manual", 1.1000, ts)
+    broker._balance = 95_500.0
+    ok, reason = guard.can_open(broker, ts)
+    assert not ok and "daily loss" in reason
+    broker._balance = 91_500.0
+    ok, reason = guard.can_open(broker, ts + pd.Timedelta(days=1))
+    assert not ok and "drawdown" in reason
