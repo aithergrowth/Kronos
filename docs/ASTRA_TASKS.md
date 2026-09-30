@@ -42,9 +42,21 @@ even better.
 - [ ] **Q12 - Instruments.** Which pairs / indices / metals, and the broker's pip value, lot step and spread for each?
   > answer:
 
+## A2. Definitions in Dorus's own words
+
+For each term, a quote plus the video / lesson and timestamp it comes from: liquidity (which highs and lows count), sweep, balance / balance block, protected zone / POI, BOS, BMS, confirmation, invalidation, target, premium / discount, scalp vs intraday vs swing.
+
+> definitions:
+
+## A3. New rules
+
+Rules Dorus states that are not in our rule set (sessions, news, max trades per day, anything on partials or trailing, time-of-day for entries).
+
+> new rules:
+
 ## B. Deliverables Astra can build (drop the result path here)
 
-- [ ] **B1 - Annotated examples.** 5–10 real chart examples from Dorus's material as CSV + a short note per example: which candle is the sweep, which is the BOS, where the POI is, where the SL/TP went. Claude turns each into a regression test (`tests/trader/`). Format: `docs/examples/<pair>_<date>.csv` (timestamp,open,high,low,close,volume) + `docs/examples/<pair>_<date>.md`.
+- [ ] **B1 - Annotated examples.** 5–10 real chart examples from Dorus's material in the format of `docs/examples/README.md`: `<name>.csv` (candles) + `<name>.yaml` (sweep candle, break candle, balance block, POI, entry, stop, target). They become tests automatically (`python -m pytest tests/trader/test_examples.py`).
   > path:
 - [ ] **B2 - Prop-firm rulebook** as numbers (`config/propfirm.yaml`): daily loss, max drawdown (static/trailing), profit target, min days, allowed instruments, news rule, weekend rule, max lot.
   > path:
