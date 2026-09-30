@@ -23,8 +23,13 @@ K3’s corrected drawing now supplies entry 4624.53 and stop 4639.55 at 02:40;
 the final target-price label and chart timezone remain obscured. K6 confirms
 the illustrated bearish gap uses wick tips, but not the full POI endpoint.
 A explicitly uses a close for BS entries; the precise universal boundary and
-gap-selection algorithm remain provisional. Both priority videos remain unread.
-Complete regression fixtures: **0**.
+gap-selection algorithm remain provisional.
+
+**Restored-access update:** [priority sources D/E/F](DORUS_PRIORITY_SOURCES.md)
+now have complete available Dutch-caption reviews. D/F explicitly describe POI
+as liquidity to protection, which exposes a conceptual mismatch with the coded
+sweep-extreme/gap-edge object pair. Exact P wick/body and invalidation predicates
+remain unresolved. D independently includes M+D+4H. Complete fixtures: **0**.
 
 Skool sign-in succeeded. Its academy is now accessible. The earlier access-block
 assessment is superseded. This update adds direct inspection of the **Tradingplan**
@@ -33,14 +38,18 @@ caption review of the four accessible Loom analyses. All six visible course card
 and their 30 lesson links are inventoried; inventory is not content review. Core lessons without a
 usable Dutch transcript have not received a complete spoken-content review.
 
-YouTube still presents this browser with an unusual-traffic challenge, after one
-reload; further navigation stopped. Its channel displayed approximately 2,100
-videos. All 2,097 lines of A’s available Dutch automatic captions have now been
+YouTube’s earlier unusual-traffic challenge cleared after the user handoff.
+D/E/F caption exports are now available; D’s requested chart frame still
+rendered black/buffering after one player recovery attempt. Its channel displayed
+approximately 2,100 videos. All 2,097 lines of A’s available Dutch automatic captions have now been
 reviewed, from the opening through the final caption at 04:28:24 of the 04:28:28
 video. B’s 345 timestamped captions (00:00–11:46) and C’s 1,266 timestamped
 captions (00:00–47:05) have also been reviewed end-to-end. This is complete
 coverage of the available retrieved caption text for A/B/C, not independent
-audio verification or a full visual review of those videos.
+audio verification or a full visual review of those videos. D’s 419 Dutch
+caption segments (00:00–16:23), E’s 391 (00:00–14:13) and F’s 288 (00:00–10:26)
+were subsequently reviewed end-to-end and independently checked. E’s initial
+English export was replaced with its explicitly selected Dutch track.
 Loom playback/captions work; its full transcript/download panels require a
 separate sign-in. Gated transcript text is not used as evidence. Automatic captions
 are not an independently checked audio transcription.
@@ -62,12 +71,16 @@ are evidence notes, not a complete verbatim transcript.
 | A | [Hoe Start Je Met Traden in 2026 (Volledige 4-Uur Beginnerscursus)](https://www.youtube.com/watch?v=HRPgdK8VhMc), 4:28:28 | Published 2026-02-18. All available Dutch automatic-caption lines reviewed through 04:28:24; audio and unreadable chart frames not independently verified. |
 | B | [Mijn Volledige Trading Strategie Uitleg (Stap voor Stap)](https://www.youtube.com/watch?v=xWR8M46iSW8) | Publication date unverified. All 345 available timestamped Dutch automatic captions reviewed, 00:00–11:46; no independent audio or full visual verification. |
 | C | [Hoe Start Je Met Traden In 2026 (A-Z Uitleg)](https://www.youtube.com/watch?v=R07fGFejJ5w) | Publication date unverified. All 1,266 available timestamped Dutch automatic captions reviewed, 00:00–47:05; no independent audio or full visual verification. |
+| D | [Mijn Winstgevende Tradingplan Waarmee Ik Elke Dag Trade](https://www.youtube.com/watch?v=81LThMAtj5o), displayed English title *My Profitable Trading Plan With Which I Trade Every Day*, 16:25 | Published 2026-05-01. All 419 Dutch automatic-caption segments reviewed through 16:23. Requested chart frame did not render. |
+| E | [How to Trade Liquidity (Like a Pro)](https://www.youtube.com/watch?v=F5ciF74Uzr8), 14:15 player | Published 2026-09-02. All 391 Dutch automatic-caption segments reviewed through 14:13; English export excluded. |
+| F | [How to Use Fair Value Gaps to Find Better Trades](https://www.youtube.com/watch?v=O6IgD2llrq0), 10:28 | Published 2026-09-28. All 288 Dutch automatic-caption segments reviewed through 10:26. |
 | K1 | [2. De strategie leren → Tradingplan](https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83), 18:19 | Publication date not displayed. Written slides inspected at 02:17, 03:54, 04:30, 06:30, 06:37, 06:49 and 06:55. |
 | K2 | [Analyses → Bitcoin analyse ∣ 27-09-2026](https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd), Loom title *Mijn Bitcoin visie en weekly kansen*, 2:57 | Lesson date 2026-09-27. Public playback captions reviewed continuously through the 02:57 end; selected monthly/weekly frames; no independent audio verification. |
 | K3 | [Analyses → €8.000 verdiend binnen één uur.](https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411), Loom title *Goud scalps, liquiditeitsruns en twee shorts*, 4:05 | Chart date 2026-08-26. Public playback captions reviewed continuously through the 04:05 end; selected 4H/1m frames, including the corrected 02:40 entry/stop, distance and RR labels, independently checked; later frames through 03:20 did not resolve target-price label or timezone. No independent audio verification. |
 | K4 | [Analyses → €21.000 verdiend met bitcoin](https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf), Loom title *Zo verdiende ik 21.000 euro met liquiditeit*, 2:27 | Displayed 11 days ago on 2026-09-30; exact publication timestamp unverified. Public playback captions reviewed continuously through the 02:27 end; selected daily/4H frames; no independent audio verification. |
 | K5 | [Analyses → Bitcoin analyse ∣ 7-09-2026](https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950), Loom title *Bitcoin koersverwachting, scenario’s en koopmomenten*, 7:45 | Date explicitly captioned at 00:03–00:08. Public playback captions reviewed through the end (player 07:46; poster 07:45); selected daily charts; no independent audio verification. |
 | K6 | [2. De strategie leren → Entry & Poi](https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8), player title *5-0 Entries*, 10:25 | Publication date not displayed. Selected line sketches and chart frames inspected; bearish gap at 07:30–07:31 independently checked. No complete spoken-content review. |
+| K7 | [2. De strategie leren → Balance levels](https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8), 10:08 | Selected diagram frames; 03:19–03:20 lower line at first candle’s lower wick independently checked. No readable P label; no complete spoken review. |
 | S1 | [EURUSD Short (DXY Long)](https://www.skool.com/dorusview/eurusd-short-dxy-long), Dorus replying to Jelle Engels | Reply Aug 19; attached student chart dated 2026-08-19. |
 | S2 | [Long trade USDJPY](https://www.skool.com/dorusview/long-trade-usdjpy), Dorus replying to Jelle Engels | Reply Aug 19; student chart shows August 2026. |
 | S3 | [Platform](https://www.skool.com/dorusview/platform), Dorus replying to Mees Vriends | Reply Aug 20; year not printed in the inspected comment. |
@@ -86,7 +99,7 @@ No missing rule is converted into a Dorus-attributed default.
 
 - [~] **Q1 - Balance.** How does Dorus define *balance* on a timeframe? Is it the order block of the last break (what the code does), the equilibrium of the current range (premium/discount), or something else?
   > **Answer:** Object definition contradicted; the proposed close-through → 50/50 transition is **not stated**. Balance is the gap, while P is its originating/protecting candle. See Part 1, items 3–4.
-  > **Source:** B 02:13–03:47, 05:25–05:42; A 01:32:04–01:32:19 and 01:41:49–01:42:06. Full linked titles are in the source register.
+  > **Source:** B 02:13–03:47, 05:25–05:42; A 01:32:04–01:32:19 and 01:41:49–01:42:06; D 03:05–03:41; F 00:58–01:42. Full linked titles are in the source register.
   > **Confidence:** High for explicit definitions; not assessed for the coded transition.
   > **Notes:** A discusses continued decline if P breaks. That is not the code’s automatic neutralization rule, and the gap, protector, and last opposing candle must not be conflated.
 
@@ -97,26 +110,26 @@ No missing rule is converted into a Dorus-attributed default.
   > **Notes:** Neither “already bullish” nor “always wait for BOS” can be made a confirmed rule here.
 
 - [~] **Q3 - Opposing votes.** 1M+1W+1D bullish, 4H+1H bearish. Trade the bullish bias, or wait?
-  > **Answer:** The listed combination is confirmed in K1. A veto from the two opposing timeframes is **not stated**.
-  > **Source:** K1 02:17; A 01:00:58–01:01:05 and 02:03:09–02:03:35. Full linked titles are in the source register.
+  > **Answer:** The listed combination is confirmed in K1 and D. A veto from the two opposing timeframes is **not stated**. D also explicitly lists M+D+4H; see the source-variation log.
+  > **Source:** K1 02:17; A 01:00:58–01:01:05 and 02:03:09–02:03:35; D 01:05–01:43. Full linked titles are in the source register.
   > **Confidence:** High for the combination; low for the exact case with two explicitly bearish opposing votes.
   > **Notes:** A says the 1H/4H are unnecessary in one existing higher-timeframe trade discussion. Their directions are not specified there. This strengthens the context but does not prove the exact hypothetical.
 
 - [~] **Q4 - Scalp only.** With only 1D+4H+1H aligned: which POI timeframes may be used, which confirmation timeframes, and is management different (break-even, session)?
   > **Answer:** Scalp designation and the confirmation/exit tables are verified below. The code’s **4H/1H-only POI subset is not stated**.
-  > **Source:** K1 02:17, 03:54, 06:37, 06:49–06:55; K3 00:39–00:43. Full linked titles are in the source register.
+  > **Source:** K1 02:17, 03:54, 06:37, 06:49–06:55; K3 00:39–00:43; D 01:31–01:42 and 14:56–15:17. Full linked titles are in the source register.
   > **Confidence:** High for written categories; not assessed for the subset or special session rule.
   > **Notes:** K3 explicitly qualifies its scalp context (conflict log). Do not assume that example establishes every permission for the baseline D+4H+1H branch.
 
 - [~] **Q5 - First candle confirmation.** When is "first bullish/bearish candle" an acceptable confirmation instead of a BOS/BMS body close?
   > **Answer:** A total first-candle prohibition is contradicted. A lists a first bullish/bearish candle in a POI as an option; another example enters on the first bullish candle after a shift. BS means balance shift, not a silent substitute for BOS.
-  > **Source:** A 55:18, 01:21:02–01:21:11, 01:29:29–01:31:01; K1 06:30–06:37; B 08:49–09:20. Full linked titles are in the source register.
+  > **Source:** A 55:18, 01:21:02–01:21:11, 01:29:29–01:31:01; K1 06:30–06:37; B 08:49–09:20; D 13:48–14:01. Full linked titles are in the source register.
   > **Confidence:** High for the named options; medium for example-specific sequencing.
   > **Notes:** Exact timeframe eligibility is **not stated**. At A 43:24–43:34 a hoped-for additional liquidity take does not occur, yet the discussion proceeds to entry. This does not prove there was no earlier sweep, but it does not support requiring every extra local sweep.
 
 - [x] **Q6 - TP choice.** Liquidity line vs. unmitigated balance block when both exist: nearest, or always liquidity?
   > **Answer:** “Dus ik zet ten alle tijden mijn take profit op liquiditeit.”
-  > **Source:** A 01:50:40; K1 06:30 also supports the target object. Full linked titles are in the source register.
+  > **Source:** A 01:50:40; K1 06:30 and D 13:22–13:45 also support the target object. Full linked titles are in the source register.
   > **Confidence:** High: explicit personal rule and written plan.
   > **Notes:** The code’s nearest-of-liquidity-or-block rule is contradicted as a blanket attribution. B 09:23–09:58 accepts 1.3R while allowing a further target; C 35:35–36:33 prefers the illustrated 1.7R target over extending it. Which liquidity candidate wins as a deterministic rule, and its exact timeframe floor, remain unresolved.
 
@@ -127,8 +140,8 @@ No missing rule is converted into a Dorus-attributed default.
   > **Notes:** K3 02:24–02:30 describes placing the stop above protection without a fixed one-pip rule. A uses a lot-size calculator and checks the intended protective level against the execution feed. Its captioned numerical distance is ambiguous and has not been turned into a pip specification. Neither an extra stop pip nor another sizing pip is confirmed.
 
 - [~] **Q8 - Break-even 4R vs TP 3R.** Confirm the numbers (intraday BE after 4R, swing BE after 2R, TP ≥ 3R).
-  > **Answer:** 4RR intraday/scalp and 2RR swing break-even thresholds are confirmed in K1. A universal minimum 3R is contradicted by accepted examples, including A’s 0.73R, B’s 1.47R/1.3R and C’s 1.7R.
-  > **Source:** K1 06:49–06:55; A 01:43:58–01:47:06; B 05:46–05:57, 09:23–09:58; C 35:35–36:33. Full linked titles are in the source register.
+  > **Answer:** 4RR intraday/scalp and 2RR swing break-even thresholds are confirmed in K1. A universal minimum 3R is contradicted by accepted examples, including A’s 0.73R, B’s 1.47R/1.3R and C’s 1.7R. D 11:01–11:34 also gives a hypothetical 60% win rate → 0.67 minimum RR; it is not his measured win rate or the project threshold.
+  > **Source:** K1 06:49–06:55; A 01:43:58–01:47:06; B 05:46–05:57, 09:23–09:58; C 35:35–36:33; D 11:01–11:34 and 14:56–15:17. Full linked titles are in the source register.
   > **Confidence:** High for the written thresholds and explicitly described examples.
   > **Notes:** A connects attractive RR with his claimed win rate. These are source statements, not verified performance or a new project threshold. A fixed 3R target closes before 4R; that arithmetic is not his stated explanation for the exit table.
 
@@ -180,16 +193,18 @@ No missing rule is converted into a Dorus-attributed default.
 
 | # | Term | Evidence and identification | Confidence / unresolved points |
 |---|---|---|---|
-| 1 | Liquidity | C 15:07: “Liquiditeit is eigenlijk het liquideren van het aantal orders.” C identifies structure highs/lows (18:21), consolidation edges (19:03), patterns (19:46), trendlines (20:31) and multiple timeframes (21:05). A also names Asia-session liquidity at 01:09:15. | High for named categories. Swing lengths, equal-high tolerance, previous-day/week/month hierarchy, a complete session taxonomy and internal/external definitions: **not stated** as complete algorithms. |
-| 2 | Sweep | No complete wick/close/minimum-penetration definition was verified. A 46:58–48:22 distinguishes a structural break from its liquidity interpretation without supplying a wick-only algorithm. K2 00:26 is a weekly-close condition, not a universal sweep predicate. | **Not assessed.** A line marked X does not alone establish whether a body close beyond is permitted. |
+| 1 | Liquidity | C 15:07: “Liquiditeit is eigenlijk het liquideren van het aantal orders.” C identifies structure highs/lows (18:21), consolidation edges (19:03), patterns (19:46), trendlines (20:31) and multiple timeframes (21:05). A also names Asia-session liquidity at 01:09:15. | E 00:20–00:25, 03:31–03:39, 05:21–06:51 and 07:29–08:17 additionally name orders/stop-losses, X, consolidation and patterns. High for named categories. Swing lengths, equal-high tolerance, previous-day/week/month hierarchy, a complete session taxonomy and internal/external definitions: **not stated** as complete algorithms. |
+| 2 | Sweep | No complete wick/close/minimum-penetration definition was verified. A 46:58–48:22 distinguishes a structural break from its liquidity interpretation without supplying a wick-only algorithm. K2 00:26 is a weekly-close condition, not a universal sweep predicate. | **Not assessed** for a complete predicate, including after E’s full Dutch-caption review. A line marked X does not alone establish whether a body close beyond is permitted. |
 | 3 | Balance | B 03:44–03:47: “dit gat noemen wij dus het balance level.” B’s three-candle gap (03:21–03:47); C’s wick-to-wick drawing description (27:04–27:18). K6 07:30–07:31 visually shows a bearish gap from candle 3’s upper wick to candle 1’s lower wick. | High for definition; medium for this independently checked diagram geometry. Gap is distinct from the originating candle. No deterministic active-gap selection/reset rule verified. |
-| 4 | Protected zone / POI | B 05:29–05:40: “De beschermde zone is de candle die de balance level heeft gecreëerd.” K1’s POI notation is in the plan table. | High for wording. The gap’s wick boundaries in K6 do not determine the full POI or P boundaries. `gap_bottom` remains unverified; so does the opposite endpoint’s use of the sweep extreme rather than the liquidity line. Invalidating timeframe/close condition and first-return-only: **not stated** as complete rules. |
+| 4 | Protected zone / POI | B 05:29–05:40: “De beschermde zone is de candle die de balance level heeft gecreëerd.” K1’s POI notation is in the plan table. | High for wording. D 12:21–12:54 and F 03:00–03:36 explicitly name liquidity-to-protection, including reactions before full gap fill and deeper at protection. This conflicts conceptually with attributing the coded sweep-extreme/gap-edge pair to Dorus. Exact OHLC endpoints remain unresolved; K7’s lower-wick line has no readable P label. See the priority-source audit. Invalidating timeframe/close condition and first-return-only: **not stated** as complete rules. |
 | 5 | BOS / BMS / BS | A 14:06–16:44 explicitly teaches BOS as continuation and BMS/CHoCH as reversal through the prior opposing swing. A 55:18 defines BS as balance shift; 01:29:29–01:30:22 distinguishes it from a plain structural break by the opposing balance level. C 12:14–12:18: “wij nog steeds in dezelfde trend bevinden”. C 12:37–13:02 also calls a prior-low break/reversal BOS. | High for the stated terminology, which varies across passages. A 42:52 and B 08:54 use looser BOS/BMS language when explaining balance shift. A 02:25:40–02:26:15 and 02:30:39–02:30:56 explicitly wait for a close in BS entry examples. The universal price boundary and gap-selection algorithm remain unspecified; A 01:07:49–01:08:30 also refers to the candle that caused the gap. See the focused audit. |
 | 6 | Confirmation | Q5 plus the verified K1 matrix below. | High for explicit options/matrix. Close-based BS entry is explicitly demonstrated (item 5). Required independent LTF sweep and a stricter full-body-beyond predicate: **not stated** as universal requirements. A close beyond and the entire body beyond are different tests. |
 | 7 | Stop / invalidation | K1 06:30: “SL ALTIJD op minimale 1H P”. B 05:25–05:46 connects protection with the origin candle in item 4. | High for wording. A stop based solely on a smaller confirmation swing is not supported as a blanket rule. Exact extra distance is **not stated**. |
 | 8 | Target | Q6; K1 06:30: “TP ALTIJD op x”. B 09:23–09:45 returns to 1H for protection/target context. A 01:54:49–01:55:16 prefers more substantial high/low liquidity over nearby local liquidity in that example. | High for object; medium for application. A deterministic candidate tie-break and universal target-timeframe floor: **not stated**. |
 | 9 | Other concepts | FVG geometry is used (item 3); C’s FVG indicator is in Q14. | High for FVG use. Mandatory premium/discount, equilibrium or breaker-block filters were **not found**. This is not proof of absence from all lessons. |
 | 10 | Scalp / intraday / swing | Written K1 categories below; K3’s scalp qualification in the conflict log. | High for written category labels. Duration cutoffs and exact POI permissions within the scalp-only bias branch remain **not stated**. |
+
+**New priority-source reconciliation:** [DORUS_PRIORITY_SOURCES.md](DORUS_PRIORITY_SOURCES.md) supplies the D/E/F findings, the exact coded endpoint comparison, and K7’s limited diagram observation. D adds a no-trade example and a narration inconsistency; neither produces a complete fixture.
 
 ### Verified plan table — K1, written slides
 
@@ -216,6 +231,8 @@ a plain BOS matrix. An exit group does not establish every
 allowed POI/confirmation combination for a restricted bias state.
 
 ### Variations and contradictions
+
+D (2026-05-01) explicitly includes M+D+4H at 01:09–01:13, reinforcing A; K1’s inspected written table omits it and its date remains unknown. D/F also strengthen the POI definition to liquidity-to-protection, without resolving the exact P endpoint or invalidation close. These findings do not silently alter the code.
 
 | Issue | Sources and dates | What remains unresolved |
 |---|---|---|
@@ -258,6 +275,8 @@ allowed POI/confirmation combination for a restricted bias state.
 | Trailing / timers | A complete trailing-stop rule and numerical setup/approval expiry are **not stated**. | Do not derive them from the descriptive account routine or Q15’s session cutoff. |
 
 ## A4. Part 5 — His process
+
+D 15:25–15:38 independently describes the daily sequence bias → POI → entry → exit and journaling. D 13:22–13:45 repeats one trade per funded account and 1% risk. Confidence: high for the captioned process; no new numerical definition of “start small.”
 
 | Stage | Finding | Source / confidence |
 |---|---|---|
@@ -316,9 +335,7 @@ invented from one screenshot.
 ### Continuation queue
 
 The four-priority follow-up is recorded in [DORUS_FOCUSED_AUDIT.md](DORUS_FOCUSED_AUDIT.md).
-The priority videos still require accessible recordings/captions or resolution of
-the existing browser block. For gold, obtain an unobscured corrected target and
-chart timezone; for POI/BS, verify the full-zone endpoint and precise BS threshold.
+The priority D/E videos and additional F video now have complete available Dutch-caption reviews; see [the update](DORUS_PRIORITY_SOURCES.md). For gold, obtain an unobscured corrected target and chart timezone; for POI/BS, verify exact P bounds and the precise BS threshold. D’s requested picture still did not render.
 
 1. A’s full available caption text is now reviewed; unreadable chart frames and
    audio remain unverified. Review remaining academy spoken content using reliable Dutch transcripts or
@@ -328,8 +345,7 @@ chart timezone; for POI/BS, verify the full-zone endpoint and precise BS thresho
 2. Resolve the K1/A combination difference and K3 scalp/confirmation context.
    Complete active-balance selection, exact POI/invalidation geometry, sweep and
    candle-close predicates before treating the definitions as detector-ready.
-3. Review dedicated YouTube plan **81LThMAtj5o**, liquidity **F5ciF74Uzr8** and FVG
-   **O6IgD2llrq0** when this browser’s access is restored. Titles alone are not evidence.
+3. D/E/F caption review is complete; inspect their remaining diagrams/chart frames and original audio when readable. New candidate locators are in the priority-source audit. Titles and captioned price fragments are not chart evidence.
 4. For each case, verify the actual POI frame, feed, timezone, complete date range,
    sweep and break candle; export real candles with the exact CSV schema in the brief.
 5. Only after complete CSV/YAML pairs exist in `docs/examples/`, run
@@ -385,3 +401,4 @@ chart timezone; for POI/BS, verify the full-zone endpoint and precise BS thresho
 | 2026-09-30 | Code recalibrated to the audit: balance level = the gap, P = the candle that created it (B 03:44, 05:29); balance view flips when P breaks (A 01:41:49); confirmation options BS / BMS / first candle per K1 06:30, BS = close through the opposing balance level; TP on liquidity only (A 01:50:40); stop at minimum the 1H P (K1 06:30); Amsterdam entry windows (A 02:24:03); local lookbacks (S1). Wick-only sweep, 1-pip buffer and 1:3 stay as Max's rules pending his decision. | Claude |
 | 2026-09-30 | M+D+4H combination kept available but off (`bias.extra_combos_enabled`) because K1's written table omits it. | Claude |
 | 2026-09-30 | Focused follow-up: independently checked K3 corrected entry/stop/distance/RR and K6 wick-to-wick bearish gap; rechecked A’s explicit close-based BS examples. Full POI boundary, universal BS threshold, gold target/clock and priority-video access remain unresolved. No runtime change or completed fixture claimed. | Codex/Astra |
+| 2026-09-30 | User handoff cleared YouTube verification. Reviewed all available Dutch captions for D/E/F (419/391/288 segments). D/F clarify POI starts at liquidity and can reach protection; D explicitly includes M+D+4H. Exact P endpoint/BS algorithm and complete fixtures remain unresolved; no runtime change. | Codex/Astra |

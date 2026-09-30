@@ -2,26 +2,29 @@ as_of: '2026-09-30'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Complete available A/B/C automatic-caption text review; rendered academy pages, selected
+method: Complete available A/B/C/D/E/F automatic Dutch-caption text review; rendered academy pages, selected
   plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
   verified.
 retrieved_caption_sources:
 - HRPgdK8VhMc
 - xWR8M46iSW8
 - R07fGFejJ5w
+- 81LThMAtj5o
+- F5ciF74Uzr8
+- O6IgD2llrq0
 caption_audio_audited: false
-youtube_access_block: Unusual-traffic/human-verification page when opening 81LThMAtj5o; persisted
-  after one reload. Stopped further YouTube navigation.
+youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports
+  reviewed. D requested video frame still black/buffering after one ordinary player recovery.
 skool_classroom:
   1. Beginnen met traden: all three lesson pages inventoried; spoken content not reviewed
-  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides
-    verified; Entry & Poi diagram sampled
+  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides verified;
+    Entry & Poi diagram sampled
   3. De juiste route: both lesson pages inventoried; Route video sampled at 01:30 and 04:23; no subtitles
     exposed; spoken content not reviewed
-  Analyses: five lessons inventoried; K2/K3/K4/K5 public playback captions reviewed continuously
-    from beginning to end; selected chart frames only; native Aug 19 player sampled
-  Student interviews: 13 lesson links inventoried; first page is a 32:32 YouTube player, not opened
-    because further YouTube interaction is blocked; interview content not reviewed
+  Analyses: five lessons inventoried; K2/K3/K4/K5 public playback captions reviewed continuously from
+    beginning to end; selected chart frames only; native Aug 19 player sampled
+  Student interviews: 13 lesson links inventoried; first page is a 32:32 YouTube player. Interview content
+    not reviewed; previous YouTube challenge has since cleared.
   Bibliotheek: Claude Journal Prompt lesson/resource located; separate linked Google Drive file blocked
     by automatic approval review; substantive contents not reviewed
 skool_public_profile_pages_inspected:
@@ -32,15 +35,6 @@ skool_public_profile_pages_inspected:
 - 5
 - 6
 priority_videos_discovered_not_reviewed:
-- id: 81LThMAtj5o
-  displayed_title: Mijn Winstgevende Tradingplan Waarmee Ik Elke Dag Trade
-  reason: navigation blocked
-- id: F5ciF74Uzr8
-  displayed_title: How to Trade Liquidity (Like a Pro)
-  reason: transcript panel did not load in the earlier inspection
-- id: O6IgD2llrq0
-  displayed_title: How to Use Fair Value Gaps to Find Better Trades
-  reason: channel title only
 - id: FZPN1jEGWH4
   displayed_title: How to Use Claude to Become Profitable with Trading
   reason: channel title only
@@ -83,56 +77,55 @@ strategy_lesson_inventory:
   review: located, 13:34; content not reviewed
 - lesson: Balance levels
   url: https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8
-  review: 10:08; frames at 02:09, 03:27, 04:41 and 06:44 sampled; no complete spoken review or new
-    numerical rule attributed
+  review: 'K7: earlier selected frames plus 03:00, 03:19–03:20, 03:24–03:25, 03:34–03:35. Lower line at first
+    drawn candle lower wick independently checked; no readable P label and no complete spoken review.'
 - lesson: Bias analyse
   url: https://www.skool.com/dorusview/classroom/1924b124?md=e661788b9bd849b6b4f5a3ec10c0b6d8
   review: 8:50; player opened and selected frames sampled; no complete spoken review
 - lesson: Entry & Poi
   url: https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8
-  review: 'K6: selected line sketches and chart frames inspected through 09:01; 07:30–07:31 bearish
-    gap wick boundaries independently checked. Full POI/P endpoint and complete spoken review remain
-    unresolved.'
+  review: 'K6: selected line sketches and chart frames inspected through 09:01; 07:30–07:31 bearish gap
+    wick boundaries independently checked. Full POI/P endpoint and complete spoken review remain unresolved.'
 - lesson: Tradingplan
   url: https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83
   review: 18:19; selected written slides verified, not complete spoken-content review
 analysis_lesson_inventory:
 - lesson: €8.000 verdiend binnen één uur.
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
-  review: K3 continuous public playback captions through 4:05 end; selected chart frames now include
-    corrected 02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone
-    and complete fixture remain unresolved.
+  review: K3 continuous public playback captions through 4:05 end; selected chart frames now include corrected
+    02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone and complete
+    fixture remain unresolved.
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
   review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
 - lesson: Bitcoin analyse | 7-09-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
-  review: K5 continuous public playback captions through end; player displayed 07:46 (poster 07:45);
-    selected daily frames; no complete trade expectations
+  review: K5 continuous public playback captions through end; player displayed 07:46 (poster 07:45); selected
+    daily frames; no complete trade expectations
 - lesson: €21.000 verdiend met bitcoin
   url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
   review: K4 continuous public playback captions through 2:27 end; selected daily/4H frames; no complete
     order record
 - lesson: Bitcoin analyse | 27-09-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
-  review: K2 continuous public playback captions through 2:57 end; selected monthly/weekly frames;
-    conditional scenario, no executed trade
+  review: K2 continuous public playback captions through 2:57 end; selected monthly/weekly frames; conditional
+    scenario, no executed trade
 media_limits:
 - Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone embed refused
   playback under its privacy settings, so inspection stayed in authorized Skool embed.
-- Loom full transcript/download requires separate account. Gated transcript content excluded from
-  findings; public playback captions and charts used.
+- Loom full transcript/download requires separate account. Gated transcript content excluded from findings;
+  public playback captions and charts used.
 - Native Skool Aug 19 media export returned no file.
 - No complete OHLC export obtained. Chart-frame inspection does not establish every event, POI timeframe
   or UTC interval.
-- Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option
-  in the inspected menus.
+- Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option in
+  the inspected menus.
 - Entry & Poi video-element media export produced no downloadable file; no unseen audio or transcript
   was attributed.
 academy_screenshots_in_pr: false
-publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially
-  private source material. All raw academy screenshots were excluded from the PR; only requested
-  sourced documentation and chart-value YAMLs are included.
+publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially private
+  source material. All raw academy screenshots were excluded from the PR; only requested sourced documentation
+  and chart-value YAMLs are included.
 main_course_caption_audit: course_caption_audit.yaml
 main_course_all_available_captions_reviewed: true
 main_course_all_frames_reviewed: false
@@ -175,8 +168,8 @@ external_resource_block:
   resource: Bibliotheek → Claude Prompt
   url: https://drive.google.com/file/d/1yVDpc4Fv6abD5fiP5ccVCNGIHoGpa7wa/view
   status: not_read
-  reason: Automatic approval review denied browser opening of a separate potentially private Google
-    Drive resource without explicit authorization for that resource. No workaround attempted.
+  reason: Automatic approval review denied browser opening of a separate potentially private Google Drive
+    resource without explicit authorization for that resource. No workaround attempted.
 visible_classroom_course_count: 6
 visible_classroom_lesson_link_count: 30
 lesson_link_inventory_complete_for_visible_courses: true
@@ -224,16 +217,85 @@ library_lesson_inventory:
 - lesson: Claude Journal Prompt
   url: https://www.skool.com/dorusview/classroom/e7612bd1?md=a10bbc21052d41dda2dd86e53a60b04a
   duration: '19:21'
-  review: page/resource inventoried; spoken content not reviewed; external Drive resource blocked
-    as recorded separately
+  review: page/resource inventoried; spoken content not reviewed; external Drive resource blocked as recorded
+    separately
 focused_followup: ../../DORUS_FOCUSED_AUDIT.md
 focused_followup_date: '2026-09-30'
 focused_followup_results:
-  gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target
-    price/timezone still obscured; no complete fixture
-  entry_poi: 00:55–03:33 sketches and 06:01–09:01 selected chart frames inspected; 07:30–07:31 bearish
-    gap wick boundaries distinguishable; full POI/P boundaries not established
+  gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target price/timezone
+    still obscured; no complete fixture
+  entry_poi: K6 confirms local gap wick boundaries. D/F explicitly describe liquidity-to-protection; exact
+    P endpoints still unresolved. K7 03:19–03:20 lower line meets first candle lower wick but has no readable
+    P label.
   bs: Opposing balance concept and close requirement supported in A examples; exact universal far-edge/latest-gap
     algorithm unresolved
-  priority_video_access: Independent primary-source search found no verified creator-published readable
-    transcript/mirror for 81LThMAtj5o or F5ciF74Uzr8; no YouTube retry or workaround used
+  priority_video_access: User handoff restored access; D/E complete Dutch-caption review plus F dedicated
+    gap lesson. English E track excluded after selecting Dutch.
+youtube_access_block_history: Earlier unusual-traffic challenge on 81LThMAtj5o persisted after one reload;
+  navigation stopped until user handoff.
+priority_videos_caption_reviewed:
+- id: 81LThMAtj5o
+  displayed_title: Mijn Winstgevende Tradingplan Waarmee Ik Elke Dag Trade
+  review: All available Dutch automatic captions reviewed; no independent audio/full visual review
+- id: F5ciF74Uzr8
+  displayed_title: How to Trade Liquidity (Like a Pro)
+  review: All available Dutch automatic captions reviewed; no independent audio/full visual review
+- id: O6IgD2llrq0
+  displayed_title: How to Use Fair Value Gaps to Find Better Trades
+  review: All available Dutch automatic captions reviewed; no independent audio/full visual review
+priority_source_update: ../../DORUS_PRIORITY_SOURCES.md
+caption_reviews:
+  D:
+    video_id: 81LThMAtj5o
+    displayed_title: My Profitable Trading Plan With Which I Trade Every Day
+    published: '2026-05-01'
+    player_duration: '16:25'
+    language: nl
+    automatic: true
+    segment_count: 419
+    first_caption: 0:00
+    last_caption: '16:23'
+    all_available_segments_reviewed: true
+    independent_second_caption_review: true
+    audio_verified: false
+    all_chart_frames_reviewed: false
+    raw_transcript_delivered: false
+    sha256: 5bcbc8fc0a20b7d0f67f14636b28332ea6c7b0ce844e1bc919d81a469af0675b
+  E:
+    video_id: F5ciF74Uzr8
+    displayed_title: How to Trade Liquidity (Like a Pro)
+    published: '2026-09-02'
+    player_duration: '14:15'
+    language: nl
+    automatic: true
+    segment_count: 391
+    first_caption: 0:00
+    last_caption: '14:13'
+    all_available_segments_reviewed: true
+    independent_second_caption_review: true
+    audio_verified: false
+    all_chart_frames_reviewed: false
+    raw_transcript_delivered: false
+    sha256: 1940c65585e0d30ffd82a88797f1564815a97dcc27f87b933546710af79b0c47
+  F:
+    video_id: O6IgD2llrq0
+    displayed_title: How to Use Fair Value Gaps to Find Better Trades
+    published: '2026-09-28'
+    player_duration: '10:28'
+    language: nl
+    automatic: true
+    segment_count: 288
+    first_caption: 0:00
+    last_caption: '10:26'
+    all_available_segments_reviewed: true
+    independent_second_caption_review: true
+    audio_verified: false
+    all_chart_frames_reviewed: false
+    raw_transcript_delivered: false
+    sha256: 59e8a378caf71677a35ced8aef44812fde8e9a7ad3cf8ffc067f25034a44252e
+additional_caption_only_locators:
+  D_rejected_setup: 03:48–10:28; instrument/date/feed/prices unverified
+  E_btc_weekly_context: 09:00–11:19; entry reference 09:53–10:12; no captioned price fragment promoted
+    to expectation
+  F_btc_daily_context: 06:48–08:23; Daily named 07:58
+  F_gold_daily: 08:58–09:23
