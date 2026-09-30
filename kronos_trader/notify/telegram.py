@@ -1,8 +1,14 @@
-"""Telegram notifications through the Bot API (no extra dependency beyond ``requests``)."""
+"""Telegram notifications and the approve / skip flow (Bot API, ``requests`` only).
+
+Messages: setups, fills, break-even moves, closes.  Approval requests carry an
+inline keyboard; ``poll_decisions`` reads the taps (or ``/approve <id>`` and
+``/skip <id>`` texts) and only accepts them from the configured chat.
+"""
 from __future__ import annotations
 
-import os
-from typing import Optional
+import json
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ..config import SymbolSpec, TelegramParams
 from ..core.types import Analysis, ForecastSummary, TradeSetup
@@ -11,42 +17,117 @@ from .formatting import format_analysis, format_setup
 API = "https://api.telegram.org/bot{token}/{method}"
 
 
+@dataclass
+class Decision:
+    short_id: str
+    approved: bool
+    user_id: Optional[int] = None
+    via: str = "button"
+
+
 class TelegramNotifier:
     def __init__(self, token: Optional[str] = None, chat_id: Optional[str] = None, parse_mode: str = "HTML",
-                 dry_run: bool = False, params: Optional[TelegramParams] = None, timeout: float = 15.0):
+                 dry_run: bool = False, params: Optional[TelegramParams] = None, timeout: float = 15.0,
+                 allowed_user_ids: Optional[List[int]] = None):
         params = params or TelegramParams()
         self.token = token or params.bot_token
         self.chat_id = chat_id or params.chat_id
         self.parse_mode = parse_mode or params.parse_mode
         self.dry_run = dry_run or not (self.token and self.chat_id)
         self.timeout = timeout
+        self.allowed_user_ids = set(allowed_user_ids or [])
         self.sent: list = []
+        self._offset: Optional[int] = None
+        self._queued: List[Decision] = []
 
     @property
     def configured(self) -> bool:
         return bool(self.token and self.chat_id)
 
-    def send(self, text: str) -> bool:
+    # ------------------------------------------------------------ transport
+    def _call(self, method: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        import requests
+        resp = requests.post(API.format(token=self.token, method=method), json=payload, timeout=self.timeout)
+        if resp.status_code != 200:
+            raise RuntimeError(f"Telegram {method} failed: {resp.status_code} {resp.text[:200]}")
+        return resp.json()
+
+    def send(self, text: str, reply_markup: Optional[Dict[str, Any]] = None) -> bool:
         self.sent.append(text)
         if self.dry_run:
             print("[telegram dry-run]\n" + text)
             return False
-        import requests
-        resp = requests.post(
-            API.format(token=self.token, method="sendMessage"),
-            json={"chat_id": self.chat_id, "text": text[:4000], "parse_mode": self.parse_mode,
-                  "disable_web_page_preview": True},
-            timeout=self.timeout,
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(f"Telegram sendMessage failed: {resp.status_code} {resp.text[:200]}")
+        payload: Dict[str, Any] = {"chat_id": self.chat_id, "text": text[:4000], "parse_mode": self.parse_mode,
+                                   "disable_web_page_preview": True}
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+        self._call("sendMessage", payload)
         return True
 
+    # ------------------------------------------------------------ messages
     def send_setup(self, setup: TradeSetup, forecast: Optional[ForecastSummary] = None, spec: Optional[SymbolSpec] = None) -> bool:
         return self.send("🚨 " + format_setup(setup, forecast, spec))
 
     def send_analysis(self, analysis: Analysis, spec: Optional[SymbolSpec] = None) -> bool:
         return self.send(format_analysis(analysis, spec))
 
+    def send_approval_request(self, setup: TradeSetup, short_id: str, forecast: Optional[ForecastSummary] = None,
+                              spec: Optional[SymbolSpec] = None, expires_at=None) -> bool:
+        lines = ["⏳ <b>APPROVAL NEEDED</b>", format_setup(setup, forecast, spec)]
+        if expires_at is not None:
+            lines.append(f"Expires {expires_at:%Y-%m-%d %H:%M} UTC")
+        lines.append(f"id <code>{short_id}</code>  (or reply /approve {short_id} · /skip {short_id})")
+        keyboard = {"inline_keyboard": [[
+            {"text": "✅ Approve", "callback_data": f"approve:{short_id}"},
+            {"text": "❌ Skip", "callback_data": f"skip:{short_id}"},
+        ]]}
+        return self.send("\n".join(lines), reply_markup=keyboard)
+
     def test(self) -> bool:
         return self.send("kronos_trader connected ✅")
+
+    # ------------------------------------------------------------ decisions
+    def queue_decision(self, short_id: str, approved: bool, user_id: Optional[int] = None) -> None:
+        """Inject a decision (tests, or a local console in dry-run mode)."""
+        self._queued.append(Decision(short_id, approved, user_id, via="queued"))
+
+    def _authorised(self, user_id: Optional[int], chat_id: Optional[int]) -> bool:
+        if user_id is not None and user_id in self.allowed_user_ids:
+            return True
+        return chat_id is not None and self.chat_id is not None and str(chat_id) == str(self.chat_id)
+
+    def poll_decisions(self) -> List[Decision]:
+        decisions: List[Decision] = list(self._queued)
+        self._queued.clear()
+        if self.dry_run:
+            return decisions
+        payload: Dict[str, Any] = {"timeout": 0, "allowed_updates": json.dumps(["callback_query", "message"])}
+        if self._offset is not None:
+            payload["offset"] = self._offset
+        result = self._call("getUpdates", payload).get("result", [])
+        for update in result:
+            self._offset = int(update["update_id"]) + 1
+            cq = update.get("callback_query")
+            if cq:
+                data = str(cq.get("data", ""))
+                user_id = cq.get("from", {}).get("id")
+                chat_id = cq.get("message", {}).get("chat", {}).get("id")
+                verb, _, short_id = data.partition(":")
+                ok = verb in ("approve", "skip") and short_id and self._authorised(user_id, chat_id)
+                try:
+                    self._call("answerCallbackQuery", {"callback_query_id": cq.get("id"),
+                                                       "text": ("Approved ✅" if verb == "approve" else "Skipped") if ok else "Not allowed"})
+                except Exception:
+                    pass
+                if ok:
+                    decisions.append(Decision(short_id, verb == "approve", user_id, via="button"))
+                continue
+            msg = update.get("message")
+            if msg and isinstance(msg.get("text"), str):
+                parts = msg["text"].strip().split()
+                if len(parts) == 2 and parts[0] in ("/approve", "/skip"):
+                    user_id = msg.get("from", {}).get("id")
+                    chat_id = msg.get("chat", {}).get("id")
+                    if self._authorised(user_id, chat_id):
+                        decisions.append(Decision(parts[1], parts[0] == "/approve", user_id, via="command"))
+        return decisions

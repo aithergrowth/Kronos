@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
+from ..core.candles import CandleSeries
+from ..core.timeframe import Timeframe
 from ..core.types import Direction
 
 
@@ -82,3 +84,11 @@ class Broker(ABC):
 
     @abstractmethod
     def current_price(self, symbol: str) -> float: ...
+
+    # optional capabilities -------------------------------------------------
+    def recent_closes(self) -> List[ClosedTrade]:
+        """Trades closed since the last call (stop / target hits at the broker)."""
+        return []
+
+    def get_candles(self, symbol: str, timeframe: Timeframe, count: int = 500) -> CandleSeries:
+        raise NotImplementedError(f"{type(self).__name__} does not provide candles")

@@ -29,17 +29,28 @@ Each phase has an exit criterion. We do not move on before it is met.
 - Measure: does agreement between Kronos and the setup direction improve win rate / R? Choose the mode from data, not opinion.
 - Exit: documented decision for `kronos.mode` and `horizon`.
 
-## Phase 4 - Live dry-run
+## Phase 4 - Live dry-run (Telegram only)
 
-- `LiveRunner` on the desktop, `dry_run=True`: signals to Telegram, no orders.
+- `python -m kronos_trader live --broker ibkr` on a machine that never sleeps (`docs/LIVE_SETUP.md`): IBKR paper feed for the low timeframes, TradingView cache for the high ones, signals to Telegram, no orders.
 - Run for 2–4 weeks; compare every alert with what Dorus's rules say manually.
 - Exit: zero rule violations in alerts; no crashes; latency under one candle.
 
-## Phase 5 - Demo account
+## Phase 5 - IBKR paper execution with the Approve step
 
-- MT5 demo with the prop firm's broker; `dry_run=False`.
+- `--execute` with the Telegram approve / skip flow; bracket orders (market + stop + target), break-even, close reports.
 - Guard rails live: 1 % risk, 1 trade, daily-loss / drawdown stops.
 - Exit: one month without a guard breach; realised results match the backtest distribution.
+
+## Phase 5b - Prop-firm demo
+
+- The firm's platform (MT5 today; cTrader / MatchTrader adapter if required) with the same loop and the Approve step.
+- Exit: the firm's demo mirrors the IBKR paper results.
+
+## Collaborators
+
+- **Claude** (this environment): code, tests, TradingView pulls through the MCP, backtests, reviews.
+- **Astra / a ChatGPT Dot** (24/7, own cloud computer): works the repo through GitHub on its own branches - answers `docs/ASTRA_TASKS.md`, encodes Dorus's examples, runs backtests, opens pull requests. Never in the order path and never holding broker or Telegram secrets.
+- **Max**: definitions, accounts, approvals, the final word on every parameter.
 
 ## Phase 6 - Prop firm challenge
 

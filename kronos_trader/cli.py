@@ -184,6 +184,61 @@ def cmd_telegram_test(args) -> int:
     return 0
 
 
+def _broker(args, settings: Settings):
+    kind = getattr(args, "broker", "none")
+    if kind == "none":
+        return None
+    if kind == "paper":
+        from .execution.paper import PaperBroker
+        return PaperBroker(settings)
+    if kind == "ibkr":
+        from .execution.ibkr import IBKRBroker
+        return IBKRBroker(settings)
+    if kind == "mt5":
+        from .execution.mt5 import MT5Broker
+        return MT5Broker(settings)
+    raise SystemExit(f"unknown broker {kind}")
+
+
+def cmd_live(args) -> int:
+    from .live import LiveRunner, build_fetch
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    broker = _broker(args, settings)
+    data_dir = args.data_dir or settings.tradingview.cache_dir
+    # only IBKR / MT5 provide a live feed; with no broker or the paper broker everything comes from the cache
+    broker_tfs = [] if args.broker in ("none", "paper") else None
+    fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker, broker_timeframes=broker_tfs)
+    notifier = TelegramNotifier(params=settings.telegram)
+    runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
+                        engine=StrategyEngine(settings, _forecaster(settings)),
+                        dry_run=not args.execute, require_approval=not args.no_approval,
+                        notify_every_scan=args.notify_every_scan)
+    mode = "EXECUTE" if args.execute else "dry-run"
+    print(f"live {symbol}: broker={args.broker} mode={mode} approval={'off' if args.no_approval else 'on'} "
+          f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
+    if args.once:
+        analysis = runner.step()
+        print(_plain(format_analysis(analysis, settings.symbol(symbol))))
+        return 0
+    runner.run_forever(args.poll)
+    return 0
+
+
+def cmd_ibkr_test(args) -> int:
+    from .execution.ibkr import IBKRBroker
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    broker = IBKRBroker(settings)
+    print(f"connected to {settings.ibkr.host}:{settings.ibkr.port}  equity {broker.equity():,.2f}  balance {broker.balance():,.2f}")
+    print("contract:", broker.contract(symbol))
+    print("price:", broker.current_price(symbol))
+    bars = broker.get_candles(symbol, Timeframe.parse(args.tf), 5)
+    print(bars.df.to_string())
+    broker.disconnect()
+    return 0
+
+
 def cmd_tv_tools(args) -> int:
     settings = _load_settings(args)
     from .data.tradingview_mcp import TradingViewMCPClient
@@ -261,6 +316,21 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("tv-tools", help="list tools of the TradingView MCP server (needs TRADINGVIEW_MCP_TOKEN)")
     sp.set_defaults(func=cmd_tv_tools)
+
+    sp = sub.add_parser("live", help="run the live loop: cache + broker bars -> engine -> Telegram (approve) -> broker")
+    data_args(sp)
+    sp.add_argument("--broker", choices=["none", "paper", "ibkr", "mt5"], default="none")
+    sp.add_argument("--execute", action="store_true", help="send real orders (default: dry-run, Telegram only)")
+    sp.add_argument("--no-approval", action="store_true", help="execute without the Telegram approve step")
+    sp.add_argument("--poll", type=int, default=60, help="seconds between scans")
+    sp.add_argument("--once", action="store_true", help="run a single scan and exit")
+    sp.add_argument("--notify-every-scan", action="store_true")
+    sp.set_defaults(func=cmd_live)
+
+    sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")
+    sp.add_argument("--symbol", default="EURUSD")
+    sp.add_argument("--tf", default="15m")
+    sp.set_defaults(func=cmd_ibkr_test)
     return p
 
 

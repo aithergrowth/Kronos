@@ -3,4 +3,5 @@
 pyyaml>=6.0
 requests>=2.28
 pytest>=7.0
-# MetaTrader5   # Windows only, for the live MT5 broker adapter
+ib_async>=1.0     # Interactive Brokers adapter (TWS / IB Gateway API)
+# MetaTrader5     # Windows only, for the live MT5 broker adapter

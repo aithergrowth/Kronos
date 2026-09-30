@@ -58,6 +58,10 @@ even better.
   > notes:
 - [ ] **B7 - TradingView data pulls.** Astra can't call the MCP, but can list which symbols/timeframes to keep warm in the cache (`data/tv_cache/`). Claude pulls them in each session.
   > list:
+- [ ] **B8 - Dot on GitHub.** If Astra runs as a ChatGPT Dot: connect it to the `aithergrowth/kronos` repository, work on branches named `astra/<topic>`, open pull requests for Claude to review, and keep all secrets out of its computer. It should read `docs/STRATEGY.md` and `docs/ASTRA_TASKS.md` first.
+  > status:
+- [ ] **B9 - IBKR paper + Telegram on the desktop.** Follow `docs/LIVE_SETUP.md` sections 1 and 2, then run `python -m kronos_trader ibkr-test` and `python -m kronos_trader telegram-test`.
+  > status:
 
 ## C. What Claude did / will do
 
@@ -68,7 +72,8 @@ even better.
 - [x] C5 - Backtester + CLI + first runs on the bundled 6-year 5-minute dataset
 - [ ] C6 - Turn B1 examples into regression tests
 - [ ] C7 - Forex backtests on real TradingView history (needs cached bars, see `docs/TRADINGVIEW_BRIDGE.md`)
-- [ ] C8 - Live dry-run loop on the desktop with Telegram (Phase 4 in `docs/ROADMAP.md`)
+- [x] C8 - Live loop with IBKR paper adapter, Telegram approve/skip flow and close reports (`kronos_trader/live.py`, `execution/ibkr.py`) - 2026-09-30
+- [ ] C9 - Run the loop for real on the desktop (needs B9)
 
 ## D. Decision log
 

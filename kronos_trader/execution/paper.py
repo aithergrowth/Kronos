@@ -27,6 +27,12 @@ class PaperBroker(Broker):
         self.equity_curve: List[Tuple[pd.Timestamp, float]] = []
         self._last_price: Dict[str, float] = {}
         self._ids = itertools.count(1)
+        self._close_cursor = 0
+
+    def recent_closes(self) -> List[ClosedTrade]:
+        out = self.closed[self._close_cursor:]
+        self._close_cursor = len(self.closed)
+        return out
 
     # ------------------------------------------------------------ helpers
     def _spec(self, symbol: str):

@@ -34,6 +34,8 @@ class SymbolSpec:
     price_decimals: int = 5
     tradingview_symbol: Optional[str] = None   # e.g. OANDA:EURUSD
     mt5_symbol: Optional[str] = None           # broker-specific name, e.g. EURUSD.r
+    contract_size: float = 100_000.0           # units per 1.0 lot (forex standard lot)
+    ibkr_contract: Optional[str] = None        # "forex" | "cfd:IBUST100" | "stock:AAPL:SMART:USD" | "crypto:BTC:PAXOS:USD"
 
     def pips(self, distance: float) -> float:
         return distance / self.pip_size
@@ -50,10 +52,14 @@ DEFAULT_SYMBOLS: Dict[str, SymbolSpec] = {
     "USDCAD": SymbolSpec("USDCAD", 0.0001, 7.3, typical_spread_pips=1.5, tradingview_symbol="OANDA:USDCAD"),
     "USDCHF": SymbolSpec("USDCHF", 0.0001, 11.0, typical_spread_pips=1.5, tradingview_symbol="OANDA:USDCHF"),
     "USDJPY": SymbolSpec("USDJPY", 0.01, 6.5, price_decimals=3, tradingview_symbol="OANDA:USDJPY"),
-    "XAUUSD": SymbolSpec("XAUUSD", 0.1, 10.0, typical_spread_pips=2.0, price_decimals=2, tradingview_symbol="OANDA:XAUUSD"),
-    "NAS100": SymbolSpec("NAS100", 1.0, 1.0, typical_spread_pips=1.5, price_decimals=1, tradingview_symbol="OANDA:NAS100USD"),
-    "US30": SymbolSpec("US30", 1.0, 1.0, typical_spread_pips=2.0, price_decimals=1, tradingview_symbol="OANDA:US30USD"),
-    "BTCUSD": SymbolSpec("BTCUSD", 1.0, 1.0, typical_spread_pips=15.0, price_decimals=1, tradingview_symbol="BINANCE:BTCUSDT"),
+    "XAUUSD": SymbolSpec("XAUUSD", 0.1, 10.0, typical_spread_pips=2.0, price_decimals=2, tradingview_symbol="OANDA:XAUUSD",
+                         contract_size=100.0, ibkr_contract="cfd:XAUUSD"),
+    "NAS100": SymbolSpec("NAS100", 1.0, 1.0, typical_spread_pips=1.5, price_decimals=1, tradingview_symbol="OANDA:NAS100USD",
+                         contract_size=1.0, ibkr_contract="cfd:IBUST100"),
+    "US30": SymbolSpec("US30", 1.0, 1.0, typical_spread_pips=2.0, price_decimals=1, tradingview_symbol="OANDA:US30USD",
+                       contract_size=1.0, ibkr_contract="cfd:IBUS30"),
+    "BTCUSD": SymbolSpec("BTCUSD", 1.0, 1.0, typical_spread_pips=15.0, price_decimals=1, tradingview_symbol="BINANCE:BTCUSDT",
+                         contract_size=1.0, ibkr_contract="crypto:BTC:PAXOS:USD"),
 }
 
 
@@ -170,6 +176,47 @@ class TradingViewParams:
 
 
 @dataclass
+class IBKRParams:
+    """Interactive Brokers connection (TWS or IB Gateway). Paper TWS listens on 7497, paper Gateway on 4002."""
+    host_env: str = "IBKR_HOST"
+    port_env: str = "IBKR_PORT"
+    client_id_env: str = "IBKR_CLIENT_ID"
+    account_env: str = "IBKR_ACCOUNT"
+    default_host: str = "127.0.0.1"
+    default_port: int = 7497
+    default_client_id: int = 17
+    what_to_show: str = "MIDPOINT"      # bar type for forex structure (MIDPOINT | BID | ASK | TRADES)
+    fill_wait_seconds: float = 2.0
+
+    @property
+    def host(self) -> str:
+        return os.environ.get(self.host_env, self.default_host)
+
+    @property
+    def port(self) -> int:
+        return int(os.environ.get(self.port_env, self.default_port))
+
+    @property
+    def client_id(self) -> int:
+        return int(os.environ.get(self.client_id_env, self.default_client_id))
+
+    @property
+    def account(self) -> str:
+        return os.environ.get(self.account_env, "")
+
+
+@dataclass
+class LiveParams:
+    poll_seconds: int = 60
+    require_approval: bool = True                  # human taps Approve in Telegram before an order is sent
+    approval_timeout_minutes: Optional[int] = None  # None = one confirmation-timeframe candle (min 5 minutes)
+    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4)
+    broker_bar_counts: Dict[Timeframe, int] = field(default_factory=lambda: {
+        Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400})
+    notify_every_scan: bool = False
+
+
+@dataclass
 class Settings:
     account_size: float = 100_000.0
     account_currency: str = "USD"
@@ -183,6 +230,8 @@ class Settings:
     prop_firm: PropFirmParams = field(default_factory=PropFirmParams)
     telegram: TelegramParams = field(default_factory=TelegramParams)
     tradingview: TradingViewParams = field(default_factory=TradingViewParams)
+    ibkr: IBKRParams = field(default_factory=IBKRParams)
+    live: LiveParams = field(default_factory=LiveParams)
 
     # ------------------------------------------------------------------ access
     def symbol(self, name: str) -> SymbolSpec:
@@ -238,7 +287,7 @@ def _coerce(field_type: Any, value: Any) -> Any:
                 out.append(tuple(Timeframe.parse(x) for x in v) if isinstance(v, (list, tuple)) else Timeframe.parse(v))
             return tuple(out)
         if isinstance(value, dict):
-            return {Timeframe.parse(k): Timeframe.parse(v) for k, v in value.items()}
+            return {Timeframe.parse(k): (Timeframe.parse(v) if isinstance(v, str) else v) for k, v in value.items()}
         return Timeframe.parse(value)
     return value
 
