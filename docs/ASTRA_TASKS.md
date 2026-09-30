@@ -78,7 +78,7 @@ Rules Dorus states that are not in our rule set (sessions, news, max trades per 
 ## C. What Claude did / will do
 
 - [x] C1 - Rule set codified with tests (`kronos_trader/strategy`, `tests/trader`) - 2026-09-30
-- [x] C2 - Kronos forecast indicator wired (`kronos_trader/indicators`) - needs model weights on the desktop (Hugging Face is blocked from the cloud session)
+- [x] C2 - Kronos forecast indicator wired (`kronos_trader/indicators`) and verified with the real Kronos-small weights (110 MB download, CPU) - 2026-09-30
 - [x] C3 - TradingView MCP adapter + CSV cache, verified against the live server tools - 2026-09-30
 - [x] C4 - Paper broker, prop-firm guard, MT5 adapter skeleton, Telegram notifier
 - [x] C5 - Backtester + CLI + first runs on the bundled 6-year 5-minute dataset
