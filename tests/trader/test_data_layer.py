@@ -1,9 +1,10 @@
 import json
 
 import pandas as pd
+import pytest
 
 from kronos_trader.core import CandleSeries, Timeframe
-from kronos_trader.data import MultiTimeframeData, load_all, load_series, parse_ohlcv_payload, resample, save_payload, save_series
+from kronos_trader.data import MultiTimeframeData, cache_path, load_all, load_series, parse_ohlcv_payload, resample, save_payload, save_series
 from kronos_trader.data.tradingview_mcp import news_blackout_windows
 
 T = Timeframe
@@ -59,6 +60,19 @@ def test_cache_roundtrip_merges(tmp_path):
     loaded = load_series(tmp_path, "FX:EURUSD", T.D_1)
     assert len(loaded) == 4
     assert list(load_all(tmp_path, "FX:EURUSD")) == [T.D_1]
+
+
+def test_cache_names_are_case_safe_and_spacing_is_checked(tmp_path):
+    names = {cache_path(tmp_path, "X", tf).name.lower() for tf in T}
+    assert len(names) == len(list(T))   # no two timeframes may share a file name on a case-insensitive file system
+    monthly = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 6, T.MN_1, start="2024-01-01", symbol="X")
+    save_series(monthly, tmp_path)
+    assert cache_path(tmp_path, "X", T.MN_1).name == "X_1MO.csv"
+    # a monthly file served under the 1-minute name (what Windows did with 1M / 1m) must be rejected, not used
+    (tmp_path / "X_1min.csv").write_bytes(cache_path(tmp_path, "X", T.MN_1).read_bytes())
+    with pytest.raises(ValueError):
+        load_series(tmp_path, "X", T.MIN_1)
+    assert set(load_all(tmp_path, "X")) == {T.MN_1}
 
 
 def test_news_blackout_windows():

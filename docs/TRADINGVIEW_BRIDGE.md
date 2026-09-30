@@ -24,7 +24,9 @@ bars and writes them into the cache. Per symbol and timeframe:
    `python -m kronos_trader import-tv --symbol OANDA:EURUSD --tf 4H --json bars_4h.json`
    (or call `kronos_trader.data.save_payload` directly). Saving **merges** with
    existing rows, so repeated pulls extend the history.
-3. The engine reads `data/tv_cache/OANDA_EURUSD_<TF>.csv` for every timeframe:
+3. The engine reads `data/tv_cache/OANDA_EURUSD_<TF>.csv` for every timeframe
+   (file labels `1min 5min 15min 30min 1H 4H 1D 1W 1MO`, chosen so that minute
+   and month files cannot collide on Windows or macOS):
    `python -m kronos_trader scan --symbol EURUSD --data-dir data/tv_cache`
    (`EURUSD` is mapped to `OANDA:EURUSD` through `symbols.EURUSD.tradingview_symbol`).
 
