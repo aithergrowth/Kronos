@@ -4,14 +4,26 @@ from kronos_trader.core import Bias, CandleSeries, POIStatus, Timeframe
 from kronos_trader.strategy import analyze_structure, current_visit, map_pois
 
 
-def test_poi_is_zone_between_sweep_and_balance_block(scenario):
+def test_poi_is_x_to_balance(scenario):
     pois = map_pois(analyze_structure(scenario), current_price=105.0)
     assert len(pois) == 1
     poi = pois[0]
-    assert poi.direction is Bias.BULLISH and (poi.low, poi.high) == (99.0, 102.0)
-    assert poi.protection_level == 99.0
+    assert poi.direction is Bias.BULLISH and (poi.low, poi.high) == (99.0, 102.0)   # sweep wick -> bottom of the gap
+    assert poi.protection_level == 99.0 and poi.protector_extreme == 100.6           # P = candle 12
+    assert poi.gap is not None and poi.gap.index == 13 and poi.balance is not None
     assert poi.created_at == pd.Timestamp("2024-01-01 13:00")
     assert poi.status is POIStatus.FRESH
+
+
+def test_poi_far_edge_options(scenario):
+    from kronos_trader.config import StructureParams
+    st = analyze_structure(scenario)
+    top = map_pois(st, StructureParams(poi_far_edge="gap_top"), current_price=105.0)[0]
+    assert (top.low, top.high) == (99.0, 105.0)
+    prot = map_pois(st, StructureParams(poi_far_edge="protector"), current_price=105.0)[0]
+    assert (prot.low, prot.high) == (99.0, 106.0)
+    none = map_pois(st, StructureParams(max_bars_sweep_to_balance=1), current_price=105.0)
+    assert none == []
 
 
 def test_poi_status_active_tested_invalidated(scenario, scenario_rows):

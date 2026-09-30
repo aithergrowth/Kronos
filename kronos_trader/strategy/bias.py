@@ -53,19 +53,28 @@ def timeframe_bias(
     else:
         notes.append("liquidity: no sweep or break found -> 50/50")
 
-    # balance view -------------------------------------------------------------
+    # balance view: the last balance level (gap) and its protector ------------------
     balance = Bias.NEUTRAL
-    brk: Optional[StructureBreak] = st.last_break
-    if brk is not None:
-        block = st.block_for_break(brk)
-        if block is not None and block.is_violated:
-            notes.append(f"balance: {brk.direction} block {block.low:.5f}-{block.high:.5f} violated at candle {block.violated_index} -> 50/50")
+    gap = st.last_gap
+    if gap is not None:
+        if gap.is_violated:
+            if params.balance_violation == "flip":
+                balance = gap.direction.opposite
+                notes.append(f"balance: {gap.direction} P {gap.protector_low:.5f}-{gap.protector_high:.5f} broken at candle "
+                             f"{gap.violated_index} -> continuation {balance}")
+            else:
+                notes.append(f"balance: {gap.direction} P broken at candle {gap.violated_index} -> 50/50")
         else:
-            balance = brk.direction
-            where = "unmitigated" if block is not None and not block.is_mitigated else "mitigated"
-            notes.append(f"balance: last {brk.kind.value} {brk.direction}, block {block.low:.5f}-{block.high:.5f} ({where}) -> {balance}")
+            balance = gap.direction
+            where = "unmitigated" if not gap.is_mitigated else "mitigated"
+            notes.append(f"balance: last balance level {gap.direction} gap {gap.low:.5f}-{gap.high:.5f} ({where}) -> {balance}")
     else:
-        notes.append("balance: no structure break found -> 50/50")
+        brk: Optional[StructureBreak] = st.last_break
+        if brk is not None:
+            balance = brk.direction
+            notes.append(f"balance: no gap found; last {brk.kind.value} {brk.direction} -> {balance}")
+        else:
+            notes.append("balance: no balance level found -> 50/50")
 
     if liquidity is balance and liquidity is not Bias.NEUTRAL:
         bias = liquidity
@@ -89,7 +98,7 @@ def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] =
         if len(aligned) < params.min_matching_timeframes:
             continue
         aligned_set = set(aligned)
-        for combo in params.full_combos:
+        for combo in params.active_full_combos:
             if set(combo) <= aligned_set:
                 return BiasDecision(direction, TradeMode.FULL, aligned, conflicting, neutral, tuple(combo),
                                     f"{direction}: {'+'.join(tf.label for tf in combo)} aligned -> full trade allowed")

@@ -12,12 +12,15 @@ Owner codes: **M** = Max · **C** = Claude · **A** = Astra (ChatGPT / Dot). Tic
 
 ## 1. Definitions locked (this week - nothing else matters more)
 
-- [ ] M+A - Answer Q1–Q12 in `docs/ASTRA_TASKS.md` (balance, sweep-without-break, opposing votes, scalp rules, first-candle, TP choice, buffer, break-even numbers, entry style, sessions, prop firm, instruments)
-- [ ] M+A - 5–10 annotated chart examples from Dorus's material as CSV + notes (`docs/examples/`)
+- [x] A - Source audit of the course captions, two videos and four academy analyses; all 15 questions answered with sources (`docs/ASTRA_TASKS.md`, 2026-09-30)
+- [x] C - Code recalibrated to the audit: gap-based balance and P, BS/BMS/first-candle confirmations, TP on liquidity, stop at the 1H P, Amsterdam sessions, local lookbacks (`docs/STRATEGY.md` §2-3)
+- [ ] M - Decide the items in `docs/STRATEGY.md` §5 (minimum R:R, 1-pip buffer, session variant, M+D+4H)
+- [ ] M+A - Get readable recordings or transcripts for the priority videos and academy lessons Astra could not open (list in `docs/examples/research/source_coverage.yaml`)
+- [ ] M+A - 5–10 complete chart examples (candles + annotations, `docs/examples/README.md`); the XAUUSD 2026-08-26 scalp is the first candidate
 - [ ] M - Confirm the instrument list and each broker's pip value / lot step / spread (B3)
 - [ ] M - Choose the prop firm and write its rulebook as numbers (B2)
-- [ ] C - Encode the examples as regression tests; adjust detectors until they pass
-- [ ] C - Close every `ASSUMPTION` in `docs/STRATEGY.md` with the answers
+- [ ] C - Pull candles for the research records through the TradingView MCP and turn them into fixtures
+- [ ] C - Session-based (Asia) and trendline liquidity levels
 
 ## 2. Data and forex backtests
 

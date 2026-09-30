@@ -67,30 +67,54 @@ DEFAULT_SYMBOLS: Dict[str, SymbolSpec] = {
 class StructureParams:
     swing_left: int = 2                 # fractal bars to the left of a swing
     swing_right: int = 2                # fractal bars to the right (confirmation delay)
-    lookback: int = 400                 # candles analysed per timeframe
+    lookback: int = 400                 # candles analysed per timeframe (lower timeframes)
+    lookback_by_timeframe: Dict[Timeframe, int] = field(default_factory=lambda: {   # "hou het lokaal" (S1)
+        Timeframe.MN_1: 60, Timeframe.W_1: 104, Timeframe.D_1: 250, Timeframe.H_4: 300, Timeframe.H_1: 300})
     equal_level_tolerance_pct: float = 0.0003   # equal highs/lows clustering (0.03 %)
-    full_body_break: bool = False       # ASSUMPTION: BOS = close beyond level (True = whole body beyond)
-    block_body_only: bool = False       # balance block = full candle range (True = body only)
-    max_bars_sweep_to_break: int = 40   # a sweep must be followed by a break within this many candles to form a POI
+    full_body_break: bool = False       # a close beyond the level is the break ("closure", A 02:26:06); True = whole body beyond
+    block_body_only: bool = False       # order block (candle 1) = full candle range (True = body only)
+    min_gap_fraction: float = 0.2       # ASSUMPTION: a balance level (gap) must be >= this fraction of the median candle range
+    max_bars_sweep_to_balance: int = 40 # the balance level must form within this many candles after the sweep to make a POI
+    poi_requires_break: bool = False    # ASSUMPTION: "X to b/P" needs liquidity + balance, not a structure break
+    poi_far_edge: str = "gap_bottom"    # gap_bottom | gap_top | protector: where the zone ends away from the liquidity line
 
 
 @dataclass
 class BiasParams:
     liquidity_lookback: int = 80        # ASSUMPTION: a sweep older than this no longer drives the liquidity view
+    balance_violation: str = "flip"     # when P breaks: "flip" = continuation in the break direction (A 01:41:49), "neutral" = 50/50
     min_matching_timeframes: int = 3    # rule: minimum 3/5 timeframes must match
-    full_combos: Tuple[Tuple[Timeframe, ...], ...] = (
+    full_combos: Tuple[Tuple[Timeframe, ...], ...] = (                            # K1 02:17 (written plan)
         (Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1),
         (Timeframe.W_1, Timeframe.D_1, Timeframe.H_4),
         (Timeframe.MN_1, Timeframe.D_1, Timeframe.H_1),
     )
+    extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # demonstrated in A, absent from K1
+    extra_combos_enabled: bool = False
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+
+    @property
+    def active_full_combos(self) -> Tuple[Tuple[Timeframe, ...], ...]:
+        return tuple(self.full_combos) + (tuple(self.extra_combos) if self.extra_combos_enabled else ())
+
+
+@dataclass
+class SessionParams:
+    """Entries only inside Dorus's stated windows (A 02:24:03 / 02:30:48, Amsterdam clock); open trades run on."""
+    enabled: bool = True
+    timezone: str = "Europe/Amsterdam"
+    windows: Tuple[Tuple[str, str], ...] = (("09:00", "11:00"), ("13:00", "17:00"))   # C 10:28 gives 08:00-17:00 instead
+    weekdays: Tuple[int, ...] = (0, 1, 2, 3, 4)
 
 
 @dataclass
 class ConfirmationParams:
-    allow_first_candle: bool = False    # rule lists "first bullish/bearish candle"; off by default (see STRATEGY.md Q5)
+    allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
+    allow_first_candle: bool = True     # K1 06:30 option "Eerste bullish of bearish candle"
+    accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
+    opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
-    allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded
+    allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
     # Rule: Monthly POI -> min. 4H, Weekly -> 1H, Daily -> 15m, 4H -> 5m, 1H -> 1m
     min_confirmation_tf: Dict[Timeframe, Timeframe] = field(default_factory=lambda: {
         Timeframe.MN_1: Timeframe.H_4,
@@ -104,11 +128,12 @@ class ConfirmationParams:
 
 @dataclass
 class RiskParams:
-    risk_pct: float = 1.0               # rule: 1 % risk per trade
-    min_rr: float = 3.0                 # rule: minimum 1:3
-    spread_buffer_pips: float = 1.0     # rule: 1-pip protection buffer in lot sizing
-    sl_offset_pips: float = 1.0         # ASSUMPTION: "strictly behind" = 1 pip beyond the invalidation swing
-    tp_policy: str = "nearest"          # nearest | liquidity_first | balance_first
+    risk_pct: float = 1.0               # rule: 1 % risk per trade (K1 06:30)
+    min_rr: float = 3.0                 # Max's rule. Dorus's accepted examples run 0.7R-1.7R (A/B/C) - decide, see STRATEGY.md
+    spread_buffer_pips: float = 1.0     # Max's rule (not found in Dorus's material, Q7)
+    sl_offset_pips: float = 1.0         # ASSUMPTION: 1 pip beyond the protection level
+    tp_policy: str = "liquidity"        # "Dus ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40); legacy: nearest | liquidity_first | balance_first
+    stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
 
 
@@ -223,6 +248,7 @@ class Settings:
     symbols: Dict[str, SymbolSpec] = field(default_factory=lambda: dict(DEFAULT_SYMBOLS))
     structure: StructureParams = field(default_factory=StructureParams)
     bias: BiasParams = field(default_factory=BiasParams)
+    session: SessionParams = field(default_factory=SessionParams)
     confirmation: ConfirmationParams = field(default_factory=ConfirmationParams)
     risk: RiskParams = field(default_factory=RiskParams)
     exits: ExitParams = field(default_factory=ExitParams)

@@ -34,12 +34,29 @@ from ..core.types import (
     SignalStatus,
     TradeMode,
 )
+from ..config import SessionParams
 from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
 from .poi import current_visit, map_pois
 from .risk import build_setup
 from .structure import StructureAnalysis, analyze_structure
+
+
+def in_session(now: pd.Timestamp, params: SessionParams) -> Tuple[bool, str]:
+    """Is ``now`` (naive UTC) inside one of the entry windows?  Returns ``(inside, local time label)``."""
+    ts = pd.Timestamp(now)
+    local = (ts.tz_localize("UTC") if ts.tzinfo is None else ts).tz_convert(params.timezone)
+    label = local.strftime("%a %H:%M")
+    if local.weekday() not in params.weekdays:
+        return False, label
+    minutes = local.hour * 60 + local.minute
+    for start, end in params.windows:
+        h1, m1 = (int(x) for x in start.split(":"))
+        h2, m2 = (int(x) for x in end.split(":"))
+        if h1 * 60 + m1 <= minutes < h2 * 60 + m2:
+            return True, label
+    return False, label
 
 
 class StrategyEngine:
@@ -60,6 +77,17 @@ class StrategyEngine:
         st = analyze_structure(view, self.settings.structure)
         self._structure_cache[key] = (stamp[0], stamp[1], st)
         return st
+
+    def _protection_level(self, poi: POI, direction: Direction, touch_ts, structures: Dict[Timeframe, StructureAnalysis]) -> float:
+        """The P the stop sits behind: the most recent 1H balance level in the trade direction formed
+        since the touch, else the POI's own protector ("SL ALTIJD op minimale 1H P")."""
+        h1 = structures.get(Timeframe.H_1)
+        if h1 is not None and poi.timeframe > Timeframe.H_1:
+            start = h1.series.index_at_or_after(touch_ts)
+            recent = [g for g in h1.gaps_in(direction.bias) if g.index >= start and not g.is_violated]
+            if recent:
+                return recent[-1].protection_level
+        return poi.protector_extreme
 
     def _forecast(self, view: CandleSeries, notes: List[str]) -> Optional[ForecastSummary]:
         if self.forecaster is None or self.settings.kronos.mode == "off":
@@ -86,11 +114,11 @@ class StrategyEngine:
         if not series_by_tf:
             raise ValueError("series_by_tf is empty")
 
-        # closed candles only, limited to the analysis lookback ---------------------
+        # closed candles only, limited to the (local) analysis lookback ---------------
         views: Dict[Timeframe, CandleSeries] = {}
         for tf, series in series_by_tf.items():
             view = series.closed_as_of(now) if now is not None else series
-            view = view.tail(s.structure.lookback)
+            view = view.tail(s.structure.lookback_by_timeframe.get(tf, s.structure.lookback))
             if len(view):
                 views[tf] = view
         if not views:
@@ -132,6 +160,13 @@ class StrategyEngine:
 
         direction = Direction.from_bias(decision.direction)
         allowed_poi_tfs = tuple(POI_TIMEFRAMES) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
+
+        # session windows: no new entries outside them (A 02:30:56 rejects a 17:00 entry) ---------
+        if s.session.enabled:
+            inside, local_label = in_session(now, s.session)
+            if not inside:
+                analysis.rejections.append(f"outside the entry windows ({local_label} {s.session.timezone}); open trades run on")
+                return analysis
 
         # 4: POIs being visited now, highest timeframe first ------------------------------
         candidates = [p for p in pois
@@ -176,8 +211,10 @@ class StrategyEngine:
 
             # 5: the setup ---------------------------------------------------------------
             entry = spec.round_price(confirmation.close)
+            protection = self._protection_level(poi, direction, touch_ts, structures)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
-                                         s.risk, equity, breakeven_trigger_r(poi.timeframe, s.exits))
+                                         s.risk, equity, breakeven_trigger_r(poi.timeframe, s.exits),
+                                         protection_level=protection)
             if setup is None:
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}")
                 continue

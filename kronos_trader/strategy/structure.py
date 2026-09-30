@@ -1,20 +1,20 @@
-"""Market-structure detection: swings, liquidity, sweeps, breaks and balance blocks.
+"""Market-structure detection in Dorus Wanders' vocabulary.
 
-This module turns raw candles into the vocabulary the Dorus Wanders rules use:
-
-* **Swing points** - fractal highs/lows (``swing_left`` bars lower on the left,
-  ``swing_right`` bars not higher on the right).  A swing is only *known*
-  ``swing_right`` candles after it prints, so nothing here looks ahead.
-* **Liquidity levels** - every swing high carries buy-side liquidity (BSL),
-  every swing low sell-side liquidity (SSL).  Equal highs/lows within a small
-  tolerance stack onto one level (``touches``).
-* **Sweep** - a *wick* pierces the level while the body closes back inside the
-  range (rule: "High-Timeframe Sweep: wick pierce only").
+* **Swing points** - fractal highs/lows; a swing is only *known* ``swing_right``
+  candles after it prints, so nothing here looks ahead.
+* **Liquidity (X)** - every swing high carries buy-side liquidity, every swing
+  low sell-side liquidity ("het liquideren van het aantal orders", C 15:07).
+  Equal highs/lows within a small tolerance stack onto one level.
+* **Sweep** - a *wick* pierces the level while the body closes back inside
+  (Max's rule; Dorus's material gives no wick/close algorithm).
 * **Structure break** (BOS / BMS) - a candle *body closes* through the level
-  (rule: "wicks do NOT count").  BOS continues the previous break direction,
-  BMS reverses it.
-* **Balance block** - the last opposing candle before the impulse that broke
-  structure (order block); tracked as mitigated / violated afterwards.
+  ("closure", A 02:26:06).  BOS continues the previous break direction, BMS
+  reverses it (A 14:06-16:44).
+* **Balance level (b)** - the gap between candle 1 and candle 3 of a displacement
+  ("dit gat noemen wij dus het balance level", B 03:44).  The candle that created
+  it, candle 2, is the **protected zone (P)** ("de beschermde zone is de candle
+  die de balance level heeft gecreëerd", B 05:29).  Candle 1 is kept as the order
+  block for reference; the three are never conflated.
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from ..core.types import (
     BalanceBlock,
     Bias,
     BreakKind,
+    Gap,
     LiquidityLevel,
     LiquiditySide,
     StructureBreak,
@@ -72,6 +73,7 @@ class StructureAnalysis:
     sweeps: List[Sweep] = field(default_factory=list)
     breaks: List[StructureBreak] = field(default_factory=list)
     blocks: List[BalanceBlock] = field(default_factory=list)
+    gaps: List[Gap] = field(default_factory=list)
     _block_by_break: Dict[int, BalanceBlock] = field(default_factory=dict, repr=False)
 
     # ------------------------------------------------------------- shortcuts
@@ -86,6 +88,10 @@ class StructureAnalysis:
     @property
     def last_break(self) -> Optional[StructureBreak]:
         return self.breaks[-1] if self.breaks else None
+
+    @property
+    def last_gap(self) -> Optional[Gap]:
+        return self.gaps[-1] if self.gaps else None
 
     def block_for_break(self, brk: StructureBreak) -> Optional[BalanceBlock]:
         return self._block_by_break.get(brk.index)
@@ -104,6 +110,9 @@ class StructureAnalysis:
     def unmitigated_blocks(self, direction: Bias) -> List[BalanceBlock]:
         return [b for b in self.blocks if b.direction is direction and not b.is_mitigated and not b.is_violated]
 
+    def gaps_in(self, direction: Bias) -> List[Gap]:
+        return [g for g in self.gaps if g.direction is direction]
+
     def events_in_order(self):
         """Sweeps and breaks merged by candle index (sweeps first on ties)."""
         items = [(s.index, 0, s) for s in self.sweeps] + [(b.index, 1, b) for b in self.breaks]
@@ -111,13 +120,16 @@ class StructureAnalysis:
 
     def summary(self) -> str:
         parts = [f"{self.series.symbol or ''} {self.series.timeframe.label}: {self.n} candles, "
-                 f"{len(self.swings)} swings, {len(self.sweeps)} sweeps, {len(self.breaks)} breaks, {len(self.blocks)} blocks"]
+                 f"{len(self.swings)} swings, {len(self.sweeps)} sweeps, {len(self.breaks)} breaks, {len(self.gaps)} balance levels"]
         if self.last_sweep:
             s = self.last_sweep
             parts.append(f"last sweep: {s.level.side.value} @ {s.level.price:.5f} on {s.timestamp} -> {s.implied_bias}")
         if self.last_break:
             b = self.last_break
             parts.append(f"last break: {b.kind.value} {b.direction} through {b.broken_level:.5f} on {b.timestamp}")
+        if self.last_gap:
+            g = self.last_gap
+            parts.append(f"last balance: {g.direction} gap {g.low:.5f}-{g.high:.5f} (P {g.protector_low:.5f}-{g.protector_high:.5f}) on {g.timestamp}")
         return "; ".join(parts)
 
 
@@ -138,9 +150,12 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
     for sw in swings:
         confirm_at.setdefault(sw.index + params.swing_right, []).append(sw)
 
+    median_range = float(np.median(highs - lows)) if n else 0.0
+    min_gap = params.min_gap_fraction * median_range
+
     active_high: List[LiquidityLevel] = []
     active_low: List[LiquidityLevel] = []
-    swing_lows_seen: List[SwingPoint] = []   # confirmed swing lows, for origin lookup
+    swing_lows_seen: List[SwingPoint] = []
     swing_highs_seen: List[SwingPoint] = []
     trend: Optional[Bias] = None
     tol = params.equal_level_tolerance_pct
@@ -192,7 +207,17 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
             lvl = max(broken_lows, key=lambda x: x.swing.index)
             trend = _record_break(analysis, j, Bias.BEARISH, lvl, swing_highs_seen, trend, params)
 
+        # 4) balance level: the gap between candle j-2 and candle j -----------------
+        if j >= 2:
+            if lows[j] > highs[j - 2] and (lows[j] - highs[j - 2]) >= min_gap:
+                analysis.gaps.append(Gap(Bias.BULLISH, float(highs[j - 2]), float(lows[j]), j, ts.iloc[j],
+                                         j - 1, float(lows[j - 1]), float(highs[j - 1]), j - 2))
+            elif highs[j] < lows[j - 2] and (lows[j - 2] - highs[j]) >= min_gap:
+                analysis.gaps.append(Gap(Bias.BEARISH, float(highs[j]), float(lows[j - 2]), j, ts.iloc[j],
+                                         j - 1, float(lows[j - 1]), float(highs[j - 1]), j - 2))
+
     _update_block_states(analysis)
+    _update_gap_states(analysis)
     return analysis
 
 
@@ -250,7 +275,7 @@ def _record_break(
     )
     analysis.breaks.append(brk)
 
-    # balance block: last opposing candle inside the leg -------------------------
+    # order block: last opposing candle inside the leg (kept for reference) --------
     block_idx = origin_index
     for k in range(j - 1, origin_index - 1, -1):
         if direction is Bias.BULLISH and series.close[k] < series.open[k]:
@@ -288,3 +313,22 @@ def _update_block_states(analysis: StructureAnalysis) -> None:
             block.mitigated_index = start + int(touched[0])
         if violated.size:
             block.violated_index = start + int(violated[0])
+
+
+def _update_gap_states(analysis: StructureAnalysis) -> None:
+    series = analysis.series
+    n = len(series)
+    for gap in analysis.gaps:
+        start = gap.index + 1
+        if start >= n:
+            continue
+        if gap.direction is Bias.BULLISH:
+            touched = np.flatnonzero(series.low[start:] <= gap.high)
+            violated = np.flatnonzero(series.close[start:] < gap.protector_low)
+        else:
+            touched = np.flatnonzero(series.high[start:] >= gap.low)
+            violated = np.flatnonzero(series.close[start:] > gap.protector_high)
+        if touched.size:
+            gap.mitigated_index = start + int(touched[0])
+        if violated.size:
+            gap.violated_index = start + int(violated[0])

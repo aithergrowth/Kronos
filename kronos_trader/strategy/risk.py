@@ -31,30 +31,40 @@ def find_take_profit(
     poi_tf: Timeframe,
     params: RiskParams,
 ) -> Optional[Tuple[float, str]]:
-    """Nearest valid target beyond ``entry`` on the POI timeframe and above."""
-    liquidity: List[Tuple[float, str]] = []
+    """Target beyond ``entry``.
+
+    Default policy ``liquidity``: "ik zet ten alle tijden mijn take profit op
+    liquiditeit" (A 01:50:40) - the nearest resting opposite liquidity on the POI
+    timeframe, then on higher timeframes.  Legacy policies also consider
+    unmitigated order blocks.
+    """
+    liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
     for tf, st in structures.items():
         if tf < poi_tf:
             continue
         if direction is Direction.LONG:
             for lvl in st.resting_liquidity_above(entry):
-                liquidity.append((lvl.price, f"{tf.label} buy-side liquidity {lvl.price:.5f} (x{lvl.touches})"))
+                liquidity.append((lvl.price, f"{tf.label} buy-side liquidity {lvl.price:.5f} (x{lvl.touches})", tf))
             for blk in st.unmitigated_blocks(Bias.BEARISH):
                 if blk.low > entry:
-                    balance.append((blk.low, f"{tf.label} bearish balance block {blk.low:.5f}-{blk.high:.5f}"))
+                    balance.append((blk.low, f"{tf.label} bearish order block {blk.low:.5f}-{blk.high:.5f}"))
         else:
             for lvl in st.resting_liquidity_below(entry):
-                liquidity.append((lvl.price, f"{tf.label} sell-side liquidity {lvl.price:.5f} (x{lvl.touches})"))
+                liquidity.append((lvl.price, f"{tf.label} sell-side liquidity {lvl.price:.5f} (x{lvl.touches})", tf))
             for blk in st.unmitigated_blocks(Bias.BULLISH):
                 if blk.high < entry:
-                    balance.append((blk.high, f"{tf.label} bullish balance block {blk.low:.5f}-{blk.high:.5f}"))
+                    balance.append((blk.high, f"{tf.label} bullish order block {blk.low:.5f}-{blk.high:.5f}"))
 
-    def nearest(cands: List[Tuple[float, str]]) -> Optional[Tuple[float, str]]:
+    def nearest(cands) -> Optional[Tuple[float, str]]:
         if not cands:
             return None
-        return min(cands, key=lambda c: abs(c[0] - entry))
+        best = min(cands, key=lambda c: abs(c[0] - entry))
+        return best[0], best[1]
 
+    if params.tp_policy == "liquidity":
+        own_tf = [c for c in liquidity if c[2] is poi_tf]
+        return nearest(own_tf) or nearest(liquidity)
     if params.tp_policy == "liquidity_first":
         return nearest(liquidity) or nearest(balance)
     if params.tp_policy == "balance_first":
@@ -99,12 +109,25 @@ def build_setup(
     params: RiskParams,
     equity: float,
     breakeven_r: Optional[float] = None,
+    protection_level: Optional[float] = None,
 ) -> Tuple[Optional[TradeSetup], List[str]]:
-    """Apply the SL / TP / R:R / sizing rules; returns ``(setup, rejection_reasons)``."""
+    """Apply the SL / TP / R:R / sizing rules; returns ``(setup, rejection_reasons)``.
+
+    ``protection_level`` is the extreme of the protected zone (P) the stop sits
+    behind when ``stop_basis == "protector"`` ("SL ALTIJD op minimale 1H P");
+    it defaults to the POI's own protector.  With ``stop_basis == "confirmation"``
+    the lower-timeframe invalidation swing is used instead.
+    """
     reasons: List[str] = []
-    stop = compute_stop(direction, confirmation.invalidation_price, spec, params)
+    if params.stop_basis == "protector":
+        level = protection_level if protection_level is not None else poi.protector_extreme
+        stop_note = "stop behind the protected zone (P)"
+    else:
+        level = confirmation.invalidation_price
+        stop_note = "stop behind the confirmation swing"
+    stop = compute_stop(direction, level, spec, params)
     if direction is Direction.LONG and stop >= entry or direction is Direction.SHORT and stop <= entry:
-        reasons.append(f"stop {stop} is not behind entry {entry}")
+        reasons.append(f"stop {stop} ({stop_note}) is not behind entry {entry}")
         return None, reasons
 
     target = find_take_profit(direction, entry, structures, poi.timeframe, params)
@@ -139,6 +162,6 @@ def build_setup(
         risk_amount=risk_amount,
         breakeven_r=breakeven_r if breakeven_r is not None else breakeven_trigger_r(poi.timeframe),
         tp_source=tp_source,
-        notes=[f"stop {stop_pips:.1f} pips incl. {params.spread_buffer_pips:.0f}-pip buffer"],
+        notes=[f"{stop_note}; {stop_pips:.1f} pips incl. {params.spread_buffer_pips:.0f}-pip buffer"],
     )
     return setup, reasons

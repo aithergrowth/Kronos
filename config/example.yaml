@@ -15,24 +15,37 @@ symbols:
 structure:
   swing_left: 2
   swing_right: 2
-  lookback: 400
-  full_body_break: false          # ASSUMPTION - see docs/STRATEGY.md
-  max_bars_sweep_to_break: 40
+  lookback: 400                   # lower timeframes
+  lookback_by_timeframe: {1M: 60, 1W: 104, 1D: 250, 4H: 300, 1H: 300}   # "hou het lokaal"
+  full_body_break: false          # a close through the level is the break ("closure")
+  min_gap_fraction: 0.2           # balance level (gap) must be >= 20 % of the median candle range
+  max_bars_sweep_to_balance: 40
+  poi_far_edge: gap_bottom        # gap_bottom | gap_top | protector
 
 bias:
   liquidity_lookback: 80
+  balance_violation: flip         # flip (continuation when P breaks) | neutral
+  extra_combos_enabled: false     # M+D+4H (demonstrated in the course, absent from the written plan)
+
+session:
+  enabled: true
+  timezone: Europe/Amsterdam
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # course variant; the A-Z video says 08:00-17:00
 
 confirmation:
-  allow_first_candle: true
+  allow_balance_shift: true       # BS (balance shift), the plan's primary confirmation
+  allow_first_candle: true        # "Eerste bullish of bearish candle"
+  accept_bos: true
   allow_retest: false
   max_extension_zones: 1.5
 
 risk:
   risk_pct: 1.0
-  min_rr: 3.0
+  min_rr: 3.0                     # Max's rule; Dorus's accepted trades run 0.7R-1.7R
   spread_buffer_pips: 1.0
   sl_offset_pips: 1.0
-  tp_policy: nearest              # nearest | liquidity_first | balance_first
+  tp_policy: liquidity            # "TP altijd op liquiditeit"; legacy: nearest | liquidity_first | balance_first
+  stop_basis: protector           # "SL altijd op minimale 1H P"; legacy: confirmation
 
 exits:
   breakeven_r_swing: 2.0

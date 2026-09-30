@@ -23,7 +23,20 @@ def _settings():
     s = Settings()
     s.symbols["09988"] = SymbolSpec("09988", 0.01, 1.0, price_decimals=2, typical_spread_pips=2.0)
     s.kronos.mode = "off"
+    s.session.enabled = False     # Hong Kong stock hours, not the Amsterdam forex windows
     return s
+
+
+def test_session_windows():
+    from kronos_trader.config import SessionParams
+    from kronos_trader.strategy.engine import in_session
+    params = SessionParams()
+    assert in_session(pd.Timestamp("2026-10-01 07:30"), params) == (True, "Thu 09:30")     # CEST = UTC+2
+    assert in_session(pd.Timestamp("2026-10-01 09:30"), params)[0] is False                # 11:30 Amsterdam: between windows
+    assert in_session(pd.Timestamp("2026-10-01 14:59"), params)[0] is True                 # 16:59
+    assert in_session(pd.Timestamp("2026-10-01 15:00"), params)[0] is False                # 17:00 is rejected (A 02:30:56)
+    assert in_session(pd.Timestamp("2026-10-03 08:00"), params)[0] is False                # Saturday
+    assert in_session(pd.Timestamp("2026-12-01 08:30"), params) == (True, "Tue 09:30")     # CET = UTC+1
 
 
 def test_engine_analysis_on_real_data(hk_data):

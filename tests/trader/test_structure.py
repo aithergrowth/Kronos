@@ -64,6 +64,19 @@ def test_block_mitigation_and_bms_classification(scenario_rows):
     assert last.index == 18 and last.direction is Bias.BEARISH and last.kind is BreakKind.BMS
 
 
+def test_balance_level_is_the_gap_and_p_is_the_candle_that_made_it(scenario):
+    st = analyze_structure(scenario)
+    gaps = st.gaps_in(Bias.BULLISH)
+    gap = next(g for g in gaps if g.index == 13)
+    assert (gap.low, gap.high) == (102.0, 105.0)                                    # candle 11 high -> candle 13 low
+    assert gap.protector_index == 12 and (gap.protector_low, gap.protector_high) == (100.6, 106.0)
+    assert gap.origin_index == 11 and gap.protection_level == 100.6
+    assert not gap.is_mitigated and not gap.is_violated
+    assert st.last_gap.index == 14                                                  # the impulse leaves a second gap: 106 -> 110
+    small = next(g for g in gaps if g.index == 5)                                   # 103 -> 104 in the first rally
+    assert small.mitigated_index == 8 and small.violated_index == 10                 # filled on the way down, P broken by the sweep candle
+
+
 def test_equal_highs_stack_on_one_level():
     rows = [(10, 11, 9, 10), (10, 12, 9.5, 11), (11, 13, 10.5, 12), (12, 12.5, 11, 11.5), (11.5, 12, 10.5, 11),
             (11, 12, 10.5, 11.5), (11.5, 13, 11, 12.5), (12.5, 12.8, 11.8, 12), (12, 12.5, 11, 11.2),

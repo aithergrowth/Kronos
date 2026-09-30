@@ -1,12 +1,10 @@
-"""POI mapping.
+"""POI mapping - "X to b/P" (K1 03:54).
 
-Rule: *POI = area between liquidity and balance level (protected zone)*; map on
-1M, 1W, 1D, 4H, 1H; look at both sides.
-
-A bullish POI forms when sell-side liquidity is swept (wick only) and price
-then breaks structure upwards with a body close.  The zone runs from the sweep
-wick (the liquidity line that protects it) to the top of the balance block of
-that break.  Bearish POIs mirror this.
+A POI forms when liquidity is swept (X, the wick that took the level) and a
+balance level (b, the gap) is created in the implied direction shortly after by
+a protector candle (P).  The zone runs from the sweep wick to the balance level;
+which edge of the gap ends the zone is a setting (``poi_far_edge``).  Mapped on
+1M, 1W, 1D, 4H, 1H, both sides.
 """
 from __future__ import annotations
 
@@ -16,9 +14,16 @@ import numpy as np
 
 from ..config import StructureParams
 from ..core.candles import CandleSeries
-from ..core.timeframe import Timeframe
-from ..core.types import Bias, POI, POIStatus
+from ..core.types import Bias, Gap, POI, POIStatus
 from .structure import StructureAnalysis
+
+
+def _far_edge(gap: Gap, direction: Bias, mode: str) -> float:
+    if mode == "gap_top":
+        return gap.high if direction is Bias.BULLISH else gap.low
+    if mode == "protector":
+        return gap.protector_high if direction is Bias.BULLISH else gap.protector_low
+    return gap.low if direction is Bias.BULLISH else gap.high     # gap_bottom: where the balance level begins
 
 
 def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, current_price: Optional[float] = None) -> List[POI]:
@@ -26,33 +31,35 @@ def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, cu
     pois: List[POI] = []
     for sweep in st.sweeps:
         want = sweep.implied_bias
-        for brk in st.breaks:
-            if brk.index <= sweep.index:
-                continue
-            if brk.index - sweep.index > params.max_bars_sweep_to_break:
-                break
-            if brk.direction is not want:
-                break  # an opposite break first: the sweep did not lead to displacement
-            block = st.block_for_break(brk)
-            if block is None:
-                break
-            if want is Bias.BULLISH:
-                low, high = sweep.extreme, block.high
-            else:
-                low, high = block.low, sweep.extreme
-            if high <= low:
-                break
-            pois.append(POI(
-                timeframe=st.series.timeframe,
-                direction=want,
-                low=float(low),
-                high=float(high),
-                sweep=sweep,
-                balance=block,
-                created_index=brk.index,
-                created_at=brk.timestamp,
-            ))
-            break
+        # an opposite structure break before the balance forms means the sweep did not lead anywhere
+        opposite_break = next((b.index for b in st.breaks if b.index > sweep.index and b.direction is not want), None)
+        gap = next((g for g in st.gaps_in(want)
+                    if g.index > sweep.index and g.index - sweep.index <= params.max_bars_sweep_to_balance
+                    and (opposite_break is None or g.index < opposite_break)), None)
+        if gap is None:
+            continue
+        brk = next((b for b in st.breaks if b.index > sweep.index and b.direction is want
+                    and (opposite_break is None or b.index < opposite_break)), None)
+        if params.poi_requires_break and brk is None:
+            continue
+        far = _far_edge(gap, want, params.poi_far_edge)
+        if want is Bias.BULLISH:
+            low, high = sweep.extreme, far
+        else:
+            low, high = far, sweep.extreme
+        if high <= low:
+            continue
+        pois.append(POI(
+            timeframe=st.series.timeframe,
+            direction=want,
+            low=float(low),
+            high=float(high),
+            sweep=sweep,
+            balance=st.block_for_break(brk) if brk is not None else None,
+            created_index=gap.index,
+            created_at=gap.timestamp,
+            gap=gap,
+        ))
     # twin sweeps (equal lows swept one after the other) can produce identical zones: keep the first
     unique: List[POI] = []
     seen = set()

@@ -11,6 +11,7 @@ from .types import (
     BreakKind,
     StructureBreak,
     BalanceBlock,
+    Gap,
     POIStatus,
     POI,
     TimeframeBias,
@@ -29,7 +30,7 @@ __all__ = [
     "Timeframe", "BIAS_TIMEFRAMES", "POI_TIMEFRAMES",
     "Candle", "CandleSeries",
     "Bias", "Direction", "SwingKind", "SwingPoint", "LiquiditySide", "LiquidityLevel",
-    "Sweep", "BreakKind", "StructureBreak", "BalanceBlock", "POIStatus", "POI",
+    "Sweep", "BreakKind", "StructureBreak", "BalanceBlock", "Gap", "POIStatus", "POI",
     "TimeframeBias", "TradeMode", "BiasDecision", "ConfirmationType", "Confirmation",
     "ForecastSummary", "TradeSetup", "SignalStatus", "Signal", "Analysis",
 ]

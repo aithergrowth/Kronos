@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from kronos_trader.config import RiskParams, Settings
+from kronos_trader.config import RiskParams, Settings, SymbolSpec
 from kronos_trader.core import Bias, Confirmation, ConfirmationType, Direction, LiquiditySide, LiquidityLevel, SwingKind, SwingPoint, Timeframe
 from kronos_trader.core.types import BalanceBlock
 from kronos_trader.strategy import analyze_structure, build_setup, compute_stop, find_take_profit, map_pois, size_position
@@ -53,24 +53,42 @@ def test_lot_size_below_minimum_is_zero():
 def test_take_profit_policies():
     st = {T.H_1: StubStructure(bsl=[1.1200, 1.1300], bear_blocks=[(1.1150, 1.1170)]),
           T.MIN_15: StubStructure(bsl=[1.1050])}   # below the POI timeframe -> ignored
+    default = find_take_profit(Direction.LONG, 1.1000, st, T.H_1, RiskParams())    # "TP altijd op liquiditeit"
+    assert default[0] == 1.1200 and "liquidity" in default[1]
     nearest = find_take_profit(Direction.LONG, 1.1000, st, T.H_1, RiskParams(tp_policy="nearest"))
-    assert nearest[0] == 1.1150 and "balance" in nearest[1]
+    assert nearest[0] == 1.1150 and "order block" in nearest[1]
     liq = find_take_profit(Direction.LONG, 1.1000, st, T.H_1, RiskParams(tp_policy="liquidity_first"))
     assert liq[0] == 1.1200 and "liquidity" in liq[1]
     assert find_take_profit(Direction.SHORT, 1.1000, st, T.H_1, RiskParams()) is None
+    higher = {T.H_1: StubStructure(), T.H_4: StubStructure(bsl=[1.1300])}
+    assert find_take_profit(Direction.LONG, 1.1000, higher, T.H_1, RiskParams())[0] == 1.1300   # falls back to a higher timeframe
 
 
 def test_build_setup_enforces_min_rr(scenario):
     poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
     conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 1.1050, 1.0950, 1.1000)
+    params = RiskParams(stop_basis="confirmation")
     good = {T.H_1: StubStructure(bsl=[1.1200])}
-    setup, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, good, RiskParams(), 100_000)
+    setup, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, good, params, 100_000)
     assert setup is not None and reasons == []
     assert setup.stop == 1.0949 and setup.take_profit == 1.1200
     assert setup.rr == pytest.approx(0.02 / 0.0052)
     assert setup.lots == 1.92 and setup.breakeven_r == 4.0
     bad = {T.H_1: StubStructure(bsl=[1.1100])}
-    setup, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, bad, RiskParams(), 100_000)
+    setup, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, bad, params, 100_000)
     assert setup is None and "R:R" in reasons[0]
-    none, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, {T.H_1: StubStructure()}, RiskParams(), 100_000)
+    none, reasons = build_setup("EURUSD", EURUSD, Direction.LONG, poi, conf, 1.1000, {T.H_1: StubStructure()}, params, 100_000)
     assert none is None and "target" in reasons[0]
+
+
+def test_stop_behind_the_protected_zone(scenario):
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]          # P = candle 12, low 100.6
+    conf = Confirmation(ConfirmationType.BS, T.MIN_15, 7, pd.Timestamp("2024-01-01 15:45"), Bias.BULLISH, 102.5, 100.0, 102.8)
+    spec = SymbolSpec("TEST", 0.01, 1.0, price_decimals=2)
+    targets = {T.H_1: StubStructure(bsl=[112.0])}
+    setup, reasons = build_setup("TEST", spec, Direction.LONG, poi, conf, 102.8, targets, RiskParams(), 100_000)
+    assert setup is not None, reasons
+    assert setup.stop == pytest.approx(100.59)                                   # 100.6 minus one pip
+    assert "protected zone" in setup.notes[0]
+    explicit, _ = build_setup("TEST", spec, Direction.LONG, poi, conf, 102.8, targets, RiskParams(), 100_000, protection_level=101.0)
+    assert explicit.stop == pytest.approx(100.99)                                # a 1H P handed in by the engine wins

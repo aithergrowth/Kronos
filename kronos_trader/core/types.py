@@ -158,6 +158,41 @@ class BalanceBlock:
         return self.high - self.low
 
 
+@dataclass
+class Gap:
+    """Balance level in Dorus's vocabulary: the gap between candle 1 and candle 3 of a
+    displacement (an imbalance).  ``protector`` is candle 2, the candle that created the
+    balance level - the protected zone (P).  ``origin`` is candle 1 (the order block)."""
+    direction: Bias
+    low: float
+    high: float
+    index: int                 # candle 3: the gap exists once this candle closes
+    timestamp: pd.Timestamp
+    protector_index: int
+    protector_low: float
+    protector_high: float
+    origin_index: int
+    mitigated_index: Optional[int] = None   # price traded back into the gap
+    violated_index: Optional[int] = None    # a close beyond the protector's far extreme ("P breaks")
+
+    @property
+    def height(self) -> float:
+        return self.high - self.low
+
+    @property
+    def is_mitigated(self) -> bool:
+        return self.mitigated_index is not None
+
+    @property
+    def is_violated(self) -> bool:
+        return self.violated_index is not None
+
+    @property
+    def protection_level(self) -> float:
+        """Far extreme of the protector candle: the level a stop sits behind."""
+        return self.protector_low if self.direction is Bias.BULLISH else self.protector_high
+
+
 class POIStatus(Enum):
     FRESH = "fresh"              # price has not returned since the POI formed
     ACTIVE = "active"            # price is inside the zone now
@@ -167,15 +202,17 @@ class POIStatus(Enum):
 
 @dataclass
 class POI:
-    """Point of interest: the protected zone between a liquidity sweep and its balance block."""
+    """Point of interest: "X to b/P" - the zone between the liquidity line (X, the sweep wick)
+    and the balance level (b, the gap) created by the protector candle (P)."""
     timeframe: Timeframe
     direction: Bias
     low: float
     high: float
     sweep: Sweep
-    balance: BalanceBlock
+    balance: Optional[BalanceBlock]
     created_index: int
     created_at: pd.Timestamp
+    gap: Optional[Gap] = None
     status: POIStatus = POIStatus.FRESH
     first_touch_index: Optional[int] = None
 
@@ -187,6 +224,23 @@ class POI:
     def protection_level(self) -> float:
         """The liquidity line that protects the zone (an invalidation if closed through)."""
         return self.low if self.direction is Bias.BULLISH else self.high
+
+    @property
+    def protector_low(self) -> float:
+        if self.gap is not None:
+            return self.gap.protector_low
+        return self.balance.low if self.balance is not None else self.low
+
+    @property
+    def protector_high(self) -> float:
+        if self.gap is not None:
+            return self.gap.protector_high
+        return self.balance.high if self.balance is not None else self.high
+
+    @property
+    def protector_extreme(self) -> float:
+        """Far extreme of P: where "SL altijd op minimale 1H P" puts the stop for this timeframe."""
+        return self.protector_low if self.direction is Bias.BULLISH else self.protector_high
 
     @property
     def key(self) -> Tuple[str, int, str]:
@@ -231,9 +285,14 @@ class BiasDecision:
 
 
 class ConfirmationType(Enum):
-    BOS = "BOS"
-    BMS = "BMS"
+    BS = "BS"                    # balance shift: body close through the opposing balance level
+    BMS = "BMS"                  # break of market structure (reversal of the lower-timeframe trend)
+    BOS = "BOS"                  # continuation break (accepted, not in the written plan's option list)
     FIRST_CANDLE = "first_candle"
+
+    @property
+    def priority(self) -> int:
+        return {"BS": 0, "BMS": 1, "BOS": 2, "first_candle": 3}[self.value]
 
 
 @dataclass

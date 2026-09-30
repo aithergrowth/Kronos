@@ -24,6 +24,24 @@ def test_conflicting_views_are_fifty_fifty(scenario_rows):
     assert tb.bias is Bias.NEUTRAL
 
 
+def test_p_break_flips_the_balance_view(scenario_rows):
+    rows = list(scenario_rows) + [       # a three-candle decline with overlapping ranges: no new gap forms
+        (112.5, 113, 109, 109.5),    # 16
+        (109.5, 111, 106.5, 107),    # 17
+        (107, 109.5, 104, 104.2),    # 18 closes below 105 = low of P (candle 13) of the last gap -> P breaks
+    ]
+    st = analyze_structure(CandleSeries.from_records(rows, T.H_1))
+    assert st.last_gap.index == 14 and st.last_gap.violated_index == 18
+    assert timeframe_bias(st).balance_view is Bias.BEARISH                                   # continuation
+    assert timeframe_bias(st, BiasParams(balance_violation="neutral")).balance_view is Bias.NEUTRAL
+
+
+def test_extra_combo_is_off_by_default():
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.NEUTRAL, T.D_1: Bias.BULLISH, T.H_4: Bias.BULLISH, T.H_1: Bias.NEUTRAL}
+    assert combine_biases(votes).mode is TradeMode.NONE
+    assert combine_biases(votes, BiasParams(extra_combos_enabled=True)).mode is TradeMode.FULL
+
+
 def test_stale_liquidity_event_is_neutral(scenario):
     tb = timeframe_bias(analyze_structure(scenario), BiasParams(liquidity_lookback=1))
     assert tb.liquidity_view is Bias.NEUTRAL and tb.bias is Bias.NEUTRAL
