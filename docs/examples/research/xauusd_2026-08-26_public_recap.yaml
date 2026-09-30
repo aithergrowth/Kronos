@@ -1,0 +1,35 @@
+status: incomplete_chart_record
+regression_ready: false
+symbol: XAUUSD
+source: S5 — €8.000 verdiend binnen één uur.; public Loom recap, approximately 00:05
+source_url: https://www.skool.com/dorusview/8000-verdiend-binnen-een-uur
+media_url: https://www.loom.com/embed/10ef10e4c18843f9b25ca5c108215935?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
+source_author: Dorus Wanders
+chart_author: Dorus Wanders
+notes: The public recap shows the chart, but the protected-zone and entry rationale
+  cannot be fully recovered from this frame.
+confidence:
+  chart_identity: medium
+  full_strategy_interpretation: not_assessed
+observations:
+  displayed_chart_timeframe: 1m
+  chart_feed: FOREXCOM
+  media_title_date: '2026-08-26'
+  chart_crosshair_label: Wed 26 Aug 26 02:50
+  displayed_clock_zone: UTC-4
+  position_drawing: short-shaped risk/reward drawing; orange zones and B/X labels
+    visible
+evidence_image: assets/gold_public_0005.jpg
+missing:
+- POI timeframe
+- exact sweep and break candles
+- labeled entry/stop/target prices
+- exact historical data interval
+- 60 pre-sweep candles
+- post-break return data
+data_request:
+  symbol: XAUUSD
+  feed: FOREXCOM
+  displayed_timeframe: 1m
+  chart_date: '2026-08-26'
+  exact_utc_range_established: false
