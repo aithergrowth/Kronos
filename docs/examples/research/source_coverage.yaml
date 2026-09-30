@@ -2,8 +2,8 @@ as_of: '2026-09-30'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Targeted primary-source caption review and rendered public Skool UI/chart
-  inspection; no third-party strategy summaries used as authority.
+method: Targeted primary-source Dutch caption review, rendered Skool/academy plan
+  slides and chart inspection. No third-party strategy summaries used.
 retrieved_caption_sources:
 - HRPgdK8VhMc
 - xWR8M46iSW8
@@ -12,12 +12,15 @@ caption_audio_audited: false
 youtube_access_block: Unusual-traffic/human-verification page when opening 81LThMAtj5o;
   persisted after one reload. Stopped further YouTube navigation.
 skool_classroom:
-  1. Beginnen met traden: not accessible; Level 1 or Standard
-  2. De strategie leren: not accessible; Level 1 or Standard
-  3. De juiste route: not accessible; Level 1 or Standard
-  Analyses: not accessible; Standard
-  Student interviews: not accessible; Level 1 or Standard
-  Bibliotheek: not accessible; Level 1 or Standard
+  1. Beginnen met traden: accessible card; not reviewed
+  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected
+    written slides verified; Entry & Poi diagram sampled
+  3. De juiste route: accessible card; not reviewed
+  Analyses: accessible; five lessons inventoried; four selected Loom charts/captions
+    inspected; native Aug 19 player sampled
+  Student interviews: accessible card; not reviewed
+  Bibliotheek: accessible; Claude Journal Prompt lesson and resource located; substantive
+    contents not reviewed
 skool_public_profile_pages_inspected:
 - 1
 - 2
@@ -25,9 +28,6 @@ skool_public_profile_pages_inspected:
 - 4
 - 5
 - 6
-skool_lesson_links_not_reviewed:
-- https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
-- https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
 priority_videos_discovered_not_reviewed:
 - id: 81LThMAtj5o
   displayed_title: Mijn Winstgevende Tradingplan Waarmee Ik Elke Dag Trade
@@ -51,18 +51,72 @@ priority_videos_discovered_not_reviewed:
   displayed_title: Deze Goud Trade Leverde Mij €3.313,46 Op (Trade Recap)
   reason: channel title only
 deliverables:
-  chart_records: 4
+  dorus_authored_chart_records: 5
+  student_chart_reviews: 2
   caption_only_leads: 2
   complete_regression_fixtures: 0
   ohlc_csvs: 0
+  partial_position_tool_price_records: 1
 required_example_coverage_unmet:
-- monthly_or_weekly_POI
-- daily_POI
-- 4H_POI
-- 1H_POI
-- accepted_scalp_only
+- complete monthly/weekly POI trade
+- complete daily POI trade
+- complete 4H POI trade
+- complete 1H POI trade
+- confirmed baseline scalp-only rule application
+- at least five complete worked examples with adequate candle data or complete retrieval
+  metadata
 assets_sha256:
   btc_loss_h1.jpg: ed654b56964e9b8b529c77efdc4b94968149fe6e74d2964e885b936937973210
   eurusd_student_4h.jpg: cd7b39548581cb1f199b1ebae9bc63d6e98db0f8e74d4f4bf0fa8a4a1b154275
   gold_public_0005.jpg: 4773ca381f6269ea5d26f5e2d4cb4c83be286e8f22d03698667db3afeeb1b7db
   usdjpy_student_daily.jpg: d91d28d9c7918a689e84ba3209a3dc1772c72140cd71698518113d31169164f6
+skool_authenticated: true
+strategy_lesson_inventory:
+- lesson: Marktstructuur
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=d6410442749643abab536d31adc14e7b
+  review: not reviewed
+- lesson: Liquiditeit
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=d0e255d8877e47bbb6812849b56b41a5
+  review: located, 13:34; content not reviewed
+- lesson: Balance levels
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8
+  review: not reviewed
+- lesson: Bias analyse
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=e661788b9bd849b6b4f5a3ec10c0b6d8
+  review: not reviewed
+- lesson: Entry & Poi
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8
+  review: 10:25; player/diagram at 03:31 inspected; no complete spoken-content review
+- lesson: Tradingplan
+  url: https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83
+  review: 18:19; selected written slides verified, not complete spoken-content review
+analysis_lesson_inventory:
+- lesson: €8.000 verdiend binnen één uur.
+  url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
+  review: K3 selected public playback captions and chart frames; 4:05
+- lesson: Bitcoin analyse | 19-08-2026
+  url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
+  review: native player, 3:45; English CC appears unreliable for Dutch speech; no
+    rule attributed
+- lesson: Bitcoin analyse | 7-09-2026
+  url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
+  review: K5 date caption and daily chart frames; 7:45
+- lesson: €21.000 verdiend met bitcoin
+  url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
+  review: K4 selected daily/4H frames and public playback caption; 2:27
+- lesson: Bitcoin analyse | 27-09-2026
+  url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
+  review: K2 selected monthly/weekly frames and public playback caption; 2:57
+media_limits:
+- Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone
+  embed refused playback under its privacy settings, so inspection stayed in authorized
+  Skool embed.
+- Loom full transcript/download requires separate account. Gated transcript content
+  excluded from findings; public playback captions and charts used.
+- Native Skool Aug 19 media export returned no file.
+- No complete OHLC export obtained. Chart-frame inspection does not establish every
+  event, POI timeframe or UTC interval.
+academy_screenshots_in_pr: false
+publication_limit: Automatic approval review rejected two raw academy-image uploads
+  as potentially private source material. All raw academy screenshots were excluded
+  from the PR; only requested sourced documentation and chart-value YAMLs are included.

@@ -1,19 +1,23 @@
-# Research records awaiting sufficient evidence
+# Source chart records awaiting complete data
 
-These files are **not regression fixtures**. Read `../../ASTRA_TASKS.md`, Part 3,
-for the coverage gap and attribution rules. Four records have inspected images;
-two are caption-only source locators. No complete OHLC export exists.
+These are **not regression fixtures**. Read `../../ASTRA_TASKS.md`, Part 3.
+There are five Dorus-authored chart records, two student-chart critiques, and two
+caption-only research leads. No complete OHLC export or five complete cases exist.
 
-The production example loader only scans `docs/examples/*.yaml` and requires a
-matching CSV. Keeping these files in this subdirectory prevents unsupported
-annotations from producing apparent passing tests. Do not move them to the
-parent directory until symbol/feed, POI timeframe, UTC interval and the actual
-shown expectations are verified.
+The example loader scans only `docs/examples/*.yaml` and requires a matching CSV.
+This subdirectory prevents partial records from producing apparent passing tests.
+Gold has a partial `expect` containing only readable position-tool prices, explicitly
+separated from verified execution. All other records omit `expect`.
 
-Student plans criticized by Dorus are explicitly labeled. Their readable price
-labels remain under `student_plan_not_dorus_expectations`, never under `expect`.
-No tolerance, sweep, break, zone, entry time or candle series is fabricated.
+Keep this directory outside the test-fixture scan until POI timeframe, feed, UTC
+interval, real candles and actual shown expectations are verified. Student price
+annotations are not Dorus’s approved trade expectations. Selected crosshair dates,
+alert levels, live quotes and drawing endpoints are not silently labeled as orders.
 
-Each `.yaml` has a same-name `.md` handoff instead of a candle CSV. This records
-the evidence gap; it is not a claim that the brief's candle-data fallback is
-already complete. `source_coverage.yaml` records access, scope and image hashes.
+Each YAML has a same-name Markdown handoff with source, available public-post screenshots, known metadata
+and missing data. The CSV fallback remains incomplete where exact date ranges or
+feed details cannot be read. `source_coverage.yaml` records scope and asset hashes.
+
+Raw academy screenshots are excluded from the PR; source lesson timestamps support
+the corresponding readings. This follows an automatic approval review restriction
+on uploading potentially private raw source images.

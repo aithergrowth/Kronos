@@ -1,16 +1,19 @@
 status: incomplete_chart_record
 regression_ready: false
 symbol: XAUUSD
-source: S5 — €8.000 verdiend binnen één uur.; public Loom recap, approximately 00:05
-source_url: https://www.skool.com/dorusview/8000-verdiend-binnen-een-uur
-media_url: https://www.loom.com/embed/10ef10e4c18843f9b25ca5c108215935?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
+source: K3 — Goud scalps, liquiditeitsruns en twee shorts, 01:45 and 02:34; supplements
+  S5 public recap
+source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
+media_url: https://www.loom.com/embed/eb80cbd1ed424a6d8d6690da7e2ea3e5?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
 source_author: Dorus Wanders
 chart_author: Dorus Wanders
-notes: The public recap shows the chart, but the protected-zone and entry rationale
-  cannot be fully recovered from this frame.
+notes: K3 captions qualify this as a scalp with less emphasis on monthly/weekly/daily;
+  the selected drawing illustrates protection and a lower liquidity target.
 confidence:
   chart_identity: medium
-  full_strategy_interpretation: not_assessed
+  position_tool_prices: medium
+  scalp_qualification: high
+  complete_strategy_interpretation: not_assessed
 observations:
   displayed_chart_timeframe: 1m
   chart_feed: FOREXCOM
@@ -19,17 +22,46 @@ observations:
   displayed_clock_zone: UTC-4
   position_drawing: short-shaped risk/reward drawing; orange zones and B/X labels
     visible
+  academy_context_timeframe: 4H
+  academy_entry_drawing_timeframe: 1m
+  academy_0145_crosshair_label: Wed 26 Aug 26 12:00
+  academy_0234_crosshair_label: Wed 26 Aug 26 14:45
+  academy_0234_drawing_end_label: 26 15:39
+  academy_chart_timezone: not readable; do not transfer S5 UTC-4 to this recording
+  position_tool_stop_distance: 12.08
+  position_tool_target_distance: 19.25
+  position_tool_rr: 1.59
+  execution_time_established: false
 evidence_image: assets/gold_public_0005.jpg
 missing:
-- POI timeframe
-- exact sweep and break candles
-- labeled entry/stop/target prices
-- exact historical data interval
-- 60 pre-sweep candles
-- post-break return data
+- Formal POI classification and relation to K1 minimum-confirmation table
+- sweep and break candle identity/levels
+- balance and POI bounds
+- verified UTC execution time
+- academy chart timezone
+- complete historical interval including 60 pre-sweep bars and post-break return
 data_request:
   symbol: XAUUSD
   feed: FOREXCOM
   displayed_timeframe: 1m
   chart_date: '2026-08-26'
   exact_utc_range_established: false
+  additional_displayed_timeframes:
+  - 4H
+  - 1m
+  readable_local_date_labels:
+  - 2026-08-26 12:00
+  - 2026-08-26 14:45
+  poi_timeframe_established: false
+direction: bearish
+expect_scope: Values from the illustrated position tool at 02:34, not verified broker
+  fills; incomplete expectations.
+expect:
+  entry:
+    price: 4624.53
+  stop: 4636.61
+  target: 4605.28
+evidence_images:
+- assets/gold_public_0005.jpg
+academy_evidence_location: K3 at 01:45 and 02:34; raw academy screenshots excluded
+  from PR.

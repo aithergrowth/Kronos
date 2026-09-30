@@ -1,0 +1,33 @@
+status: incomplete_chart_record
+regression_ready: false
+symbol: BTCUSD
+source: K4 — Zo verdiende ik 21.000 euro met liquiditeit, 01:02
+source_url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
+media_url: https://www.loom.com/embed/4e41a9c79ea247f69cbcb9b0d6c3a8e6?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
+direction: bullish
+notes: Dorus points to a circled purchase area beneath successive marked liquidity
+  levels; no exact executed entry label is shown.
+observations:
+  displayed_chart_timeframe: 4H
+  other_frame_observed: 1D at approximately 00:08
+  chart_feed: INDEX
+  crosshair_date_label: Wed 16 Sep 26 22:00
+  crosshair_price: 76148.05
+  crosshair_is_execution: false
+  exact_chart_timezone_verified: false
+missing:
+- confirmed POI timeframe
+- exact sweep/break candles and levels
+- entry/SL/TP order labels
+- verified UTC conversion
+- complete historical data interval
+confidence:
+  chart_observations: medium
+  complete_trade_specification: not_assessed
+data_request:
+  symbol: BTCUSD
+  feed: INDEX
+  displayed_timeframe: 4H
+  exact_utc_range_established: false
+evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot
+  excluded from PR.
