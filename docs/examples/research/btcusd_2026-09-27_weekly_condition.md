@@ -9,3 +9,5 @@ Raw academy frame omitted from the PR; verify the timestamp in the linked lesson
 
 This remains a research record. Missing fields are omitted from the YAML; no
 synthetic candles, tolerance or detector expectations are supplied.
+
+Public playback captions reviewed from beginning to the 02:57 end; audio not independently verified. At 00:19–00:47 the weekly close is a condition, not an entry. At 00:47–01:03 he describes alternative paths and a possible balance shift. At 02:00–02:37 he also consults TOTAL/TOTAL2/TOTAL3; no automatic confirmation filter is stated.

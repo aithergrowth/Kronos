@@ -9,3 +9,5 @@ Raw academy frame omitted from the PR; verify the timestamp in the linked lesson
 
 This remains a research record. Missing fields are omitted from the YAML; no
 synthetic candles, tolerance or detector expectations are supplied.
+
+Public playback captions reviewed from beginning to the 02:27 end; audio not independently verified. At 00:10–01:08 he explains the purchase through successive liquidity takes and remaining liquidity above. At 01:15–01:46 he permits several possible future paths. At 02:01–02:19 he wants clear confirmation for future entries; these passages do not supply missing order prices or a deterministic entry predicate. Profit remains a self-report.

@@ -9,3 +9,5 @@ Raw academy frame omitted from the PR; verify the timestamp in the linked lesson
 
 This remains a research record. Missing fields are omitted from the YAML; no
 synthetic candles, tolerance or detector expectations are supplied.
+
+Public playback captions reviewed continuously to the end (player displayed 07:46); no independent audio verification. At 01:15–01:56 he describes a prior spot/DCA purchase and an exceptional trendline-close rationale. At 02:32–03:07 he explains conditional scenarios; at 03:15–05:08 he combines liquidity, the remaining gap and protection. At 06:35–06:58 he describes monthly technically informed spot buying through January. These passages do not establish funded-account trade frequency, exact fills, or a complete regression case.

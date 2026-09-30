@@ -2,25 +2,28 @@ as_of: '2026-09-30'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Targeted primary-source Dutch caption review, rendered Skool/academy plan
-  slides and chart inspection. No third-party strategy summaries used.
+method: Complete available A/B/C automatic-caption text review; rendered academy pages, selected
+  plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
+  verified.
 retrieved_caption_sources:
 - HRPgdK8VhMc
 - xWR8M46iSW8
 - R07fGFejJ5w
 caption_audio_audited: false
-youtube_access_block: Unusual-traffic/human-verification page when opening 81LThMAtj5o;
-  persisted after one reload. Stopped further YouTube navigation.
+youtube_access_block: Unusual-traffic/human-verification page when opening 81LThMAtj5o; persisted
+  after one reload. Stopped further YouTube navigation.
 skool_classroom:
-  1. Beginnen met traden: accessible card; not reviewed
-  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected
-    written slides verified; Entry & Poi diagram sampled
-  3. De juiste route: accessible card; not reviewed
-  Analyses: accessible; five lessons inventoried; four selected Loom charts/captions
-    inspected; native Aug 19 player sampled
-  Student interviews: accessible card; not reviewed
-  Bibliotheek: accessible; Claude Journal Prompt lesson and resource located; substantive
-    contents not reviewed
+  1. Beginnen met traden: all three lesson pages inventoried; spoken content not reviewed
+  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides
+    verified; Entry & Poi diagram sampled
+  3. De juiste route: both lesson pages inventoried; Route video sampled at 01:30 and 04:23; no subtitles
+    exposed; spoken content not reviewed
+  Analyses: five lessons inventoried; K2/K3/K4/K5 public playback captions reviewed continuously
+    from beginning to end; selected chart frames only; native Aug 19 player sampled
+  Student interviews: 13 lesson links inventoried; first page is a 32:32 YouTube player, not opened
+    because further YouTube interaction is blocked; interview content not reviewed
+  Bibliotheek: Claude Journal Prompt lesson/resource located; separate linked Google Drive file blocked
+    by automatic approval review; substantive contents not reviewed
 skool_public_profile_pages_inspected:
 - 1
 - 2
@@ -53,18 +56,18 @@ priority_videos_discovered_not_reviewed:
 deliverables:
   dorus_authored_chart_records: 5
   student_chart_reviews: 2
-  caption_only_leads: 2
+  caption_only_leads: 3
   complete_regression_fixtures: 0
   ohlc_csvs: 0
-  partial_position_tool_price_records: 1
+  intermediate_drawing_state_records: 1
+  records_with_expect_fields: 0
 required_example_coverage_unmet:
 - complete monthly/weekly POI trade
 - complete daily POI trade
 - complete 4H POI trade
 - complete 1H POI trade
 - confirmed baseline scalp-only rule application
-- at least five complete worked examples with adequate candle data or complete retrieval
-  metadata
+- at least five complete worked examples with adequate candle data or complete retrieval metadata
 assets_sha256:
   btc_loss_h1.jpg: ed654b56964e9b8b529c77efdc4b94968149fe6e74d2964e885b936937973210
   eurusd_student_4h.jpg: cd7b39548581cb1f199b1ebae9bc63d6e98db0f8e74d4f4bf0fa8a4a1b154275
@@ -80,10 +83,11 @@ strategy_lesson_inventory:
   review: located, 13:34; content not reviewed
 - lesson: Balance levels
   url: https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8
-  review: not reviewed
+  review: 10:08; frames at 02:09, 03:27, 04:41 and 06:44 sampled; no complete spoken review or new
+    numerical rule attributed
 - lesson: Bias analyse
   url: https://www.skool.com/dorusview/classroom/1924b124?md=e661788b9bd849b6b4f5a3ec10c0b6d8
-  review: not reviewed
+  review: 8:50; player opened and selected frames sampled; no complete spoken review
 - lesson: Entry & Poi
   url: https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8
   review: 10:25; player/diagram at 03:31 inspected; no complete spoken-content review
@@ -93,30 +97,127 @@ strategy_lesson_inventory:
 analysis_lesson_inventory:
 - lesson: €8.000 verdiend binnen één uur.
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
-  review: K3 selected public playback captions and chart frames; 4:05
+  review: K3 continuous public playback captions through 4:05 end; selected 4H/1m frames; 02:34 drawing
+    corrected in later commentary; no final trade expectations
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
-  review: native player, 3:45; English CC appears unreliable for Dutch speech; no
-    rule attributed
+  review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
 - lesson: Bitcoin analyse | 7-09-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
-  review: K5 date caption and daily chart frames; 7:45
+  review: K5 continuous public playback captions through end; player displayed 07:46 (poster 07:45);
+    selected daily frames; no complete trade expectations
 - lesson: €21.000 verdiend met bitcoin
   url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
-  review: K4 selected daily/4H frames and public playback caption; 2:27
+  review: K4 continuous public playback captions through 2:27 end; selected daily/4H frames; no complete
+    order record
 - lesson: Bitcoin analyse | 27-09-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
-  review: K2 selected monthly/weekly frames and public playback caption; 2:57
+  review: K2 continuous public playback captions through 2:57 end; selected monthly/weekly frames;
+    conditional scenario, no executed trade
 media_limits:
-- Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone
-  embed refused playback under its privacy settings, so inspection stayed in authorized
-  Skool embed.
-- Loom full transcript/download requires separate account. Gated transcript content
-  excluded from findings; public playback captions and charts used.
+- Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone embed refused
+  playback under its privacy settings, so inspection stayed in authorized Skool embed.
+- Loom full transcript/download requires separate account. Gated transcript content excluded from
+  findings; public playback captions and charts used.
 - Native Skool Aug 19 media export returned no file.
-- No complete OHLC export obtained. Chart-frame inspection does not establish every
-  event, POI timeframe or UTC interval.
+- No complete OHLC export obtained. Chart-frame inspection does not establish every event, POI timeframe
+  or UTC interval.
+- Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option
+  in the inspected menus.
 academy_screenshots_in_pr: false
-publication_limit: Automatic approval review rejected two raw academy-image uploads
-  as potentially private source material. All raw academy screenshots were excluded
-  from the PR; only requested sourced documentation and chart-value YAMLs are included.
+publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially
+  private source material. All raw academy screenshots were excluded from the PR; only requested
+  sourced documentation and chart-value YAMLs are included.
+main_course_caption_audit: course_caption_audit.yaml
+main_course_all_available_captions_reviewed: true
+main_course_all_frames_reviewed: false
+beginner_lesson_inventory:
+- lesson: Hoe werkt traden?
+  url: https://www.skool.com/dorusview/classroom/760af30b?md=0742b181c0d14dd3a3843da7200dccbf
+  duration: '7:03'
+  review: page inventoried; spoken content not reviewed
+- lesson: Alle basisprincipes
+  url: https://www.skool.com/dorusview/classroom/760af30b?md=6a38c7ca076e4159a710fc6720d5e7e2
+  duration: '7:53'
+  review: page inventoried; spoken content not reviewed
+- lesson: Platformen gebruiken
+  url: https://www.skool.com/dorusview/classroom/760af30b?md=97082f368f5a4f9ca5637d34835ecc9b
+  duration: '21:14'
+  review: page and broker link inspected; spoken content not reviewed
+route_lesson_inventory:
+- lesson: Behoren tot de winnende 5%
+  url: https://www.skool.com/dorusview/classroom/5fd46dc2?md=222b098db1134481a0005994a8d7a59b
+  duration: '1:53'
+  review: page inventoried; spoken content not reviewed
+- lesson: De juiste route naar fulltime traden
+  url: https://www.skool.com/dorusview/classroom/5fd46dc2?md=9bb95cf5de444d768aafd4323f278de2
+  duration: '8:27'
+  review: selected frames; Settings exposes Quality only; no complete spoken review
+additional_caption_audits:
+- source: B
+  timestamped_captions: 345
+  first: 00:00
+  last: '11:46'
+  all_available_caption_text_reviewed: true
+  audio_audited: false
+- source: C
+  timestamped_captions: 1266
+  first: 00:00
+  last: '47:05'
+  all_available_caption_text_reviewed: true
+  audio_audited: false
+external_resource_block:
+  resource: Bibliotheek → Claude Prompt
+  url: https://drive.google.com/file/d/1yVDpc4Fv6abD5fiP5ccVCNGIHoGpa7wa/view
+  status: not_read
+  reason: Automatic approval review denied browser opening of a separate potentially private Google
+    Drive resource without explicit authorization for that resource. No workaround attempted.
+visible_classroom_course_count: 6
+visible_classroom_lesson_link_count: 30
+lesson_link_inventory_complete_for_visible_courses: true
+interview_lesson_inventory:
+- lesson: Paul (23) verdiende €35.000 in 1 maand met traden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=96fe7d10e15b438db03e6a50c70017a8
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Albert binnen 6 maanden funded + 3 payouts
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=c9212a417fae4447a5a8feefadacfd0a
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Damian van 0 naar $500K funding in 6 maanden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=e3877ee22530483d9a2d65ec1bb68753
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Elias $900K funding in 2 jaar zonder ervaring
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=1e7a79623a4645c6aa758406d2605413
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Marijn $200.000 funded werd
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=7a3ec44da41d4446864d49794010fb8c
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Danny van niks naar $220K funding ging
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=bf9dcae607a94fb4b284129b72a8c00f
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Tim winstgevend geworden door backtesten
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=49347438f9864484b7286d78b49f22b6
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Damien in slechts 4 maanden funded werd
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=27c22a39f9524dda9342bebbf6f7e12b
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Roy winstgevend is geworden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=33e404647b4544afbb07bad78c937cdc
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Van niks naar €1.000 per dag winst
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=fb439ed147f34bdeb0e6d30d7d5f9c2a
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Tijs winstgevend is geworden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=958c711cabee4b2aa9d69e4f83b9bea7
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Juul $400k funded is geworden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=7449a8e6ced7476a92fdf9c374266810
+  review: link/title inventoried; content not reviewed; title is not verified performance
+- lesson: Hoe Jarno van 0 naar $300k funded is geworden
+  url: https://www.skool.com/dorusview/classroom/6f4c646d?md=8b19f1ef53a0458987c137968a1bc952
+  review: link/title inventoried; content not reviewed; title is not verified performance
+library_lesson_inventory:
+- lesson: Claude Journal Prompt
+  url: https://www.skool.com/dorusview/classroom/e7612bd1?md=a10bbc21052d41dda2dd86e53a60b04a
+  duration: '19:21'
+  review: page/resource inventoried; spoken content not reviewed; external Drive resource blocked
+    as recorded separately

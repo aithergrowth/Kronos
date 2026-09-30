@@ -7,6 +7,16 @@ media_url: https://www.loom.com/embed/4e41a9c79ea247f69cbcb9b0d6c3a8e6?autoplay=
 direction: bullish
 notes: Dorus points to a circled purchase area beneath successive marked liquidity
   levels; no exact executed entry label is shown.
+caption_review:
+  scope: continuous public playback captions from 00:00 through 02:27 end; selected chart frames
+  independent_audio_verification: false
+  observations:
+  - timestamp: '00:10–01:08'
+    finding: Describes prior purchases and a recent buy based on successive liquidity takes, with liquidity left above; profit is a self-report, not verified performance.
+  - timestamp: '01:15–01:46'
+    finding: Acknowledges lower prices remain possible and describes several alternative paths and another possible purchase.
+  - timestamp: '02:01–02:19'
+    finding: Wants clear confirmation for the illustrated future trades; no fixed lower-timeframe predicate or order labels supplied.
 observations:
   displayed_chart_timeframe: 4H
   other_frame_observed: 1D at approximately 00:08
@@ -22,6 +32,7 @@ missing:
 - verified UTC conversion
 - complete historical data interval
 confidence:
+  explicit_caption_reasoning: high
   chart_observations: medium
   complete_trade_specification: not_assessed
 data_request:
