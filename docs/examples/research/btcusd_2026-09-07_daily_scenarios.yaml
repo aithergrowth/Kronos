@@ -1,0 +1,50 @@
+status: incomplete_chart_record
+regression_ready: false
+symbol: BTCUSD
+source: K5 — Bitcoin koersverwachting, scenario’s en koopmomenten, 02:30
+source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
+media_url: https://www.loom.com/embed/92a000fe218040239d2020ed44d5973a?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
+notes: Daily scenario chart containing X, B and P annotations. Captions discuss spot
+  accumulation, a prior purchase and several conditional paths; no complete executed
+  trade is established from chart labels.
+caption_review:
+  scope: continuous public playback captions from 00:00 through end; player displayed 07:46
+  independent_audio_verification: false
+  observations:
+  - timestamp: '01:15–01:56'
+    finding: Describes a prior spot/DCA purchase and an exceptional trendline-close rationale; date is spoken, not a verified candle or execution time.
+  - timestamp: '02:32–03:07'
+    finding: Frames trading as conditional scenarios and reacting to what happens, not certainty about a single path.
+  - timestamp: '03:15–05:08'
+    finding: Reviews liquidity, a remaining gap, protection and several possible paths; no deterministic numerical sweep/break/POI detector supplied.
+  - timestamp: '06:03–06:24'
+    finding: Separates uncertain short-term movement requiring lower-timeframe observation from his long-term conviction.
+  - timestamp: '06:35–06:58'
+    finding: Describes monthly technically informed Bitcoin purchases through January and mentions weekly accumulation as another possibility; this is spot/DCA context, not funded-account trade frequency.
+observations:
+  displayed_chart_timeframe: 1D
+  chart_feed: INDEX
+  lesson_date: '2026-09-07'
+  date_caption_timestamp: 00:06
+  crosshair_date_label: Thu 16 Apr 26
+  crosshair_price: 75223.19
+  crosshair_is_execution: false
+  other_frame_inspected: 02:45
+  exact_chart_timezone_verified: false
+missing:
+- completed trade or explicit rejection classification
+- formal POI selection
+- exact event candles and order labels
+- verified chart timezone
+- complete historical data interval
+confidence:
+  explicit_caption_reasoning: high
+  chart_observations: medium
+  complete_trade_specification: not_assessed
+data_request:
+  symbol: BTCUSD
+  feed: INDEX
+  displayed_timeframe: 1D
+  exact_utc_range_established: false
+evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot
+  excluded from PR.

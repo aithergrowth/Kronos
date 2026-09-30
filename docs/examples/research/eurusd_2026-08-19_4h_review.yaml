@@ -1,0 +1,37 @@
+status: student_plan_reviewed_critically_by_dorus
+regression_ready: false
+symbol: EURUSD
+source: S1 — EURUSD Short (DXY Long); Dorus reply dated Aug 19 and attached EURUSD_2026-08-19_15-52-31.png
+source_url: https://www.skool.com/dorusview/eurusd-short-dxy-long
+source_author: Dorus Wanders (critique only)
+chart_author: Jelle Engels
+notes: Dorus says the analysis looks too far back and is no longer relevant; he gives
+  no numerical lookback threshold.
+confidence:
+  critique: high
+  student_price_labels: medium
+  dorus_approval_of_trade: not_assessed
+observations:
+  displayed_chart_timeframe: 4H
+  chart_feed: OANDA
+  chart_creation_label: Aug 19, 2026 15:52 UTC+2
+  attachment_filename: EURUSD_2026-08-19_15-52-31.png
+  plan_direction: bearish
+student_plan_not_dorus_expectations:
+  entry_price_label: 1.16702
+  stop_price_label: 1.17213
+  target_price_label: 1.15702
+  orders_are_proposed_not_verified_fills: true
+evidence_image: assets/eurusd_student_4h.jpg
+missing:
+- Dorus-approved POI and bias
+- actual entry confirmation
+- event candle times
+- full exact dated interval
+- OHLC export
+data_request:
+  symbol: EURUSD
+  feed: OANDA
+  displayed_timeframe: 4H
+  chart_snapshot_date: '2026-08-19'
+  exact_utc_range_established: false

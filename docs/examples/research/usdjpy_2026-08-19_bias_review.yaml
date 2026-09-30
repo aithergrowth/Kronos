@@ -1,0 +1,48 @@
+status: student_scalp_claim_with_dorus_bias_warning
+regression_ready: false
+symbol: USDJPY
+source: S2 — Long trade USDJPY; Dorus reply dated Aug 19; attached 43-second chart
+  video
+source_url: https://www.skool.com/dorusview/long-trade-usdjpy
+source_author: Dorus Wanders (critique only)
+chart_author: Jelle Engels
+notes: Dorus identifies errors in the student’s bias analysis but does not enumerate
+  the exact incorrect levels or votes.
+confidence:
+  critique: high
+  student_price_labels: medium
+  accepted_scalp_classification: not_assessed
+observations:
+  displayed_chart_timeframes:
+  - 1H
+  - 1D
+  chart_feed: FOREXCOM
+  selected_daily_label: Fri 07 Aug 26
+  other_daily_axis_label: Mon 24 Aug 26
+  displayed_clock_zone: UTC+2
+student_claim_not_dorus_rule:
+  aligned_timeframes:
+  - 1D
+  - 4H
+  - 1H
+  confirmation_timeframe: 1m
+  direction: bullish
+student_plan_not_dorus_expectations:
+  entry_price_label: 158.373
+  stop_price_label: 157.842
+  target_price_label: 159.189
+evidence_image: assets/usdjpy_student_daily.jpg
+missing:
+- which bias votes Dorus corrects
+- Dorus-approved POI timeframe
+- exact entry/sweep/break candle times
+- full exact data range
+- OHLC export
+data_request:
+  symbol: USDJPY
+  feed: FOREXCOM
+  displayed_timeframes:
+  - 1H
+  - 1D
+  chart_month: 2026-08
+  exact_utc_range_established: false
