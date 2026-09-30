@@ -29,7 +29,7 @@ def resample(series: CandleSeries, target: Timeframe, session_offset_hours: floa
     if target.is_intraday:
         out = df.resample(target.pandas_rule, closed="left", label="left", origin="start_day").agg(AGG)
     else:
-        shift = pd.Timedelta(hours=session_offset_hours)
+        shift = pd.Timedelta(float(session_offset_hours), unit="h")
         shifted = df.copy()
         shifted.index = shifted.index + shift
         out = shifted.resample(target.pandas_rule, closed="left", label="left").agg(AGG)

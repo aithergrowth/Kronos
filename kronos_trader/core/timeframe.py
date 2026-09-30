@@ -64,7 +64,7 @@ class Timeframe(Enum):
         """Length of one candle as a pandas offset (calendar-month aware)."""
         if self is Timeframe.MN_1:
             return pd.DateOffset(months=1)
-        return pd.Timedelta(minutes=self.minutes)
+        return pd.Timedelta(self.minutes, unit="min")
 
     def floor(self, ts: pd.Timestamp) -> pd.Timestamp:
         """Open time of the candle that contains ``ts``."""
@@ -72,7 +72,7 @@ class Timeframe(Enum):
         if self is Timeframe.MN_1:
             return ts.normalize().replace(day=1)
         if self is Timeframe.W_1:
-            return ts.normalize() - pd.Timedelta(days=ts.weekday())
+            return ts.normalize() - pd.Timedelta(ts.weekday(), unit="D")
         if self is Timeframe.D_1:
             return ts.normalize()
         return ts.floor(f"{self.minutes}min")
@@ -88,9 +88,10 @@ class Timeframe(Enum):
             idx = pd.date_range(last_open + pd.DateOffset(months=1), periods=n, freq="MS")
             return pd.Series(idx)
         if self is Timeframe.W_1:
-            idx = pd.date_range(last_open + pd.Timedelta(days=7), periods=n, freq="7D")
+            week = pd.Timedelta(7, unit="D")
+            idx = pd.date_range(last_open + week, periods=n, freq=week)
             return pd.Series(idx)
-        step = pd.Timedelta(minutes=self.minutes)
+        step = pd.Timedelta(self.minutes, unit="min")
         out = []
         t = last_open
         while len(out) < n:

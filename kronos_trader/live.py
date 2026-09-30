@@ -158,7 +158,7 @@ class LiveRunner:
             return
         if self.require_approval:
             timeout = self.approval_timeout_minutes or max(5, setup.confirmation.timeframe.minutes)
-            pending = PendingSetup(short_id_for(key), key, setup, forecast, now, now + pd.Timedelta(minutes=timeout))
+            pending = PendingSetup(short_id_for(key), key, setup, forecast, now, now + pd.Timedelta(int(timeout), unit="min"))
             self.pending[pending.short_id] = pending
             self.notifier.send_approval_request(setup, pending.short_id, forecast, self.spec, pending.expires_at)
             return

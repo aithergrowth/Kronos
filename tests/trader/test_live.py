@@ -65,14 +65,14 @@ def test_approval_then_execution_and_close_report(setup):
     assert any("APPROVAL NEEDED" in m and sid in m for m in notifier.sent)
 
     notifier.queue_decision(sid, approved=True)
-    runner.step(NOW + pd.Timedelta(minutes=1))
+    runner.step(NOW + pd.Timedelta(1, unit="min"))
     assert runner.pending == {} and len(broker.open_positions()) == 1
     pos = broker.open_positions()[0]
     assert pos.lots == 1.92 and pos.stop == 1.0949 and pos.take_profit == 1.12
     assert any("filled" in m for m in notifier.sent)
 
-    broker.on_candle("EURUSD", Candle(0, NOW + pd.Timedelta(minutes=15), 1.1, 1.125, 1.099, 1.124))
-    runner.step(NOW + pd.Timedelta(minutes=16))
+    broker.on_candle("EURUSD", Candle(0, NOW + pd.Timedelta(15, unit="min"), 1.1, 1.125, 1.099, 1.124))
+    runner.step(NOW + pd.Timedelta(16, unit="min"))
     assert broker.open_positions() == []
     assert any("take_profit" in m and "P&L" in m for m in notifier.sent)
 
@@ -84,13 +84,13 @@ def test_skip_and_expiry(setup):
     runner.step(NOW)
     sid = next(iter(runner.pending))
     notifier.queue_decision(sid, approved=False)
-    runner.step(NOW + pd.Timedelta(minutes=1))
+    runner.step(NOW + pd.Timedelta(1, unit="min"))
     assert runner.pending == {} and broker.open_positions() == [] and any("skipped" in m for m in notifier.sent)
 
     runner2, notifier2 = _runner(setup, PaperBroker(Settings()))
     runner2.broker.set_price("EURUSD", 1.1)
     runner2.step(NOW)
-    runner2.step(NOW + pd.Timedelta(minutes=20))          # 15m confirmation -> 15 minute approval window
+    runner2.step(NOW + pd.Timedelta(20, unit="min"))      # 15m confirmation -> 15 minute approval window
     assert runner2.pending == {} and any("expired" in m for m in notifier2.sent)
 
 

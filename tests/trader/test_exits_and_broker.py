@@ -69,5 +69,5 @@ def test_risk_guard_limits():
     ok, reason = guard.can_open(broker, ts)
     assert not ok and "daily loss" in reason
     broker._balance = 91_500.0
-    ok, reason = guard.can_open(broker, ts + pd.Timedelta(days=1))
+    ok, reason = guard.can_open(broker, ts + pd.Timedelta(1, unit="D"))
     assert not ok and "drawdown" in reason

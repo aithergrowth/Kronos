@@ -241,6 +241,6 @@ def news_blackout_windows(events: List[Dict[str, Any]], minutes_before: int, min
         ts = pd.Timestamp(when)
         if ts.tzinfo is not None:
             ts = ts.tz_convert("UTC").tz_localize(None)
-        windows.append((ts - pd.Timedelta(minutes=minutes_before), ts + pd.Timedelta(minutes=minutes_after),
+        windows.append((ts - pd.Timedelta(int(minutes_before), unit="min"), ts + pd.Timedelta(int(minutes_after), unit="min"),
                         f"{ev.get('currency', '')} {ev.get('title', ev.get('indicator', ''))}"))
     return windows
