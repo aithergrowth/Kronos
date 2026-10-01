@@ -129,7 +129,8 @@ class Backtester:
             from pathlib import Path
             from .dossier import write_decision_dossier
             out = Path(self.dossier_dir) / f"{pd.Timestamp(now):%Y-%m-%d_%H%M}"
-            write_decision_dossier(self.settings, self.data, self.symbol, now, out, engine=self.engine)
+            write_decision_dossier(self.settings, self.data, self.symbol, now, out, engine=self.engine,
+                                   memory_label="the run's own engine (visits counted from each zone's formation)")
             self._dossiers_written += 1
         except Exception as exc:   # pragma: no cover - diagnostics must not stop a run
             print(f"  dossier at {now} failed: {exc}", flush=True)

@@ -69,7 +69,8 @@ def warm_up(engine: StrategyEngine, data: MultiTimeframeData, symbol: str, at, d
 
 
 def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol: str, at, out_dir,
-                           engine: Optional[StrategyEngine] = None, lookback: int = 120, warmup_days: float = 0.0) -> Path:
+                           engine: Optional[StrategyEngine] = None, lookback: int = 120, warmup_days: float = 0.0,
+                           memory_label: Optional[str] = None) -> Path:
     from ..notify.chart import render_chart
     engine = engine or StrategyEngine(settings)
     symbol = symbol.upper()
@@ -87,8 +88,8 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
         from ..strategy.structure import analyze_structure
         structure_for = lambda sym, view: analyze_structure(view, settings.structure)
     doc: Dict[str, object] = {"symbol": symbol, "at": str(at), "price": analysis.price, "warmup_steps": warmed,
-                              "visit_memory": "the run's own engine" if warmed == 0 and tracker is not None else
-                                              (f"replayed {warmed} steps before this moment" if warmed else "cold start: visits counted from the analysis window only"),
+                              "visit_memory": memory_label or (f"warm-up replay of {warmed} steps before this moment" if warmed
+                                                               else "cold start: visits counted from the analysis window only"),
                               "decision": {"direction": analysis.decision.direction.name, "mode": analysis.decision.mode.value,
                                            "reason": analysis.decision.reason},
                               "rejections": list(analysis.rejections), "timeframes": {}}
@@ -132,10 +133,10 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
             lines += [f"Bias **{tb.bias.name.lower()}**: liquidity view {tb.liquidity_view.name.lower()}, balance view {tb.balance_view.name.lower()}.", ""]
             lines += [f"- {n}" for n in tb.notes] + [""]
         if zone_rows:
-            lines += ["| Zone | Low | High | X | B | P | Formed | Status | Visits |", "|---|---|---|---|---|---|---|---|---|"]
+            lines += ["| Zone | Low | High | X | B | P | Formed | Status | Visits (a visit stays open until a close 1.5 zone heights beyond the zone) |", "|---|---|---|---|---|---|---|---|---|"]
             for z in zone_rows:
                 b = "" if z["b"] is None else f"{z['b'][0]:.{decimals}f}-{z['b'][1]:.{decimals}f}"
-                v = "" if z["visit"] is None else f"{z['visit']['visits']} ({'inside' if z['visit']['inside'] else 'outside'})"
+                v = "" if z["visit"] is None else f"{z['visit']['visits']} ({'visit open' if z['visit']['inside'] else 'no visit'})"
                 lines.append(f"| {z['direction'].lower()} | {z['low']:.{decimals}f} | {z['high']:.{decimals}f} | {'' if z['x'] is None else f'{z[chr(120)]:.{decimals}f}'} | {b} | {z['p']:.{decimals}f} | {z['formed'][:16]} | {z['status']} | {v} |")
             lines.append("")
         dropped = [g for g in gaps if not g["kept"]]
