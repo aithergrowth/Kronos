@@ -351,6 +351,7 @@ class TradeSetup:
     breakeven_r: float
     tp_source: str
     notes: List[str] = field(default_factory=list)
+    touched_at: Optional[pd.Timestamp] = None      # when price entered the zone on the lowest timeframe (this visit)
 
     @property
     def stop_pips(self) -> Optional[float]:

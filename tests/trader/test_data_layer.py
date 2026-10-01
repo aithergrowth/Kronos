@@ -79,3 +79,11 @@ def test_news_blackout_windows():
     events = [{"date": "2026-10-02T12:30:00.000Z", "currency": "USD", "title": "Non Farm Payrolls"}]
     (start, end, label), = news_blackout_windows(events, 30, 30)
     assert start == pd.Timestamp("2026-10-02 12:00") and end == pd.Timestamp("2026-10-02 13:00") and "USD" in label
+
+
+def test_yaml_off_is_read_as_the_string_off(tmp_path):
+    from kronos_trader.config import Settings
+    path = tmp_path / "c.yaml"
+    path.write_text("kronos:\n  mode: off\nrisk:\n  min_rr: 1.5\n", encoding="utf-8")
+    s = Settings.load(path)
+    assert s.kronos.mode == "off" and s.risk.min_rr == 1.5

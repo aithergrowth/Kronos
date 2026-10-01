@@ -1,5 +1,8 @@
-"""Paper broker: fills at mid +/- half spread, checks SL/TP on every closed candle,
-moves the stop to break-even per the exit rules and never takes partials."""
+"""Paper broker: fills and stop/target checks on bid and ask built from the candles
+(``quote_basis="mid"``: candle +/- half the spread; ``"bid"``: the candles are bid
+quotes, as HistData's are, so ask = bid + spread), checks SL/TP on every closed
+candle, fills a stop at the open when a candle gaps through it, moves the stop to
+break-even per the exit rules and never takes partials."""
 from __future__ import annotations
 
 import itertools
@@ -16,7 +19,10 @@ from .base import Broker, ClosedTrade, Position
 
 class PaperBroker(Broker):
     def __init__(self, settings: Optional[Settings] = None, equity: Optional[float] = None,
-                 spread_pips: Optional[Dict[str, float]] = None, use_spread: bool = True):
+                 spread_pips: Optional[Dict[str, float]] = None, use_spread: bool = True, quote_basis: str = "mid"):
+        if quote_basis not in ("mid", "bid"):
+            raise ValueError(f"quote_basis must be 'mid' or 'bid', not {quote_basis!r}")
+        self.quote_basis = quote_basis
         self.settings = settings or Settings()
         self._balance = float(equity if equity is not None else self.settings.account_size)
         self.initial_balance = self._balance
@@ -44,6 +50,13 @@ class PaperBroker(Broker):
         spec = self._spec(symbol)
         pips = self.spread_pips.get(symbol.upper(), spec.typical_spread_pips)
         return pips * spec.pip_size / 2.0
+
+    def _offsets(self, symbol: str) -> Tuple[float, float]:
+        """``(bid - candle, ask - candle)`` for the configured quote basis."""
+        half = self._half_spread(symbol)
+        if self.quote_basis == "bid":
+            return 0.0, 2.0 * half
+        return -half, half
 
     def pnl_for(self, symbol: str, direction: Direction, entry: float, exit_price: float, lots: float) -> float:
         spec = self._spec(symbol)
@@ -77,7 +90,8 @@ class PaperBroker(Broker):
                            meta=None, price=None, ts=None) -> Position:
         symbol = symbol.upper()
         mid = float(price if price is not None else self.current_price(symbol))
-        fill = mid + direction.sign * self._half_spread(symbol)
+        bid_off, ask_off = self._offsets(symbol)
+        fill = mid + (ask_off if direction is Direction.LONG else bid_off)
         pos = Position(
             id=f"P{next(self._ids)}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
             stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.utcnow(),
@@ -110,25 +124,27 @@ class PaperBroker(Broker):
     def on_candle(self, symbol: str, candle: Candle) -> List[ClosedTrade]:
         """Process a just-closed candle: stops first (conservative), then targets, then break-even."""
         symbol = symbol.upper()
-        half = self._half_spread(symbol)
+        bid_off, ask_off = self._offsets(symbol)
         closed: List[ClosedTrade] = []
         close_ts = candle.timestamp
         for pos in list(self.open_positions(symbol)):
             if pos.opened_at is not None and pd.Timestamp(candle.timestamp) < pos.opened_at:
                 continue
             if pos.direction is Direction.LONG:
-                bid_low, bid_high = candle.low - half, candle.high - half
+                bid_low, bid_high, bid_open = candle.low + bid_off, candle.high + bid_off, candle.open + bid_off
                 hit_stop = bid_low <= pos.stop
                 hit_tp = bid_high >= pos.take_profit
                 extreme = bid_high
+                stop_fill = min(pos.stop, bid_open)      # a candle gapping through the stop fills at its open
             else:
-                ask_high, ask_low = candle.high + half, candle.low + half
+                ask_high, ask_low, ask_open = candle.high + ask_off, candle.low + ask_off, candle.open + ask_off
                 hit_stop = ask_high >= pos.stop
                 hit_tp = ask_low <= pos.take_profit
                 extreme = ask_low
+                stop_fill = max(pos.stop, ask_open)
             if hit_stop:
                 reason = "breakeven" if pos.breakeven_done else "stop"
-                closed.append(self.close_position(pos.id, reason, pos.stop, close_ts))
+                closed.append(self.close_position(pos.id, reason, stop_fill, close_ts))
                 continue
             if hit_tp:
                 closed.append(self.close_position(pos.id, "take_profit", pos.take_profit, close_ts))

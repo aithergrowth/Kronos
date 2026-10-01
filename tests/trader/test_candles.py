@@ -49,3 +49,18 @@ def test_to_kronos_inputs_adds_amount():
     assert list(x.columns) == ["open", "high", "low", "close", "volume", "amount"]
     assert x["amount"].iloc[0] == 100 * (1 + 2 + 0.5 + 1.5) / 4
     assert len(ts) == 1
+
+
+def test_monthly_candle_is_not_visible_before_the_month_ends():
+    import pandas as pd
+    from kronos_trader.core import CandleSeries, Timeframe
+    from kronos_trader.data.resample import MultiTimeframeData
+    rows = [(1.0, 1.1, 0.9, 1.05), (1.05, 1.3, 1.0, 1.2)]
+    monthly = CandleSeries.from_records(rows, Timeframe.MN_1, start="2023-01-31 22:00", symbol="EURUSD")
+    monthly.df.loc[1, "timestamp"] = pd.Timestamp("2023-02-28 21:00")   # March, stamped the evening before
+    assert len(monthly.closed_as_of(pd.Timestamp("2023-03-28 21:00"))) == 1     # the old rule showed it here
+    assert len(monthly.closed_as_of(pd.Timestamp("2023-03-31 20:59"))) == 1
+    assert len(monthly.closed_as_of(pd.Timestamp("2023-03-31 21:00"))) == 2
+    data = MultiTimeframeData({Timeframe.MN_1: monthly})
+    assert len(data.as_of(pd.Timestamp("2023-03-30"))[Timeframe.MN_1]) == 1
+    assert len(data.as_of(pd.Timestamp("2023-04-01"))[Timeframe.MN_1]) == 2

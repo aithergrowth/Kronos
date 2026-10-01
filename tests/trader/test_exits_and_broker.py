@@ -71,3 +71,33 @@ def test_risk_guard_limits():
     broker._balance = 91_500.0
     ok, reason = guard.can_open(broker, ts + pd.Timedelta(1, unit="D"))
     assert not ok and "drawdown" in reason
+
+
+def test_bid_quote_basis_fills_longs_at_the_full_spread_and_checks_stops_on_the_bid():
+    broker = PaperBroker(Settings(), quote_basis="bid")
+    pos = _long(broker)
+    assert pos.entry == pytest.approx(1.1001)          # ask = bid + the full 1-pip spread
+    # bid low 1.09505 is above the stop: with the candles as bid quotes nothing is subtracted, so no stop
+    assert broker.on_candle("EURUSD", _candle(1.1000, 1.1010, 1.09505, 1.1005)) == []
+    closed = broker.on_candle("EURUSD", _candle(1.1000, 1.1010, 1.0950, 1.1005))
+    assert len(closed) == 1 and closed[0].reason == "stop" and closed[0].exit == pytest.approx(1.0950)
+    with pytest.raises(ValueError):
+        PaperBroker(Settings(), quote_basis="ask")
+
+
+def test_short_stop_on_bid_basis_uses_the_ask():
+    broker = PaperBroker(Settings(), quote_basis="bid")
+    pos = broker.place_market_order("EURUSD", Direction.SHORT, 1.0, 1.1050, 1.0900, 1000.0, 0.0051, 4.0,
+                                    price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
+    assert pos.entry == pytest.approx(1.1000)          # sold on the bid itself
+    assert broker.on_candle("EURUSD", _candle(1.1000, 1.10485, 1.0990, 1.1000)) == []      # ask high 1.10495 < stop
+    closed = broker.on_candle("EURUSD", _candle(1.1000, 1.10495, 1.0990, 1.1000))          # ask high 1.10505 >= stop
+    assert len(closed) == 1 and closed[0].reason == "stop"
+
+
+def test_stop_fills_at_the_open_when_a_candle_gaps_through_it():
+    broker = PaperBroker(Settings(), use_spread=False)
+    _long(broker)                                                     # stop 1.0950
+    closed = broker.on_candle("EURUSD", _candle(1.0900, 1.0920, 1.0880, 1.0910, ts="2024-01-07 22:00"))
+    assert len(closed) == 1 and closed[0].reason == "stop" and closed[0].exit == pytest.approx(1.0900)
+    assert closed[0].r < -1.0

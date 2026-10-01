@@ -137,7 +137,8 @@ def cmd_backtest(args) -> int:
     data = _load_data(args, settings, symbol)
     print(data.describe())
     bt = Backtester(settings, data, symbol, step_tf=args.step_tf, engine=_engine(settings),
-                    start=args.start, end=args.end, use_spread=not args.no_spread, progress=args.progress)
+                    start=args.start, end=args.end, use_spread=not args.no_spread, progress=args.progress,
+                    quote_basis=args.quote_basis)
     result = bt.run()
     print(format_report(result))
     if args.out:
@@ -342,7 +343,8 @@ def cmd_histdata(args) -> int:
     minutes = fetch_history(pair, int(args.start_year), end_year, end_month, args.raw_dir, pause=args.pause, progress=print)
     tfs = [Timeframe.parse(t.strip()) for t in args.timeframes.split(",")] if args.timeframes else None
     kwargs = {"timeframes": tfs} if tfs else {}
-    written = build_cache(symbol, pair, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset, minutes=minutes, **kwargs)
+    written = build_cache(symbol, pair, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset, minutes=minutes,
+                          session_tz=args.session_tz or None, **kwargs)
     print(f"{len(minutes)} minute candles {minutes['timestamp'].iloc[0]} -> {minutes['timestamp'].iloc[-1]}; cache written: {written} -> {args.out_dir}")
     return 0
 
@@ -409,6 +411,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--start")
     sp.add_argument("--end")
     sp.add_argument("--no-spread", action="store_true")
+    sp.add_argument("--quote-basis", choices=("mid", "bid"), default="mid",
+                    help="what the candles are: mid prices (default) or bid quotes (HistData, Dukascopy bid files)")
     sp.add_argument("--progress", action="store_true")
     sp.add_argument("--out", help="write the trade list to this CSV")
     sp.set_defaults(func=cmd_backtest)
@@ -501,7 +505,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--raw-dir", default="data/histdata/raw")
     sp.add_argument("--out-dir", default="data/histdata")
     sp.add_argument("--pause", type=float, default=1.5)
-    sp.add_argument("--session-offset", type=float, default=3.0)
+    sp.add_argument("--session-offset", type=float, default=3.0, help="fixed hours before midnight UTC for the session boundary when --session-tz is empty")
+    sp.add_argument("--session-tz", default="America/New_York", help="time zone whose 17:00 ends the trading day (DST-aware); '' for the fixed offset")
     sp.add_argument("--timeframes", help="comma list to write, e.g. 5m,15m,1H,4H (default: 5m to 1M)")
     sp.set_defaults(func=cmd_histdata)
     return p

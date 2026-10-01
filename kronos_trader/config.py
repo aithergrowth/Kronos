@@ -341,7 +341,10 @@ class Settings:
         import yaml  # local import: optional dependency for users who only use defaults
         with open(path, "r", encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
-        return cls.from_dict(data)
+        settings = cls.from_dict(data)
+        if isinstance(settings.kronos.mode, bool):     # YAML 1.1 reads an unquoted `off` as False
+            settings.kronos.mode = "off" if not settings.kronos.mode else "advisory"
+        return settings
 
     @classmethod
     def load(cls, path: Optional["str | Path"] = None) -> "Settings":

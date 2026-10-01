@@ -111,7 +111,8 @@ def fetch_history(pair: str, start_year: int, end_year: int, end_month: int, raw
 
 
 def build_cache(symbol: str, pair: str, raw_dir, out_dir, session_offset_hours: float = 3.0,
-                timeframes: Iterable[Timeframe] = CACHE_TIMEFRAMES, minutes: Optional[pd.DataFrame] = None) -> Dict[str, int]:
+                timeframes: Iterable[Timeframe] = CACHE_TIMEFRAMES, minutes: Optional[pd.DataFrame] = None,
+                session_tz: Optional[str] = "America/New_York") -> Dict[str, int]:
     if minutes is None:
         folder = Path(raw_dir) / pair.upper()
         frames = [parse_csv(unzip_csv(p.read_bytes())) for p in sorted(folder.glob("*.zip")) if p.stat().st_size]
@@ -119,7 +120,7 @@ def build_cache(symbol: str, pair: str, raw_dir, out_dir, session_offset_hours: 
     series = CandleSeries(minutes, Timeframe.MIN_1, symbol.upper())
     written = {}
     for tf in timeframes:
-        out = anchored_resample(series, tf, session_offset_hours)
+        out = anchored_resample(series, tf, session_offset_hours, session_tz=session_tz)
         save_series(out, out_dir, symbol, merge=False)
         written[tf.label] = len(out)
     return written

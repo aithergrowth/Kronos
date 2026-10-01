@@ -18,4 +18,4 @@ session:
 news:
   enabled: true                   # not in the list; source G 11:08: he does not open a trade right before news
 kronos:
-  mode: off
+  mode: "off"

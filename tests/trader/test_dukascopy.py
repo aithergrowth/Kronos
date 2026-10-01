@@ -46,3 +46,22 @@ def test_build_cache_anchors_the_session(tmp_path):
     h4 = views[T.H_4]
     assert {ts.hour for ts in h4.timestamps} <= {21, 1, 5, 9, 13, 17}        # 4H bins start at the 21:00 UTC session open
     assert views[T.D_1].timestamps.iloc[0].hour == 21
+
+
+def test_four_hour_bins_follow_new_york_daylight_saving():
+    import pandas as pd
+    from kronos_trader.core import CandleSeries, Timeframe
+    from kronos_trader.data.dukascopy import anchored_resample
+    frames = []
+    for day in ("2024-01-10", "2024-07-10"):
+        idx = pd.date_range(f"{day} 00:00", f"{day} 23:59", freq="1min")
+        frames.append(pd.DataFrame({"timestamp": idx, "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0}))
+    minutes = CandleSeries(pd.concat(frames, ignore_index=True), Timeframe.MIN_1, "EURUSD", validate=False)
+    out = anchored_resample(minutes, Timeframe.H_4)
+    stamps = set(out.timestamps.dt.strftime("%m-%d %H:%M"))
+    assert {"01-10 02:00", "01-10 06:00", "01-10 18:00", "01-10 22:00"} <= stamps     # winter: 17:00 New York = 22:00 UTC
+    assert {"07-10 01:00", "07-10 05:00", "07-10 17:00", "07-10 21:00"} <= stamps     # summer: 21:00 UTC
+    fixed = anchored_resample(minutes, Timeframe.H_4, session_offset_hours=3.0, session_tz=None)
+    assert "01-10 21:00" in set(fixed.timestamps.dt.strftime("%m-%d %H:%M"))
+    # below 4H the bins are the same whatever the anchor
+    assert len(anchored_resample(minutes, Timeframe.H_1)) == 48

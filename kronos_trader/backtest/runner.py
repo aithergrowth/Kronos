@@ -48,7 +48,9 @@ class BacktestResult:
                 "pnl": t.pnl, "r": t.r, "reason": t.reason,
                 "poi_tf": t.meta.get("poi_tf"), "confirmation": t.meta.get("confirmation"),
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
-                "tp_source": t.meta.get("tp_source"), "poi_low": (t.meta.get("poi") or (None, None))[0],
+                "tp_source": t.meta.get("tp_source"), "touched_at": t.meta.get("touched_at"), "confirmed_at": t.meta.get("confirmed_at"),
+                "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"),
+                "poi_low": (t.meta.get("poi") or (None, None))[0],
                 "poi_high": (t.meta.get("poi") or (None, None))[1], "kronos": t.meta.get("kronos"),
             })
         return pd.DataFrame(rows)
@@ -79,6 +81,7 @@ class Backtester:
         end: Optional[pd.Timestamp] = None,
         use_spread: bool = True,
         progress: bool = False,
+        quote_basis: str = "mid",
     ):
         self.settings = settings
         self.data = data
@@ -89,11 +92,13 @@ class Backtester:
         self.end = pd.Timestamp(end) if end is not None else None
         self.use_spread = use_spread
         self.progress = progress
+        self.quote_basis = quote_basis
 
     def run(self) -> BacktestResult:
         t0 = time.time()
         s = self.settings
-        broker = PaperBroker(s, use_spread=self.use_spread)
+        broker = PaperBroker(s, use_spread=self.use_spread, quote_basis=self.quote_basis)
+        spec = s.symbol(self.symbol)
         guard = RiskGuard(s.prop_firm, s.account_size)
         step = self.data[self.step_tf]
         seen: Set[Tuple] = set()
@@ -101,6 +106,7 @@ class Backtester:
         guard_reasons: Dict[str, int] = {}
         rejection_reasons: Dict[str, int] = {}
         first_ts = last_ts = None
+        last_candle = None
 
         n = len(step)
         report_every = max(1, n // 20)
@@ -113,6 +119,7 @@ class Backtester:
                 break
             first_ts = first_ts or ts
             last_ts = ts
+            last_candle = candle
             steps += 1
             broker.on_candle(self.symbol, candle)
             now = self.step_tf.close_time(ts)
@@ -133,6 +140,18 @@ class Backtester:
                     rejected += 1
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     continue
+                # market order at the price of this moment (the close of the candle that just closed), with the
+                # same re-check the live runner makes: the confirmation close may be older than ``now`` when a
+                # session or news gate held the signal back
+                price_now = float(candle.close)
+                risk_now = abs(price_now - setup.stop) + s.risk.spread_buffer_pips * spec.pip_size
+                rr_now = abs(setup.take_profit - price_now) / risk_now if risk_now > 0 else 0.0
+                wrong_side = (setup.direction.sign > 0 and price_now <= setup.stop) or (setup.direction.sign < 0 and price_now >= setup.stop)
+                if wrong_side or rr_now < s.risk.min_rr:
+                    rejected += 1
+                    reason = "price moved: wrong side of the stop" if wrong_side else "price moved: R:R below minimum"
+                    guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
+                    continue
                 fc = analysis.signal.forecast
                 broker.place_market_order(
                     self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
@@ -140,20 +159,20 @@ class Backtester:
                     meta={
                         "poi_tf": setup.poi.timeframe.label, "poi": (setup.poi.low, setup.poi.high),
                         "confirmation": setup.confirmation.type.value, "confirmation_tf": setup.confirmation.timeframe.label,
-                        "planned_rr": round(setup.rr, 2), "tp_source": setup.tp_source,
+                        "confirmed_at": setup.confirmation.timestamp, "touched_at": setup.touched_at, "entry_planned": setup.entry,
+                        "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
                     },
-                    price=setup.entry, ts=now,
+                    price=price_now, ts=now,
                 )
                 guard.record_trade(now)
             if self.progress and i % report_every == 0:
                 print(f"  {i}/{n} {ts} equity={broker.equity():,.0f} trades={len(broker.closed)}", flush=True)
 
-        # flatten at the end so every trade has an outcome
-        if broker.open_positions():
-            last_price = step.last.close
+        # flatten at the end so every trade has an outcome (at the last candle this run processed)
+        if broker.open_positions() and last_candle is not None:
             for pos in list(broker.open_positions()):
-                broker.close_position(pos.id, "end_of_data", last_price, self.step_tf.close_time(step.last_timestamp))
+                broker.close_position(pos.id, "end_of_data", float(last_candle.close), self.step_tf.close_time(last_candle.timestamp))
 
         return BacktestResult(
             symbol=self.symbol, step_tf=self.step_tf, start=first_ts, end=last_ts,

@@ -126,8 +126,30 @@ def load_minutes(instrument: str, raw_dir, symbol: Optional[str] = None) -> Cand
     return CandleSeries(df, Timeframe.MIN_1, (symbol or instrument).upper())
 
 
-def anchored_resample(minutes: CandleSeries, target: Timeframe, session_offset_hours: float) -> CandleSeries:
-    """Resample with the 4H bins anchored to the session start as well (the daily and higher already are)."""
+SESSION_CLOSE_HOUR = 17   # the trading day ends at 17:00 New York; 4H, daily, weekly and monthly bins start there
+
+
+def anchored_resample(minutes: CandleSeries, target: Timeframe, session_offset_hours: float = 0.0,
+                      session_tz: Optional[str] = "America/New_York") -> CandleSeries:
+    """Resample with the 4H and higher bins anchored to the session boundary.
+
+    With ``session_tz`` the boundary is 17:00 local time in that zone and follows
+    its daylight-saving changes (21:00 UTC in summer, 22:00 UTC in winter for New
+    York), which is what MetaTrader and TradingView "New York close" candles do.
+    Without it the boundary is a fixed ``session_offset_hours`` before midnight UTC.
+    Intraday targets below 4H are unaffected either way (their bins repeat every hour).
+    """
+    if target < Timeframe.H_4:
+        return resample(minutes, target)
+    if session_tz:
+        shift = pd.Timedelta(24 - SESSION_CLOSE_HOUR, unit="h")      # 17:00 local -> midnight of the "session day"
+        utc = pd.DatetimeIndex(minutes.df["timestamp"]).tz_localize("UTC")
+        local = utc.tz_convert(session_tz).tz_localize(None) + shift
+        shifted = CandleSeries(minutes.df.assign(timestamp=local), minutes.timeframe, minutes.symbol, validate=False)
+        out = resample(shifted, target)
+        back = (pd.DatetimeIndex(out.df["timestamp"]) - shift).tz_localize(session_tz, ambiguous="NaT", nonexistent="shift_forward")
+        stamps = back.tz_convert("UTC").tz_localize(None)
+        return CandleSeries(out.df.assign(timestamp=stamps), target, minutes.symbol, validate=False)
     if target is Timeframe.H_4 and session_offset_hours:
         shift = pd.Timedelta(session_offset_hours, unit="h")
         shifted = CandleSeries(minutes.df.assign(timestamp=minutes.df["timestamp"] + shift), minutes.timeframe, minutes.symbol, validate=False)
@@ -137,7 +159,8 @@ def anchored_resample(minutes: CandleSeries, target: Timeframe, session_offset_h
 
 
 def build_cache(symbol: str, instrument: str, raw_dir, out_dir, session_offset_hours: float = 3.0,
-                timeframes: Iterable[Timeframe] = CACHE_TIMEFRAMES, keep_minutes: bool = False) -> Dict[str, int]:
+                timeframes: Iterable[Timeframe] = CACHE_TIMEFRAMES, keep_minutes: bool = False,
+                session_tz: Optional[str] = "America/New_York") -> Dict[str, int]:
     """Decode the raw day files and write every timeframe the engine needs into ``out_dir``."""
     minutes = load_minutes(instrument, raw_dir, symbol)
     written = {}
@@ -145,7 +168,7 @@ def build_cache(symbol: str, instrument: str, raw_dir, out_dir, session_offset_h
         save_series(minutes, out_dir, symbol, merge=False)
         written["1m"] = len(minutes)
     for tf in timeframes:
-        series = anchored_resample(minutes, tf, session_offset_hours)
+        series = anchored_resample(minutes, tf, session_offset_hours, session_tz=session_tz)
         save_series(series, out_dir, symbol, merge=False)
         written[tf.label] = len(series)
     return written

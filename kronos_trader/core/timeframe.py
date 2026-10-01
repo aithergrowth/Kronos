@@ -78,8 +78,26 @@ class Timeframe(Enum):
         return ts.floor(f"{self.minutes}min")
 
     def close_time(self, open_time: pd.Timestamp) -> pd.Timestamp:
-        """Timestamp at which the candle opened at ``open_time`` is fully closed."""
-        return pd.Timestamp(open_time) + self.delta()
+        """Timestamp at which the candle opened at ``open_time`` is fully closed.
+
+        Monthly candles may be stamped on the previous evening (a New York close
+        feed stamps March as 28 February 21:00); the close is then the next
+        month's boundary with the same offset (31 March 21:00), never
+        ``open + 1 month`` (28 March 21:00), which would show three days of the
+        month before they happened.
+        """
+        open_time = pd.Timestamp(open_time)
+        if self is Timeframe.MN_1:
+            logical = (open_time + pd.Timedelta(hours=12)).normalize().replace(day=1)
+            return logical + pd.DateOffset(months=1) - (logical - open_time)
+        return open_time + self.delta()
+
+    def close_times(self, open_times) -> pd.Series:
+        """Vectorised :meth:`close_time` for a series of candle open times."""
+        opens = pd.Series(pd.to_datetime(open_times)).reset_index(drop=True)
+        if self is Timeframe.MN_1:
+            return pd.Series([self.close_time(t) for t in opens], dtype="datetime64[ns]")
+        return opens + self.delta()
 
     def future_timestamps(self, last_open: pd.Timestamp, n: int, skip_weekends: bool = True) -> pd.Series:
         """``n`` candle open times following ``last_open`` (used for Kronos ``y_timestamp``)."""

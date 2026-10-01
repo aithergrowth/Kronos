@@ -180,9 +180,12 @@ class CandleSeries:
         ts = pd.Timestamp(ts)
         if len(self) == 0:
             return self
-        # open + delta <= ts  <=>  open <= ts - delta  (candle opens sit on bin starts, so this is exact)
-        cutoff = ts - (pd.DateOffset(months=1) if self.timeframe is Timeframe.MN_1 else self.timeframe.delta())
-        n = int(self.timestamps.searchsorted(cutoff, side="right"))
+        if self.timeframe is Timeframe.MN_1:
+            n = int((self.timeframe.close_times(self.timestamps) <= ts).sum())
+        else:
+            # open + delta <= ts  <=>  open <= ts - delta  (candle opens sit on bin starts, so this is exact)
+            cutoff = ts - self.timeframe.delta()
+            n = int(self.timestamps.searchsorted(cutoff, side="right"))
         if n >= len(self):
             return self
         return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)

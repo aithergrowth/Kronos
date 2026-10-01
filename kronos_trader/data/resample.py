@@ -47,8 +47,7 @@ class MultiTimeframeData:
         self.series: Dict[Timeframe, CandleSeries] = {Timeframe.parse(tf): s for tf, s in series.items()}
         self._close_times: Dict[Timeframe, np.ndarray] = {}
         for tf, s in self.series.items():
-            closes = s.timestamps + (pd.DateOffset(months=1) if tf is Timeframe.MN_1 else tf.delta())
-            self._close_times[tf] = pd.DatetimeIndex(closes).to_numpy()
+            self._close_times[tf] = pd.DatetimeIndex(tf.close_times(s.timestamps)).to_numpy()
 
     # ------------------------------------------------------------ constructors
     @classmethod

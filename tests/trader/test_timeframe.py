@@ -42,3 +42,15 @@ def test_future_timestamps_skip_weekends():
     assert hourly == [pd.Timestamp("2024-03-15 23:00"), pd.Timestamp("2024-03-18 00:00"), pd.Timestamp("2024-03-18 01:00")]
     monthly = Timeframe.MN_1.future_timestamps(pd.Timestamp("2024-03-01"), 2).tolist()
     assert monthly == [pd.Timestamp("2024-04-01"), pd.Timestamp("2024-05-01")]
+
+
+def test_monthly_close_time_keeps_the_feed_stamp_offset():
+    # a New York close feed stamps March as 28 February 21:00: the candle closes 31 March 21:00, not 28 March
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2023-02-28 21:00")) == pd.Timestamp("2023-03-31 21:00")
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2023-04-30 21:00")) == pd.Timestamp("2023-05-31 21:00")
+    # a feed stamping the first of the month at midnight closes on the next first
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2007-06-01 00:00")) == pd.Timestamp("2007-07-01 00:00")
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2024-02-01 00:00")) == pd.Timestamp("2024-03-01 00:00")
+    closes = Timeframe.MN_1.close_times(pd.Series(pd.to_datetime(["2023-02-28 21:00", "2023-03-31 21:00"])))
+    assert list(closes) == [pd.Timestamp("2023-03-31 21:00"), pd.Timestamp("2023-04-30 21:00")]
+    assert Timeframe.H_4.close_time(pd.Timestamp("2024-01-10 22:00")) == pd.Timestamp("2024-01-11 02:00")
