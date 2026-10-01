@@ -1,0 +1,82 @@
+{
+  "symbol": "USDJPY",
+  "feed": "OANDA:USDJPY",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": true,
+  "profile": "forward",
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-07-21 04:00:00",
+    "2026-10-01 05:45:00"
+  ],
+  "steps": 5000,
+  "signals": 2,
+  "trades_including_end_marks": 2,
+  "decided_trades": 2,
+  "wins": 0,
+  "losses": 2,
+  "breakeven": 0,
+  "realized_r": -1.9430912638870552,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 57.332934617996216,
+  "input_files": [
+    {
+      "path": "OANDA_USDJPY_15min.csv",
+      "sha256": "83ac8f6b310851f102996f298138656bfb576e8c555156152d0532d9f065fbde",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00"
+    },
+    {
+      "path": "OANDA_USDJPY_1H.csv",
+      "sha256": "ff26a72e1d8649f7090009179db69e3570885ef992883e5113919e8c481726ca",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_USDJPY_4H.csv",
+      "sha256": "4aae79310a3130c029876a0ab8ca07b4b807a3c31dcd36074c2f019dcc3bca04",
+      "timeframe": "4H",
+      "rows": 5000,
+      "first_open": "2023-07-14 01:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_USDJPY_1D.csv",
+      "sha256": "a6265c0e760f55a5a9b29acf35f7d14127a3d471fb099897678716b3af28d566",
+      "timeframe": "1D",
+      "rows": 5000,
+      "first_open": "2007-07-01 21:00:00",
+      "last_open": "2026-09-30 21:00:00"
+    },
+    {
+      "path": "OANDA_USDJPY_1W.csv",
+      "sha256": "7af4256bb19ed1adfa82ba5bba9e9539c684938d9b71f3ee3f873f6e3c9cc8e3",
+      "timeframe": "1W",
+      "rows": 1006,
+      "first_open": "2007-06-25 00:00:00",
+      "last_open": "2026-09-28 00:00:00"
+    },
+    {
+      "path": "OANDA_USDJPY_1MO.csv",
+      "sha256": "3586e727c51470370f3a1af4ded1bd7b227fb9e7bf4b56801c77c5334af7327b",
+      "timeframe": "1M",
+      "rows": 231,
+      "first_open": "2007-07-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00"
+    }
+  ],
+  "guard_rejection_counts": {},
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "d01e31832595c5374bfed4ee95101ef41aa50971336b05f90e76551563ade85d",
+  "calendar_sha256": "195c053423e63a475f29712342c1b8d6331aaf4aa0eb76a9e4ab67a606fe978f",
+  "news_window_minutes": [
+    30,
+    30
+  ]
+}

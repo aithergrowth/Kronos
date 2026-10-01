@@ -237,7 +237,8 @@ def cmd_live(args) -> int:
     fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
                         broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
-    runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
+    # In notification-only mode the adapter supplies candles but has no execution/management role.
+    runner = LiveRunner(settings, symbol, fetch, broker=broker if args.execute else None, notifier=notifier,
                         engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan)

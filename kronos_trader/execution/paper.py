@@ -1,5 +1,9 @@
-"""Paper broker: fills at mid +/- half spread, checks SL/TP on every closed candle,
-moves the stop to break-even per the exit rules and never takes partials."""
+"""Paper broker with executable-side spread and conservative OHLC exit ordering.
+
+Opening quotes are ordered before intrabar extremes. Otherwise unknown intrabar
+paths favour an existing stop, or a reachable break-even return before a farther
+target. These are simulation assumptions, not reconstructed tick sequences.
+"""
 from __future__ import annotations
 
 import itertools
@@ -53,13 +57,24 @@ class PaperBroker(Broker):
     def set_price(self, symbol: str, price: float) -> None:
         self._last_price[symbol.upper()] = float(price)
 
+    def market_fill_price(self, symbol: str, direction: Direction, price: Optional[float] = None) -> float:
+        """Preview a market fill from a midpoint, using the order's buy/sell side."""
+        mid = float(price if price is not None else self.current_price(symbol))
+        return mid + direction.sign * self._half_spread(symbol)
+
+    def _activate_breakeven(self, pos: Position) -> None:
+        offset = self.settings.exits.breakeven_offset_pips * self._spec(pos.symbol).pip_size
+        pos.stop = pos.entry + pos.direction.sign * offset
+        pos.breakeven_done = True
+
     # ------------------------------------------------------------ Broker API
     def equity(self) -> float:
         unrealized = 0.0
         for pos in self.positions.values():
             price = self._last_price.get(pos.symbol)
             if price is not None:
-                unrealized += self.pnl_for(pos.symbol, pos.direction, pos.entry, price, pos.lots)
+                liquidation = self.market_fill_price(pos.symbol, Direction(-pos.direction.sign), price)
+                unrealized += self.pnl_for(pos.symbol, pos.direction, pos.entry, liquidation, pos.lots)
         return self._balance + unrealized
 
     def balance(self) -> float:
@@ -77,7 +92,7 @@ class PaperBroker(Broker):
                            meta=None, price=None, ts=None) -> Position:
         symbol = symbol.upper()
         mid = float(price if price is not None else self.current_price(symbol))
-        fill = mid + direction.sign * self._half_spread(symbol)
+        fill = self.market_fill_price(symbol, direction, mid)
         pos = Position(
             id=f"P{next(self._ids)}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
             stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.utcnow(),
@@ -92,8 +107,15 @@ class PaperBroker(Broker):
         self.positions[position_id].stop = float(stop)
 
     def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
+        """Market liquidation: an explicit ``price`` is a midpoint, not a bid/ask fill."""
+        pos = self.positions[position_id]
+        exit_price = self.market_fill_price(pos.symbol, Direction(-pos.direction.sign), price)
+        return self._close_at_price(position_id, reason, exit_price, ts)
+
+    def _close_at_price(self, position_id, reason, exit_price, ts=None) -> ClosedTrade:
+        """Record an already executable SL/TP/gap price without adding spread twice."""
         pos = self.positions.pop(position_id)
-        exit_price = float(price if price is not None else self.current_price(pos.symbol))
+        exit_price = float(exit_price)
         pnl = self.pnl_for(pos.symbol, pos.direction, pos.entry, exit_price, pos.lots)
         self._balance += pnl
         r = pos.r_at(exit_price)
@@ -108,7 +130,15 @@ class PaperBroker(Broker):
 
     # ------------------------------------------------------------ simulation
     def on_candle(self, symbol: str, candle: Candle) -> List[ClosedTrade]:
-        """Process a just-closed candle: stops first (conservative), then targets, then break-even."""
+        """Simulate exits from OHLC; ambiguous paths use the worse reachable exit.
+
+        Stop gaps fill at the executable opening quote. A target marketable at
+        the open fills at its limit (no assumed favourable price improvement).
+        Then an existing stop takes priority over unknown intrabar ordering.
+        A BE trigger followed by a possible return is treated as a BE exit,
+        unless the target necessarily precedes the trigger. Exact hit times,
+        liquidity, slippage beyond opening gaps, commission and swap are absent.
+        """
         symbol = symbol.upper()
         half = self._half_spread(symbol)
         closed: List[ClosedTrade] = []
@@ -116,27 +146,44 @@ class PaperBroker(Broker):
         for pos in list(self.open_positions(symbol)):
             if pos.opened_at is not None and pd.Timestamp(candle.timestamp) < pos.opened_at:
                 continue
+            sign = pos.direction.sign
+            opening = candle.open - sign * half
             if pos.direction is Direction.LONG:
-                bid_low, bid_high = candle.low - half, candle.high - half
-                hit_stop = bid_low <= pos.stop
-                hit_tp = bid_high >= pos.take_profit
-                extreme = bid_high
+                adverse, extreme = candle.low - half, candle.high - half
             else:
-                ask_high, ask_low = candle.high + half, candle.low + half
-                hit_stop = ask_high >= pos.stop
-                hit_tp = ask_low <= pos.take_profit
-                extreme = ask_low
-            if hit_stop:
+                adverse, extreme = candle.high + half, candle.low + half
+            if sign * (opening - pos.stop) <= 0:
                 reason = "breakeven" if pos.breakeven_done else "stop"
-                closed.append(self.close_position(pos.id, reason, pos.stop, close_ts))
+                closed.append(self._close_at_price(pos.id, reason, opening, close_ts))
                 continue
-            if hit_tp:
-                closed.append(self.close_position(pos.id, "take_profit", pos.take_profit, close_ts))
+            if sign * (opening - pos.take_profit) >= 0:
+                closed.append(self._close_at_price(pos.id, "take_profit", pos.take_profit, close_ts))
+                continue
+            if not pos.breakeven_done and breakeven_reached(pos.direction, pos.entry, pos.risk_distance, opening, pos.breakeven_r):
+                self._activate_breakeven(pos)
+                if sign * (opening - pos.stop) <= 0:
+                    closed.append(self._close_at_price(pos.id, "breakeven", opening, close_ts))
+                    continue
+            if sign * (adverse - pos.stop) <= 0:
+                reason = "breakeven" if pos.breakeven_done else "stop"
+                closed.append(self._close_at_price(pos.id, reason, pos.stop, close_ts))
+                continue
+            hit_tp = sign * (extreme - pos.take_profit) >= 0
+            target_precedes_be = sign * (pos.take_profit - pos.entry) <= pos.risk_distance * pos.breakeven_r
+            if hit_tp and target_precedes_be:
+                closed.append(self._close_at_price(pos.id, "take_profit", pos.take_profit, close_ts))
                 continue
             if not pos.breakeven_done and breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):
-                offset = self.settings.exits.breakeven_offset_pips * self._spec(symbol).pip_size
-                pos.stop = pos.entry + pos.direction.sign * offset
-                pos.breakeven_done = True
+                self._activate_breakeven(pos)
+                activation = pos.entry + sign * pos.risk_distance * pos.breakeven_r
+                if sign * (activation - pos.stop) <= 0:
+                    closed.append(self._close_at_price(pos.id, "breakeven", activation, close_ts))
+                    continue
+                if sign * (adverse - pos.stop) <= 0:
+                    closed.append(self._close_at_price(pos.id, "breakeven", pos.stop, close_ts))
+                    continue
+            if hit_tp:
+                closed.append(self._close_at_price(pos.id, "take_profit", pos.take_profit, close_ts))
         self._last_price[symbol] = float(candle.close)
         self.equity_curve.append((close_ts, self.equity()))
         return closed

@@ -7,10 +7,10 @@ venue when the IBKR paper account has no market data.  The strategy and the
 risk guard decide; this module only translates to ``order_send`` and reads
 positions and deals back.
 
-Server time: MT5 stamps candles and ticks in the broker's server time.  The
-offset to UTC is estimated from the latest tick (rounded to 30 minutes) and
-removed, so the engine's clock and the session windows stay in UTC; pin it
-with ``MT5_SERVER_OFFSET_HOURS`` when the estimate is wrong.
+Timestamps: the MT5 Python API returns tick and bar-open epochs in UTC.
+Keep those native candle opens unchanged; a tick's age is not a timezone
+offset. ``MT5_SERVER_OFFSET_HOURS`` remains an explicit manual compatibility
+correction for a separately verified nonstandard feed, with zero as the default.
 """
 from __future__ import annotations
 
@@ -107,25 +107,19 @@ class MT5Broker(Broker):
         return name.upper()
 
     def server_offset(self, symbol: Optional[str] = None) -> pd.Timedelta:
-        """Broker server time minus UTC: ``MT5_SERVER_OFFSET_HOURS`` or estimated from the latest tick."""
+        """Explicit timestamp correction only; standard MT5 epochs already represent UTC.
+
+        Never infer a timezone from the latest tick or the clock: stale ticks can
+        otherwise shift all historical candles. ``symbol`` remains for compatibility.
+        """
         if self._offset is not None:
             return self._offset
         pinned = os.environ.get(self.params.offset_env)
-        if pinned:
-            self._offset = pd.Timedelta(float(pinned) * 60, unit="min")
-            return self._offset
-        name = self.mt5_symbol(symbol or next(iter(self.settings.symbols)))
-        tick = self.mt5.symbol_info_tick(name)
-        seconds = int(getattr(tick, "time", 0) or 0) if tick is not None else 0
-        if seconds:
-            raw = (pd.Timestamp(seconds, unit="s") - self.clock()).total_seconds()
-            if -16 * 3600 <= raw <= 16 * 3600:          # a fresh tick; a stale weekend tick is not trusted
-                self._offset = pd.Timedelta(round(raw / 1800.0) * 30, unit="min")
-                return self._offset
-        return pd.Timedelta(0)
+        self._offset = pd.Timedelta(float(pinned) * 60, unit="min") if pinned else pd.Timedelta(0)
+        return self._offset
 
     def to_utc(self, server_seconds) -> pd.Timestamp:
-        return pd.Timestamp(int(server_seconds), unit="s") - self.server_offset()
+        return pd.Timestamp(int(server_seconds), unit="s", tz="UTC").tz_localize(None) - self.server_offset()
 
     def _position_from_mt5(self, p) -> Position:
         direction = Direction.LONG if p.type == self.mt5.POSITION_TYPE_BUY else Direction.SHORT
@@ -312,7 +306,8 @@ class MT5Broker(Broker):
         if rates is None or len(rates) == 0:
             raise RuntimeError(f"MT5 returned no bars for {symbol} {timeframe.label}: {mt5.last_error()}")
         df = pd.DataFrame(rates)
-        df["timestamp"] = pd.to_datetime(df["time"].astype("int64"), unit="s") - self.server_offset(symbol)
+        df["timestamp"] = (pd.to_datetime(df["time"].astype("int64"), unit="s", utc=True).dt.tz_localize(None)
+                           - self.server_offset(symbol))
         df = df.rename(columns={"tick_volume": "volume"})
         return CandleSeries(df[["timestamp", "open", "high", "low", "close", "volume"]].reset_index(drop=True),
                             timeframe, symbol.upper())

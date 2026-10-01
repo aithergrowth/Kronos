@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Sequence, Tuple
 
-import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from .timeframe import Timeframe
 
@@ -180,16 +180,20 @@ class CandleSeries:
         ts = pd.Timestamp(ts)
         if len(self) == 0:
             return self
-        # open + delta <= ts  <=>  open <= ts - delta  (candle opens sit on bin starts, so this is exact)
-        cutoff = ts - (pd.DateOffset(months=1) if self.timeframe is Timeframe.MN_1 else self.timeframe.delta())
-        n = int(self.timestamps.searchsorted(cutoff, side="right"))
+        # Compare forward close times, as MultiTimeframeData.as_of does.
+        # Calendar-month subtraction is not the inverse of addition at month
+        # ends (Jan 31 + one month can close on Feb 28).
+        close_times = self.timestamps + self.timeframe.delta()
+        # pandas 3 may retain microsecond-resolution arrays. Searching those
+        # with a nanosecond boundary must not round or raise on conversion.
+        n = int(close_times.to_numpy(dtype="datetime64[ns]").searchsorted(ts.to_datetime64(), side="right"))
         if n >= len(self):
             return self
         return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
 
     def index_at_or_after(self, ts: pd.Timestamp) -> int:
         """Index of the first candle opening at or after ``ts`` (``len`` if none)."""
-        return int(self.timestamps.searchsorted(pd.Timestamp(ts), side="left"))
+        return int(self.timestamps.to_numpy(dtype="datetime64[ns]").searchsorted(pd.Timestamp(ts).to_datetime64(), side="left"))
 
     def to_kronos_inputs(self) -> Tuple[pd.DataFrame, pd.Series]:
         """``(x_df, x_timestamp)`` in the layout ``KronosPredictor.predict`` expects."""
@@ -221,14 +225,14 @@ def _coerce_columns(raw: pd.DataFrame) -> pd.DataFrame:
     # timestamp ---------------------------------------------------------
     if "<date>" in lower and "<time>" in lower:
         frame["timestamp"] = pd.to_datetime(raw[lower["<date>"]].astype(str) + " " + raw[lower["<time>"]].astype(str))
-    elif "date" in lower and "time" in lower and not np.issubdtype(raw[lower["time"]].dtype, np.number):
+    elif "date" in lower and "time" in lower and not is_numeric_dtype(raw[lower["time"]]):
         frame["timestamp"] = pd.to_datetime(raw[lower["date"]].astype(str) + " " + raw[lower["time"]].astype(str))
     else:
         tcol = next((lower[a] for a in _TIME_ALIASES if a in lower), None)
         if tcol is None:
             raise ValueError(f"No timestamp column found in {list(raw.columns)}")
         col = raw[tcol]
-        if np.issubdtype(col.dtype, np.number):
+        if is_numeric_dtype(col):
             unit = "ms" if col.max() > 1e12 else "s"
             frame["timestamp"] = pd.to_datetime(col, unit=unit)
         else:

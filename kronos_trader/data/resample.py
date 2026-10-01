@@ -1,4 +1,4 @@
-"""Resampling and multi-timeframe views without look-ahead."""
+"""Resampling and timestamp-based multi-timeframe views."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,14 +17,21 @@ def resample(series: CandleSeries, target: Timeframe, session_offset_hours: floa
     """Aggregate ``series`` into ``target`` candles.
 
     Intraday bins are anchored at midnight UTC.  ``session_offset_hours`` shifts
-    the daily/weekly/monthly boundary (e.g. ``2`` when the broker's day starts
-    at 22:00 UTC) so resampled higher-timeframe candles match the platform.
+    the daily/weekly boundary (e.g. ``2`` when the broker's day starts
+    at 22:00 UTC). Shifted monthly resampling requires explicit calendar close
+    metadata and is rejected rather than exposing the completed month early.
     """
     target = Timeframe.parse(target)
     if target is series.timeframe:
         return series
     if target < series.timeframe:
         raise ValueError(f"cannot resample {series.timeframe.label} into the smaller {target.label}")
+    if target is Timeframe.MN_1 and float(session_offset_hours) != 0.0:
+        raise ValueError(
+            "Shifted monthly resampling is unsupported: open + one month does not preserve the bin end. "
+            "Use native higher-timeframe candles with verified period boundaries until explicit calendar "
+            "close metadata is supported."
+        )
     df = series.df.set_index("timestamp")
     if target.is_intraday:
         out = df.resample(target.pandas_rule, closed="left", label="left", origin="start_day").agg(AGG)
@@ -39,7 +46,12 @@ def resample(series: CandleSeries, target: Timeframe, session_offset_hours: floa
 
 
 class MultiTimeframeData:
-    """A bundle of candle series for one symbol, queryable as of any moment."""
+    """A bundle of candle series for one symbol, queryable as of any moment.
+
+    Close times follow ``Timeframe.close_time``. Native monthly labels away
+    from the first day remain unverified without feed provenance establishing
+    their actual period boundaries; this container does not infer an anchor.
+    """
 
     def __init__(self, series: Dict[Timeframe, CandleSeries]):
         if not series:
@@ -61,14 +73,16 @@ class MultiTimeframeData:
     ) -> "MultiTimeframeData":
         """Build every requested timeframe from ``base`` by resampling; ``extra`` series win."""
         wanted = [Timeframe.parse(tf) for tf in (timeframes or BIAS_TIMEFRAMES)]
+        supplied = {Timeframe.parse(tf): s for tf, s in (extra or {}).items()}
         out: Dict[Timeframe, CandleSeries] = {base.timeframe: base}
         for tf in wanted:
             if tf < base.timeframe:
                 continue
             if tf not in out:
-                out[tf] = resample(base, tf, session_offset_hours)
-        for tf, s in (extra or {}).items():
-            out[Timeframe.parse(tf)] = s
+                # Supplied native candles win without attempting an unsafe
+                # or unnecessary resample first.
+                out[tf] = supplied[tf] if tf in supplied else resample(base, tf, session_offset_hours)
+        out.update(supplied)
         return cls(out)
 
     @classmethod

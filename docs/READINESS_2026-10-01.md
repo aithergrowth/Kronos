@@ -1,5 +1,7 @@
 # Dorus/Kronos readiness — 1 October 2026
 
+> **Historical snapshot at `375c16b`.** Claude subsequently changed the runtime at `40ae003` and added CI at `445cd25`. See [the independent execution verification](EXECUTION_VERIFICATION_2026-10-01.md) for current test results and remaining defects. The original findings below are retained as the audit trail.
+
 **Ready to continue source calibration and historical testing. Not yet demonstrated ready for reliable autonomous paper execution or a prop-firm challenge.**
 
 Reviewed code/data revision: [`375c16b`](https://github.com/aithergrowth/Kronos/commit/375c16bda89ce74cef824062308dcf7f61a4cdd4). Research PR #4 is merged. This update changes research documentation and delivery metadata only.

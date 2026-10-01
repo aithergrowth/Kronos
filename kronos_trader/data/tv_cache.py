@@ -39,13 +39,18 @@ def cache_path(directory: "str | Path", symbol: str, timeframe: Timeframe) -> Pa
     return Path(directory) / f"{_slug(symbol)}_{FILE_LABELS[Timeframe.parse(timeframe)]}.csv"
 
 
-def spacing_matches(series: CandleSeries, low: float = 0.5, high: float = 3.0) -> bool:
-    """True when the median gap between candles fits the series' timeframe."""
-    if len(series) < 3:
+def spacing_matches(series: CandleSeries, low: float = 0.9, high: float = 3.0) -> bool:
+    """Check median cadence without requiring a continuous market session.
+
+    The lower tolerance admits short calendar months and DST shifts, but not
+    half-timeframe data. With only one interval, reject excessive density but
+    do not mistake a weekend/session gap for an incorrect timeframe.
+    """
+    if len(series) < 2:
         return True
     median_minutes = float(series.timestamps.diff().median().total_seconds()) / 60.0
     ratio = median_minutes / series.timeframe.minutes
-    return low <= ratio <= high
+    return ratio >= low and (len(series) < 3 or ratio <= high)
 
 
 def save_series(series: CandleSeries, directory: "str | Path", symbol: Optional[str] = None, merge: bool = True) -> Path:

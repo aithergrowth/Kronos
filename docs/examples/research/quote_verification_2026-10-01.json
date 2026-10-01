@@ -1,0 +1,145 @@
+{
+  "canonical_document": "../../STRATEGY.md",
+  "audio_verified": false,
+  "method": "Literal caption excerpt matches or fresh screen-text checks; adjacent caption segments joined with spaces; no silent spelling repairs.",
+  "word_totals_by_source": {
+    "A": 21,
+    "B": 20,
+    "C": 9,
+    "D": 16,
+    "E": 11,
+    "F": 15,
+    "G": 18,
+    "H": 20,
+    "I": 17,
+    "K1": 23
+  },
+  "quotes": [
+    {
+      "quote_id": "A1",
+      "source_locator": "A 01:50:40",
+      "evidence": "Automatic captions; high for wording in captions",
+      "words": 11,
+      "utf8_sha256": "4ef75fe6e9b9b878fdb4594472e0141c506c3c5cc41a0b77f942c2dbf01c0378"
+    },
+    {
+      "quote_id": "A2",
+      "source_locator": "A 02:26:06",
+      "evidence": "Automatic captions; high",
+      "words": 10,
+      "utf8_sha256": "c691a44493da75ab2d177a355e5b2f11e0f1383866a65e02ad559a02db02e70f"
+    },
+    {
+      "quote_id": "B1",
+      "source_locator": "B 03:44–03:47",
+      "evidence": "Automatic captions; high",
+      "words": 8,
+      "utf8_sha256": "9e3ae823158616661fc0339803a99884786bcb6fcd84d97b96f8cf9866345f79"
+    },
+    {
+      "quote_id": "B2",
+      "source_locator": "B 05:29–05:34",
+      "evidence": "Automatic captions; high",
+      "words": 12,
+      "utf8_sha256": "cba1222aed302cd0924f013c2540fcf115c942ff56fb0b6d8beebb8304ddc4fc"
+    },
+    {
+      "quote_id": "C1",
+      "source_locator": "C 15:07–15:10",
+      "evidence": "Automatic captions; high",
+      "words": 9,
+      "utf8_sha256": "ac03223be57d07cb065644ff0aa0bbba417232e3aa65f1273f5b76c1a2d04f0b"
+    },
+    {
+      "quote_id": "D1",
+      "source_locator": "D 12:42–12:45",
+      "evidence": "Automatic captions; high; bullish example",
+      "words": 6,
+      "utf8_sha256": "35d0c97f597c9c1ffb165b482792f5854cbb5901c85160b92d0a094ac2b3cd56"
+    },
+    {
+      "quote_id": "D2",
+      "source_locator": "D 12:45–12:48",
+      "evidence": "Automatic captions; high",
+      "words": 10,
+      "utf8_sha256": "0b0ad61b9148ee6e07569d8b52a745c65d7641dcde0b4cd73a834edffb089d39"
+    },
+    {
+      "quote_id": "E1",
+      "source_locator": "E 00:22–00:25",
+      "evidence": "Automatic captions; high",
+      "words": 11,
+      "utf8_sha256": "b6e1acee6bc0c6b93cc4b7a78081e06f82c23c3e11f884c02bc7427feb601599"
+    },
+    {
+      "quote_id": "F1",
+      "source_locator": "F 01:34",
+      "evidence": "Automatic captions; high",
+      "words": 6,
+      "utf8_sha256": "bb6210456da4b4f2a16a6f63e2314b2e3ed2aa3b56081ce5ababa78bdddaf5d1"
+    },
+    {
+      "quote_id": "F2",
+      "source_locator": "F 03:07–03:09",
+      "evidence": "Automatic captions; high",
+      "words": 9,
+      "utf8_sha256": "38da7b8e799609be7702435192bdb8feb0a3439d550956f5370729ddf1cc0dfd"
+    },
+    {
+      "quote_id": "G1",
+      "source_locator": "G 10:49–10:53",
+      "evidence": "Automatic captions; high, example-specific sequence",
+      "words": 12,
+      "utf8_sha256": "521544faac280a3183c640576d6b05ea57e8ee15a713bd0ac2642e0cf8ba6e9d"
+    },
+    {
+      "quote_id": "G2",
+      "source_locator": "G 11:13–11:16",
+      "evidence": "Automatic captions; high, not a complete news schedule",
+      "words": 6,
+      "utf8_sha256": "3a04c93ad5eb54eb7e56b80c6c73fa4966631fe0665e8f1c4ea2b412245ac9ef"
+    },
+    {
+      "quote_id": "H1",
+      "source_locator": "H 08:14–08:16",
+      "evidence": "Automatic captions; high; apparent caption error retained",
+      "words": 7,
+      "utf8_sha256": "c63c59f8f81e7a3b97d114e4d44e802011af1ae513e010386038b21093ff3503"
+    },
+    {
+      "quote_id": "H2",
+      "source_locator": "H 07:28–07:33",
+      "evidence": "Automatic captions; high",
+      "words": 13,
+      "utf8_sha256": "e8038288512686ea3e8678db31efeb1e24419b9e417a14868b866ff0f661c0dc"
+    },
+    {
+      "quote_id": "I1",
+      "source_locator": "I 00:10–00:12",
+      "evidence": "Automatic captions; high",
+      "words": 9,
+      "utf8_sha256": "f0641c1946b7f597946d1b9ae6228bd14bbf5dbcef2cfafe081377b6444a8258"
+    },
+    {
+      "quote_id": "I2",
+      "source_locator": "I 02:02–02:04",
+      "evidence": "Automatic captions; high",
+      "words": 8,
+      "utf8_sha256": "eee777f5a6b535a39a2b0e7190c8b6e1bbcb99cc326b50ad776b268828d98ab0"
+    },
+    {
+      "quote_id": "K1a",
+      "source_locator": "K1 03:53",
+      "evidence": "Written slide; high",
+      "words": 12,
+      "utf8_sha256": "58b8722d07dd711f33dfd1d252ae9d5a06c0bda6d28d96ca04c15deaaaa5cae7"
+    },
+    {
+      "quote_id": "K1b",
+      "source_locator": "K1 06:28",
+      "evidence": "Written slide; high",
+      "words": 11,
+      "utf8_sha256": "59e628ef594251c8c5446460e17f95a2839044c4914ea0892a61f76403fb8268"
+    }
+  ]
+}

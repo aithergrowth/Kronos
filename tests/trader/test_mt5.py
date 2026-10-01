@@ -1,4 +1,4 @@
-"""MT5 adapter against a fake MetaTrader5 module: server time, candles, orders, break-even, closes."""
+"""MT5 adapter against a fake MetaTrader5 module: UTC timestamps, candles, orders, break-even, closes."""
 from types import SimpleNamespace
 
 import numpy as np
@@ -10,11 +10,11 @@ from kronos_trader.core import Direction, Timeframe as T
 from kronos_trader.execution.mt5 import MT5Broker
 
 NOW = pd.Timestamp("2026-10-01 09:00")          # UTC
-OFFSET_H = 3                                     # the broker server runs on UTC+3
 
 
-def server_seconds(ts: pd.Timestamp) -> int:
-    return int((ts + pd.Timedelta(OFFSET_H, unit="h")).timestamp())
+def utc_seconds(ts: pd.Timestamp) -> int:
+    ts = ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+    return int(ts.timestamp())
 
 
 class FakeMT5:
@@ -36,6 +36,7 @@ class FakeMT5:
         self.requests = []
         self._ticket = 500
         self.accept = True
+        self.tick_time = utc_seconds(NOW)
 
     def initialize(self, **kwargs):
         self.init_kwargs = kwargs
@@ -65,10 +66,10 @@ class FakeMT5:
         return True
 
     def symbol_info_tick(self, name):
-        return SimpleNamespace(bid=self.bid, ask=self.ask, time=server_seconds(NOW))
+        return SimpleNamespace(bid=self.bid, ask=self.ask, time=self.tick_time)
 
     def copy_rates_from_pos(self, name, tf, start, count):
-        rows = [(server_seconds(NOW - pd.Timedelta(15 * (count - 1 - i), unit="min")), 1.1, 1.101, 1.099, 1.1005, 12, 1, 0)
+        rows = [(utc_seconds(NOW - pd.Timedelta(15 * (count - 1 - i), unit="min")), 1.1, 1.101, 1.099, 1.1005, 12, 1, 0)
                 for i in range(count)]
         return np.array(rows, dtype=[("time", "<i8"), ("open", "<f8"), ("high", "<f8"), ("low", "<f8"), ("close", "<f8"),
                                      ("tick_volume", "<u8"), ("spread", "<i4"), ("real_volume", "<u8")])
@@ -76,7 +77,7 @@ class FakeMT5:
     def _deal(self, position_id, entry, reason, price, profit, when):
         self._ticket += 1
         d = SimpleNamespace(ticket=self._ticket, position_id=position_id, entry=entry, reason=reason, price=price,
-                            profit=profit, commission=-0.5, swap=0.0, time=server_seconds(when))
+                            profit=profit, commission=-0.5, swap=0.0, time=utc_seconds(when))
         self.deals.append(d)
         return d
 
@@ -99,7 +100,7 @@ class FakeMT5:
         ticket = self._ticket
         self.positions.append(SimpleNamespace(ticket=ticket, symbol=request["symbol"], type=request["type"],
                                               volume=request["volume"], price_open=price, sl=request["sl"], tp=request["tp"],
-                                              time=server_seconds(NOW), magic=request["magic"], comment=request["comment"],
+                                              time=utc_seconds(NOW), magic=request["magic"], comment=request["comment"],
                                               profit=0.0))
         d = self._deal(ticket, self.DEAL_ENTRY_IN, self.DEAL_REASON_CLIENT, price, 0.0, NOW)
         return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=ticket, deal=d.ticket, price=price, comment="")
@@ -139,10 +140,60 @@ def test_initialize_uses_the_environment(broker):
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
 
 
-def test_server_time_is_converted_to_utc(broker):
-    assert broker.server_offset("EURUSD") == pd.Timedelta(3, unit="h")
+def test_connection_falls_back_to_first_available_terminal(broker, monkeypatch):
+    paths = [r"C:\First\terminal64.exe", r"C:\Second\terminal64.exe", r"C:\Third\terminal64.exe"]
+    monkeypatch.setattr("kronos_trader.execution.mt5.terminal_candidates", lambda: paths)
+    calls = []
+
+    def initialize(**kwargs):
+        calls.append(kwargs)
+        return kwargs.get("path") == paths[1]
+
+    monkeypatch.setattr(broker.mt5, "initialize", initialize)
+    broker.connect()
+
+    assert calls == [{}, {"path": paths[0]}, {"path": paths[1]}]
+    assert broker.terminal_path == paths[1]
+    assert broker.mt5.login_args == (62724281, "pw", "MetaQuotes-Demo")
+    assert broker.mt5.requests == []
+
+
+def test_explicit_terminal_failure_does_not_switch_terminals(broker, monkeypatch):
+    path = r"C:\Chosen\terminal64.exe"
+    monkeypatch.setenv("MT5_PATH", path)
+    calls = []
+
+    def initialize(**kwargs):
+        calls.append(kwargs)
+        return False
+
+    def unexpected_call(*args, **kwargs):
+        raise AssertionError("an explicit terminal failure must not discover or log into another terminal")
+
+    monkeypatch.setattr(broker.mt5, "initialize", initialize)
+    monkeypatch.setattr(broker.mt5, "login", unexpected_call)
+    monkeypatch.setattr("kronos_trader.execution.mt5.terminal_candidates", unexpected_call)
+    with pytest.raises(RuntimeError, match="MT5 initialize failed"):
+        broker.connect()
+
+    assert calls == [{"path": path}]
+    assert broker.mt5.requests == []
+
+
+def test_explicit_login_failure_is_not_silently_accepted(broker, monkeypatch):
+    monkeypatch.setattr(broker.mt5, "login", lambda *args, **kwargs: False)
+
+    with pytest.raises(RuntimeError, match="MT5 login failed"):
+        broker.connect()
+
+    assert broker.mt5.requests == []
+
+
+def test_mt5_utc_timestamps_are_preserved_by_default(broker):
+    assert broker.server_offset("EURUSD") == pd.Timedelta(0)
     s = broker.get_candles("EURUSD", T.MIN_15, 4)
     assert len(s) == 4 and s.symbol == "EURUSD" and str(s.timestamps.iloc[-1]) == "2026-10-01 09:00:00"
+    assert s.timestamps.dt.tz is None and broker.to_utc(utc_seconds(NOW)) == NOW
     assert s.last.close == pytest.approx(1.1005)
 
 
@@ -150,6 +201,56 @@ def test_pinned_offset(monkeypatch):
     monkeypatch.setenv("MT5_SERVER_OFFSET_HOURS", "2")
     b = MT5Broker(Settings(), api=FakeMT5(), clock=lambda: NOW)
     assert b.server_offset() == pd.Timedelta(2, unit="h")
+    # An explicitly configured compatibility correction, never inferred from a tick.
+    assert b.to_utc(utc_seconds(NOW + pd.Timedelta(2, unit="h"))) == NOW
+
+
+@pytest.mark.parametrize("age", [pd.Timedelta(2, unit="h"), pd.Timedelta(3, unit="d")], ids=["two_hours", "weekend"])
+@pytest.mark.parametrize("clock_time", [NOW, NOW.tz_localize("UTC")], ids=["naive_utc_clock", "aware_utc_clock"])
+def test_stale_tick_cannot_retime_utc_candles(broker, age, clock_time):
+    broker.mt5.tick_time = utc_seconds(NOW - age)
+    broker.clock = lambda: clock_time
+    raw = broker.mt5.copy_rates_from_pos("EURUSD", FakeMT5.TIMEFRAME_M15, 0, 4)
+    expected = pd.to_datetime(raw["time"], unit="s", utc=True).tz_localize(None).tolist()
+
+    series = broker.get_candles("EURUSD", T.MIN_15, 4)
+
+    assert series.timestamps.tolist() == expected
+    assert broker.server_offset() == pd.Timedelta(0)
+    assert broker.to_utc(utc_seconds(NOW - age)) == NOW - age
+    assert broker.mt5.requests == []
+
+
+@pytest.mark.parametrize("timeframe,api_timeframe,opens", [
+    (T.H_4, FakeMT5.TIMEFRAME_H4, ["2026-09-30 21:00", "2026-10-01 01:00", "2026-10-01 05:00"]),
+    (T.D_1, FakeMT5.TIMEFRAME_D1, ["2026-09-28 21:00", "2026-09-29 21:00", "2026-09-30 21:00"]),
+], ids=["native_4h", "native_daily"])
+def test_native_bar_open_times_are_not_reanchored(broker, monkeypatch, timeframe, api_timeframe, opens):
+    broker.mt5.tick_time = utc_seconds(NOW - pd.Timedelta(2, unit="h"))
+    expected = [pd.Timestamp(value) for value in opens]
+    raw = broker.mt5.copy_rates_from_pos("EURUSD", api_timeframe, 0, 3)
+    raw["time"] = [utc_seconds(value) for value in expected]
+    calls = []
+
+    def native_rates(symbol, tf, start, count):
+        calls.append((symbol, tf, start, count))
+        return raw.copy()
+
+    monkeypatch.setattr(broker.mt5, "copy_rates_from_pos", native_rates)
+    series = broker.get_candles("EURUSD", timeframe, 3)
+
+    assert calls == [("EURUSD", api_timeframe, 0, 3)]
+    assert series.timestamps.tolist() == expected and series.timeframe is timeframe
+    assert series.timestamps.dt.tz is None
+
+
+def test_candle_timestamp_conversion_does_not_need_a_tick(broker, monkeypatch):
+    def unavailable_tick(symbol):
+        raise AssertionError("historical timestamp parsing must not query a tick")
+
+    monkeypatch.setattr(broker.mt5, "symbol_info_tick", unavailable_tick)
+    series = broker.get_candles("EURUSD", T.MIN_15, 4)
+    assert series.last_timestamp == NOW and broker.server_offset() == pd.Timedelta(0)
 
 
 def test_market_order_tracking_breakeven_and_close(broker):

@@ -1,0 +1,82 @@
+{
+  "symbol": "GBPUSD",
+  "feed": "OANDA:GBPUSD",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": true,
+  "profile": "forward",
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-07-21 04:00:00",
+    "2026-10-01 05:45:00"
+  ],
+  "steps": 5000,
+  "signals": 1,
+  "trades_including_end_marks": 1,
+  "decided_trades": 1,
+  "wins": 0,
+  "losses": 1,
+  "breakeven": 0,
+  "realized_r": -0.9534883720930208,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 57.464717388153076,
+  "input_files": [
+    {
+      "path": "OANDA_GBPUSD_15min.csv",
+      "sha256": "549ab4e76351ba4914ed99ce98f355ac0016a53a48fde6537ca1ba41a97e85a0",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00"
+    },
+    {
+      "path": "OANDA_GBPUSD_1H.csv",
+      "sha256": "c8130c407fd06ae6e02948da4f70b0c70fe4005589d919417e9e445cbfa8facc",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_GBPUSD_4H.csv",
+      "sha256": "c9bfa0b4c7ed5e87d2c4143bfe019aeeb65be65f188b5d16542bfb861604b165",
+      "timeframe": "4H",
+      "rows": 5000,
+      "first_open": "2023-07-14 01:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_GBPUSD_1D.csv",
+      "sha256": "763471e531aae94c7da50b26ab3679e4ee9cd9288120565a164171f7b54c1593",
+      "timeframe": "1D",
+      "rows": 5000,
+      "first_open": "2007-06-28 21:00:00",
+      "last_open": "2026-09-30 21:00:00"
+    },
+    {
+      "path": "OANDA_GBPUSD_1W.csv",
+      "sha256": "2c1b29efdba04d896a3fc94e4ee3f729c353bcca98d8d1b322f035fc3d353d9b",
+      "timeframe": "1W",
+      "rows": 1006,
+      "first_open": "2007-06-25 00:00:00",
+      "last_open": "2026-09-28 00:00:00"
+    },
+    {
+      "path": "OANDA_GBPUSD_1MO.csv",
+      "sha256": "968f0003b154b67ff0861d3e21c8ebccc7cb32516c5c3eec674c1427566b8a4f",
+      "timeframe": "1M",
+      "rows": 232,
+      "first_open": "2007-06-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00"
+    }
+  ],
+  "guard_rejection_counts": {},
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "0975820d02d8630d8e88b4f284b1f7a7e783c40d95a5cd49ead25fc56e9ee3f1",
+  "calendar_sha256": "195c053423e63a475f29712342c1b8d6331aaf4aa0eb76a9e4ab67a606fe978f",
+  "news_window_minutes": [
+    30,
+    30
+  ]
+}

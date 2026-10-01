@@ -1,5 +1,7 @@
 # Phase 1 backtests: EURUSD and XAUUSD on TradingView history (2026-10-01)
 
+> Historical simulator results. An independent reproduction and corrected-execution rerun are in [verification_2026-10-01](../verification_2026-10-01/README.md). Those findings supersede any interpretation here as a reliable performance estimate. The news window is a project setting, not a precisely sourced Dorus duration.
+
 Code revision: the `feature/kronos-trader` head of 2026-10-01 (POI liquidity-to-protection, M+D+4H on, BS confirmations,
 min R:R 1:3, sessions 09-11 / 13-17 Amsterdam, Kronos off). Data: `data/tv_cache/OANDA_*` pulled through the TradingView
 MCP (latest 5000 bars per timeframe, so 15m covers eleven weeks, 1H ten months, 4H two to three years, 1D since 2007;
@@ -140,7 +142,7 @@ four signals because its one open trade was still running; NAS100 never found th
 
 Same runs with two filters, each on its own. *News*: no new entry from 30 minutes before to 30 minutes after a
 high-impact event of the symbol's currencies (TradingView economic calendar, `data/calendar/high_impact.csv`;
-Dorus, source G 11:08). *Kronos*: the forecast must agree with the setup direction (`--kronos filter`); the gold
+window chosen by the project; source G 11:08–11:24 does not prescribe 30 minutes). *Kronos*: the forecast must agree with the setup direction (`--kronos filter`); the gold
 run did not finish in the time allowed.
 
 | Symbol | Rules only | With news blackout | With Kronos filter |
@@ -154,16 +156,15 @@ run did not finish in the time allowed.
 - **News** removed one USDJPY loss (the 30 July entry half an hour before US GDP and PCE) and the 11 August
   BTC short that sat half an hour before a US housing release. That BTC short had blocked four later signals
   for a week; without it those fired and all three lost. Net across the five: USDJPY +1.0R better, BTC -2.1R
-  worse. The rule stays on because it is Dorus's own rule, not because of this sample; which events count as
+  worse. Avoiding imminent news has source support, but this exact 30-minute window is a project policy, not Dorus's stated duration; which events count as
   high impact deserves a second look (TradingView marks housing data high, ForexFactory does not).
 - **Kronos** removed the only winner (EURUSD, 22 September) and, by removing the same BTC short, let the three
-  BTC losers through. It stays advisory, not a filter, until a larger sample says otherwise.
+  BTC losers through. This comparison originally retained advisory mode; the subsequent forward profile below switches Kronos off. No predictive advantage is established.
 
 ## Forward-test profile (2026-10-01): Kronos off, 09:00-17:00, no first-candle entries, news blackout on
 
 The settings the laptop will run with. Compared with the rules-only runs above: the session is Max's 9 to 5
-instead of A's split windows, the first candle no longer counts as a confirmation on its own (G 10:49 shows
-it as the entry after a shift), the 30-minute news blackout is on, Kronos is off.
+instead of A's split windows, the forward profile disables first-candle confirmation as a project choice (G 10:49 is an after-shift example, while H 08:10–08:38 lists an alternative method), the 30-minute news blackout is on, Kronos is off.
 
 | Symbol | Period | Trades | Realized | Wins | Losses | Break-even | Open at end |
 |---|---|---|---|---|---|---|---|

@@ -1,0 +1,83 @@
+{
+  "reviewed_on": "2026-10-01",
+  "status": "offline_checks_passed_live_integrations_not_run",
+  "repository": "aithergrowth/Kronos",
+  "integration_parents": {
+    "astra": "400f30b4889fdf817fe041a8b37c8faaa98394f5",
+    "claude_mt5": "b747e7d87525919ac6530362a2a45ba6c8d688c6"
+  },
+  "active_stack": "MT5 candles -> strategy and optional Kronos forecast -> Telegram notifications",
+  "validation": {
+    "command": "python -m pytest -q -ra tests/trader",
+    "passed": 141,
+    "skipped": 1,
+    "deselected": 1,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 5.896,
+    "passed_by_module": {
+      "tests.trader.test_bias": 10,
+      "tests.trader.test_candles": 7,
+      "tests.trader.test_confirmation": 7,
+      "tests.trader.test_data_layer": 6,
+      "tests.trader.test_engine_and_notify": 4,
+      "tests.trader.test_examples": 1,
+      "tests.trader.test_exits_and_broker": 7,
+      "tests.trader.test_ibkr": 24,
+      "tests.trader.test_kronos_indicator": 5,
+      "tests.trader.test_live": 29,
+      "tests.trader.test_live_cli": 2,
+      "tests.trader.test_mt5": 13,
+      "tests.trader.test_oanda": 3,
+      "tests.trader.test_poi": 5,
+      "tests.trader.test_risk": 6,
+      "tests.trader.test_structure": 8,
+      "tests.trader.test_timeframe": 4
+    },
+    "skipped_reason": "No complete source-annotated Dorus chart fixtures",
+    "deselected_reason": "Slow real Kronos model-weights test excluded by default",
+    "broker_and_notifier_implementations": "Test doubles only"
+  },
+  "runtime_verified": {
+    "real_mt5_terminal": false,
+    "real_telegram_delivery": false,
+    "real_broker_order": false,
+    "real_model_weights_in_this_run": false,
+    "complete_dorus_fixtures": 0
+  },
+  "checked_behaviors": [
+    "MT5 UTC epochs preserved without inferring offset from tick age",
+    "Native higher-timeframe candle opens retained",
+    "Default broker feed includes 1m",
+    "Notification-only runner cannot execute or manage stops and does not poll approvals",
+    "Failed setup send can retry; successful send deduplicates within process",
+    "Notification transport failure does not terminate monitoring loop",
+    "IBKR partial and unattributable exposure retained in attention state with entry halt",
+    "Attention alerts retry failed delivery; protection remains unverified"
+  ],
+  "limitations": [
+    "No persistent alert delivery or restart deduplication guarantee",
+    "No account-wide durable IBKR entry halt or automatic protection reconciliation",
+    "All-source Dorus review and complete chart fixtures remain unfinished"
+  ],
+  "tested_file_sha256": {
+    "kronos_trader/cli.py": "aecb27abd764494fdafbbd1bce546a6f0a0cc277251ad2809730c2fc4ce65ae2",
+    "kronos_trader/config.py": "243a02ab65679b630f91a747009d0753476e78b7047ef16d4c85c7984a115252",
+    "config/example.yaml": "809d2c262b971637660f9df1d6f778a5e6797fcc294729201a40d91c6b2942e2",
+    "kronos_trader/execution/mt5.py": "ae6c8857d154a69795f9a48ee776f174cae672cb2c44a990489992d720acbd4a",
+    "kronos_trader/execution/ibkr.py": "1d70c5cb21c29f31f276709d229a591d24db69aad92b52b63eae4822743a1054",
+    "kronos_trader/execution/base.py": "f89f878408cafa4e33012d85a1c14909019641525bc0c35570543508416d76b1",
+    "kronos_trader/execution/risk_guard.py": "d7b514c560e3953b1d8deac12e7870083a15bab8e9dbee4b326e1a532aa6f26c",
+    "kronos_trader/live.py": "d1d0a986dbc0455bebd93d9a141c74d1694b2dd3cd7d5cb96af97b3c5b5d1dff",
+    "tests/trader/test_mt5.py": "d718a4640692fa0a3a1d2972a28e46a445d205f83985a688e0b2c7e601632e0f",
+    "tests/trader/test_ibkr.py": "af0548f7bb5f5dd56eaee3a93871552c438845e9fc9dc7f951fff3a59729c2b3",
+    "tests/trader/test_live.py": "da63e3cbf9ed711e64ba63d395a2b50b4be4c8fccf28effc2a434d03f21e2434",
+    "tests/trader/test_live_cli.py": "379d3a36fca7f6a8f38aed6b89199e5f05fcb5a5abc495d4e81c340975342f27",
+    "tests/trader/test_exits_and_broker.py": "3378c312a86d11b6c242d9f1c480f8da7c22b606b092059006f4e054eff07098"
+  },
+  "hosted_ci": {
+    "current_revision": "See PR #6 exact-head workflow check after publication",
+    "previous_astra_run": "https://github.com/aithergrowth/Kronos/actions/runs/36818533676",
+    "previous_astra_result": "103 passed, 1 skipped, 1 deselected"
+  }
+}

@@ -135,16 +135,39 @@ def render_chart(
 
 
 def forecast_rows(forecast: ForecastSummary, last_time: pd.Timestamp, timeframe, server_offset: pd.Timedelta = pd.Timedelta(0)):
-    """Rows for the MT5 overlay file: mean path OHLC per future candle, in server time (epoch seconds)."""
+    """Mean OHLC in server time, preserving the model's actual future calendar.
+
+    Dated paths must agree on their timestamps. Undated legacy paths retain
+    the timeframe's default calendar; a dated path is never silently relabeled.
+    """
     paths = getattr(forecast, "paths_ohlc", None) or []
     if not paths:
         return []
     horizon = min(len(p) for p in paths)
+    if not horizon:
+        return []
     stacked = np.stack([p[["open", "high", "low", "close"]].to_numpy(dtype=float)[:horizon] for p in paths])
     mean = stacked.mean(axis=0)
-    times = timeframe.future_timestamps(last_time, horizon)
+    dates = []
+    for path in paths:
+        raw = path["timestamp"].iloc[:horizon] if "timestamp" in path else (
+            path.index[:horizon] if isinstance(path.index, pd.DatetimeIndex) else None
+        )
+        dates.append(None if raw is None else pd.DatetimeIndex(pd.to_datetime(raw, utc=True)).tz_convert(None))
+    if any(date is not None for date in dates):
+        if any(date is None for date in dates):
+            raise ValueError("forecast paths must all supply the same timestamps")
+        times = dates[0]
+        last_utc = pd.Timestamp(last_time)
+        if last_utc.tzinfo is not None:
+            last_utc = last_utc.tz_convert("UTC").tz_localize(None)
+        if (times.hasnans or not times.is_monotonic_increasing or not times.is_unique
+                or times[0] <= last_utc or any(not times.equals(date) for date in dates[1:])):
+            raise ValueError("forecast timestamps must agree and increase after the last candle")
+    else:
+        times = pd.DatetimeIndex(timeframe.future_timestamps(last_time, horizon))
     rows = []
     for k in range(horizon):
-        t = int((pd.Timestamp(times.iloc[k]) + server_offset).timestamp())
+        t = int((pd.Timestamp(times[k]) + server_offset).timestamp())
         rows.append((t, *[float(v) for v in mean[k]]))
     return rows

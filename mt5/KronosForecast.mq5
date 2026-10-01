@@ -52,7 +52,12 @@ void Redraw()
    string name = FilePrefix + _Symbol + ".csv";
    int h = FileOpen(name, FILE_READ | FILE_TXT | FILE_ANSI | FILE_COMMON);
    if(h == INVALID_HANDLE)
+   {
+      // A missing/unreadable file must not leave the previous forecast visible.
+      ObjectsDeleteAll(0, prefix);
+      ChartRedraw(0);
       return;
+   }
    ObjectsDeleteAll(0, prefix);
    datetime t_prev = 0; double c_prev = 0.0;
    string direction = ""; double confidence = 0.0, pct = 0.0, band_high = 0.0, band_low = 0.0;
@@ -85,7 +90,12 @@ void Redraw()
       t_prev = t; c_prev = c; t_last = t; k++;
    }
    FileClose(h);
-   if(k == 0) return;
+   if(k == 0 || t_last <= TimeTradeServer())
+   {
+      ObjectsDeleteAll(0, prefix);
+      ChartRedraw(0);
+      return;
+   }
    if(band_high > band_low)
    {
       string band = prefix + "band";

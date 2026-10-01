@@ -63,7 +63,7 @@ class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
         self.forecaster = forecaster
-        self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
+        self.calendar = calendar            # Optional configured news gate; window durations are project choices.
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
 
     # ------------------------------------------------------------------ helpers
@@ -169,7 +169,7 @@ class StrategyEngine:
                 analysis.rejections.append(f"outside the entry windows ({local_label} {s.session.timezone}); open trades run on")
                 return analysis
 
-        # news blackout: no new entries around high-impact news of the symbol's currencies (G 11:08) ---
+        # Configured news blackout: reject new signals around relevant high-impact events. ---
         if self.calendar is not None and s.news.enabled:
             event = self.calendar.blackout(symbol, now)
             if event is not None:
@@ -230,6 +230,13 @@ class StrategyEngine:
             # 6: Kronos as an extra indicator ---------------------------------------------------
             notes: List[str] = []
             forecast = self._forecast(views[confirmation.timeframe], notes)
+            if s.kronos.mode == "filter" and forecast is None:
+                reason = f"{label}: Kronos forecast unavailable; filter mode requires a forecast"
+                setup.notes.extend(notes)
+                analysis.rejections.extend(notes)
+                analysis.rejections.append(reason)
+                analysis.signal = Signal(now, SignalStatus.REJECTED, setup, None, [reason])
+                continue
             if forecast is not None:
                 analysis.forecasts.setdefault(confirmation.timeframe, forecast)
                 if s.kronos.mode == "filter" and forecast.conflicts_with(decision.direction) \

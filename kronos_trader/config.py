@@ -106,14 +106,14 @@ class SessionParams:
     """Entries only inside Dorus's stated windows (A 02:24:03 / 02:30:48, Amsterdam clock); open trades run on."""
     enabled: bool = True
     timezone: str = "Europe/Amsterdam"
-    windows: Tuple[Tuple[str, str], ...] = (("09:00", "17:00"),)   # Max: Dorus works 9 to 5. A's split 09-11 / 13-17 and C's 08-17 are the variants
+    windows: Tuple[Tuple[str, str], ...] = (("09:00", "17:00"),)   # Forward-test profile; A's split windows and C's 08-17 are source variants.
     weekdays: Tuple[int, ...] = (0, 1, 2, 3, 4)
 
 
 @dataclass
 class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
-    allow_first_candle: bool = False    # K1 06:30 lists it; G 10:49 shows it as the entry after a shift, not instead of one. Off for the defensive forward test
+    allow_first_candle: bool = False    # Forward-test choice. K1/H list this alternative; G's after-shift example is not a universal restriction.
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
@@ -151,7 +151,7 @@ class ExitParams:
 
 @dataclass
 class KronosParams:
-    mode: str = "advisory"              # advisory = shown on charts and in messages, never a gate; filter = a gate (phase 1: it removed the only winner); off = model not loaded
+    mode: str = "advisory"              # advisory = charts/comments only; filter = a gate; off = no model. Recorded verification backtests explicitly use off.
     model: str = "NeoQuasar/Kronos-small"
     tokenizer: str = "NeoQuasar/Kronos-Tokenizer-base"
     device: Optional[str] = None        # None = auto (cuda / mps / cpu)
@@ -165,14 +165,16 @@ class KronosParams:
     neutral_band_pct: float = 0.1       # |expected move| below this % of price counts as neutral
     min_confidence: float = 0.6         # filter mode: reject when the forecast conflicts with >= this confidence
     forecast_timeframes: Tuple[Timeframe, ...] = (Timeframe.H_4, Timeframe.H_1)  # extra advisory forecasts
+    # Known canonical/default-cache aliases only; broker aliases require explicit configuration.
+    weekend_symbols: Tuple[str, ...] = ("BTCUSD", "BTCUSDT", "BINANCE:BTCUSDT")  # not a holiday calendar
 
 
 @dataclass
 class PropFirmParams:
-    """FTMO-style limits with margin: FTMO stops you at 5 % daily loss and 10 % total loss; this guard stops at 4 % and 8 %."""
+    """Project guard limits. The selected firm's current contract and account-specific rules remain to be verified."""
     max_open_trades: int = 1            # rule: max 1 trade per funded account
-    daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
-    max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
+    daily_loss_limit_pct: float = 4.0   # project choice; not a verified firm requirement
+    max_drawdown_pct: float = 8.0       # project choice; not a verified firm requirement
     news_blackout_minutes: int = 0      # optional: block entries N minutes around high-impact news
     min_minutes_between_trades: int = 0
 
@@ -238,9 +240,10 @@ class IBKRParams:
 
 @dataclass
 class NewsParams:
-    """No new entries around high-impact news of the symbol's currencies (Dorus, source G 11:08: no entry right before news).
+    """Configurable entry blackout around high-impact news of the symbol's currencies.
 
-    Open trades run on.  Events come from ``calendar_csv`` (filled from the TradingView economic calendar) and,
+    The 30-minute windows are implementation choices, not durations specified by Dorus in source G.
+    Open trades run on. Events come from ``calendar_csv`` (filled from the TradingView economic calendar) and,
     in the live loop, from the free ForexFactory weekly feed when ``forexfactory`` is on.
     """
     enabled: bool = True
@@ -259,7 +262,7 @@ class MT5Params:
     password_env: str = "MT5_PASSWORD"
     server_env: str = "MT5_SERVER"
     path_env: str = "MT5_PATH"                    # terminal64.exe, only when the terminal is not found automatically
-    offset_env: str = "MT5_SERVER_OFFSET_HOURS"   # pin the server-time offset instead of estimating it from ticks
+    offset_env: str = "MT5_SERVER_OFFSET_HOURS"   # optional manual correction; native Python API epochs are UTC
     magic: int = 20260930                         # marks the positions this program opened
     deviation_points: int = 20                    # max slippage for market orders
     filling: str = "ORDER_FILLING_IOC"            # ORDER_FILLING_FOK for brokers that reject IOC
@@ -271,13 +274,13 @@ class LiveParams:
     require_approval: bool = True                  # human taps Approve in Telegram before an order is sent
     approval_timeout_minutes: Optional[int] = None  # None = one confirmation-timeframe candle (min 5 minutes)
     # every timeframe the engine needs comes from the broker; the TradingView cache is the fallback
-    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4,
+    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_1, Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4,
                                                 Timeframe.D_1, Timeframe.W_1, Timeframe.MN_1)
     broker_bar_counts: Dict[Timeframe, int] = field(default_factory=lambda: {
-        Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
+        Timeframe.MIN_1: 500, Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
-    briefing_time: Optional[str] = "08:45"   # Dorus analyses before the open: a bias and POI briefing at this local time (session timezone)
+    briefing_time: Optional[str] = "08:45"   # project-selected local time (session timezone), not a quoted Dorus schedule
     notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
     send_charts: bool = True                 # a chart image with the briefing, the POI touch and every setup
     charts_dir: str = "charts"

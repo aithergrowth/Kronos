@@ -49,7 +49,9 @@ def test_paper_broker_moves_to_breakeven_after_4r():
     broker = PaperBroker(Settings())
     pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1300, 1000.0, 0.0051, 4.0,
                                     price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
-    assert broker.on_candle("EURUSD", _candle(1.1000, 1.1210, 1.0999, 1.1205)) == []
+    # The activation bar stays above the new stop; an ambiguous same-bar return
+    # is covered separately and conservatively closes at break-even.
+    assert broker.on_candle("EURUSD", _candle(1.1010, 1.1210, 1.1005, 1.1205)) == []
     assert pos.breakeven_done and pos.stop == pytest.approx(pos.entry)
     closed = broker.on_candle("EURUSD", _candle(1.1205, 1.1210, 1.0999, 1.1000, "2024-01-02 11:00"))
     assert closed[0].reason == "breakeven" and closed[0].pnl == pytest.approx(0.0)
@@ -71,3 +73,93 @@ def test_risk_guard_limits():
     broker._balance = 91_500.0
     ok, reason = guard.can_open(broker, ts + pd.Timedelta(1, unit="D"))
     assert not ok and "drawdown" in reason
+
+
+@pytest.mark.parametrize("raised_during_reconcile", [False, True])
+def test_broker_execution_halt_blocks_other_symbols_without_positions(monkeypatch, raised_during_reconcile):
+    settings = Settings()
+    settings.prop_firm.max_open_trades = 5
+    broker = PaperBroker(settings)
+    reason = "EURUSD partial fill requires reconciliation"
+    broker.execution_halt_reason = None if raised_during_reconcile else reason
+
+    def reconcile():
+        broker.execution_halt_reason = reason
+        return []
+
+    if raised_during_reconcile:
+        monkeypatch.setattr(broker, "open_positions", reconcile)
+    guard = RiskGuard(settings.prop_firm, settings.account_size)
+    ok, detail = guard.can_open(broker, pd.Timestamp("2026-10-01 09:00"), "USDJPY")
+    assert not ok and reason in detail
+
+
+def _directional_position(broker, direction, target_r=6.0):
+    return broker.place_market_order("EURUSD", direction, 1., 1.1 - direction.sign * .01,
+                                     1.1 + direction.sign * target_r * .01, 1000., .01, 4.,
+                                     price=1.1, ts=pd.Timestamp("2024-01-02 09:00"))
+
+
+def _r_candle(direction, o, favourable, adverse, c):
+    """Symmetric long/short scenarios expressed relative to the 1.1 midpoint."""
+    values = [1.1 + direction.sign * value * .01 for value in (o, favourable, adverse, c)]
+    return _candle(values[0], max(values), min(values), values[-1])
+
+
+@pytest.mark.parametrize("direction", [Direction.LONG, Direction.SHORT])
+@pytest.mark.parametrize("o,favourable,adverse,c,target_r,reason,exit_r", [
+    (1., 5., -.5, -.1, 6., "breakeven", 0.),  # trigger then adverse close guarantees a return
+    (1., 5., -.5, 3., 6., "breakeven", 0.),   # unknown high/low order: choose the BE-return path
+    (1., 7., -.5, 6.5, 6., "breakeven", 0.),  # possible BE before the later target
+    (1., 5., -.5, 4., 3., "take_profit", 3.),  # target is reached before the BE trigger
+    (4.5, 5., -2., -1.5, 6., "breakeven", 0.),  # BE can arm at the known opening quote
+    (1., 5., -2., 4., 6., "stop", -1.),       # original stop may precede intrabar BE
+    (7., 8., -2., 1., 6., "take_profit", 6.),  # opening target precedes subsequent adverse moves
+])
+def test_paper_ohlc_exit_ordering_is_explicit_and_conservative(
+    direction, o, favourable, adverse, c, target_r, reason, exit_r
+):
+    broker = PaperBroker(Settings(), use_spread=False)
+    _directional_position(broker, direction, target_r)
+    closed = broker.on_candle("EURUSD", _r_candle(direction, o, favourable, adverse, c))
+    assert len(closed) == 1
+    assert not broker.open_positions()
+    assert closed[0].reason == reason
+    assert closed[0].exit == pytest.approx(1.1 + direction.sign * exit_r * .01)
+
+
+@pytest.mark.parametrize("direction", [Direction.LONG, Direction.SHORT])
+@pytest.mark.parametrize("at_breakeven", [False, True])
+def test_paper_stop_gap_uses_executable_open_instead_of_unavailable_stop(direction, at_breakeven):
+    broker = PaperBroker(Settings())
+    pos = _directional_position(broker, direction)
+    if at_breakeven:
+        pos.stop = pos.entry
+        pos.breakeven_done = True
+    candle = _r_candle(direction, -3., -2.5, -4., -3.5)
+    closed = broker.on_candle("EURUSD", candle)
+    assert len(closed) == 1
+    assert closed[0].exit == pytest.approx(candle.open - direction.sign * .00005)
+    assert closed[0].reason == ("breakeven" if at_breakeven else "stop")
+
+
+@pytest.mark.parametrize("direction", [Direction.LONG, Direction.SHORT])
+@pytest.mark.parametrize("explicit_price", [False, True])
+def test_paper_market_liquidation_and_equity_include_exit_spread(direction, explicit_price):
+    broker = PaperBroker(Settings())
+    pos = _directional_position(broker, direction)
+    assert broker.equity() == pytest.approx(100_000. - 10.)
+    closed = broker.close_position(pos.id, "end_of_data", price=1.1 if explicit_price else None,
+                                    ts=pd.Timestamp("2024-01-02 10:00"))
+    assert closed.exit == pytest.approx(1.1 - direction.sign * .00005)
+    assert closed.pnl == pytest.approx(-10.)
+    assert broker.balance() == pytest.approx(99_990.)
+
+
+@pytest.mark.parametrize("direction", [Direction.LONG, Direction.SHORT])
+def test_paper_market_fill_preview_matches_submitted_order(direction):
+    broker = PaperBroker(Settings())
+    expected = broker.market_fill_price("EURUSD", direction, 1.1)
+    pos = _directional_position(broker, direction)
+    assert pos.entry == pytest.approx(expected)
+    assert expected == pytest.approx(1.1 + direction.sign * .00005)

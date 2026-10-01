@@ -29,7 +29,7 @@ class Position:
     initial_stop: float
     breakeven_done: bool = False
     meta: Dict[str, Any] = field(default_factory=dict)
-    status: str = "filled"             # "filled" (confirmed) | "pending" (submitted, fill not confirmed yet)
+    status: str = "filled"             # filled | pending | attention (exposure/protection needs reconciliation)
 
     def r_at(self, price: float) -> float:
         if self.risk_distance <= 0:

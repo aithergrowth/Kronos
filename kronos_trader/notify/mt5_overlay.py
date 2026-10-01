@@ -9,6 +9,7 @@ with the time in the broker's server time as epoch seconds, after a header
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -31,14 +32,25 @@ def common_files_dir() -> Path:
 def write_forecast_file(symbol: str, forecast: ForecastSummary, last_time: pd.Timestamp, timeframe,
                         server_offset: pd.Timedelta = pd.Timedelta(0), directory: Optional[Path] = None,
                         mt5_symbol: Optional[str] = None) -> Optional[Path]:
+    directory = Path(directory) if directory is not None else common_files_dir()
+    # MT5 reads the exact _Symbol, including the broker's case-sensitive suffix.
+    path = directory / f"kronos_forecast_{mt5_symbol or symbol}.csv"
     rows = forecast_rows(forecast, last_time, timeframe, server_offset)
     if not rows:
+        path.unlink(missing_ok=True)
         return None
-    directory = Path(directory) if directory is not None else common_files_dir()
     directory.mkdir(parents=True, exist_ok=True)
-    path = directory / f"kronos_forecast_{(mt5_symbol or symbol).upper()}.csv"
     lines = [f"# {forecast.direction.name.lower()};{forecast.confidence:.4f};{forecast.pct_change:.4f};"
              f"{forecast.expected_high:.6f};{forecast.expected_low:.6f}"]
     lines += [f"{t};{o:.6f};{h:.6f};{l:.6f};{c:.6f}" for t, o, h, l, c in rows]
-    path.write_text("\n".join(lines) + "\n", encoding="ascii")
+    # The indicator must see a complete forecast, never a partially written file.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="ascii", dir=directory, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write("\n".join(lines) + "\n")
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     return path

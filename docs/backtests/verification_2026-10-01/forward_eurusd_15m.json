@@ -1,0 +1,82 @@
+{
+  "symbol": "EURUSD",
+  "feed": "OANDA:EURUSD",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": true,
+  "profile": "forward",
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-07-21 04:00:00",
+    "2026-10-01 05:45:00"
+  ],
+  "steps": 5000,
+  "signals": 1,
+  "trades_including_end_marks": 1,
+  "decided_trades": 1,
+  "wins": 1,
+  "losses": 0,
+  "breakeven": 0,
+  "realized_r": 3.96521739130439,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 55.137542724609375,
+  "input_files": [
+    {
+      "path": "OANDA_EURUSD_15min.csv",
+      "sha256": "452a5df1043f171d23453446054a571280f81ae2920d04739a6a9ea9e33ba398",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00"
+    },
+    {
+      "path": "OANDA_EURUSD_1H.csv",
+      "sha256": "fbb488d6355e0cbb63b21d5a0fc2f5417f5e472bb944523f8ad5de05a984812a",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_EURUSD_4H.csv",
+      "sha256": "f64c6f5ea81c3cf3ece1b9fb08e03be069b09739a52307892f3f0703ea67feb1",
+      "timeframe": "4H",
+      "rows": 2000,
+      "first_open": "2025-06-18 21:00:00",
+      "last_open": "2026-10-01 01:00:00"
+    },
+    {
+      "path": "OANDA_EURUSD_1D.csv",
+      "sha256": "9aa3f6c2b2b807ec1b7028957d203a62cb251f31ac046067b8c950af88eb5732",
+      "timeframe": "1D",
+      "rows": 5000,
+      "first_open": "2007-06-28 21:00:00",
+      "last_open": "2026-09-30 21:00:00"
+    },
+    {
+      "path": "OANDA_EURUSD_1W.csv",
+      "sha256": "338584a882a09ef232cb99d0dad2266b961017ee507ba6657ef8b89e053cbbac",
+      "timeframe": "1W",
+      "rows": 150,
+      "first_open": "2023-11-19 22:00:00",
+      "last_open": "2026-09-27 21:00:00"
+    },
+    {
+      "path": "OANDA_EURUSD_1MO.csv",
+      "sha256": "8c8b316fa2fe374bd2c8f8b899100c41ef8432109b59d467e21af951b51b0fcc",
+      "timeframe": "1M",
+      "rows": 100,
+      "first_open": "2018-05-31 21:00:00",
+      "last_open": "2026-08-31 21:00:00"
+    }
+  ],
+  "guard_rejection_counts": {},
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "c1d6d193d02b686ca7cda67a7b2227d993941c38a0db587573f1ae2865f2a9fd",
+  "calendar_sha256": "195c053423e63a475f29712342c1b8d6331aaf4aa0eb76a9e4ab67a606fe978f",
+  "news_window_minutes": [
+    30,
+    30
+  ]
+}

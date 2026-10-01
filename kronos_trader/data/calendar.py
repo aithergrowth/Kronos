@@ -1,9 +1,10 @@
 """High-impact news calendar and the entry blackout around it.
 
-Dorus holds a plan-compliant trade through news but does not open one right
-before a release (source G, 11:08-11:24).  The blackout here refuses new
-entries from ``before_minutes`` before to ``after_minutes`` after a
-high-impact event of one of the symbol's currencies.  Events come from a CSV
+Dorus discusses avoiding an entry immediately before news and retaining a
+plan-compliant open trade (source G, 11:08-11:24). The configurable blackout
+here rejects new signals before and after relevant high-impact events. Its
+30-minute default windows are implementation choices, not stated durations
+from that source. Events come from a CSV
 (``data/calendar/high_impact.csv``, filled from the TradingView economic
 calendar for backtests) and, on the laptop, from the free ForexFactory weekly
 feed, which needs no key.

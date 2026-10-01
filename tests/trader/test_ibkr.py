@@ -265,3 +265,144 @@ def test_rejected_parent_cancels_children_and_raises(broker):
         broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0, price=1.1)
     assert broker.open_positions() == []
     assert all(t.orderStatus.status == "Cancelled" for t in broker.ib.trades)
+
+
+def _record_parent_fill(broker, units, status="Submitted", price=1.1002):
+    """Simulate a broker callback and account snapshot without submitting another order."""
+    parent = broker.ib.trades[0]
+    parent.orderStatus.status = status
+    parent.orderStatus.filled = units
+    parent.orderStatus.remaining = parent.order.totalQuantity - units
+    parent.orderStatus.avgFillPrice = price if units else 0.0
+    sign = 1 if parent.order.action == "BUY" else -1
+    broker.ib.held[symbol_of(parent.contract)] = sign * units
+
+
+def _pending_entry(broker):
+    broker.ib.fill_mode = "pending"
+    broker.params.fill_wait_seconds = 0
+    return broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0,
+                                     price=1.1000)
+
+
+@pytest.mark.parametrize("status", ["Cancelled", "ApiCancelled", "Inactive"])
+def test_terminal_partial_fill_retains_actual_exposure_and_children(broker, status):
+    pos = _pending_entry(broker)
+    _record_parent_fill(broker, 40000, status)
+
+    assert broker.open_positions() == [pos]
+    assert pos.status == "attention" and pos.lots == pytest.approx(0.4) and pos.entry == 1.1002
+    assert pos.meta["filled_units"] == 40000 and pos.meta["requested_units"] == 100000
+    assert pos.meta["entry_fill_state"] == "partial_terminal" and pos.meta["protection_verified"] is False
+    assert "entry_unconfirmed" not in pos.meta
+    assert pos.risk_distance == pytest.approx(0.0053)
+    assert pos.risk_amount == pytest.approx(1000.0 * 0.4 * 0.0053 / 0.0051)
+    assert broker.execution_halt_reason and broker.recent_closes() == []
+    assert all(t.orderStatus.status == "Submitted" and not t.modified for t in broker.ib.trades[1:])
+    assert len(broker.ib.trades) == 3
+
+
+def test_immediate_partial_then_cancelled_is_tracked_not_raised(broker, monkeypatch):
+    broker.ib.fill_mode = "pending"
+    place = broker.ib.placeOrder
+
+    def partial_then_cancelled(contract, order):
+        trade = place(contract, order)
+        if order.orderType == "MKT":
+            _record_parent_fill(broker, 40000, "Cancelled")
+        return trade
+
+    monkeypatch.setattr(broker.ib, "placeOrder", partial_then_cancelled)
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0, price=1.1)
+
+    assert broker.open_positions() == [pos] and pos.status == "attention"
+    assert pos.lots == pytest.approx(0.4) and broker.execution_halt_reason
+    assert all(t.orderStatus.status == "Submitted" for t in broker.ib.trades[1:])
+
+
+def test_working_partial_grows_to_full_but_attention_stays_latched(broker):
+    pos = _pending_entry(broker)
+    _record_parent_fill(broker, 30000)
+    assert broker.open_positions() == [pos]
+    assert pos.status == "attention" and pos.meta["entry_fill_state"] == "partial_pending"
+    assert pos.lots == pytest.approx(0.3)
+    halt = broker.execution_halt_reason
+
+    _record_parent_fill(broker, 50000, price=1.1004)
+    assert broker.open_positions() == [pos]
+    assert pos.lots == pytest.approx(0.5) and pos.entry == 1.1004
+    assert pos.meta["requested_units"] == 100000 and pos.meta["entry_fill_state"] == "partial_pending"
+
+    _record_parent_fill(broker, 100000, "Filled", price=1.1003)
+    assert broker.open_positions() == [pos]
+    assert pos.lots == 1.0 and pos.entry == 1.1003 and pos.meta["entry_fill_state"] == "filled"
+    assert pos.status == "attention" and broker.execution_halt_reason == halt
+    assert pos.meta["protection_verified"] is False and broker.recent_closes() == []
+
+
+def test_partial_attention_survives_empty_snapshot_and_older_callback(broker):
+    pos = _pending_entry(broker)
+    _record_parent_fill(broker, 40000, "Cancelled")
+    assert broker.open_positions() == [pos] and pos.status == "attention"
+    risk = pos.risk_amount
+    _record_parent_fill(broker, 0, "Cancelled")
+
+    assert broker.open_positions() == [pos] and broker.recent_closes() == []
+    assert pos.meta["filled_units"] == 40000 and pos.lots == pytest.approx(0.4)
+    assert pos.entry == 1.1002 and pos.risk_amount == risk and broker.execution_halt_reason
+    assert all(t.orderStatus.status == "Submitted" for t in broker.ib.trades[1:])
+
+
+def test_partial_halt_blocks_direct_entry_and_unsafe_position_mutations(broker):
+    pos = _pending_entry(broker)
+    _record_parent_fill(broker, 40000, "Cancelled")
+    # A direct adapter entry must discover the partial, even without a RiskGuard call.
+    with pytest.raises(RuntimeError, match="manual|attention|halt"):
+        broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0, price=1.1)
+    with pytest.raises(RuntimeError, match="manual|attention"):
+        broker.modify_stop(pos.id, 1.1)
+    with pytest.raises(RuntimeError, match="manual|attention"):
+        broker.close_position(pos.id, price=1.1)
+
+    assert len(broker.ib.trades) == 3 and broker.open_positions() == [pos]
+    assert all(t.orderStatus.status == "Submitted" and not t.modified for t in broker.ib.trades[1:])
+
+
+def test_deferred_zero_fill_cancellation_remains_rejection(broker):
+    _pending_entry(broker)
+    _record_parent_fill(broker, 0, "Cancelled")
+    assert broker.open_positions() == [] and broker.recent_closes() == []
+    assert broker.execution_halt_reason is None
+    assert all(t.orderStatus.status == "Cancelled" for t in broker.ib.trades)
+
+
+@pytest.mark.parametrize("reported_fill", [0.0, None, float("nan")], ids=["zero", "missing", "nan"])
+def test_cancelled_unknown_fill_with_account_exposure_requires_attention(broker, reported_fill):
+    pos = _pending_entry(broker)
+    _record_parent_fill(broker, 0, "Cancelled")
+    parent = broker.ib.trades[0]
+    if reported_fill is None:
+        del parent.orderStatus.filled
+    else:
+        parent.orderStatus.filled = reported_fill
+    broker.ib.held["EURUSD"] = 40000
+
+    assert broker.open_positions() == [pos] and pos.status == "attention"
+    assert pos.meta["exposure_unverified"] and pos.meta["risk_unverified"]
+    assert pos.meta["filled_units"] == 0 and pos.lots == 0 and pos.risk_amount == 0
+    assert pos.meta["entry_fill_state"] == "unknown" and pos.meta["protection_verified"] is False
+    assert broker.execution_halt_reason and broker.recent_closes() == []
+    assert all(t.orderStatus.status == "Submitted" and not t.modified for t in broker.ib.trades[1:])
+
+
+def test_other_account_exposure_is_not_attributed_to_rejected_parent(broker, monkeypatch):
+    monkeypatch.setenv(broker.params.account_env, "DU1")
+    _pending_entry(broker)
+    _record_parent_fill(broker, 0, "Cancelled")
+    monkeypatch.setattr(broker.ib, "positions", lambda: [
+        SimpleNamespace(account="DU2", contract=_Contract(secType="CASH", symbol="EUR", currency="USD"),
+                        position=40000, avgCost=1.1)])
+
+    assert broker.open_positions() == [] and broker.execution_halt_reason is None
+    assert broker.recent_closes() == []
+    assert all(t.orderStatus.status == "Cancelled" for t in broker.ib.trades)

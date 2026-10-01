@@ -1,5 +1,7 @@
 # Runtime and readiness review — 2026-10-01
 
+> **Historical snapshot at `375c16b`.** Claude subsequently changed the runtime at `40ae003` and added CI at `445cd25`. See [the independent execution verification](EXECUTION_VERIFICATION_2026-10-01.md) for current test results and remaining defects. The original findings below are retained as the audit trail.
+
 Pinned branch: `feature/kronos-trader` at [`375c16bda89ce74cef824062308dcf7f61a4cdd4`](https://github.com/aithergrowth/Kronos/commit/375c16bda89ce74cef824062308dcf7f61a4cdd4).
 
 This is a read-only source and repository-evidence review. The findings below were **identified by code inspection, not reproduced by running the system**. No tests, broker calls, orders, deployments, settings changes, or secret reads were performed. These are review items for Claude. Candle-file content validation is a separate audit.

@@ -1,11 +1,14 @@
-# Live setup - IBKR paper, Telegram, the loop, working from your phone
+# Live setup — MT5 candles, Telegram alerts and optional execution
 
-The live loop is `python -m kronos_trader live`. On every poll it pulls candles
-from the broker (every timeframe the rules need, 1M down to 5m; the
-TradingView cache is the fallback), runs the engine, sends setups to Telegram,
-waits for your Approve tap, places a bracket order (market + stop + target),
-moves the stop to break-even per the rules and reports fills and closes with
-P&L.
+Max's active route is **MetaTrader 5 candles → strategy analysis with optional Kronos forecasts → Telegram notifications**.
+Use [the focused MT5/Telegram guide](MT5_TELEGRAM_READINESS.md). Without `--execute`,
+the adapter only supplies candles: the runner receives no execution broker, does
+not manage positions and does not poll approval commands. Configured Telegram
+credentials still enable real notifications; without them messages print locally.
+
+Optional execution is a separate mode, explicitly selected with `--execute`.
+The default candle request includes 1m through monthly timeframes. TradingView
+cache fallback is labelled by source and remains subject to freshness checks.
 
 Install the trader dependencies once:
 
@@ -56,9 +59,9 @@ symbol spec); check they are enabled for your region.
 
 ## 1b. MetaTrader 5 demo: live candles and a paper venue without a live account
 
-Any MT5 demo account gives real-time candles for every timeframe plus a
-paper account that fills orders, and MT5 is what the prop firms run. This is
-the route when IBKR has no market data.
+An MT5 demo terminal can supply broker candles and simulated execution.
+Available symbols and history depend on the broker and terminal settings.
+Max uses MT5 for the candle feed; IBKR is not required.
 
 1. Install MetaTrader 5 from metatrader5.com (or the terminal of the broker
    or prop firm you will use later). On first start it offers a demo account
@@ -77,14 +80,15 @@ the route when IBKR has no market data.
    Open a new terminal. If the terminal is not found automatically, also set
    `MT5_PATH` to `C:\Program Files\MetaTrader 5\terminal64.exe`.
 4. `python -m kronos_trader mt5-test --symbol EURUSD --tf 15m` prints the
-   account, the server-time offset to UTC and the last five bars.
+   account, the configured timestamp correction (normally zero) and the last five bars.
 5. `python -m kronos_trader live --symbol EURUSD --broker mt5` runs the loop
-   with MT5 candles and MT5 paper orders.
+   with MT5 candles and Telegram notifications; it does not place or manage orders.
 
 Brokers name symbols differently (`EURUSD.r`, `XAUUSD.m`): set
-`mt5_symbol` in the symbol spec. The server-time offset is estimated from
-the latest tick and rounded to half hours; pin it with
-`MT5_SERVER_OFFSET_HOURS` if it looks wrong on a weekend.
+`mt5_symbol` in the symbol spec. MetaQuotes documents Python API candle/tick
+epochs as UTC. They are preserved by default, including native 4H/daily opens.
+`MT5_SERVER_OFFSET_HOURS` is a manual compatibility correction only; leave it
+unset for the standard API. Tick age is never interpreted as a timezone.
 
 ## 2. Telegram (10 minutes)
 
@@ -114,7 +118,7 @@ Only taps and `/approve` / `/skip` texts coming from that chat are accepted.
 ## 3. Data
 
 The loop needs live candles for every timeframe the rules use (1M down to
-5m, `live.broker_timeframes`) and takes them from one source, chosen with
+1m, `live.broker_timeframes`) and takes them from one source, chosen with
 `--feed`:
 
 - `broker` (default with `--broker ibkr` or `mt5`): the broker's own bars.
@@ -202,49 +206,68 @@ on mains power, awake and logged in to TWS:
 4. While testing, add `--notify-every-scan` to get one message per poll on
    the phone; drop it once you trust the loop.
 
-What arrives on the phone in a normal day: the morning analysis at 08:45
-Amsterdam (bias per timeframe, decision, the POI map), a heads-up when price
-enters a POI the bias allows, the setup with Approve / Skip once a
-confirmation closes, then fills, break-even moves and closes. Entries only
-between 09:00 and 17:00 Amsterdam and never inside a high-impact news window.
+Configured notifications: morning analysis on the first weekday scan at or
+after 08:45 Amsterdam (bias, decision, POI map), a heads-up for a POI touch,
+and confirmed setups. Approval buttons, fills, break-even moves and closes
+belong to execution mode; notification-only mode sends setup alerts. The
+current defaults use 09:00–17:00 Amsterdam, first-candle confirmation off
+and Kronos advisory. The recorded verification backtests retain their earlier
+Kronos-off profile; they do not test the new advisory forecast output. These
+are project choices. The news gate uses loaded events
+and does not establish complete calendar coverage.
 
-Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
-at 5 % daily and 10 % total loss, the guard stops at 4 % and 8 %, one open
-trade, 1 % risk.
+The guard uses 4 % daily loss, 8 % total drawdown, one open trade and 1 %
+planned risk. These are project settings; the selected firm's current
+contract and account-specific calculation rules remain unverified.
 
-### Charts and Kronos on the chart
+### Generated charts and Kronos on the chart
 
-![EURUSD 15m briefing chart with zones and the Kronos fan](images/sample_chart_EURUSD_15m.png)
+With `live.send_charts: true`, the runner attempts to attach a generated image
+to briefing, POI-touch and setup notifications. The default image lookback is
+120 candles (`live.chart_lookback`); files are written under `live.charts_dir`.
+It can show input candles, engine-mapped zones and, for a setup, an entry
+marker, stop/target boxes and R:R. These are system-generated illustrations,
+not Dorus screenshots or verified reconstructions of his chart readings.
 
-With a setup the chart adds the position tool: the entry marker on the confirmation
-candle, the risk box to the stop and the reward box to the target, with the R:R.
+When model forecasts are available, the image can also show sampled paths,
+their mean and the expected band. `kronos.mode: advisory` does not veto trades;
+`filter` remains a separate selectable mode, and `off` avoids loading the
+model. Install the model dependencies from `requirements.txt` and provide
+access to the configured weights to use real forecasts. Rendering a supplied
+or fake forecast in a test does not verify model inference or predictive value.
 
-![EURUSD 1H setup chart with entry, stop, target and the Kronos fan](images/sample_setup_EURUSD_1H.png)
+The optional MT5 indicator is installed by copying `mt5/KronosForecast.mq5`
+into the terminal's `MQL5\Indicators` folder (File → Open Data Folder), then
+compiling it in MetaEditor and attaching it to a chart. Enable Chart Shift
+to leave space to the right. The indicator is designed to read
+`kronos_forecast_<SYMBOL>.csv` from the terminal's common files folder every
+30 seconds, displaying the mean path and band. It only draws; it does not trade.
 
-Every briefing, POI touch and setup comes with a chart image on Telegram:
-the last 120 candles, the zones the bias allows, entry, stop and target when
-there is a setup, and Kronos's sampled paths as a fan to the right of the
-last candle with its mean path and expected band (`live.send_charts`,
-`kronos.mode: advisory`; Kronos never decides, it only shows).
+Export is conditional on an available forecast, `live.mt5_overlay` and an MT5
+adapter being available to the chart path. The notification-only runner has
+no execution broker, so do not assume that selecting `--broker mt5` alone
+proves overlay export in that mode. Confirm an updated file, the exact broker
+symbol, chart timeframe and chart-time alignment on the terminal before
+relying on the display. This export does not provide a TradingView overlay.
 
-To see the same fan on the MetaTrader chart: copy `mt5/KronosForecast.mq5`
-into the terminal's `MQL5\Indicators` folder (File, Open Data Folder),
-compile it in MetaEditor (F7), drag it onto the chart, and enable the chart
-shift (the arrow icon in the toolbar) so there is room on the right. The
-loop writes `kronos_forecast_<SYMBOL>.csv` to the terminal's common files
-folder whenever it sends a chart (`live.mt5_overlay`), and the indicator
-re-reads it every 30 seconds. TradingView cannot take drawings from outside,
-so the forecast is not shown there.
+Live Telegram photo delivery, trained-model inference, MQL5 compilation and
+the on-terminal overlay have not been verified here. Chart errors are logged;
+an accompanying text notification is not proof that its image or overlay
+was produced. The chart feature is independent of the recorded Kronos-off
+backtest results.
 
 Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if
 the laptop cannot stay on.
 
-News: the loop opens no new trade from 30 minutes before to 30 minutes after
-a high-impact event of the symbol's currencies (`news:` in the config). It
-loads `data/calendar/high_impact.csv` and refreshes this and next week from
-the free ForexFactory feed every hour; each setup message names the next
-high-impact event.
+News: the engine rejects new signals from 30 minutes before to 30 minutes
+after a loaded high-impact event of the symbol's currencies (`news:` in the
+config). These durations are project choices, not verified Dorus rules. It
+loads `data/calendar/high_impact.csv` and attempts to refresh this and next
+week from the free ForexFactory feed every hour. Setup messages name the
+next loaded event within four hours. A missing CSV supplies no events; a
+failed refresh retains the events already loaded. This does not verify that
+calendar coverage is complete or current.
 
 ## 6. Prop-firm phase
 

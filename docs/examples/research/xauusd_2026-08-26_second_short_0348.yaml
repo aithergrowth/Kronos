@@ -1,0 +1,55 @@
+status: partial_illustration_state_record
+regression_ready: false
+record_role: supplement_to_existing_k3_gold_case_not_a_new_complete_case
+parent_case: xauusd_2026-08-26_public_recap
+source_id: K3
+source_title: Goud scalps, liquiditeitsruns en twee shorts
+source_author: Dorus Wanders
+source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
+source_timestamp: '03:48'
+reviewed_on: '2026-10-01'
+symbol: XAUUSD
+displayed_feed: FOREXCOM
+displayed_chart_timeframe: 1m
+direction: bearish
+formal_poi_timeframe_verified: false
+observations:
+  drawing_identity: second illustrated short; distinct from the corrected first short at 02:40
+  entry_axis_label: 4623.59
+  stop_axis_label: 4633.72
+  stop_distance_label: 10.13
+  target_distance_label: 27.97
+  risk_reward_label: 2.76
+  target_axis_price_readable: false
+  chart_timezone_readable: false
+  crosshair_date_time_label: Wed 26 Aug 26 16:05
+  drawing_right_endpoint_date_time_label: Wed 26 Aug 26 17:31
+  execution_timestamps_verified: false
+  utc_candle_open_times_verified: false
+  actual_broker_fills_verified: false
+confidence: medium
+independent_second_visual_check: true
+evidence:
+  location: Linked K3 academy recording, 03:48 selected drawing
+  private_frame_sha256: 2b0198641dbdc662cbbd4a28e74791986bb56ef168e588fc743083680653ccc9
+  private_frame_bytes: 100984
+  raw_frame_published: false
+  added_spoken_quote_words: 0
+missing:
+- Directly readable target price; recorded webcam obscures its axis label
+- Verified chart timezone and source event candle times
+- Formal POI selection, bounds, sweep and confirmation-break annotations
+- Adequate real 1m entry history and verified coverage around the source events
+data_relation:
+  existing_context_request: k3_gold_context_4h
+  existing_entry_detail_request: k3_gold_detail_1m
+  delivered_entry_substitute: 15m
+  substitute_satisfies_1m_request: false
+  existing_request_metadata: retrieval_requests.yaml
+interpretation_limits:
+- Values describe a position-tool illustration, not execution fills
+- Target distance is not a directly observed target price; no subtraction-derived target supplied
+- Crosshair and drawing endpoint are not execution timestamps
+- No timezone transferred from S5 or the separate mobile attachments
+- These second-short observations do not resolve the first short's missing target or clock
+- Broker fills are not required for a clearly labeled illustration fixture, but remaining source and data gaps still prevent one

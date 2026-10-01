@@ -1,0 +1,347 @@
+{
+  "data_commit": "6ccfd06dd767e0d8e13a760bb2fb7b39a9719fff",
+  "raw_validation": "Finite OHLCV, ordered unique timestamps, high/low bounds. No market-source authenticity or broker-feed equivalence inferred.",
+  "files": [
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-08-10 04:00:00",
+      "last_open": "2026-10-01 05:45:00",
+      "monthly_day_values": null,
+      "sha256": "e62618535bad2335ab5513f75380e63fe08ce9f6ffb6404aa9664dc38aeea4d7"
+    },
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_1D.csv",
+      "rows": 3333,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2017-08-17 00:00:00",
+      "last_open": "2026-10-01 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "93cc18b57c4dc7bc24dd8a140d0c4a444a772abfd447b3a201d946a0c5538cb9"
+    },
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-03-06 22:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "c5e68581ba70f4ad31f8bbabc8671249c85a7d297731421f4e95b1f510b95aa6"
+    },
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_1MO.csv",
+      "rows": 111,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2017-08-01 00:00:00",
+      "last_open": "2026-10-01 00:00:00",
+      "monthly_day_values": [
+        1
+      ],
+      "sha256": "2fa0aa3a84f7ba58f9bf96c137b485d65bf7d41a0f496d2028298d3a6ad33f33"
+    },
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_1W.csv",
+      "rows": 477,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2017-08-14 00:00:00",
+      "last_open": "2026-09-28 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "6098b79284ff568c0d52306cdd60bc9faa9f937d2a00a77ebb488f65b84e3123"
+    },
+    {
+      "path": "data/tv_cache/BINANCE_BTCUSDT_4H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2024-06-20 00:00:00",
+      "last_open": "2026-10-01 04:00:00",
+      "monthly_day_values": null,
+      "sha256": "7cde9aa6414f15e3d28843340213fc319bfad9a61bb2676245cbba877ca6eeaa"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00",
+      "monthly_day_values": null,
+      "sha256": "452a5df1043f171d23453446054a571280f81ae2920d04739a6a9ea9e33ba398"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_1D.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-28 21:00:00",
+      "last_open": "2026-09-30 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "9aa3f6c2b2b807ec1b7028957d203a62cb251f31ac046067b8c950af88eb5732"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "fbb488d6355e0cbb63b21d5a0fc2f5417f5e472bb944523f8ad5de05a984812a"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_1MO.csv",
+      "rows": 100,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2018-05-31 21:00:00",
+      "last_open": "2026-08-31 21:00:00",
+      "monthly_day_values": [
+        1,
+        2,
+        28,
+        29,
+        30,
+        31
+      ],
+      "sha256": "8c8b316fa2fe374bd2c8f8b899100c41ef8432109b59d467e21af951b51b0fcc"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_1W.csv",
+      "rows": 150,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2023-11-19 22:00:00",
+      "last_open": "2026-09-27 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "338584a882a09ef232cb99d0dad2266b961017ee507ba6657ef8b89e053cbbac"
+    },
+    {
+      "path": "data/tv_cache/OANDA_EURUSD_4H.csv",
+      "rows": 2000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-06-18 21:00:00",
+      "last_open": "2026-10-01 01:00:00",
+      "monthly_day_values": null,
+      "sha256": "f64c6f5ea81c3cf3ece1b9fb08e03be069b09739a52307892f3f0703ea67feb1"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00",
+      "monthly_day_values": null,
+      "sha256": "549ab4e76351ba4914ed99ce98f355ac0016a53a48fde6537ca1ba41a97e85a0"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_1D.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-28 21:00:00",
+      "last_open": "2026-09-30 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "763471e531aae94c7da50b26ab3679e4ee9cd9288120565a164171f7b54c1593"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "c8130c407fd06ae6e02948da4f70b0c70fe4005589d919417e9e445cbfa8facc"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_1MO.csv",
+      "rows": 232,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00",
+      "monthly_day_values": [
+        1
+      ],
+      "sha256": "968f0003b154b67ff0861d3e21c8ebccc7cb32516c5c3eec674c1427566b8a4f"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_1W.csv",
+      "rows": 1006,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-25 00:00:00",
+      "last_open": "2026-09-28 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "2c1b29efdba04d896a3fc94e4ee3f729c353bcca98d8d1b322f035fc3d353d9b"
+    },
+    {
+      "path": "data/tv_cache/OANDA_GBPUSD_4H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2023-07-14 01:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "c9bfa0b4c7ed5e87d2c4143bfe019aeeb65be65f188b5d16542bfb861604b165"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-07-16 17:00:00",
+      "last_open": "2026-10-01 05:45:00",
+      "monthly_day_values": null,
+      "sha256": "bde8891270208a6867e0aefd97c11afa87dbd814ec2e3ba7248b7724f5e00b14"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_1D.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-05-29 21:00:00",
+      "last_open": "2026-09-30 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "8e7d91485d89752cbe6117dae18499ae9444511566ba27e8dd0ea21b2ea5e554"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-11-25 17:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "ee939219271e89f0aa3e29f0e7546e01a52a4501bc78f0cc7313412bd6c37a5d"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_1MO.csv",
+      "rows": 233,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-05-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00",
+      "monthly_day_values": [
+        1
+      ],
+      "sha256": "0c88b6baaafaecaf7acc2fb1f54baa39696d5eaad13828c7c1a2cfdb72b9c5eb"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_1W.csv",
+      "rows": 1010,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-05-28 00:00:00",
+      "last_open": "2026-09-28 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "88a07e9ba9d028d33391d3c8f74c4afd5a32cc7db980f01b87bef03a34e35f13"
+    },
+    {
+      "path": "data/tv_cache/OANDA_NAS100USD_4H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2023-07-05 21:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "53fefbc005f036419317b32cd84d7c14706d5d29da31994ed38393de705469c2"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-07-21 04:00:00",
+      "last_open": "2026-10-01 05:45:00",
+      "monthly_day_values": null,
+      "sha256": "83ac8f6b310851f102996f298138656bfb576e8c555156152d0532d9f065fbde"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_1D.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-07-01 21:00:00",
+      "last_open": "2026-09-30 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "a6265c0e760f55a5a9b29acf35f7d14127a3d471fb099897678716b3af28d566"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-12-10 23:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "ff26a72e1d8649f7090009179db69e3570885ef992883e5113919e8c481726ca"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_1MO.csv",
+      "rows": 231,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-07-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00",
+      "monthly_day_values": [
+        1
+      ],
+      "sha256": "3586e727c51470370f3a1af4ded1bd7b227fb9e7bf4b56801c77c5334af7327b"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_1W.csv",
+      "rows": 1006,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-25 00:00:00",
+      "last_open": "2026-09-28 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "7af4256bb19ed1adfa82ba5bba9e9539c684938d9b71f3ee3f873f6e3c9cc8e3"
+    },
+    {
+      "path": "data/tv_cache/OANDA_USDJPY_4H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2023-07-14 01:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "4aae79310a3130c029876a0ab8ca07b4b807a3c31dcd36074c2f019dcc3bca04"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_15min.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2026-07-16 18:15:00",
+      "last_open": "2026-10-01 05:30:00",
+      "monthly_day_values": null,
+      "sha256": "bcbd40d5d7bddef813e15adb296624de5acc7aeecbb950b425d5cf267c6e2f44"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_1D.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-11 21:00:00",
+      "last_open": "2026-09-30 21:00:00",
+      "monthly_day_values": null,
+      "sha256": "6cfca076aadd8270289ea321085d56d73c9c4419ffb18309b8eae7389e01726f"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_1H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2025-11-26 00:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "ea6d321db5a9939d28445a93bbbcecd46b315fb552db99c1c796334bba9ebc26"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_1MO.csv",
+      "rows": 232,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00",
+      "monthly_day_values": [
+        1
+      ],
+      "sha256": "72069b97c6808b3cf2f13fca80e92867f259577a6bb17744bd38f1472be478d7"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_1W.csv",
+      "rows": 1008,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2007-06-11 00:00:00",
+      "last_open": "2026-09-28 00:00:00",
+      "monthly_day_values": null,
+      "sha256": "9f5922d9e30898fd2f2fc053b0bcd706474ea52a008d07b41d8989f2b3367130"
+    },
+    {
+      "path": "data/tv_cache/OANDA_XAUUSD_4H.csv",
+      "rows": 5000,
+      "valid_ohlcv_and_unique_ordered_timestamps": true,
+      "first_open": "2023-07-10 13:00:00",
+      "last_open": "2026-10-01 05:00:00",
+      "monthly_day_values": null,
+      "sha256": "53d4da6bde18f4dde50103a39c2150f95f124d4306e19568d9450db1999289ba"
+    }
+  ]
+}

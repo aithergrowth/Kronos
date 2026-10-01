@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from kronos_trader.config import Settings
 from kronos_trader.core import Bias, CandleSeries, ForecastSummary, Timeframe as T
@@ -35,11 +36,54 @@ def test_forecast_rows_and_overlay_file(tmp_path):
     fc = _forecast()
     rows = forecast_rows(fc, pd.Timestamp("2026-10-01 09:00"), T.MIN_15, server_offset=pd.Timedelta(3, unit="h"))
     assert len(rows) == 6 and rows[0][0] == int(pd.Timestamp("2026-10-01 12:15").timestamp())    # next candle, server time
-    assert abs(rows[0][4] - (1.1 + 0.0005 * (1 + 1 - 1) / 3)) < 0.01                               # mean of the three paths
+    assert rows[0][4] == pytest.approx(1.1 + 0.0005 / 3, abs=1e-12)
     path = write_forecast_file("EURUSD", fc, pd.Timestamp("2026-10-01 09:00"), T.MIN_15, directory=tmp_path, mt5_symbol="EURUSD.r")
     text = path.read_text().splitlines()
-    assert path.name == "kronos_forecast_EURUSD.R.csv" or path.name == "kronos_forecast_EURUSD.r".upper() + ".csv" or True
+    assert path.name == "kronos_forecast_EURUSD.r.csv"
     assert text[0].startswith("# bullish;0.6700;") and len(text) == 7 and text[1].count(";") == 4
+
+
+def test_forecast_rows_preserve_weekend_and_timezone_from_model():
+    fc = _forecast()
+    last = pd.Timestamp("2026-10-02 23:45", tz="UTC")  # Friday; BTC trades on Saturday too.
+    dates = pd.date_range("2026-10-03 02:00", periods=6, freq="15min", tz="Europe/Berlin")
+    for path in fc.paths_ohlc:
+        path.index = dates
+    rows = forecast_rows(fc, last, T.MIN_15, pd.Timedelta(hours=3))
+    assert [row[0] for row in rows] == [int((t + pd.Timedelta(hours=3)).timestamp()) for t in dates]
+    assert rows[0][0] == int(pd.Timestamp("2026-10-03 03:00", tz="UTC").timestamp())
+
+
+@pytest.mark.parametrize("bad_dates", ["different", "past", "duplicate", "undated"])
+def test_forecast_rows_reject_inconsistent_dates(bad_dates):
+    fc = _forecast()
+    last = pd.Timestamp("2026-10-01 09:00")
+    dates = pd.date_range("2026-10-01 09:15", periods=6, freq="15min")
+    for path in fc.paths_ohlc:
+        path.index = dates
+    if bad_dates == "different":
+        fc.paths_ohlc[1].index = dates + pd.Timedelta(minutes=15)
+    elif bad_dates == "past":
+        for path in fc.paths_ohlc:
+            path.index = dates - pd.Timedelta(hours=1)
+    elif bad_dates == "duplicate":
+        for path in fc.paths_ohlc:
+            path.index = [dates[0]] * 6
+    else:
+        fc.paths_ohlc[1] = fc.paths_ohlc[1].reset_index(drop=True)
+    with pytest.raises(ValueError, match="forecast"):
+        forecast_rows(fc, last, T.MIN_15)
+
+
+def test_missing_forecast_removes_previous_overlay(tmp_path):
+    fc = _forecast()
+    path = write_forecast_file("EURUSD", fc, pd.Timestamp("2026-10-01 09:00"), T.MIN_15,
+                               directory=tmp_path, mt5_symbol="EURUSD.r")
+    assert path.exists()
+    fc.paths_ohlc = []
+    assert write_forecast_file("EURUSD", fc, pd.Timestamp("2026-10-01 09:00"), T.MIN_15,
+                               directory=tmp_path, mt5_symbol="EURUSD.r") is None
+    assert not path.exists()
 
 
 def test_forecast_summary_to_dict_skips_paths():
