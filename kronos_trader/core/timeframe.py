@@ -7,9 +7,10 @@ minute*.  The enum uses unambiguous names (``MN_1`` vs ``MIN_1``) and
 from __future__ import annotations
 
 from enum import Enum
-from functools import total_ordering
+from functools import lru_cache, total_ordering
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 
 SESSION_CLOSE_HOUR = 17   # the forex trading day ends at 17:00 New York; sessions, 4H, daily, weekly and monthly candles start there
@@ -103,10 +104,12 @@ class Timeframe(Enum):
 
     def close_times(self, open_times, session_tz: Optional[str] = "America/New_York") -> pd.Series:
         """Vectorised :meth:`close_time` for a series of candle open times."""
-        opens = pd.Series(pd.to_datetime(open_times)).reset_index(drop=True)
-        if self is Timeframe.MN_1:
-            return pd.Series([self.close_time(t, session_tz) for t in opens], dtype="datetime64[ns]")
-        return opens + self.delta()
+        opens = pd.DatetimeIndex(pd.to_datetime(open_times))
+        if self is not Timeframe.MN_1:
+            return pd.Series(opens + self.delta())
+        if not len(opens):
+            return pd.Series(opens)
+        return pd.Series(pd.DatetimeIndex(_monthly_close_times(opens.values.tobytes(), len(opens), session_tz)))
 
     def future_timestamps(self, last_open: pd.Timestamp, n: int, skip_weekends: bool = True) -> pd.Series:
         """``n`` candle open times following ``last_open`` (used for Kronos ``y_timestamp``)."""
@@ -151,3 +154,18 @@ _CASE_SENSITIVE_ALIASES = {
 BIAS_TIMEFRAMES: List[Timeframe] = [Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1, Timeframe.H_4, Timeframe.H_1]
 #: Timeframes on which POIs are mapped (rule: map POIs on 1M, 1W, 1D, 4H, 1H).
 POI_TIMEFRAMES: List[Timeframe] = list(BIAS_TIMEFRAMES)
+
+
+@lru_cache(maxsize=256)
+def _monthly_close_times(raw: bytes, n: int, session_tz: Optional[str]) -> np.ndarray:
+    """Session-calendar close times of monthly candles (cached: the same series is asked every step)."""
+    opens = pd.DatetimeIndex(np.frombuffer(raw, dtype="datetime64[ns]", count=n))
+    month = (opens + pd.Timedelta(hours=12)).values.astype("datetime64[M]")
+    logical = pd.DatetimeIndex(month.astype("datetime64[ns]"))
+    nxt = pd.DatetimeIndex((month + np.timedelta64(1, "M")).astype("datetime64[ns]"))
+    offset = logical - opens
+    plain = nxt - offset
+    if not session_tz:
+        return plain.values
+    session_close = (nxt - pd.Timedelta(hours=24 - SESSION_CLOSE_HOUR)).tz_localize(session_tz).tz_convert("UTC").tz_localize(None)
+    return np.where(offset != pd.Timedelta(0), session_close.values, plain.values)
