@@ -481,3 +481,38 @@ def test_poi_touch_retries_failed_delivery(setup, monkeypatch):
     runner.announce_poi_touch(analysis)
     assert send.call_count == 2
     assert setup.poi.key in runner._touched
+
+
+def test_setup_comes_with_a_chart(setup, tmp_path):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker)
+    runner.settings.live.charts_dir = str(tmp_path)
+    runner.settings.live.briefing_time = None                  # the briefing would send its own chart
+    runner.step(NOW)
+    photos = [m for m in notifier.sent if m.startswith("[photo]")]
+    assert len(photos) == 1 and "EURUSD_15m_setup.png" in photos[0] and (tmp_path / "EURUSD_15m_setup.png").exists()
+
+
+def test_chart_forecast_uses_closed_candles(setup, monkeypatch, tmp_path):
+    runner, notifier = _runner(setup, None)
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 3
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:45", symbol="EURUSD")}
+    runner.settings.live.charts_dir = str(tmp_path)
+    runner.settings.live.briefing_time = None
+    runner.settings.kronos.mode = "advisory"
+    runner.engine.forecaster = object()
+    forecast = Mock(return_value=None)
+    runner.engine._forecast = forecast
+    from kronos_trader.notify import chart
+    render = Mock(return_value=tmp_path / "chart.png")
+    monkeypatch.setattr(chart, "render_chart", render)
+    monkeypatch.setattr(notifier, "send_photo", Mock())
+
+    runner.step(NOW)
+
+    assert forecast.call_count == 1
+    forecast_view = forecast.call_args.args[0]
+    assert len(forecast_view) == 1
+    assert forecast_view.last_close_time == NOW
+    assert len(render.call_args.args[0]) == 1

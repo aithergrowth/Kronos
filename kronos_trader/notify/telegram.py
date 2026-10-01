@@ -64,6 +64,19 @@ class TelegramNotifier:
         self._call("sendMessage", payload)
         return True
 
+    def send_photo(self, path, caption: str = "") -> bool:
+        """sendPhoto with an optional caption; in dry-run the path is printed."""
+        self.sent.append(f"[photo] {path} {caption}".strip())
+        if self.dry_run:
+            print(f"[telegram dry-run photo] {path}\n{caption}")
+            return False
+        import requests
+        with open(path, "rb") as fh:
+            r = requests.post(API.format(token=self.token, method="sendPhoto"), data={"chat_id": self.chat_id, "caption": caption[:1000],
+                                                                   "parse_mode": self.parse_mode},
+                              files={"photo": fh}, timeout=self.timeout * 2)
+        return r.ok
+
     # ------------------------------------------------------------ messages
     def send_setup(self, setup: TradeSetup, forecast: Optional[ForecastSummary] = None, spec: Optional[SymbolSpec] = None) -> bool:
         return self.send("🚨 " + format_setup(setup, forecast, spec))

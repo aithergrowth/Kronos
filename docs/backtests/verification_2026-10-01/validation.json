@@ -1,16 +1,16 @@
 {
   "local_test_command": "PYTHONPATH=<tested_snapshot>:<test_deps> python -m pytest tests/trader -q -m 'not slow'",
   "result": {
-    "passed": 222,
+    "passed": 234,
     "skipped": 1,
     "deselected": 1
   },
-  "test_output": "....................................................................s... [ 32%]\n........................................................................ [ 64%]\n........................................................................ [ 96%]\n.......                                                                  [100%]\n222 passed, 1 skipped, 1 deselected in 7.87s\n",
+  "test_output": "........................................................................ [ 30%]\n.....s.................................................................. [ 61%]\n........................................................................ [ 91%]\n...................                                                      [100%]\n234 passed, 1 skipped, 1 deselected in 11.94s\n",
   "python": "3.12.14",
   "pandas": "2.2.3",
   "numpy": "2.3.5",
   "source_baseline": "6ccfd06dd767e0d8e13a760bb2fb7b39a9719fff",
-  "integrated_feature": "a2a29aa12c0284ead7fea356717b51a921d27f8e",
+  "integrated_feature": "7ef4ea837cf62f61f5982a72f02dd1867449ce60",
   "prior_astra": "4daf88d75823c569b5083bf50427ab008406ed72",
   "real_model_inference_verified": false,
   "mt5_terminal_connection_verified": false,
@@ -18,8 +18,8 @@
   "fresh_tradingview_connection_verified": false,
   "tested_files": {
     "kronos_trader/config.py": {
-      "sha256": "5a204303a479b3c69a0e55e29a2ddf03ff3998655b198c6110d1cdf43942e550",
-      "git_blob_sha1": "815c98d5fb1ed2ac3acf2727607553f8f8c7ceeb"
+      "sha256": "31c5e968d33e989d33a8b6e6e0f45fa9b8efebcddc0a09ccc29a9ff21474359c",
+      "git_blob_sha1": "2a251a07295d79dca594c648af3fbe9d6b88093b"
     },
     "kronos_trader/cli.py": {
       "sha256": "5246730601869f9da57b34c85fac915ae1ae3bf1b942cfbf9a33fd47119ed69a",
@@ -34,8 +34,8 @@
       "git_blob_sha1": "bfdcd0c1158dff4fcc25157b317419f0a89dd33f"
     },
     "kronos_trader/live.py": {
-      "sha256": "35d4e6afa95d6c166ee88d650f0faa7bb03a34c80a7c6fb2ed6d619679207434",
-      "git_blob_sha1": "41481c32b00d18d6f588628bdc6d3e653b990eec"
+      "sha256": "cc1e3da13cc3d889b5918a5cecc8a8123df3fca645266e8e23ee2ba3d478fb39",
+      "git_blob_sha1": "6fc4e2a20b5e29fa49b66ff0e63b539b2c264620"
     },
     "kronos_trader/examples.py": {
       "sha256": "80978c60d84de2ea48901bc9e4ea8f5b1dc056b119c076fe310b3c6f8cf288e7",
@@ -54,8 +54,8 @@
       "git_blob_sha1": "a3afffe5144c6a5952effe2b86c7d35c8bd6273f"
     },
     "kronos_trader/core/types.py": {
-      "sha256": "7b68515c1b8627acb4191da9df255c291c87f2eab767d52e692e74befd08e05f",
-      "git_blob_sha1": "92be2ac58b04db0532509f25ca7e9a591e55cdd3"
+      "sha256": "ceb71b377b9170d035aca1b32a852d2424948a77b833e71b1d0485f4e519a282",
+      "git_blob_sha1": "cc7dd9dc0190d2ceb53737b076c6811ac816f7b4"
     },
     "kronos_trader/strategy/bias.py": {
       "sha256": "5fd97375e5cc27f619c447633b822bdee8dd172e17cf5680696fbeec60f54394",
@@ -126,8 +126,8 @@
       "git_blob_sha1": "d674455f3327403645e70ca1f2e9ced209ffd1ae"
     },
     "kronos_trader/indicators/kronos_forecast.py": {
-      "sha256": "475e3546c2a8fc84444b2eb229bb4d352dd9d6ffcf5752e58c3d4255f8bfcf61",
-      "git_blob_sha1": "33592fad49beea2ab1fb93e5a44c14416b7724ca"
+      "sha256": "a256ff0be2b58bfe3dd7eeb59c963a42549f83256cbd9027f0ce29a8b234ba06",
+      "git_blob_sha1": "24ac6b973c8e1c7ce5b45aaa56e30b977642a75d"
     },
     "kronos_trader/indicators/__init__.py": {
       "sha256": "ce8d80c8e985aeaa406b47cc79eeedadf469716994f982a3acf4e0cdd712d9ba",
@@ -162,8 +162,8 @@
       "git_blob_sha1": "3ced1cc763aaef09255e58d7e1bb2d69df38282a"
     },
     "kronos_trader/notify/telegram.py": {
-      "sha256": "c04ee08f3d4e28f7d6c334866b0a80fe94f099e141a0352ab22231220d841aed",
-      "git_blob_sha1": "0c66b59c0476d648fef7c2617f700482bac96a02"
+      "sha256": "75f31053a27ea0a9f0a560fbaf804df5923ada55f73ea64a4bd90f8260a50be8",
+      "git_blob_sha1": "4700818975a417369296f0c7c1f0671e476fb1cf"
     },
     "kronos_trader/notify/__init__.py": {
       "sha256": "e5db027796ea54b8dad7f30bf2371be6435f1c0a736415ae2b958ee0272dd522",
@@ -194,8 +194,8 @@
       "git_blob_sha1": "0bdad656fadb678588bb54579b566a1f125de1e9"
     },
     "tests/trader/test_live.py": {
-      "sha256": "ae25ce1cde8dae16ca5418f73baa862170a37caaa32e890fa286d7c4282e0996",
-      "git_blob_sha1": "1142e68687be420b0b7c258bc56388e42d6284a2"
+      "sha256": "4c41c6e57e667900cad42212c5a3c36b0c46ccaf5f19e340754e4bd23d5973ca",
+      "git_blob_sha1": "97f1b52982ede28030ae13f08b47bccce05c11ce"
     },
     "tests/trader/test_data_layer.py": {
       "sha256": "353017d16e12e464d4381141a2bcb02f0480036ad9636ceff896c69abbf80444",
@@ -238,8 +238,8 @@
       "git_blob_sha1": "8de3b2838fe9fd4eb6fc892b7aaaa3692d4a2d7c"
     },
     "tests/trader/test_kronos_indicator.py": {
-      "sha256": "6143607878fbed4493290c79fd964f1afe24883ce13c828ffe08de06c0e0407b",
-      "git_blob_sha1": "887c89e4acbfcdbf65b8be12be22c0f73877d15f"
+      "sha256": "5ced523d69e3185ae8247602335e208da5ee01097e893d1fca3b79f26038e4c0",
+      "git_blob_sha1": "1f9bda246071a29189380df519bc2d66d884d109"
     },
     "tests/trader/test_candles.py": {
       "sha256": "753ac17cf8d612a957fa70b97be808fd5ba9315e84170232c3a3821254b3468a",
@@ -254,17 +254,37 @@
       "git_blob_sha1": "14ad3156b435e0b43108e3533e14c0d77cbf943e"
     },
     "config/example.yaml": {
-      "sha256": "9b07c878ae337288c9b3594096e83864b2d5ae95651035ac8eee51d678260906",
-      "git_blob_sha1": "929dd448dbba164649f747453097f2c18a3e90a0"
+      "sha256": "c0d51c9c3ad907b132647742821033cd2772fb7b32450a91d7d8012e271853b5",
+      "git_blob_sha1": "e22897a4dd7c5fb3bd67be201e359bc32123859f"
     },
     ".github/workflows/tests.yml": {
       "sha256": "5d6e96135b157c9a24c6ffd37431768b900f3d79655a072dcbba81eb9e40e0b0",
       "git_blob_sha1": "98c0e7d564a4e7ec64967cd52a70b2be951d2a30"
+    },
+    "kronos_trader/notify/chart.py": {
+      "sha256": "25eff8a774413caee8289b8306c87d287608ee46d966412863f2713342326014",
+      "git_blob_sha1": "d401a1a2770c1ace15c562c020a709bd16474bac"
+    },
+    "kronos_trader/notify/mt5_overlay.py": {
+      "sha256": "312143a65e610039600d1d63796fe720787006b11c7bb90b1265d4cb071bbc56",
+      "git_blob_sha1": "a1e5e243712e6ddaaf42d1c35b896b5a1739a323"
+    },
+    "tests/trader/test_chart.py": {
+      "sha256": "efa43d179bec7d3f02a9f8ce3ff00630412a1da4ef7b8bab82a9a97ab3ab1a09",
+      "git_blob_sha1": "4aa8a6fa36d98171f79196bf032ed4a7d8d2d9d2"
     }
   },
   "precision_followup": {
     "trigger": "Hosted CI run 36828794809 with pandas 3.0.6 failed four nanosecond-before-month-close regressions because the stored array retained microsecond resolution.",
     "correction": "Search explicitly at nanosecond resolution for closed_as_of and index_at_or_after; add microsecond-storage boundary regression.",
-    "ci_verification": "Pending follow-up commit workflow; local 222 passed."
+    "ci_verification": "Pending merged follow-up workflow; local 234 passed."
+  },
+  "replay_profile_feature": "a2a29aa12c0284ead7fea356717b51a921d27f8e",
+  "charts": {
+    "offline_rendering_and_calendar_tests": true,
+    "mql_compilation_verified": false,
+    "mt5_overlay_display_verified": false,
+    "model_inference_verified": false,
+    "note": "Generated system illustrations, not source fixtures; notification-only overlay export remains unavailable without broker metadata."
   }
 }

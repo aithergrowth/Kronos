@@ -1,6 +1,6 @@
 # Live setup — MT5 candles, Telegram alerts and optional execution
 
-Max's active route is **MetaTrader 5 candles → Kronos analysis → Telegram notifications**.
+Max's active route is **MetaTrader 5 candles → strategy analysis with optional Kronos forecasts → Telegram notifications**.
 Use [the focused MT5/Telegram guide](MT5_TELEGRAM_READINESS.md). Without `--execute`,
 the adapter only supplies candles: the runner receives no execution broker, does
 not manage positions and does not poll approval commands. Configured Telegram
@@ -210,13 +210,51 @@ Configured notifications: morning analysis on the first weekday scan at or
 after 08:45 Amsterdam (bias, decision, POI map), a heads-up for a POI touch,
 and confirmed setups. Approval buttons, fills, break-even moves and closes
 belong to execution mode; notification-only mode sends setup alerts. The
-forward-test profile uses 09:00–17:00 Amsterdam, first-candle confirmation off
-and Kronos off. These are project choices. The news gate uses loaded events
+current defaults use 09:00–17:00 Amsterdam, first-candle confirmation off
+and Kronos advisory. The recorded verification backtests retain their earlier
+Kronos-off profile; they do not test the new advisory forecast output. These
+are project choices. The news gate uses loaded events
 and does not establish complete calendar coverage.
 
 The guard uses 4 % daily loss, 8 % total drawdown, one open trade and 1 %
 planned risk. These are project settings; the selected firm's current
 contract and account-specific calculation rules remain unverified.
+
+### Generated charts and Kronos on the chart
+
+With `live.send_charts: true`, the runner attempts to attach a generated image
+to briefing, POI-touch and setup notifications. The default image lookback is
+120 candles (`live.chart_lookback`); files are written under `live.charts_dir`.
+It can show input candles, engine-mapped zones and, for a setup, an entry
+marker, stop/target boxes and R:R. These are system-generated illustrations,
+not Dorus screenshots or verified reconstructions of his chart readings.
+
+When model forecasts are available, the image can also show sampled paths,
+their mean and the expected band. `kronos.mode: advisory` does not veto trades;
+`filter` remains a separate selectable mode, and `off` avoids loading the
+model. Install the model dependencies from `requirements.txt` and provide
+access to the configured weights to use real forecasts. Rendering a supplied
+or fake forecast in a test does not verify model inference or predictive value.
+
+The optional MT5 indicator is installed by copying `mt5/KronosForecast.mq5`
+into the terminal's `MQL5\Indicators` folder (File → Open Data Folder), then
+compiling it in MetaEditor and attaching it to a chart. Enable Chart Shift
+to leave space to the right. The indicator is designed to read
+`kronos_forecast_<SYMBOL>.csv` from the terminal's common files folder every
+30 seconds, displaying the mean path and band. It only draws; it does not trade.
+
+Export is conditional on an available forecast, `live.mt5_overlay` and an MT5
+adapter being available to the chart path. The notification-only runner has
+no execution broker, so do not assume that selecting `--broker mt5` alone
+proves overlay export in that mode. Confirm an updated file, the exact broker
+symbol, chart timeframe and chart-time alignment on the terminal before
+relying on the display. This export does not provide a TradingView overlay.
+
+Live Telegram photo delivery, trained-model inference, MQL5 compilation and
+the on-terminal overlay have not been verified here. Chart errors are logged;
+an accompanying text notification is not proof that its image or overlay
+was produced. The chart feature is independent of the recorded Kronos-off
+backtest results.
 
 Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if

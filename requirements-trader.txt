@@ -4,6 +4,7 @@ pandas>=2.2
 numpy
 pyyaml          # config/*.yaml and docs/examples/*.yaml
 requests        # Telegram bot API
+matplotlib      # chart images for Telegram and the briefing
 
 # brokers (install the one you use)
 ib_async>=2.0   # Interactive Brokers: python -m kronos_trader live --broker ibkr

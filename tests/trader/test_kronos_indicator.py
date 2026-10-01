@@ -185,3 +185,15 @@ def test_real_kronos_small_forecast():
     summary = fc.forecast(series)
     assert summary.direction in (Bias.BULLISH, Bias.BEARISH, Bias.NEUTRAL)
     assert summary.expected_low < summary.expected_high
+
+
+def test_forecast_paths_keep_requested_calendar_when_predictor_returns_range_index():
+    class RangeIndexPredictor(FakePredictor):
+        def predict(self, *args, **kwargs):
+            return super().predict(*args, **kwargs).reset_index(drop=True)
+
+    series = CandleSeries.from_records([(100, 101, 99, 100)] * 48, Timeframe.H_1,
+                                       start="2024-01-04", symbol="BTCUSD")
+    summary = KronosForecaster(KronosParams(horizon=3, n_paths=1),
+                              predictor=RangeIndexPredictor(0.01)).forecast(series)
+    assert list(summary.paths_ohlc[0].index) == list(pd.date_range("2024-01-06", periods=3, freq="h"))

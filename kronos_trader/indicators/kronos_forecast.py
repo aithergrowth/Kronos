@@ -87,6 +87,10 @@ class KronosForecaster:
                 sample_count=1,
                 verbose=False,
             )
+            if len(pred) != len(y_ts):
+                raise ValueError("forecast length differs from requested timestamp horizon")
+            pred = pred.copy()
+            pred.index = pd.DatetimeIndex(y_ts)
             paths.append(pred)
         self.last_paths = paths
 
@@ -119,6 +123,7 @@ class KronosForecaster:
             pct_change=pct_change,
             paths=n_paths,
             model=p.model,
+            paths_ohlc=[path[["open", "high", "low", "close"]].copy() for path in paths],
         )
 
     def mean_path(self) -> Optional[pd.DataFrame]:

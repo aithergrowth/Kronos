@@ -106,7 +106,7 @@ Fresh K1 06:38/06:53 and D 14:56–15:17 corroborate BE after **4R for D/4H/H1 P
 
 ### Current repository forward profile
 
-Concurrent commit `a2a29aa12c0284ead7fea356717b51a921d27f8e` changes the defaults to **Kronos off, 09:00–17:00 Amsterdam, first-candle confirmation off**, plus a morning briefing and POI-touch alerts. These are retained as project choices. G's after-shift example does not cancel H's alternative-method passage; disabling the option is not a newly proven universal Dorus rule. The ±30-minute news window and 4%/8% loss guards are configuration policies, not verification of Max's current prop contract. Historical benchmark profiles are pinned separately in the replay script.
+The current defaults use **Kronos advisory, 09:00–17:00 Amsterdam, first-candle confirmation off**, plus a morning briefing, POI-touch alerts and generated chart images. The earlier `a2a29aa12c0284ead7fea356717b51a921d27f8e` forward profile used Kronos off; the recorded verification backtests keep that profile pinned in the replay script. The chart update changes the live default to advisory. In advisory mode forecasts do not veto trades; filter mode remains separately configurable. These are project choices. G's after-shift example does not cancel H's alternative-method passage; disabling the option is not a newly proven universal Dorus rule. The ±30-minute news window and 4%/8% loss guards are configuration policies, not verification of Max's current prop contract.
 
 ### Part 2 — The fifteen questions
 
@@ -127,7 +127,7 @@ Concurrent commit `a2a29aa12c0284ead7fea356717b51a921d27f8e` changes the default
 | 11 | 1% and one funded-account trade supported. Historical firm discussion is not current contract verification. | D 13:22–13:29; A **03:27:00–03:56:07**; high historical statement | Firm/account loss, news and weekend terms must match Max's actual contract;4%/8% placeholders unverified. |
 | 12 | Gold/BTC examples; I describes focusing on gold and reserving EURUSD for A++ setups after reviewing his journal. No universal instrument whitelist/specs. | E 08:38–11:29; I 12:38–13:11,16:23–16:36; high captioned statements | Symbol mapping, lot sizes, spreads and pip values require MT5 broker data. |
 | 13 | Universal same-zone second-return permission/prohibition **not stated**. | H 09:03–09:07,10:32–10:49; exact case not assessed | Scale-in/another BS does not prove identical-zone revisit policy. |
-| 14 | I discourages AI trading/predicting decisions and demonstrates AI journal review. **No Kronos-specific advisory/veto rule stated.** | I1/I2,00:10–00:17,01:19–02:05; high | The earlier advisory policy and current off-by-default forward profile are project choices, not Dorus endorsements of Kronos. |
+| 14 | I discourages AI trading/predicting decisions and demonstrates AI journal review. **No Kronos-specific advisory/veto rule stated.** | I1/I2,00:10–00:17,01:19–02:05; high | The current advisory default and the recorded Kronos-off backtest profile are project choices, not Dorus endorsements of Kronos. |
 | 15 | Numeric post-confirmation approval lifetime **not stated**. | G/H reviewed; not assessed | One-candle/minimum-five-minute expiry is an engineering policy. |
 
 ### Part 4 — Additional rules and source variations
@@ -172,7 +172,7 @@ K3's corrected first drawing at 02:40 and second drawing at 03:48 supply selecte
 | Local analysis | `StructureParams.lookback_by_timeframe` | 60 monthly, 104 weekly, 250 daily, 300 4H/1H candles |
 | Break-even 4R/2R, no partials | `strategy/exits.py`, brokers, `live.py` | scheduled by POI timeframe; the scheduled automatic exit policy; runtime correctness is tested separately |
 | One trade, prop-firm limits | `execution/risk_guard.py` | 1 open trade, daily loss, drawdown, news blackout, spacing |
-| Kronos | `indicators/`, `engine.py` | off by default for the current forward profile; advisory/filter remain available (Q14: no Kronos-specific policy found); unavailable forecasts reject in filter mode |
+| Kronos | `indicators/`, `engine.py` | advisory by default; forecasts can appear in generated charts/messages without vetoing a trade; off/filter remain available (Q14: no Kronos-specific policy found); unavailable forecasts reject in filter mode; recorded verification backtests use off |
 
 ## 4. Interpretations still made by the code (not all have config knobs)
 
@@ -194,6 +194,9 @@ K3's corrected first drawing at 02:40 and second drawing at 03:48 supply selecte
 | A14 | Current forward profile uses 09:00–17:00 Amsterdam; A's split windows and C's 08:00–17:00 remain source variants | `session.windows` |
 | A15 | A continuation break (BOS) on the LTF is accepted although the plan lists BS/BMS/first candle | `confirmation.accept_bos` |
 | A16 | BS threshold = the far edge of the opposing gap; the alternative "above the candle that caused the gap" is selectable | `confirmation.bs_threshold` |
+| A17 | First-candle confirmation is disabled for the current forward profile; G's after-shift example does not establish that H's alternative is universally invalid | `confirmation.allow_first_candle` |
+| A18 | Kronos advisory is a project choice; chart forecasts have no verified Dorus endorsement or demonstrated predictive value in this audit | `kronos.mode` |
+| A19 | The ±30-minute loaded-news blackout is a project policy; G excludes an entry one minute before news but does not state this complete window | `news` |
 
 Additional unconfirmed choices: P=candle 2; which gap is active; X/displacement association; deepest-P zone merging; first-candle eligibility; earliest-confirmation and tie priorities; latest H1 P/fallback selection; nearest-liquidity/timeframe priority; closed-only use of native candles. These are model assumptions to validate against examples, not fully sourced Dorus definitions.
 
@@ -220,3 +223,10 @@ Additional unconfirmed choices: P=candle 2; which gap is active; X/displacement 
 ## 7. Repo and backtest readiness
 
 See [the independent backtest audit](backtests/verification_2026-10-01/README.md) for pinned source/data, baseline reproduction, simulator corrections and model/connection limits. Unit-test success, source fidelity and profitable out-of-sample performance are separate questions. MT5 supplies candles in Max's current stack; TradingView cache data does not verify live MT5 synchronization. Neither cached backtests nor a fake forecaster demonstrate trained Kronos predictive value.
+
+
+### Generated charts and the MT5 overlay
+
+The chart renderer can display recent input candles, engine-mapped zones, setup entry/stop/target and available Kronos sampled paths. These are generated system charts, not screenshots of Dorus's analysis or independent source evidence. A drawing of the engine's interpretation does not resolve the P/BS questions or count as a complete Dorus example fixture.
+
+The MT5 indicator is intended to display an exported forecast mean path and band; it does not execute trades. Image rendering, real trained-model inference, Telegram photo delivery and an on-terminal MT5 overlay are separate checks. The latter three have not been verified end to end here. See [live setup](LIVE_SETUP.md) for settings and the notification-only overlay limitation. The published backtest results remain the recorded Kronos-off profile and must not be presented as validation of the new advisory charts.

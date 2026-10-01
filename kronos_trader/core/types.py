@@ -325,6 +325,7 @@ class ForecastSummary:
     pct_change: float
     paths: int
     model: str
+    paths_ohlc: Optional[List[pd.DataFrame]] = field(default=None, repr=False, compare=False)   # sampled paths, for charts
 
     def agrees_with(self, bias: Bias) -> bool:
         return self.direction is bias
@@ -396,8 +397,10 @@ class Analysis:
                 return o.value if not isinstance(o, Timeframe) else o.label
             if isinstance(o, pd.Timestamp):
                 return o.isoformat()
+            if isinstance(o, pd.DataFrame):
+                return None
             if hasattr(o, "__dataclass_fields__"):
-                return {k: conv(v) for k, v in asdict(o).items()} if False else {k: conv(getattr(o, k)) for k in o.__dataclass_fields__}
+                return {k: conv(getattr(o, k)) for k in o.__dataclass_fields__ if k != "paths_ohlc"}
             if isinstance(o, dict):
                 return {str(conv(k)): conv(v) for k, v in o.items()}
             if isinstance(o, (list, tuple)):

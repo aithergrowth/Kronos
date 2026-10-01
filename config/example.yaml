@@ -53,7 +53,7 @@ exits:
   partials: false
 
 kronos:
-  mode: off                       # off | advisory | filter; forward-test choice, not a validated model-comparison result
+  mode: advisory                  # charts/comments only; filter = a gate; off = no model. Recorded verification backtests explicitly use off.
   model: NeoQuasar/Kronos-small
   tokenizer: NeoQuasar/Kronos-Tokenizer-base
   horizon: 12
@@ -80,6 +80,10 @@ live:
   feed_retry_seconds: 600         # leave a live feed alone this long after it failed on every timeframe
   briefing_time: "08:45"          # project-selected local time, not a quoted Dorus schedule
   notify_poi_touch: true          # heads-up when price enters a POI in the bias direction, before the confirmation
+  send_charts: true               # chart image (candles, zones, setup, Kronos fan) with the briefing, the touch and every setup
+  charts_dir: charts
+  chart_lookback: 120
+  mt5_overlay: true               # with --broker mt5: write the forecast file that mt5/KronosForecast.mq5 draws on the chart
 
 news:
   enabled: true                   # configurable gate for relevant high-impact news

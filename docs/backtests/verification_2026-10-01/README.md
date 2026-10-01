@@ -5,9 +5,9 @@
 ## Scope and pinned evidence
 
 - Original baseline: `6ccfd06dd767e0d8e13a760bb2fb7b39a9719fff`; the materialized runtime/data/test inputs used for reproduction matched their Git blob hashes (102 files).
-- Concurrent feature work preserved through `a2a29aa12c0284ead7fea356717b51a921d27f8e`: terminal discovery/login, news/calendar comparisons, the 09:00–17:00 forward profile and briefing/POI notifications. Astra fixes are integrated on `astra/definitions`, with `feature/kronos-trader` as the PR target.
+- Recorded replay profile pinned to `a2a29aa12c0284ead7fea356717b51a921d27f8e`: terminal discovery/login, news/calendar comparisons, the 09:00–17:00 forward profile and briefing/POI notifications. Astra fixes are integrated on `astra/definitions`, with `feature/kronos-trader` as the PR target. Concurrent chart/overlay additions through `7ef4ea837cf62f61f5982a72f02dd1867449ce60` are preserved; current default is advisory. The historical replay explicitly stays off and does not test real model inference.
 - `input_manifest.json`: 36 cached OANDA/BINANCE CSVs, **121,129 rows**. Finite OHLCV, ordered unique timestamps and high/low bounds pass. This checks file integrity, not exchange authenticity, completeness, executable quotes or MT5 feed equivalence.
-- All six original trade lists reproduce, including the empty NAS100 list. `baseline_*` preserves that result. `corrected_*` uses corrected fills/BE and the integrated code; `corrected_news_*` adds the stored calendar, with the project-selected ±30-minute window. The three benchmark columns keep **Kronos off**, minimum RR3, 1% risk, first-candle option enabled and split Amsterdam sessions, pinned explicitly in the script. The current forward profile instead uses 09:00–17:00, first-candle off and news on; its separate result is recorded below. No parameters were tuned to improve the result.
+- All six original trade lists reproduce, including the empty NAS100 list. `baseline_*` preserves that result. `corrected_*` uses corrected fills/BE and the integrated code; `corrected_news_*` adds the stored calendar, with the project-selected ±30-minute window. The three benchmark columns keep **Kronos off**, minimum RR3, 1% risk, first-candle option enabled and split Amsterdam sessions, pinned explicitly in the script. The recorded a2a29aa forward profile instead uses 09:00–17:00, first-candle off and news on; its separate result is recorded below. No parameters were tuned to improve the result.
 - Each symbol starts an independent 100,000 account; the step is 15m with the available native 1H/4H/D/W/M series. There is no 1m/5m entry history in this experiment. M15 coverage begins 16 July for gold/NAS,21 July for FX and10 August for BTC, ending 1 October 2026. Exact per-symbol open-time intervals are in JSON.
 
 ## Observed results
@@ -29,7 +29,7 @@ The sample is small, uses partially unresolved strategy definitions, and is not 
 
 **Timing limitation affecting the sole winning symbol:** EURUSD's native monthly opens include broker/session-shifted dates rather than only the first of the month. The runtime's open-plus-one-month closure assumption is not independently verified for this feed. Some labels imply a close before the next monthly open; therefore EURUSD's result and any total including it are **timing-unvalidated**, not a clean lookahead-free benchmark. Other symbols have first-day monthly labels, but feed provenance and session alignment still need verification. Calendar-month arithmetic consistency alone does not prove broker closure times.
 
-## Current forward profile, independently rerun
+## Recorded forward profile, independently rerun
 
 Pinned to feature commit `a2a29aa`: 09:00–17:00 Amsterdam, first-candle confirmation off, news ±30 minutes enabled from the stored CSV, Kronos off. Same six datasets and corrected simulator; no parameter optimization.
 
@@ -60,18 +60,22 @@ Total: **11 completed trades, -4.88R**, with 1 winner(s), 9 losses and 1 break-e
 | Briefing/POI alerts marked as sent before delivery | Sent-state now updates only on successful delivery; offline retry regressions cover both notifications. |
 | Approval could cross into a news blackout | Execution rechecks the existing calendar before broker access. Missing/stale calendar coverage remains an independent limitation. |
 
-**Local test result: 222 passed, 1 skipped, 1 deselected** (`tests/trader`, excluding `slow`). The skipped test is the absent complete source-fixture case; the deselected test requires real Kronos weights/input. Focused failing-before/passing-after regressions support the corrections. Full test log and tested runtime hashes are in `validation.json`. Hosted CI on the initial publication exposed a pandas 3 microsecond/nanosecond search incompatibility. The follow-up explicitly normalizes search resolution and adds a before/at/after boundary regression. Hosted CI is checked separately on the follow-up commit; a local pass is not a claim of live connectivity.
+**Local test result: 234 passed, 1 skipped, 1 deselected** (`tests/trader`, excluding `slow`). The skipped test is the absent complete source-fixture case; the deselected test requires real Kronos weights/input. Focused failing-before/passing-after regressions support the corrections. Full test log and tested runtime hashes are in `validation.json`. Hosted CI on the initial publication exposed a pandas 3 microsecond/nanosecond search incompatibility. The follow-up explicitly normalizes search resolution and adds a before/at/after boundary regression. Hosted CI is checked separately on the follow-up commit; a local pass is not a claim of live connectivity.
 
 ## Kronos, TradingView, MT5 and Telegram
 
 | Component | What is established | What is still unverified |
 |---|---|---|
 | Dorus rule implementation | Source/code mapping, explicit assumptions and deterministic tests | P candle/endpoints, universal BS threshold/selection, several first-candle/revisit rules; zero complete Dorus fixtures |
-| Kronos | Offline adapter/gating/calendar regressions; current forward-profile default is off | Trained-model inference and predictive benefit. This local snapshot lacks materialized model package/dependencies/cached weights and regression input. The attempt stopped locally; this is not a claim that the remote repo lacks model code. Claude's stored filter results were preserved, not independently reproduced with real weights. |
+| Kronos | Offline adapter/gating/calendar regressions; recorded backtests use off; current default is advisory | Trained-model inference and predictive benefit. This local snapshot lacks materialized model package/dependencies/cached weights and regression input. The attempt stopped locally; this is not a claim that the remote repo lacks model code. Claude's stored filter results were preserved, not independently reproduced with real weights. |
 | TradingView | Cached data schema/cadence checks and six baseline replays | Fresh live connector retrieval, source-clock completeness and MT5 price alignment. No callable TradingView connector is exposed to this audit turn. Existing cache files are not proof of a current connection. |
 | MT5 | Mocked API tests cover UTC handling, terminal discovery/login, native timeframe requests and M1 | Actual Windows terminal login, broker candle clocks/contract specs and operational uptime |
 | Telegram | Offline formatting/retry tests and notification-only isolation | Actual authorized destination delivery; no message was sent in this audit |
 | News | CSV parsers/window logic; local-calendar backtests; approval-time gate | Live feed fetching, full event coverage, freshness and importance consistency across providers |
+
+### Concurrent chart additions
+
+Telegram chart rendering and MT5 overlay export are integrated as generated system illustrations, not source screenshots. Offline checks cover rendering, exact broker-symbol suffixes, forecast calendar preservation and closed-candle inputs. MQL5 compilation, trained forecast inference and actual display/delivery are unverified. Notification-only mode has no execution broker and therefore does not currently reach the broker-dependent overlay export path.
 
 ## Material limits before live reliance
 
