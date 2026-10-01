@@ -1,0 +1,113 @@
+EURUSD 2025: 37 trades, 37 decided, total -7.4R, wins 13, losses 23
+
+unique zones: 32; zones traded more than once: 4
+                                        trades     total               first                last
+zone                                                                                            
+1W 2025-06-29 21:00:00 1.14536-1.1708        3  2.111940 2025-08-07 13:00:00 2025-09-05 13:05:00
+1H 2025-06-26 09:00:00 1.16716-1.17174       2  1.806004 2025-06-26 13:30:00 2025-06-30 14:15:00
+4H 2025-06-30 17:00:00 1.17075-1.17539       2 -2.000000 2025-07-07 12:50:00 2025-07-08 07:55:00
+4H 2025-08-22 17:00:00 1.15973-1.17118       2 -2.000000 2025-08-25 07:05:00 2025-08-26 14:35:00
+1H 2025-04-11 09:00:00 1.12839-1.13541       1 -1.000000 2025-04-11 11:45:00 2025-04-11 11:45:00
+1D 2025-05-25 21:00:00 1.1279-1.13813        1 -1.000000 2025-05-28 07:00:00 2025-05-28 07:00:00
+1H 2025-01-22 10:00:00 1.04199-1.04426       1 -1.000000 2025-01-22 13:00:00 2025-01-22 13:00:00
+1H 2024-12-31 16:00:00 1.03611-1.03891       1  0.746212 2025-01-02 08:00:00 2025-01-02 08:00:00
+1H 2025-06-02 20:00:00 1.14189-1.14368       1 -1.000000 2025-06-03 07:20:00 2025-06-03 07:20:00
+1H 2025-06-04 16:00:00 1.14004-1.14322       1  0.960000 2025-06-05 07:15:00 2025-06-05 07:15:00
+1H 2025-06-10 10:00:00 1.13912-1.14146       1  1.060465 2025-06-10 11:10:00 2025-06-10 11:10:00
+1H 2025-06-05 15:00:00 1.14181-1.14542       1 -1.000000 2025-06-06 07:50:00 2025-06-06 07:50:00
+
+touch -> entry hours: median 21.2, mean 137.4, max 1435.3
+confirmation close -> entry hours: median 0.08, max 40.00 (0 = filled on the confirmation candle)
+                      size   sum  mean
+hours_touch_to_entry                  
+<1h                      6 -3.94 -0.66
+1-4h                     3  0.81  0.27
+4-24h                   12 -6.36 -0.53
+1-3d                     6  2.21  0.37
+>3d                     10 -0.18 -0.02
+
+by confirmation:
+              size   sum  mean
+confirmation                  
+BMS             31 -3.51 -0.11
+BS               6 -3.94 -0.66
+
+by confirmation_tf:
+                 size   sum  mean
+confirmation_tf                  
+15m                 5 -5.00 -1.00
+1D                  1 -1.00 -1.00
+1H                  1 -1.00 -1.00
+4H                  2  3.11  1.56
+5m                 28 -3.56 -0.13
+
+by poi_tf:
+        size   sum  mean
+poi_tf                  
+1D         1 -1.00 -1.00
+1H        17 -5.65 -0.33
+1W         3  2.11  0.70
+4H        16 -2.91 -0.18
+
+by direction:
+           size    sum  mean
+direction                   
+LONG         34 -11.45 -0.34
+SHORT         3   4.00  1.33
+
+by target timeframe:
+           size   sum  mean
+target_tf                  
+1D            3  3.86  1.29
+1H           29 -6.30 -0.22
+1M            2 -2.00 -1.00
+1W            2 -2.00 -1.00
+4H            1 -1.00 -1.00
+
+by R:R at fill:
+         size   sum  mean
+rr_band                  
+<1         13 -0.32 -0.02
+1-1.5       7  1.82  0.26
+1.5-2       4 -1.06 -0.26
+2-3         6 -5.00 -0.83
+>3          7 -2.89 -0.41
+
+by month:
+         size  sum
+month             
+2025-01     4  0.7
+2025-03     1  0.8
+2025-04     4 -2.2
+2025-05     3 -0.7
+2025-06     9  1.2
+2025-07     6 -2.3
+2025-08     4 -3.0
+2025-09     4  0.1
+2025-12     2 -2.0
+
+losers:
+          opened_at direction poi_tf confirmation confirmation_tf  hours_touch_to_entry  rr_at_fill                          tp_source  visit
+2025-01-22 13:00:00      LONG     1H          BMS              5m                  1.42        0.96 1H buy-side liquidity 1.04573 (x1)      1
+2025-01-30 14:20:00      LONG     4H          BMS              1H                193.92        1.67 4H buy-side liquidity 1.05343 (x2)      1
+2025-04-11 11:15:00      LONG     1H           BS             15m                  0.25        5.30 1M buy-side liquidity 1.14950 (x1)      1
+2025-04-11 11:45:00      LONG     1H           BS             15m                  0.25        3.19 1M buy-side liquidity 1.14950 (x1)      1
+2025-04-22 12:50:00      LONG     4H          BMS              5m                 21.25        1.01 1H buy-side liquidity 1.15498 (x2)      1
+2025-05-27 07:05:00      LONG     1H          BMS              5m                 21.75        1.98 1H buy-side liquidity 1.14071 (x1)      1
+2025-05-28 07:00:00      LONG     1D          BMS             15m                 33.00        0.81 1H buy-side liquidity 1.13454 (x1)      1
+2025-06-03 07:20:00      LONG     1H          BMS              5m                  9.33        2.70 1H buy-side liquidity 1.14544 (x1)      1
+2025-06-06 07:50:00      LONG     1H          BMS              5m                 15.83        0.79 1H buy-side liquidity 1.14572 (x1)      1
+2025-06-13 07:05:00      LONG     4H          BMS              5m                 13.33        2.13 1W buy-side liquidity 1.15734 (x1)      1
+2025-06-23 08:15:00      LONG     1H           BS             15m                  0.25        3.73 1H buy-side liquidity 1.15439 (x1)      1
+2025-07-04 07:05:00      LONG     1H           BS              5m                  0.08        4.15 1H buy-side liquidity 1.18100 (x2)      1
+2025-07-07 12:50:00      LONG     4H          BMS              5m                120.08        2.13 1H buy-side liquidity 1.17901 (x1)      1
+2025-07-08 07:55:00      LONG     4H          BMS              5m                139.17        1.41 1H buy-side liquidity 1.17901 (x1)      1
+2025-07-23 12:45:00      LONG     1H          BMS              5m                 18.25        1.44 1H buy-side liquidity 1.17559 (x2)      1
+2025-08-07 13:00:00      LONG     1W          BMS              1D                739.25        3.00 1W buy-side liquidity 1.18299 (x1)      1
+2025-08-25 07:05:00      LONG     4H          BMS              5m                  7.42        3.55 1H buy-side liquidity 1.17425 (x1)      1
+2025-08-26 14:35:00      LONG     4H          BMS              5m                 38.92        1.78 1H buy-side liquidity 1.17089 (x1)      1
+2025-09-02 12:05:00      LONG     4H          BMS              5m                118.58        2.47 1H buy-side liquidity 1.17064 (x1)      1
+2025-09-03 11:30:00      LONG     1H           BS             15m                  0.33        2.54 1H buy-side liquidity 1.16825 (x1)      1
+2025-09-19 08:20:00      LONG     4H          BMS              5m                 17.83        0.92 1H buy-side liquidity 1.17937 (x3)      1
+2025-12-04 14:15:00      LONG     1H          BMS              5m                  5.25        0.82 1H buy-side liquidity 1.16819 (x1)      1
+2025-12-09 12:55:00      LONG     4H          BMS              5m                119.42        0.85 1H buy-side liquidity 1.16573 (x2)      1
