@@ -198,6 +198,11 @@ class LiveRunner:
         self.report_feed(views)
         self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
+        if self.broker is not None:
+            try:
+                self.guard.update(now, equity, self.broker.balance())
+            except Exception as exc:     # a feed hiccup must not stop the loop; the guard re-checks before any order
+                print(f"[live] {self.symbol}: guard update failed ({exc})")
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
         self.manage_positions(views)

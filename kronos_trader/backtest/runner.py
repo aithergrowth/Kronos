@@ -124,6 +124,7 @@ class Backtester:
             steps += 1
             broker.on_candle(self.symbol, candle)
             now = self.step_tf.close_time(ts)
+            guard.update(now, broker.equity(), broker.balance())
             views = self.data.as_of(now, lookback=s.structure.lookback)
             analysis = self.engine.analyze(self.symbol, views, equity=broker.equity(), now=now)
             for r in analysis.rejections:

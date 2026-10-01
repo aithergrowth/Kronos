@@ -174,6 +174,8 @@ class PropFirmParams:
     max_open_trades: int = 1            # rule: max 1 trade per funded account
     daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
     max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
+    drawdown_basis: str = "peak"        # peak: from the highest equity seen (stricter); initial: static floor below the starting balance (FTMO)
+    day_timezone: str = "Europe/Prague" # the day for the daily-loss rule starts at midnight here (FTMO: CE(S)T)
     news_blackout_minutes: int = 0      # optional: block entries N minutes around high-impact news
     min_minutes_between_trades: int = 0
 

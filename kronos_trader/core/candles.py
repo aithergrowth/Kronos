@@ -224,14 +224,14 @@ def _coerce_columns(raw: pd.DataFrame) -> pd.DataFrame:
     # timestamp ---------------------------------------------------------
     if "<date>" in lower and "<time>" in lower:
         frame["timestamp"] = pd.to_datetime(raw[lower["<date>"]].astype(str) + " " + raw[lower["<time>"]].astype(str))
-    elif "date" in lower and "time" in lower and not np.issubdtype(raw[lower["time"]].dtype, np.number):
+    elif "date" in lower and "time" in lower and not pd.api.types.is_numeric_dtype(raw[lower["time"]].dtype):
         frame["timestamp"] = pd.to_datetime(raw[lower["date"]].astype(str) + " " + raw[lower["time"]].astype(str))
     else:
         tcol = next((lower[a] for a in _TIME_ALIASES if a in lower), None)
         if tcol is None:
             raise ValueError(f"No timestamp column found in {list(raw.columns)}")
         col = raw[tcol]
-        if np.issubdtype(col.dtype, np.number):
+        if pd.api.types.is_numeric_dtype(col.dtype):
             unit = "ms" if col.max() > 1e12 else "s"
             frame["timestamp"] = pd.to_datetime(col, unit=unit)
         else:

@@ -63,3 +63,13 @@ def test_monthly_close_follows_new_york_daylight_saving():
     assert Timeframe.MN_1.close_time(pd.Timestamp("2024-02-29 22:00")) == pd.Timestamp("2024-03-31 21:00")
     # without a session calendar the stamp offset is kept
     assert Timeframe.MN_1.close_time(pd.Timestamp("2023-10-31 21:00"), session_tz=None) == pd.Timestamp("2023-11-30 21:00")
+
+
+def test_monthly_close_times_are_unit_independent():
+    # pandas 3 stores parsed timestamps in microseconds; the cached vector rule must not read them as nanoseconds
+    opens_ns = pd.Series(pd.to_datetime(["2023-10-31 21:00", "2024-02-29 22:00"]).astype("datetime64[ns]"))
+    opens_us = opens_ns.astype("datetime64[us]")
+    want = [pd.Timestamp("2023-11-30 22:00"), pd.Timestamp("2024-03-31 21:00")]
+    assert list(Timeframe.MN_1.close_times(opens_ns)) == want
+    assert list(Timeframe.MN_1.close_times(opens_us)) == want
+    assert list(Timeframe.MN_1.close_times(opens_us, session_tz=None)) == [pd.Timestamp("2023-11-30 21:00"), pd.Timestamp("2024-03-31 22:00")]

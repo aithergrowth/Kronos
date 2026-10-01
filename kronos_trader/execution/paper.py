@@ -99,7 +99,7 @@ class PaperBroker(Broker):
         fill = mid + (ask_off if direction is Direction.LONG else bid_off)
         pos = Position(
             id=f"P{next(self._ids)}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
-            stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.utcnow(),
+            stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None),
             risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
             initial_stop=float(stop), meta=dict(meta or {}),
         )
@@ -126,7 +126,7 @@ class PaperBroker(Broker):
         trade = ClosedTrade(
             id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.lots, entry=pos.entry, exit=exit_price,
             stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,
-            closed_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.utcnow(), reason=reason, pnl=pnl, r=r,
+            closed_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None), reason=reason, pnl=pnl, r=r,
             risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=dict(pos.meta),
         )
         self.closed.append(trade)

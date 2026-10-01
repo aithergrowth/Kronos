@@ -109,7 +109,8 @@ class Timeframe(Enum):
             return pd.Series(opens + self.delta())
         if not len(opens):
             return pd.Series(opens)
-        return pd.Series(pd.DatetimeIndex(_monthly_close_times(opens.values.tobytes(), len(opens), session_tz)))
+        raw = opens.values.astype("datetime64[ns]")      # pandas 3 stores parsed timestamps in microseconds
+        return pd.Series(pd.DatetimeIndex(_monthly_close_times(raw.tobytes(), len(opens), session_tz)))
 
     def future_timestamps(self, last_open: pd.Timestamp, n: int, skip_weekends: bool = True) -> pd.Series:
         """``n`` candle open times following ``last_open`` (used for Kronos ``y_timestamp``)."""

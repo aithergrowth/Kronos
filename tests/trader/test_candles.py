@@ -64,3 +64,16 @@ def test_monthly_candle_is_not_visible_before_the_month_ends():
     data = MultiTimeframeData({Timeframe.MN_1: monthly})
     assert len(data.as_of(pd.Timestamp("2023-03-30"))[Timeframe.MN_1]) == 1
     assert len(data.as_of(pd.Timestamp("2023-04-01"))[Timeframe.MN_1]) == 2
+
+
+def test_csv_columns_with_pandas_string_dtype_are_coerced():
+    import pandas as pd
+    from kronos_trader.core.candles import _coerce_columns
+    raw = pd.DataFrame({"timestamp": pd.array(["2024-01-02 10:00", "2024-01-02 10:05"], dtype=pd.StringDtype()),
+                        "open": [1.0, 1.1], "high": [1.2, 1.3], "low": [0.9, 1.0], "close": [1.1, 1.2]})
+    frame = _coerce_columns(raw)
+    assert list(frame["timestamp"]) == [pd.Timestamp("2024-01-02 10:00"), pd.Timestamp("2024-01-02 10:05")]
+    raw2 = pd.DataFrame({"Date": pd.array(["2024.01.02", "2024.01.02"], dtype=pd.StringDtype()),
+                         "Time": pd.array(["10:00", "10:05"], dtype=pd.StringDtype()),
+                         "Open": [1.0, 1.1], "High": [1.2, 1.3], "Low": [0.9, 1.0], "Close": [1.1, 1.2]})
+    assert len(_coerce_columns(raw2)) == 2
