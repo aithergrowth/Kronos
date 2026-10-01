@@ -71,3 +71,67 @@ works end to end on history and where the rules, as coded, stop trades from happ
 | 2026-09-15 07:00:00 | 2026-09-15 14:00:00 | SHORT | 1M | BOS | 4299.42 | 4307.88 | 3942.1 | 4299.42 | breakeven | -0.00 |
 | 2026-09-22 07:00:00 | 2026-09-22 12:30:00 | SHORT | 1M | first_candle | 4343.45 | 4347.59 | 3942.1 | 4343.45 | breakeven | -0.00 |
 | 2026-09-23 11:00:00 | 2026-10-01 05:45:00 | SHORT | 1M | BOS | 4318.25 | 4333.08 | 3942.1 | 4188.23 | end_of_data | +8.77 |
+
+## The last eleven weeks across six instruments (15m step)
+
+Same code, same settings; the 15m history reaches back to mid or late July (BTC: 10 August). *Zones* counts distinct
+POI-and-target pairs, so repeated attempts at one zone show up as trades > zones.
+
+| Symbol | Period | Trades | Zones | Realized R | Wins | Losses | Break-even | Open at end |
+|---|---|---|---|---|---|---|---|---|
+| EURUSD | 2026-07-21 to 2026-10-01 | 1 | 1 | +4.05 | 1 | 0 | 0 | none |
+| GBPUSD | 2026-07-21 to 2026-10-01 | 1 | 1 | -0.98 | 0 | 1 | 0 | none |
+| USDJPY | 2026-07-21 to 2026-10-01 | 4 | 3 | -3.90 | 0 | 4 | 0 | none |
+| XAUUSD | 2026-07-16 to 2026-10-01 | 5 | 1 | -2.00 | 0 | 2 | 2 | +8.77R |
+| BTCUSD | 2026-08-10 to 2026-10-01 | 1 | 1 | -1.01 | 0 | 1 | 0 | none |
+| NAS100 | 2026-07-16 to 2026-10-01 | 0 | 0 | +0.00 | 0 | 0 | 0 | none |
+| **all six** | | **12** | | **-3.84** | **1** | **8** | **2** | **+8.77R** |
+
+Eleven decided trades: one winner (+4.1R), eight stops, two scratches, -3.8R realized, with one gold
+short still open at +8.8R. A method that targets 1:3 or better needs roughly one win in four to break even;
+one in nine is below that. The sample is far too small to call it, and the open gold trade alone would flip
+the sign, but the direction of the evidence is clear: the rules as coded do not yet make money, and the
+first job is still to check them against Dorus's own calls on these same weeks (Astra's K3, K4 and K5 records
+cover gold and BTC in August and September 2026).
+
+Patterns worth a rule: USDJPY lost four times on three zones, twice within an hour on the same one; BTC blocked
+four signals because its one open trade was still running; NAS100 never found three agreeing timeframes.
+
+## Trade lists, 15m runs
+
+### EURUSD, step 15m
+
+| opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-09-22 11:00:00 | 2026-09-23 17:00:00 | SHORT | 4H | BS | 1.14658 | 1.14878 | 1.13746 | 1.13746 | take_profit | +4.05 |
+
+### GBPUSD, step 15m
+
+| opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-07-21 14:15:00 | 2026-07-21 14:30:00 | LONG | 1D | BMS | 1.33997 | 1.33792 | 1.35582 | 1.33792 | stop | -0.98 |
+
+### USDJPY, step 15m
+
+| opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-07-30 11:00:00 | 2026-07-30 11:00:00 | LONG | 4H | first_candle | 162.831 | 162.714 | 163.908 | 162.714 | stop | -0.96 |
+| 2026-07-30 12:00:00 | 2026-07-30 12:30:00 | LONG | 4H | first_candle | 162.899 | 162.714 | 163.908 | 162.714 | stop | -0.97 |
+| 2026-09-08 12:30:00 | 2026-09-08 18:15:00 | SHORT | 4H | BMS | 153.964 | 154.393 | 152.27 | 154.393 | stop | -0.99 |
+| 2026-09-29 13:00:00 | 2026-09-30 00:45:00 | LONG | 1D | BMS | 157.353 | 157.07 | 159.037 | 157.07 | stop | -0.98 |
+
+### XAUUSD, step 15m
+
+| opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-09-11 07:00:00 | 2026-09-11 07:00:00 | SHORT | 1M | BMS | 4316.92 | 4356.28 | 3942.1 | 4356.28 | stop | -1.00 |
+| 2026-09-14 13:00:00 | 2026-09-14 16:45:00 | SHORT | 1M | BOS | 4271.17 | 4312.03 | 3942.1 | 4312.03 | stop | -1.00 |
+| 2026-09-15 07:00:00 | 2026-09-15 14:00:00 | SHORT | 1M | BOS | 4299.42 | 4307.88 | 3942.1 | 4299.42 | breakeven | -0.00 |
+| 2026-09-22 07:00:00 | 2026-09-22 12:30:00 | SHORT | 1M | first_candle | 4343.45 | 4347.59 | 3942.1 | 4343.45 | breakeven | -0.00 |
+| 2026-09-23 11:00:00 | 2026-10-01 05:45:00 | SHORT | 1M | BOS | 4318.25 | 4333.08 | 3942.1 | 4188.23 | end_of_data | +8.77 |
+
+### BTCUSD, step 15m
+
+| opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-08-11 13:30:00 | 2026-08-18 14:15:00 | SHORT | 1D | BMS | 64192.1 | 64712.4 | 62275 | 64712.4 | stop | -1.01 |
