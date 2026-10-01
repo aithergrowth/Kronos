@@ -120,7 +120,7 @@ below (`slice_check/`, with each run's provenance and the comparison script).
 |---|---|---|---|---|---|---|
 | checkout `1f7e2b5` | 26 | -4.66R | 52 | 95,624.81 | all 26 rows identical (entry, stop, target, exit, R) | - |
 | checkout `aef7c65` | 26 | -4.66R | 52 | 95,624.81 | all 26 rows identical | every column of the ledger identical; equity series identical at all 31,392 steps |
-| working tree after the tooling changes | running at the time of this commit; its ledger and comparison follow in `slice_check/` with the next commit | | | | | |
+| working tree after the tooling changes (started 17:03 UTC on the sources of `345cc77` plus the stop-P, confirmation-close and assume-direction changes; committed as `024f4bf` while it ran) | 26 | -4.66R | 52 | 95,624.81 | all 26 rows identical | every common column identical; equity identical at all 31,392 steps; the six new columns filled (stop basis: 11 own P on 1H zones, 9 own P on higher zones without a 1H level since the touch, 6 the 1H P); its provenance records the start identity and `changed_since_start: true`, because the sources were edited and committed during the run |
 
 Within this window the two commits are indistinguishable, and the cold start reproduces the frozen ledger row for row, so
 the visit memory did not matter here. This is evidence for one window, not a proof for the whole period; it is the
