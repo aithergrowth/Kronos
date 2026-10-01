@@ -15,6 +15,15 @@ example, that the code finds the same sweep, the same break, the same zone
 and, when given, the same stop and target. A failing example is exactly what
 we want: it shows where the code's reading differs from Dorus's.
 
+The user also permits a **metadata handoff instead of CSV**: exact symbol,
+observed timeframe, feed and requested date range, with unshown annotation fields
+omitted. These handoffs live under `research/` and are not executable tests.
+See [the retrieval index](research/RETRIEVAL_REQUESTS.md). Requested padding dates
+are explicitly separate from source-observed event dates. A missing target does
+not alone prevent delivering a useful handoff. Actual CSVs must still preserve
+provider-native candle alignment and use UTC opening timestamps; the 60-candle
+pre-sweep and post-break-return checks remain necessary for complete fixtures.
+
 ## Brief for Astra
 
 While going through the videos and the Skool material, collect two things.

@@ -37,7 +37,7 @@ At 03:07–03:09:
 
 > begint ten alle tijden bij het punt van liquiditeit
 
-**Implementation implication, explicitly an inference:** the current
+**Historical implementation comparison, explicitly an inference (dd79d29):** the then-current
 `map_pois` bounds are `sweep.extreme` and a selected gap edge. With `gap_bottom`,
 the bullish interval is `[sweep.extreme, gap.low]`; the bearish interval is
 `[gap.high, sweep.extreme]`. These do not explicitly use the two objects Dorus
@@ -49,6 +49,13 @@ justification. This does not establish the exact replacement OHLC formula.
 Changing only `poi_far_edge` to `protector` is not a verified repair: that mode
 still retains `sweep.extreme` and uses protector-high for bullish or protector-low
 for bearish. The source does not establish that pair of endpoints.
+
+**Code follow-up, 2026-10-01:** Claude's `d008dac` replaces that default with
+liquidity-to-protection, retains the old mapping as legacy, enables M+D+4H and
+adds selectable BS thresholds. The historical mismatch above describes the
+earlier code. The new P far-wick boundary, P candle index, displacement window
+and exact BS candidate/edge still require chart evidence; this source audit
+does not independently validate those implementation choices.
 
 The requested K6 *Entry & Poi* frame establishes the local bearish gap's wick
 geometry, not the full POI. A further academy **K7** check —

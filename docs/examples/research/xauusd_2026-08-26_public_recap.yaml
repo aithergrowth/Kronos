@@ -1,5 +1,8 @@
 status: incomplete_chart_record
 regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression completion is implied.
+unshown_annotation_fields_may_be_omitted: true
 symbol: XAUUSD
 source: K3 — Goud scalps, liquiditeitsruns en twee shorts, 02:40 corrected drawing and later frames;
   supplements S5 public recap
@@ -54,7 +57,6 @@ data_request:
   feed: FOREXCOM
   displayed_timeframe: 1m
   chart_date: '2026-08-26'
-  exact_utc_range_established: false
   additional_displayed_timeframes:
   - 4H
   - 1m
@@ -62,6 +64,50 @@ data_request:
   - 2026-08-26 12:00
   - 2026-08-26 14:45
   poi_timeframe_established: false
+  provider_symbol: FOREXCOM:XAUUSD
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: 2026-08-26 12:00
+    kind: displayed 4H crosshair; chart timezone unverified
+  - value: 2026-08-26 14:45
+    kind: displayed 1m crosshair; not entry time
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: k3_gold_context_4h
+    provider_symbol: FOREXCOM:XAUUSD
+    timeframe: 4H
+    date_from_inclusive: '2026-07-01'
+    date_to_inclusive: '2026-08-31'
+    date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+    purpose: context only; not a verified 4H POI
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  - request_id: k3_gold_detail_1m
+    provider_symbol: FOREXCOM:XAUUSD
+    timeframe: 1m
+    date_from_inclusive: '2026-08-25'
+    date_to_inclusive: '2026-08-28'
+    date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+    purpose: supplemental entry-detail candles; not the main POI timeframe
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.
 direction: bearish
 illustrated_position_states:
 - video_timestamp: 02:34

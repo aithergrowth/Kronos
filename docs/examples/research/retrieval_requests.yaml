@@ -1,0 +1,196 @@
+as_of: '2026-10-01'
+status: exact_retrieval_requests_not_candle_exports
+request_count: 7
+case_count: 6
+dorus_authored_cases: 4
+student_critique_cases: 2
+ohlc_exports: 0
+regression_ready_cases: 0
+all_requested_candle_coverage_verified: false
+completion_scope: Instrument/feed, observed timeframe and exact chosen request windows only. This is not
+  a count of complete POI fixtures or completed trades.
+date_window_policy: All request bounds are researcher-selected padding, distinguished from the source-observed
+  dates. They are not attributed to Dorus.
+source_annotation_policy: Leave unshown fields omitted. Crosshairs, displayed quotes, alert labels and
+  drawing endpoints are not promoted to trade fills.
+export_timestamp_rule: Preserve provider-native candle alignment; export actual candle-open timestamps
+  in UTC.
+required_checks_after_retrieval:
+- Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+- Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+- Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+- Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations from
+  axis proximity.
+requests:
+- request_id: k2_btc_weekly
+  provider_symbol: INDEX:BTCUSD
+  timeframe: 1W
+  date_from_inclusive: '2024-01-01'
+  date_to_inclusive: '2026-09-27'
+  date_basis: provider-native bar dates
+  purpose: weekly analysis context
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: btcusd_2026-09-27_weekly_condition
+  source_id: K2
+  chart_author_class: Dorus
+  source_url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
+  record_yaml: btcusd_2026-09-27_weekly_condition.yaml
+  handoff_markdown: btcusd_2026-09-27_weekly_condition.md
+  source_observed_dates:
+  - value: '2026-09-27'
+    kind: dated lesson, not trade execution
+  scope: Conditional weekly analysis; no executed trade or completed return asserted.
+- request_id: k3_gold_context_4h
+  provider_symbol: FOREXCOM:XAUUSD
+  timeframe: 4H
+  date_from_inclusive: '2026-07-01'
+  date_to_inclusive: '2026-08-31'
+  date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+  purpose: context only; not a verified 4H POI
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: xauusd_2026-08-26_public_recap
+  source_id: K3
+  chart_author_class: Dorus
+  source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
+  record_yaml: xauusd_2026-08-26_public_recap.yaml
+  handoff_markdown: xauusd_2026-08-26_public_recap.md
+  source_observed_dates: &id001
+  - value: 2026-08-26 12:00
+    kind: displayed 4H crosshair; chart timezone unverified
+  - value: 2026-08-26 14:45
+    kind: displayed 1m crosshair; not entry time
+  scope: Illustrated scalp with 4H context and 1m entry detail. Formal POI timeframe is unresolved; mobile
+    .pro/.raw charts are separate feeds.
+- request_id: k3_gold_detail_1m
+  provider_symbol: FOREXCOM:XAUUSD
+  timeframe: 1m
+  date_from_inclusive: '2026-08-25'
+  date_to_inclusive: '2026-08-28'
+  date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+  purpose: supplemental entry-detail candles; not the main POI timeframe
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: xauusd_2026-08-26_public_recap
+  source_id: K3
+  chart_author_class: Dorus
+  source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
+  record_yaml: xauusd_2026-08-26_public_recap.yaml
+  handoff_markdown: xauusd_2026-08-26_public_recap.md
+  source_observed_dates: *id001
+  scope: Illustrated scalp with 4H context and 1m entry detail. Formal POI timeframe is unresolved; mobile
+    .pro/.raw charts are separate feeds.
+- request_id: k4_btc_context_4h
+  provider_symbol: INDEX:BTCUSD
+  timeframe: 4H
+  date_from_inclusive: '2026-07-01'
+  date_to_inclusive: '2026-09-30'
+  date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+  purpose: context only; not a verified 4H POI
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: btcusd_2026-09_4h_recap
+  source_id: K4
+  chart_author_class: Dorus
+  source_url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
+  record_yaml: btcusd_2026-09_4h_recap.yaml
+  handoff_markdown: btcusd_2026-09_4h_recap.md
+  source_observed_dates:
+  - value: 2026-09-16 22:00
+    kind: displayed crosshair; not entry time, chart timezone unverified
+  scope: Trade recap on an observed 4H context chart; the formal POI timeframe and exact event candles
+    remain unverified.
+- request_id: k5_btc_daily
+  provider_symbol: INDEX:BTCUSD
+  timeframe: 1D
+  date_from_inclusive: '2025-01-01'
+  date_to_inclusive: '2026-09-07'
+  date_basis: provider-native bar dates
+  purpose: daily analysis context; exact formal POI selection unresolved
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: btcusd_2026-09-07_daily_scenarios
+  source_id: K5
+  chart_author_class: Dorus
+  source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
+  record_yaml: btcusd_2026-09-07_daily_scenarios.yaml
+  handoff_markdown: btcusd_2026-09-07_daily_scenarios.md
+  source_observed_dates:
+  - value: '2026-04-16'
+    kind: chart crosshair Thu 16 Apr 26; not trade execution
+  - value: '2026-09-07'
+    kind: dated lesson and 00:06 caption; not a chart event timestamp
+  scope: Daily conditional analysis with X, B and P annotations; no complete executed trade or selected
+    numerical POI asserted.
+- request_id: s1_eurusd_student_4h
+  provider_symbol: OANDA:EURUSD
+  timeframe: 4H
+  date_from_inclusive: '2026-06-01'
+  date_to_inclusive: '2026-08-19'
+  date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+  purpose: student chart context; Dorus-approved POI unresolved
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: eurusd_2026-08-19_4h_review
+  source_id: S1
+  chart_author_class: student
+  source_url: https://www.skool.com/dorusview/eurusd-short-dxy-long
+  record_yaml: eurusd_2026-08-19_4h_review.yaml
+  handoff_markdown: eurusd_2026-08-19_4h_review.md
+  source_observed_dates:
+  - value: 2026-08-19 15:52 UTC+2
+    kind: chart-creation header; not entry time
+  scope: Student-authored proposed trade, critically reviewed by Dorus. Student levels are not Dorus-approved
+    expectations; an executed or expressly rejected trade is not asserted.
+- request_id: s2_usdjpy_student_daily
+  provider_symbol: FOREXCOM:USDJPY
+  timeframe: 1D
+  date_from_inclusive: '2026-04-01'
+  date_to_inclusive: '2026-08-31'
+  date_basis: provider-native bar dates
+  purpose: student daily context; Dorus-approved POI unresolved
+  window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+    or trade event
+  poi_timeframe_verified: false
+  ohlc_obtained: false
+  coverage_verified: false
+  case: usdjpy_2026-08-19_bias_review
+  source_id: S2
+  chart_author_class: student
+  source_url: https://www.skool.com/dorusview/long-trade-usdjpy
+  record_yaml: usdjpy_2026-08-19_bias_review.yaml
+  handoff_markdown: usdjpy_2026-08-19_bias_review.md
+  source_observed_dates:
+  - value: '2026-08-07'
+    kind: selected chart date Fri 07 Aug 26; not entry time
+  - value: '2026-08-24'
+    kind: separate date/drawing label Mon 24 Aug 26; not execution
+  scope: Student chart with Dorus warning that its bias has errors. Exact corrected votes and approved
+    POI remain unverified.
+native_export_attempt:
+  request_id: k5_btc_daily
+  date: '2026-10-01'
+  symbol: INDEX:BTCUSD
+  timeframe: 1D
+  chart_clock: UTC
+  result: Native Download action required Premium; no file was produced. No account upgrade or alternative
+    extraction attempted.

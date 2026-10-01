@@ -4,6 +4,11 @@ Reviewed 2026-09-30; follow-up inspected 2026-10-01. See
 [DORUS_PRIORITY_SOURCES.md](DORUS_PRIORITY_SOURCES.md) for the complete D/E/F caption review and stronger POI evidence. This supplements `ASTRA_TASKS.md`; it does not change the
 trading code. The implementation was read at `feature/kronos-trader` commit
 `dd79d29cda7b569f41b4e5dff62804de8eb72392`.
+Claude subsequently merged this research and updated the implementation at
+`d008dac7e9ebe4f760b022808912727d2380e8e0`: liquidity-to-protection is the new
+default, M+D+4H is enabled, and BS thresholds are selectable. Comparisons below
+to the old sweep/gap code are historical. Exact P and BS geometry remain
+unverified; the new code is not treated as source evidence.
 
 | Requested item | Result | Confidence |
 |---|---|---|
@@ -101,7 +106,7 @@ the observed price interval is **[high(candle 3), low(candle 1)]**. This is a
 description of the orange **gap** in this frame, not a new POI definition.
 No bull-side mirror is presented here as a separately observed diagram.
 
-**Updated code conclusion:** D 12:21–12:54 and F 03:00–03:36 explicitly name liquidity-to-protection and allow reaction before complete gap fill or deeper at protection. The current `poi_far_edge="gap_bottom"` and use of `sweep.extreme` therefore have a conceptual source mismatch; they are not verified full-zone endpoints. In `poi.py`, it means `gap.low` for a bullish POI and
+**Historical code conclusion (dd79d29):** D 12:21–12:54 and F 03:00–03:36 explicitly name liquidity-to-protection and allow reaction before complete gap fill or deeper at protection. The former `poi_far_edge="gap_bottom"` and use of `sweep.extreme` therefore had a conceptual source mismatch; they were not verified full-zone endpoints. In that version of `poi.py`, it meant `gap.low` for a bullish POI and
 `gap.high` for a bearish POI; the name does not mean the numerically lower edge
 in both directions. This inspection does **not** verify that setting, nor the
 choice of sweep-wick extreme rather than swept liquidity level at the other end.
@@ -132,7 +137,7 @@ publication date unverified; available Dutch automatic captions previously revie
 
 **Answer:** A close through the opposing balance level is a supported concise
 description of the demonstrated BS concept. It is **not yet a verified complete
-algorithm** for every case. In particular, the existing `confirmation.py` selects
+algorithm** for every case. In particular, the inspected dd79d29 `confirmation.py` selected
 the latest opposing gap in its configured lookback, then tests `close > gap.high`
 for bullish or `close < gap.low` for bearish. The source does not fully verify:
 
@@ -147,6 +152,35 @@ threshold/selection assumptions must stay labeled provisional. This source
 review supplies no justified replacement boundary for that function yet.
 
 ## Exact evidence still needed
+
+### Candle delivery now has an exact metadata fallback
+
+[Seven exact retrieval requests](examples/research/RETRIEVAL_REQUESTS.md) cover
+six source cases: four Dorus analyses and two explicitly separated student
+critiques. They supply feed, observed timeframe and exact requested date ranges.
+The ranges are researcher-selected padding, not prices/times attributed to Dorus.
+Unshown annotation fields remain omitted. This handoff is useful before a record
+becomes an executable regression fixture; it does not establish missing formal
+POI classifications or satisfy all requested example categories.
+
+K5 at **00:09** provides a directly readable daily candle anchor:
+**INDEX:BTCUSD, Fri 30 Jan 2026; O 84550.82, H 84638.35, L 81047.80,
+C 84149.17**. An independent second visual check confirmed every digit.
+Confidence: medium. This is not an entry/sweep/break timestamp. The crosshair
+price and live quote are separate objects and are excluded.
+
+On 2026-10-01 the exact INDEX:BTCUSD daily chart and UTC clock were selected in
+TradingView, and the 2025-01-01–2026-09-07 retrieval range was applied. The native
+**Download chart data → Download** action opened a **Premium upgrade gate**.
+No CSV was produced, no account or payment change was made, and no alternative
+extraction was attempted. Consequently the source candle has not yet been
+matched against exported OHLC. Coverage and regression readiness remain open.
+
+The additional gold recap XJ0iAKv0amQ (2026-04-25, 09:00) and coaching video
+ZGwP57Xd2TU (2026-05-16, 1:19:33) were also checked for readable captions.
+Their watch-page metadata was readable, but exports returned no transcript and
+the transcript panels exposed no readable text. No strategy claim was added
+from their titles or unavailable content.
 
 | Open item | Source location to inspect | Evidence required before using it as a code expectation |
 |---|---|---|

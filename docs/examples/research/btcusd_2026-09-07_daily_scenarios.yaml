@@ -1,26 +1,34 @@
 status: incomplete_chart_record
 regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression
+  completion is implied.
+unshown_annotation_fields_may_be_omitted: true
 symbol: BTCUSD
 source: K5 — Bitcoin koersverwachting, scenario’s en koopmomenten, 02:30
 source_url: https://www.skool.com/dorusview/classroom/304766fd?md=1262146f8aee4d35a29c63b1b6e95950
 media_url: https://www.loom.com/embed/92a000fe218040239d2020ed44d5973a?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
-notes: Daily scenario chart containing X, B and P annotations. Captions discuss spot
-  accumulation, a prior purchase and several conditional paths; no complete executed
-  trade is established from chart labels.
+notes: Daily scenario chart containing X, B and P annotations. Captions discuss spot accumulation, a prior
+  purchase and several conditional paths; no complete executed trade is established from chart labels.
 caption_review:
   scope: continuous public playback captions from 00:00 through end; player displayed 07:46
   independent_audio_verification: false
   observations:
-  - timestamp: '01:15–01:56'
-    finding: Describes a prior spot/DCA purchase and an exceptional trendline-close rationale; date is spoken, not a verified candle or execution time.
-  - timestamp: '02:32–03:07'
-    finding: Frames trading as conditional scenarios and reacting to what happens, not certainty about a single path.
-  - timestamp: '03:15–05:08'
-    finding: Reviews liquidity, a remaining gap, protection and several possible paths; no deterministic numerical sweep/break/POI detector supplied.
-  - timestamp: '06:03–06:24'
-    finding: Separates uncertain short-term movement requiring lower-timeframe observation from his long-term conviction.
-  - timestamp: '06:35–06:58'
-    finding: Describes monthly technically informed Bitcoin purchases through January and mentions weekly accumulation as another possibility; this is spot/DCA context, not funded-account trade frequency.
+  - timestamp: 01:15–01:56
+    finding: Describes a prior spot/DCA purchase and an exceptional trendline-close rationale; date is
+      spoken, not a verified candle or execution time.
+  - timestamp: 02:32–03:07
+    finding: Frames trading as conditional scenarios and reacting to what happens, not certainty about
+      a single path.
+  - timestamp: 03:15–05:08
+    finding: Reviews liquidity, a remaining gap, protection and several possible paths; no deterministic
+      numerical sweep/break/POI detector supplied.
+  - timestamp: 06:03–06:24
+    finding: Separates uncertain short-term movement requiring lower-timeframe observation from his long-term
+      conviction.
+  - timestamp: 06:35–06:58
+    finding: Describes monthly technically informed Bitcoin purchases through January and mentions weekly
+      accumulation as another possibility; this is spot/DCA context, not funded-account trade frequency.
 observations:
   displayed_chart_timeframe: 1D
   chart_feed: INDEX
@@ -31,12 +39,29 @@ observations:
   crosshair_is_execution: false
   other_frame_inspected: 02:45
   exact_chart_timezone_verified: false
+  selected_candle_anchor:
+    source_timestamp: 00:09
+    symbol: INDEX:BTCUSD
+    timeframe: 1D
+    displayed_date: '2026-01-30'
+    open: 84550.82
+    high: 84638.35
+    low: 81047.8
+    close: 84149.17
+    confidence: medium
+    independent_second_visual_check: true
+    is_trade_event: false
+    purpose: Compare a directly readable source candle with native TradingView data; not a sweep, break
+      or entry annotation.
+    utc_open_established_from_source: false
+    excluded_crosshair_price: 100311.06
+    excluded_live_quote: 79109.8
 missing:
 - completed trade or explicit rejection classification
 - formal POI selection
 - exact event candles and order labels
 - verified chart timezone
-- complete historical data interval
+- verified candle coverage, including 60 pre-sweep bars and any demonstrated post-break return
 confidence:
   explicit_caption_reasoning: high
   chart_observations: medium
@@ -45,6 +70,37 @@ data_request:
   symbol: BTCUSD
   feed: INDEX
   displayed_timeframe: 1D
-  exact_utc_range_established: false
-evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot
-  excluded from PR.
+  provider_symbol: INDEX:BTCUSD
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: '2026-04-16'
+    kind: chart crosshair Thu 16 Apr 26; not trade execution
+  - value: '2026-09-07'
+    kind: dated lesson and 00:06 caption; not a chart event timestamp
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: k5_btc_daily
+    provider_symbol: INDEX:BTCUSD
+    timeframe: 1D
+    date_from_inclusive: '2025-01-01'
+    date_to_inclusive: '2026-09-07'
+    date_basis: provider-native bar dates
+    purpose: daily analysis context; exact formal POI selection unresolved
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.
+evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot excluded from
+  PR.
