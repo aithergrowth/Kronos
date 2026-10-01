@@ -41,6 +41,10 @@ class FakeMT5:
         self.init_kwargs = kwargs
         return True
 
+    def login(self, login, password=None, server=None, timeout=None):
+        self.login_args = (login, password, server)
+        return True
+
     def shutdown(self):
         self.init_kwargs = None
 
@@ -130,7 +134,7 @@ def broker(monkeypatch):
 
 
 def test_initialize_uses_the_environment(broker):
-    assert broker.mt5.init_kwargs == {"login": 62724281, "password": "pw", "server": "MetaQuotes-Demo"}
+    assert broker.mt5.init_kwargs == {} and broker.mt5.login_args == (62724281, "pw", "MetaQuotes-Demo")
     d = broker.diagnostics()
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
 
