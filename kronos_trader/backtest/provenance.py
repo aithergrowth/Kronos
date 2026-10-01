@@ -87,6 +87,8 @@ def write_provenance(path, *, settings, symbol: str, data_dir, result=None, quot
         doc["run"] = {"start": str(result.start), "end": str(result.end), "step_tf": result.step_tf.label, "steps": result.steps,
                       "signals": result.signals, "trades": len(result.trades), "rejected_by_guard": result.rejected_by_guard,
                       "guard_reasons": result.guard_reasons, "zones_by_reason": result.zones_by_reason,
+                      "first_breach": None if not result.first_breach else {"time": str(result.first_breach[0]), "rule": result.first_breach[1]},
+                      "guard_rules": result.guard_rules,
                       "initial_equity": result.initial_equity, "final_equity": result.final_equity, "runtime_seconds": result.runtime_seconds}
     if extra:
         doc.update(extra)

@@ -28,7 +28,14 @@ class RiskGuard:
         self.last_trade_ts: Optional[pd.Timestamp] = None
         self.blackout_windows: List[Tuple[pd.Timestamp, pd.Timestamp, str]] = []
         self.halted_reason: Optional[str] = None
-        self.first_breach: Optional[Tuple[pd.Timestamp, str]] = None   # the first rule hit, kept even if equity recovers
+        self.first_breach: Optional[Tuple[pd.Timestamp, str]] = None   # the first published rule hit, kept even if equity recovers
+
+    def rules(self) -> dict:
+        p = self.params
+        return {"account_size": self.account_size, "day_timezone": p.day_timezone,
+                "recorded_against": {"daily_loss_pct_of_initial": p.record_daily_loss_pct, "max_loss_pct_of_initial_static": p.record_max_loss_pct},
+                "halting_limits": {"daily_loss_pct": p.daily_loss_limit_pct, "max_drawdown_pct": p.max_drawdown_pct, "drawdown_basis": p.drawdown_basis,
+                                   "max_open_trades": p.max_open_trades}}
 
     def _day_of(self, ts: pd.Timestamp) -> pd.Timestamp:
         ts = pd.Timestamp(ts)
@@ -54,10 +61,12 @@ class RiskGuard:
         self.peak_equity = max(self.peak_equity, equity)
         if self.first_breach is None:
             p = self.params
-            if self.daily_loss_pct(equity) >= p.daily_loss_limit_pct:
-                self.first_breach = (ts, f"daily loss {self.daily_loss_pct(equity):.2f}% >= {p.daily_loss_limit_pct}%")
-            elif self.drawdown_pct(equity) >= p.max_drawdown_pct:
-                self.first_breach = (ts, f"drawdown {self.drawdown_pct(equity):.2f}% >= {p.max_drawdown_pct}%")
+            daily = self.daily_loss_pct(equity)
+            static_loss = (self.account_size - equity) / self.account_size * 100.0
+            if daily >= p.record_daily_loss_pct:
+                self.first_breach = (ts, f"daily loss {daily:.2f}% >= {p.record_daily_loss_pct}% (baseline {self.day_start_balance:,.0f})")
+            elif static_loss >= p.record_max_loss_pct:
+                self.first_breach = (ts, f"loss {static_loss:.2f}% of the initial balance >= {p.record_max_loss_pct}%")
 
     @property
     def day_start_equity(self) -> float:

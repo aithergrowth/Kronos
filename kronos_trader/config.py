@@ -177,6 +177,8 @@ class PropFirmParams:
     max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
     drawdown_basis: str = "peak"        # peak: from the highest equity seen (stricter); initial: static floor below the starting balance (FTMO)
     day_timezone: str = "Europe/Prague" # the day for the daily-loss rule starts at midnight here (FTMO: CE(S)T)
+    record_daily_loss_pct: float = 5.0  # the published limits the first breach is recorded against (FTMO 2-step: 5 % daily,
+    record_max_loss_pct: float = 10.0   # 10 % static below the initial balance), whatever the halting limits above are set to
     news_blackout_minutes: int = 0      # optional: block entries N minutes around high-impact news
     min_minutes_between_trades: int = 0
 

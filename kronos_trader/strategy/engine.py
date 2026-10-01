@@ -143,6 +143,13 @@ class StrategyEngine:
             if tf in views:
                 pois.extend(map_pois(structures[tf], s.structure, price))
 
+        # visits are history, not eligibility: fold this step's candles into every zone's record before any
+        # bias / session / news gate can return, so a touch during a closed session still counts as a visit
+        tracker = self.visits.setdefault(symbol, VisitTracker())
+        for poi in pois:
+            if poi.status is not POIStatus.INVALIDATED:
+                tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
+
         analysis = Analysis(symbol=symbol, timestamp=now, price=price, biases=biases, decision=decision,
                             pois=pois, signal=None)
         missing = [tf.label for tf in BIAS_TIMEFRAMES if tf not in views]
@@ -188,7 +195,6 @@ class StrategyEngine:
             analysis.rejections.append(f"price is not inside a {decision.direction} POI ({n_dir} valid zones mapped)")
             return analysis
 
-        tracker = self.visits.setdefault(symbol, VisitTracker())
         for poi in candidates:
             touch_ts, visits, invalid = tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
             label = poi.describe()

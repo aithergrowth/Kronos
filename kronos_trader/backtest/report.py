@@ -67,6 +67,10 @@ def format_report(result: BacktestResult) -> str:
             lines.append(f"  {key}:")
             for k, v in s[key].items():
                 lines.append(f"    {k}: n={int(v['count'])} avgR={v['mean']:+.2f} sumR={v['sum']:+.1f}")
+    if result.first_breach:
+        lines.append(f"  first guard breach: {result.first_breach[0]}  {result.first_breach[1]}")
+    else:
+        lines.append("  first guard breach: never (bar-close equity, published limits)")
     if result.guard_reasons:
         lines.append("  guard rejections:")
         for k, v in sorted(result.guard_reasons.items(), key=lambda kv: -kv[1]):

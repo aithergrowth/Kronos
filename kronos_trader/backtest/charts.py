@@ -63,7 +63,7 @@ def render_trade_charts(
         if flags:
             title += "  [" + "; ".join(flags) + "]"
         boxes = []
-        if "ledger zone drawn dashed" in " ".join(flags):
+        if "ledger zone drawn dashed" in " ".join(flags) and pd.notna(row.get("poi_low")):
             boxes.append((float(row["poi_low"]), float(row["poi_high"]), f"{row.get('poi_tf', '')} zone of the trade"))
         name = f"{symbol}_{seq:03d}_{now:%Y%m%d_%H%M}_{tf.label}.png"
         paths.append(render_chart(views[tf], out / name, pois=zones, setup=drawn, title=title,
@@ -73,9 +73,10 @@ def render_trade_charts(
 
 
 def ledger_setup(row, regenerated, symbol: str):
-    """The setup to draw: entry, stop, target and side always from the trade record; the zone and the
-    confirmation from the replayed analysis when they match the record, else flagged and the record's
-    own zone drawn dashed.  Returns ``(setup_like, flags)``."""
+    """The setup to draw: entry, stop, target, side and confirmation time/type/timeframe always from the
+    trade record.  The replayed zone is drawn with its X/B/P marks only when its identity matches the
+    record (timeframe, formation time, bounds, X, gap and P within 5 % of the zone height); otherwise the
+    record's own zone is drawn dashed and the title carries the differences.  Returns ``(setup_like, flags)``."""
     from dataclasses import replace
     from types import SimpleNamespace
     from ..core.types import Bias, Direction, POI
@@ -83,34 +84,62 @@ def ledger_setup(row, regenerated, symbol: str):
     entry, stop, tp = float(row["entry"]), float(row["stop"]), float(row["take_profit"])
     rr = abs(tp - entry) / abs(entry - stop) if entry != stop else 0.0
     flags: List[str] = []
-    has_zone = pd.notna(row.get("poi_low")) and pd.notna(row.get("poi_high"))
+
+    def has(key):
+        return key in row and pd.notna(row.get(key))
+
+    # the confirmation as recorded (the replay's is used only to fill in fields the record lacks)
+    conf_tf = Timeframe.parse(str(row["confirmation_tf"])) if has("confirmation_tf") else (
+        regenerated.confirmation.timeframe if regenerated is not None else Timeframe.MIN_15)
+    conf_ts = pd.Timestamp(row["confirmed_at"]) if has("confirmed_at") else (
+        regenerated.confirmation.timestamp if regenerated is not None else pd.Timestamp(row["opened_at"]))
+    conf_type = str(row["confirmation"]) if has("confirmation") else (
+        regenerated.confirmation.type.value if regenerated is not None else "entry")
+    confirmation = SimpleNamespace(timestamp=conf_ts, timeframe=conf_tf, type=SimpleNamespace(value=conf_type))
+
+    has_zone = has("poi_low") and has("poi_high")
+    zone_matches = False
     if regenerated is not None:
-        zone_ok = True
+        differences: List[str] = []
+        if regenerated.direction is not direction:
+            differences.append("side")
+        if has("poi_tf") and regenerated.poi.timeframe.label != str(row["poi_tf"]):
+            differences.append("zone timeframe")
+        if has("poi_formed") and pd.Timestamp(row["poi_formed"]) != pd.Timestamp(regenerated.poi.created_at):
+            differences.append("zone formation time")
         if has_zone:
             height = max(float(row["poi_high"]) - float(row["poi_low"]), 1e-9)
-            zone_ok = (abs(regenerated.poi.low - float(row["poi_low"])) <= 0.05 * height
-                       and abs(regenerated.poi.high - float(row["poi_high"])) <= 0.05 * height)
-        side_ok = regenerated.direction is direction
-        planned = row.get("entry_planned")
-        conf_ok = pd.isna(planned) if planned is not None else True
-        if planned is not None and pd.notna(planned):
-            conf_ok = abs(float(planned) - regenerated.entry) <= 1e-9 or abs(float(planned) - regenerated.entry) <= 0.001 * abs(regenerated.entry)
-        if zone_ok and side_ok:
-            if not conf_ok:
-                flags.append("replayed confirmation differs from the record")
-            return replace(regenerated, entry=entry, stop=stop, take_profit=tp, rr=rr, direction=direction), flags
-        flags.append("REPLAY MISMATCH: replayed zone differs, ledger zone drawn dashed" if has_zone else "REPLAY MISMATCH: replayed zone differs")
+            tol = 0.05 * height
+            if abs(regenerated.poi.low - float(row["poi_low"])) > tol or abs(regenerated.poi.high - float(row["poi_high"])) > tol:
+                differences.append("zone bounds")
+            for key, value in (("poi_x", regenerated.poi.liquidity_level), ("poi_p", regenerated.poi.protector_extreme)):
+                if has(key) and value is not None and abs(float(row[key]) - float(value)) > tol:
+                    differences.append({"poi_x": "X", "poi_p": "P"}[key])
+            gap = regenerated.poi.gap if regenerated.poi.gap is not None else regenerated.poi.balance
+            if has("poi_b_low") and has("poi_b_high") and gap is not None:
+                if abs(gap.low - float(row["poi_b_low"])) > tol or abs(gap.high - float(row["poi_b_high"])) > tol:
+                    differences.append("balance level")
+        if has("confirmed_at") and pd.Timestamp(row["confirmed_at"]) != pd.Timestamp(regenerated.confirmation.timestamp):
+            differences.append("confirmation time")
+        if has("confirmation") and str(row["confirmation"]) != regenerated.confirmation.type.value:
+            differences.append("confirmation type")
+        if has("confirmation_tf") and str(row["confirmation_tf"]) != regenerated.confirmation.timeframe.label:
+            differences.append("confirmation timeframe")
+        if has("entry_planned") and abs(float(row["entry_planned"]) - regenerated.entry) > 0.001 * abs(regenerated.entry):
+            differences.append("planned entry")
+        zone_matches = not differences
+        if differences:
+            flags.append("REPLAY MISMATCH (" + ", ".join(differences) + ")" + ("; ledger zone drawn dashed" if has_zone else "; record context used"))
     else:
         flags.append("setup not reproduced by the replay" + ("; ledger zone drawn dashed" if has_zone else ""))
+    if zone_matches:
+        return replace(regenerated, entry=entry, stop=stop, take_profit=tp, rr=rr, direction=direction, confirmation=confirmation), flags
     poi = None
     if has_zone:
-        when = row.get("poi_formed") if pd.notna(row.get("poi_formed", None)) else row.get("touched_at", row["opened_at"])
-        poi = POI(Timeframe.parse(str(row.get("poi_tf") or "1H")), Bias.BULLISH if direction is Direction.LONG else Bias.BEARISH,
+        when = row["poi_formed"] if has("poi_formed") else (row["touched_at"] if has("touched_at") else row["opened_at"])
+        poi = POI(Timeframe.parse(str(row["poi_tf"])) if has("poi_tf") else Timeframe.H_1,
+                  Bias.BULLISH if direction is Direction.LONG else Bias.BEARISH,
                   float(row["poi_low"]), float(row["poi_high"]), None, None, 0, pd.Timestamp(when))
-    conf_tf = Timeframe.parse(str(row.get("confirmation_tf") or "15m"))
-    conf_ts = row.get("confirmed_at") if pd.notna(row.get("confirmed_at", None)) else row["opened_at"]
-    confirmation = SimpleNamespace(timestamp=pd.Timestamp(conf_ts), timeframe=conf_tf,
-                                   type=SimpleNamespace(value=str(row.get("confirmation") or "entry")))
     setup = SimpleNamespace(symbol=symbol, direction=direction, entry=entry, stop=stop, take_profit=tp, rr=rr,
                             poi=poi, confirmation=confirmation, lots=float(row.get("lots", 0) or 0), risk_amount=0.0)
     return setup, flags

@@ -40,6 +40,8 @@ class BacktestResult:
     guard_reasons: Dict[str, int] = field(default_factory=dict)
     rejection_reasons: Dict[str, int] = field(default_factory=dict)
     zones_by_reason: Dict[str, int] = field(default_factory=dict)      # distinct zones (not bars) behind each rejection bucket
+    first_breach: Optional[Tuple[pd.Timestamp, str]] = None             # first published prop-firm rule hit on bar-close equity
+    guard_rules: Dict[str, object] = field(default_factory=dict)
     runtime_seconds: float = 0.0
 
     def trades_frame(self) -> pd.DataFrame:
@@ -212,5 +214,6 @@ class Backtester:
             initial_equity=broker.initial_balance, final_equity=broker.balance(), trades=list(broker.closed),
             equity_curve=list(broker.equity_curve), steps=steps, signals=signals, rejected_by_guard=rejected,
             guard_reasons=guard_reasons, rejection_reasons=rejection_reasons,
-            zones_by_reason={k: len(v) for k, v in zones_by_reason.items()}, runtime_seconds=time.time() - t0,
+            zones_by_reason={k: len(v) for k, v in zones_by_reason.items()}, first_breach=guard.first_breach,
+            guard_rules=guard.rules(), runtime_seconds=time.time() - t0,
         )
