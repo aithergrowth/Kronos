@@ -22,7 +22,17 @@ def test_provenance_records_code_settings_data_and_calendar(tmp_path):
     assert doc["settings"]["risk"]["min_rr"] == s.risk.min_rr and doc["versions"]["pandas"]
     assert doc["data"]["EURUSD_15min.csv"]["rows"] == 1 and len(doc["data"]["EURUSD_15min.csv"]["sha256"]) == 64
     assert doc["calendar"]["present"] in (True, False)
-    assert "TELEGRAM_BOT_TOKEN" not in json.dumps(doc["settings"]).replace("bot_token_env", "")  # names of env vars only
+    assert doc["settings"]["telegram"]["bot_token_env"] == "TELEGRAM_BOT_TOKEN"   # the env var's name, never its value
+
+    def keys(obj):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                yield k
+                yield from keys(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                yield from keys(v)
+    assert not {k for k in keys(doc["settings"]) if k in ("bot_token", "password", "token", "api_key", "secret")}
 
 
 def _row(**over):
