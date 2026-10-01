@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Sequence, Tuple
 
-import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from .timeframe import Timeframe
 
@@ -221,14 +221,14 @@ def _coerce_columns(raw: pd.DataFrame) -> pd.DataFrame:
     # timestamp ---------------------------------------------------------
     if "<date>" in lower and "<time>" in lower:
         frame["timestamp"] = pd.to_datetime(raw[lower["<date>"]].astype(str) + " " + raw[lower["<time>"]].astype(str))
-    elif "date" in lower and "time" in lower and not np.issubdtype(raw[lower["time"]].dtype, np.number):
+    elif "date" in lower and "time" in lower and not is_numeric_dtype(raw[lower["time"]]):
         frame["timestamp"] = pd.to_datetime(raw[lower["date"]].astype(str) + " " + raw[lower["time"]].astype(str))
     else:
         tcol = next((lower[a] for a in _TIME_ALIASES if a in lower), None)
         if tcol is None:
             raise ValueError(f"No timestamp column found in {list(raw.columns)}")
         col = raw[tcol]
-        if np.issubdtype(col.dtype, np.number):
+        if is_numeric_dtype(col):
             unit = "ms" if col.max() > 1e12 else "s"
             frame["timestamp"] = pd.to_datetime(col, unit=unit)
         else:

@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from kronos_trader.core import CandleSeries, Timeframe
 
@@ -41,6 +42,32 @@ def test_from_csv_unix_seconds_and_repairs_bad_high(tmp_path):
     s = CandleSeries.from_csv(p, Timeframe.H_1, symbol="X")
     assert s.timestamps.iloc[0] == pd.Timestamp("2024-01-02 00:00")
     assert s.high[0] == 1.15  # repaired: high may not be below the close
+
+
+@pytest.mark.parametrize("time_header,time_rows,string_columns", [
+    ("timestamp", ["2024-01-02 00:00:00", "2024-01-02 01:00:00"], ["timestamp"]),
+    ("date,time", ["2024-01-02,00:00:00", "2024-01-02,01:00:00"], ["date", "time"]),
+], ids=["timestamp_string_dtype", "separate_date_time_string_dtype"])
+def test_from_csv_accepts_string_extension_timestamps(tmp_path, monkeypatch, time_header, time_rows, string_columns):
+    path = tmp_path / "EURUSD_H1.csv"
+    path.write_text(f"{time_header},open,high,low,close,volume\n"
+                    f"{time_rows[0]},1.1,1.2,1.0,1.15,5\n"
+                    f"{time_rows[1]},1.15,1.2,1.1,1.12,6\n", encoding="utf-8")
+    read_csv = pd.read_csv
+
+    def read_with_extension_strings(*args, **kwargs):
+        # Explicit dtype reproduces pandas 3's inferred string columns on pandas 2 too.
+        frame = read_csv(*args, **kwargs, dtype={column: "string" for column in string_columns})
+        assert all(isinstance(frame[column].dtype, pd.StringDtype) for column in string_columns)
+        return frame
+
+    monkeypatch.setattr(pd, "read_csv", read_with_extension_strings)
+    series = CandleSeries.from_csv(path, Timeframe.H_1)
+
+    assert series.timestamps.tolist() == [pd.Timestamp("2024-01-02 00:00"), pd.Timestamp("2024-01-02 01:00")]
+    assert series.timestamps.dt.tz is None
+    assert series.close.tolist() == [1.15, 1.12]
+    assert series.volume.tolist() == [5.0, 6.0]
 
 
 def test_to_kronos_inputs_adds_amount():

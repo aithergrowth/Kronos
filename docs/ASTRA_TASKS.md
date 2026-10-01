@@ -13,7 +13,7 @@ Status legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## Research status — 2026-10-01, follow-up evidence check
 
-**Latest execution check (base `445cd25`):** preserved Claude's concurrent runtime changes; **101 offline tests pass**, one source-fixture test skips and one model-weights test is deselected. Added finite-positive quote and stale queued-approval guards plus a CI YAML correction. A separate fake-IBKR reproduction still loses tracking/protection requests after a partial fill is cancelled. See [current verification and remaining defect](EXECUTION_VERIFICATION_2026-10-01.md); older runtime reviews below are historical.
+**Latest execution check (base `445cd25`):** preserved Claude's concurrent runtime changes; **103 offline tests pass**, one source-fixture test skips and one model-weights test is deselected. Added finite-positive quote and stale queued-approval guards plus a CI YAML correction and pandas timestamp compatibility fix. A separate fake-IBKR reproduction still loses tracking/protection requests after a partial fill is cancelled. See [current verification and remaining defect](EXECUTION_VERIFICATION_2026-10-01.md); older runtime reviews below are historical.
 
 **Current data/readiness update (base `375c16b`, 2026-10-01):** Claude delivered seven
 CSV datasets through the TradingView MCP. An independent audit checked **13,599
@@ -475,3 +475,4 @@ The priority D/E videos and additional F video now have complete available Dutch
 | 2026-10-01 | Independently audited seven MCP-derived datasets (13,599 rows), separated six exact-timeframe deliveries from the gold 15m substitute, and matched K5 OHLC. Added source G first-candle-after-shift evidence plus a pinned code/readiness review. Complete source fixtures remain zero; no runtime changes or paper performance claimed. | Codex/Astra |
 | 2026-10-01 | Added [source H](DORUS_ENTRY_METHODS.md) and Q5/Q8/Q10/BS cross-references; preserved prior decisions. All-video/all-academy review incomplete; complete fixtures zero. No runtime changes. | Codex/Astra |
 | 2026-10-01 | Independently verified latest `445cd25`; 101 offline tests pass after invalid-quote/stale-approval guards and CI YAML correction. Preserved Claude changes. Reproduced unresolved IBKR partial-cancel defect; see [verification](EXECUTION_VERIFICATION_2026-10-01.md). | Codex/Astra |
+| 2026-10-01 | First working hosted CI exposed pandas 3 StringDtype CSV parsing failure (98 pass, 1 fail, 2 errors). Added two reproducible regressions and pandas-compatible detection; full local suite now 103 pass, 1 skip, 1 deselection. Hosted follow-up pending. | Codex/Astra |

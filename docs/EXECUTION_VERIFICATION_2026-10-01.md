@@ -1,6 +1,6 @@
 # Independent execution verification — 1 October 2026
 
-**101 offline tests pass after two execution guards and a workflow syntax correction. A reproduced IBKR partial-fill cancellation defect and missing Dorus chart fixtures still prevent a readiness claim.**
+**103 offline tests pass after two execution guards, a workflow syntax correction and a CSV timestamp compatibility fix. A reproduced IBKR partial-fill cancellation defect and missing Dorus chart fixtures still prevent a readiness claim.**
 
 Base: [`445cd256b599ec9a0a1722b2049699b1ad923095`](https://github.com/aithergrowth/Kronos/commit/445cd256b599ec9a0a1722b2049699b1ad923095), on `feature/kronos-trader`. Claude's runtime update at `40ae003` and merged research PR #5 are preserved. An earlier local patch against `375c16b` was discarded when these concurrent changes arrived.
 
@@ -19,9 +19,15 @@ The exact current source, tests and required historical dataset were fetched and
 |---|---|---|
 | Approval remains valid while underlying candle data becomes stale | A request at 09:00 expires at 09:15. With unchanged 5m data and the configured two-bar age limit, approval at 09:11 still submitted an order. | `LiveRunner.execute()` rechecks the existing freshness policy before submission. |
 | Executable quote need not be a finite positive number | Positive infinity reached the paper broker. `None` and nonnumeric text raised outside the quote handler. Other invalid numeric values were blocked indirectly. | Convert to float and require finite, positive price within the existing exception handler. |
-| CI workflow is invalid YAML | [Run 36817444857](https://github.com/aithergrowth/Kronos/actions/runs/36817444857) failed with zero jobs. Local YAML parsing failed at line 16's unquoted colon. | Quote that step name; YAML now parses and install/test commands are unchanged. A successful remote run still needs observation. |
+| CI workflow is invalid YAML | [Run 36817444857](https://github.com/aithergrowth/Kronos/actions/runs/36817444857) failed with zero jobs. Local YAML parsing failed at line 16's unquoted colon. | Quote that step name; YAML now parses and install/test commands are unchanged. The workflow then started successfully; its first hosted test run exposed the separate pandas compatibility issue below. |
 
 Eight new regression cases cover seven invalid quote values and the stale queued approval. Before the patch, all eight failed; that count includes explicit error-reporting assertions for values previously blocked indirectly. Afterward, all **20 live-loop tests** passed, followed by the full **101-test** result. Existing tests cover Claude's late-approval, missing-quote, paper progression and delayed-fill changes; those fixes were not overwritten.
+
+## Hosted-CI follow-up: pandas timestamp compatibility
+
+The first working [hosted run](https://github.com/aithergrowth/Kronos/actions/runs/36818281885) installed pandas **3.0.6** and NumPy **2.5.3** under Python **3.12.14**. It reported **98 passed, 1 failed, 2 errors, 1 skipped and 1 deselected**. All three failures came from applying NumPy's dtype test to pandas `StringDtype` timestamp columns. The prior local pass used pandas **2.2.3** / NumPy **2.3.5**.
+
+The CSV loader now uses pandas' [numeric-dtype predicate](https://pandas.pydata.org/docs/reference/api/pandas.api.types.is_numeric_dtype.html) for both the single timestamp and split date/time paths. Two regression cases explicitly request extension-string columns, reproducing the failure even on pandas 2. They failed before the correction and pass afterward; numeric Unix timestamp handling remains covered by the existing test. The full local suite then passed **103 tests**, with the same one skip and one deselection. Dependency constraints were not weakened or narrowed to conceal the failure. The follow-up commit must still pass hosted CI.
 
 ## Reproduced remaining defect: partial fill followed by cancellation
 

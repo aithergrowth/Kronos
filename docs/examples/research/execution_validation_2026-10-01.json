@@ -28,13 +28,45 @@
   "files_sha256": {
     ".github/workflows/tests.yml": "5d6e96135b157c9a24c6ffd37431768b900f3d79655a072dcbba81eb9e40e0b0",
     "kronos_trader/live.py": "4d03b460e57468d43c71a3734d3f1d6b1080decaf80efc397b1c5b4fc144bbb7",
-    "tests/trader/test_live.py": "b2736428b596c8e2b64d5445713f3849a72cafb8a2d71ebe52d48907fd929525"
+    "tests/trader/test_live.py": "b2736428b596c8e2b64d5445713f3849a72cafb8a2d71ebe52d48907fd929525",
+    "kronos_trader/core/candles.py": "f192eb81670d9bfa4b353b4ae773800572d7a244d05a4237b6a3df267208dffb",
+    "tests/trader/test_candles.py": "e8a5dec5a59b021c9646ae132542d06d8a926daea9c7840181b0ee1ca15f85bd"
   },
   "workflow_validation": {
     "yaml_parses": true,
     "existing_failed_run": "https://github.com/aithergrowth/Kronos/actions/runs/36817444857",
     "jobs_before": 0,
     "issue": "unquoted colon in a step name makes YAML invalid",
-    "remote_after": "not yet observed; local result only"
+    "remote_after": "Workflow starts and installs successfully; its first test run revealed a separate CSV timestamp dtype compatibility failure."
+  },
+  "local_dependencies": {
+    "pandas": "2.2.3",
+    "numpy": "2.3.5"
+  },
+  "hosted_ci_initial": {
+    "run": "https://github.com/aithergrowth/Kronos/actions/runs/36818281885",
+    "head_commit": "a297e2002a77aa13ff161d2dd5498f9dda570a43",
+    "result": "failure",
+    "passed": 98,
+    "failed": 1,
+    "errors": 2,
+    "skipped": 1,
+    "deselected": 1,
+    "python": "3.12.14",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "cause": "NumPy issubdtype cannot interpret pandas StringDtype in CSV timestamp parsing"
+  },
+  "pandas_compatibility_patch": {
+    "passed": 103,
+    "skipped": 1,
+    "deselected": 1,
+    "failed": 0,
+    "errors": 0,
+    "seconds_reported": 6.39,
+    "regression_cases": 2,
+    "regressions_failed_before": 2,
+    "regressions_passed_after": 2,
+    "hosted_followup": "pending"
   }
 }
