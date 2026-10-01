@@ -316,6 +316,21 @@ def cmd_dukascopy(args) -> int:
     return 0
 
 
+def cmd_histdata(args) -> int:
+    """Pull HistData.com 1-minute history (past years whole, this year by month) and build the engine cache."""
+    from .data.histdata import build_cache, fetch_history
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    pair = args.pair or symbol
+    end_year, end_month = (int(x) for x in args.to.split("-"))
+    minutes = fetch_history(pair, int(args.start_year), end_year, end_month, args.raw_dir, pause=args.pause, progress=print)
+    tfs = [Timeframe.parse(t.strip()) for t in args.timeframes.split(",")] if args.timeframes else None
+    kwargs = {"timeframes": tfs} if tfs else {}
+    written = build_cache(symbol, pair, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset, minutes=minutes, **kwargs)
+    print(f"{len(minutes)} minute candles {minutes['timestamp'].iloc[0]} -> {minutes['timestamp'].iloc[-1]}; cache written: {written} -> {args.out_dir}")
+    return 0
+
+
 def cmd_journal(args) -> int:
     from .journal import format_summary, summary
     print(format_summary(summary(args.path)))
@@ -453,6 +468,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")
     sp.add_argument("--path", default="journal/trades.csv")
     sp.set_defaults(func=cmd_journal)
+    sp = sub.add_parser("histdata", help="free HistData.com 1-minute history: past years whole, this year by month; builds the cache")
+    sp.add_argument("--symbol", required=True)
+    sp.add_argument("--pair", help="HistData pair name (default: the symbol)")
+    sp.add_argument("--start-year", required=True, type=int)
+    sp.add_argument("--to", required=True, help="last month, YYYY-MM")
+    sp.add_argument("--raw-dir", default="data/histdata/raw")
+    sp.add_argument("--out-dir", default="data/histdata")
+    sp.add_argument("--pause", type=float, default=1.5)
+    sp.add_argument("--session-offset", type=float, default=3.0)
+    sp.add_argument("--timeframes", help="comma list to write, e.g. 5m,15m,1H,4H (default: 5m to 1M)")
+    sp.set_defaults(func=cmd_histdata)
     return p
 
 
