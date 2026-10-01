@@ -151,7 +151,7 @@ class ExitParams:
 
 @dataclass
 class KronosParams:
-    mode: str = "off"                   # off | advisory | filter. Off for the forward test: the filter removed the only winner (phase 1)
+    mode: str = "advisory"              # advisory = shown on charts and in messages, never a gate; filter = a gate (phase 1: it removed the only winner); off = model not loaded
     model: str = "NeoQuasar/Kronos-small"
     tokenizer: str = "NeoQuasar/Kronos-Tokenizer-base"
     device: Optional[str] = None        # None = auto (cuda / mps / cpu)
@@ -279,6 +279,10 @@ class LiveParams:
     notify_every_scan: bool = False
     briefing_time: Optional[str] = "08:45"   # Dorus analyses before the open: a bias and POI briefing at this local time (session timezone)
     notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
+    send_charts: bool = True                 # a chart image with the briefing, the POI touch and every setup
+    charts_dir: str = "charts"
+    chart_lookback: int = 120                # candles on the image
+    mt5_overlay: bool = True                 # with --broker mt5: write the forecast file the KronosForecast indicator draws
     max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
     require_fresh_data: bool = True     # stale data: analyse and manage positions, but open no new setups
     feed_retry_seconds: int = 600       # after the live feed fails for every timeframe, leave it alone this long

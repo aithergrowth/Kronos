@@ -255,3 +255,14 @@ def test_poi_touch_is_announced_once(setup):
     runner.step(NOW + pd.Timedelta(15, unit="min"))
     touches = [m for m in notifier.sent if "inside the" in m and "POI" in m]
     assert len(touches) == 1 and "waiting for a confirmation" in touches[0]
+
+
+def test_setup_comes_with_a_chart(setup, tmp_path):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker)
+    runner.settings.live.charts_dir = str(tmp_path)
+    runner.settings.live.briefing_time = None                  # the briefing would send its own chart
+    runner.step(NOW)
+    photos = [m for m in notifier.sent if m.startswith("[photo]")]
+    assert len(photos) == 1 and "EURUSD_15m_setup.png" in photos[0] and (tmp_path / "EURUSD_15m_setup.png").exists()

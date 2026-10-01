@@ -53,7 +53,7 @@ exits:
   partials: false
 
 kronos:
-  mode: off                       # off | advisory | filter. Off for the forward test (phase 1: the filter removed the only winner)
+  mode: advisory                  # advisory = drawn on the charts and named in messages, never a gate; filter = a gate (phase 1: it removed the only winner); off = model not loaded
   model: NeoQuasar/Kronos-small
   tokenizer: NeoQuasar/Kronos-Tokenizer-base
   horizon: 12
@@ -80,6 +80,10 @@ live:
   feed_retry_seconds: 600         # leave a live feed alone this long after it failed on every timeframe
   briefing_time: "08:45"          # Dorus analyses before the open: bias and POI map to Telegram at this local time
   notify_poi_touch: true          # heads-up when price enters a POI in the bias direction, before the confirmation
+  send_charts: true               # chart image (candles, zones, setup, Kronos fan) with the briefing, the touch and every setup
+  charts_dir: charts
+  chart_lookback: 120
+  mt5_overlay: true               # with --broker mt5: write the forecast file that mt5/KronosForecast.mq5 draws on the chart
 
 news:
   enabled: true                   # no new entries around high-impact news of the symbol's currencies (source G 11:08)

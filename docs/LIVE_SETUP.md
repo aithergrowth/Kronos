@@ -212,6 +212,25 @@ Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
 at 5 % daily and 10 % total loss, the guard stops at 4 % and 8 %, one open
 trade, 1 % risk.
 
+### Charts and Kronos on the chart
+
+![EURUSD 15m briefing chart with zones and the Kronos fan](images/sample_chart_EURUSD_15m.png)
+
+Every briefing, POI touch and setup comes with a chart image on Telegram:
+the last 120 candles, the zones the bias allows, entry, stop and target when
+there is a setup, and Kronos's sampled paths as a fan to the right of the
+last candle with its mean path and expected band (`live.send_charts`,
+`kronos.mode: advisory`; Kronos never decides, it only shows).
+
+To see the same fan on the MetaTrader chart: copy `mt5/KronosForecast.mq5`
+into the terminal's `MQL5\Indicators` folder (File, Open Data Folder),
+compile it in MetaEditor (F7), drag it onto the chart, and enable the chart
+shift (the arrow icon in the toolbar) so there is room on the right. The
+loop writes `kronos_forecast_<SYMBOL>.csv` to the terminal's common files
+folder whenever it sends a chart (`live.mt5_overlay`), and the indicator
+re-reads it every 30 seconds. TradingView cannot take drawings from outside,
+so the forecast is not shown there.
+
 Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if
 the laptop cannot stay on.

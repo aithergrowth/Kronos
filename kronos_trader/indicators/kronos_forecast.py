@@ -115,6 +115,7 @@ class KronosForecaster:
             pct_change=pct_change,
             paths=n_paths,
             model=p.model,
+            paths_ohlc=[path[["open", "high", "low", "close"]].copy() for path in paths],
         )
 
     def mean_path(self) -> Optional[pd.DataFrame]:

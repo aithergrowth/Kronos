@@ -109,7 +109,7 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | A13 | Break-even = exactly entry | `exits.breakeven_offset_pips` |
 | A14 | Session window 09:00-17:00 Amsterdam (Max, 2026-10-01: Dorus analyses at 08:45 and works 9 to 5); A's split 09-11 / 13-17 and C's 08-17 are the variants | `session.windows` |
 | A17 | First candle is not a confirmation on its own for the forward test: G 10:49 shows it as the entry after a shift; BS / BMS / BOS only | `confirmation.allow_first_candle` |
-| A18 | Kronos is off for the forward test; phase 1 showed the filter removing the only winner. Advisory mode stays available | `kronos.mode` |
+| A18 | Kronos never gates a trade: advisory mode draws its sampled paths on the chart images and the MT5 chart and names them in messages; phase 1 showed the filter removing the only winner | `kronos.mode` |
 | A19 | No new entry 30 minutes either side of high-impact news of the pair's currencies (G 11:08); FTMO's funded rule is 2 minutes, so this is stricter | `news` |
 | A15 | A continuation break (BOS) on the LTF is accepted although the plan lists BS/BMS/first candle | `confirmation.accept_bos` |
 | A16 | BS threshold = the far edge of the opposing gap; the alternative "above the candle that caused the gap" is selectable | `confirmation.bs_threshold` |

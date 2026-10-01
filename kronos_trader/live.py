@@ -27,7 +27,7 @@ import pandas as pd
 from .config import Settings
 from .core.candles import CandleSeries
 from .core.timeframe import Timeframe
-from .core.types import Analysis, ForecastSummary, TradeSetup
+from .core.types import Analysis, Bias, ForecastSummary, TradeSetup
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
@@ -183,18 +183,20 @@ class LiveRunner:
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
+        self._views: Dict[Timeframe, CandleSeries] = {}
         self._touched: set = set()                          # POI keys already announced as entered
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
         now = pd.Timestamp(now) if now is not None else self.clock()
         views = self.fetch()
+        self._views = views
         self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
         self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
-        analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=True)
+        analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
         self.manage_positions(views)
         self.process_decisions(now)
@@ -220,6 +222,34 @@ class LiveRunner:
         self._briefed_on = local.date()
         self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
         self.notifier.send_analysis(analysis, self.spec)
+        self.send_chart(analysis, "briefing")
+
+    def send_chart(self, analysis: Analysis, kind: str, timeframe: Optional[Timeframe] = None,
+                   setup: Optional[TradeSetup] = None, forecast: Optional[ForecastSummary] = None) -> None:
+        """Chart image to Telegram (candles, zones, setup, Kronos fan) and the MT5 overlay file; never fatal."""
+        if not self.settings.live.send_charts or not self._views:
+            return
+        try:
+            from .notify.chart import render_chart
+            tf = timeframe or (setup.confirmation.timeframe if setup is not None else None)
+            if tf is None or tf not in self._views:
+                tf = next((t for t in (Timeframe.H_4, Timeframe.H_1, Timeframe.MIN_15) if t in self._views), min(self._views))
+            series = self._views[tf]
+            if forecast is None and self.settings.kronos.mode != "off" and getattr(self.engine, "forecaster", None) is not None:
+                forecast = self.engine._forecast(series, [])
+            bias = "  ".join(f"{t.label} {b.bias.name.lower()}" for t, b in sorted(analysis.biases.items())) if analysis.biases else ""
+            zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
+            path = render_chart(series, f"{self.settings.live.charts_dir}/{self.symbol}_{tf.label}_{kind}.png",
+                                pois=zones, setup=setup, forecast=forecast, title=f"{self.symbol} {tf.label}  {kind}",
+                                subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=self.settings.live.chart_lookback,
+                                price_decimals=self.spec.price_decimals)
+            self.notifier.send_photo(path, f"{self.symbol} {tf.label} {kind}")
+            if forecast is not None and self.settings.live.mt5_overlay and hasattr(self.broker, "server_offset"):
+                from .notify.mt5_overlay import write_forecast_file
+                write_forecast_file(self.symbol, forecast, series.timestamps.iloc[-1], tf, self.broker.server_offset(self.symbol),
+                                    mt5_symbol=self.broker.mt5_symbol(self.symbol))
+        except Exception as exc:
+            print(f"[live] {self.symbol}: chart failed ({exc})")
 
     def announce_poi_touch(self, analysis: Analysis) -> None:
         """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form."""
@@ -232,9 +262,10 @@ class LiveRunner:
             if poi.key in self._touched:
                 continue
             self._touched.add(poi.key)
-            arrow = "▲" if poi.direction.value == "bullish" else "▼"
+            arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
             self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
                                f"({analysis.decision.reason}); waiting for a confirmation")
+            self.send_chart(analysis, "touch", timeframe=poi.timeframe)
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds
@@ -328,6 +359,7 @@ class LiveRunner:
                 self.notifier.send(f"📰 {self.symbol}: next high-impact news {e.title} ({e.currency}) in {minutes} min")
         if self.broker is None or self.dry_run:
             self.notifier.send_setup(setup, forecast, self.spec)
+            self.send_chart(analysis, "setup", setup=setup, forecast=forecast)
             if self.broker is not None:
                 self.notifier.send(f"{self.symbol}: dry-run, order not sent")
             return
@@ -341,6 +373,7 @@ class LiveRunner:
             pending = PendingSetup(short_id_for(key), key, setup, forecast, now, now + pd.Timedelta(int(timeout), unit="min"))
             self.pending[pending.short_id] = pending
             self.notifier.send_approval_request(setup, pending.short_id, forecast, self.spec, pending.expires_at)
+            self.send_chart(analysis, "setup", setup=setup, forecast=forecast)
             return
         self.execute(setup, forecast, now)
 
