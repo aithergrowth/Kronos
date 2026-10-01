@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import numpy as np
+import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 
 from ..config import StructureParams
@@ -150,8 +151,10 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
     for sw in swings:
         confirm_at.setdefault(sw.index + params.swing_right, []).append(sw)
 
-    median_range = float(np.median(highs - lows)) if n else 0.0
-    min_gap = params.min_gap_fraction * median_range
+    # the gap threshold as it stood when each candle closed: the median range of the candles before it
+    ranges = pd.Series(highs - lows, dtype=float)
+    rolling = ranges.rolling(max(1, params.gap_median_window), min_periods=1).median().shift(1).bfill()
+    min_gap_at = (params.min_gap_fraction * rolling).to_numpy(dtype=float) if n else np.zeros(0)
 
     active_high: List[LiquidityLevel] = []
     active_low: List[LiquidityLevel] = []
@@ -209,6 +212,7 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
 
         # 4) balance level: the gap between candle j-2 and candle j -----------------
         if j >= 2:
+            min_gap = min_gap_at[j]
             if lows[j] > highs[j - 2] and (lows[j] - highs[j - 2]) >= min_gap:
                 analysis.gaps.append(Gap(Bias.BULLISH, float(highs[j - 2]), float(lows[j]), j, ts.iloc[j],
                                          j - 1, float(lows[j - 1]), float(highs[j - 1]), j - 2))

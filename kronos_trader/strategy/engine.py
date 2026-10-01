@@ -228,6 +228,7 @@ class StrategyEngine:
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}")
                 continue
             setup.touched_at = pd.Timestamp(touch_ts)
+            setup.visit_number = visits
 
             # 6: Kronos as an extra indicator ---------------------------------------------------
             notes: List[str] = []

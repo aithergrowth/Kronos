@@ -352,6 +352,7 @@ class TradeSetup:
     tp_source: str
     notes: List[str] = field(default_factory=list)
     touched_at: Optional[pd.Timestamp] = None      # when price entered the zone on the lowest timeframe (this visit)
+    visit_number: Optional[int] = None             # 1 = the first return to the zone
 
     @property
     def stop_pips(self) -> Optional[float]:

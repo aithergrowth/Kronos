@@ -75,6 +75,7 @@ class StructureParams:
     full_body_break: bool = False       # a close beyond the level is the break ("closure", A 02:26:06); True = whole body beyond
     block_body_only: bool = False       # order block (candle 1) = full candle range (True = body only)
     min_gap_fraction: float = 0.2       # ASSUMPTION: a balance level (gap) must be >= this fraction of the median candle range
+    gap_median_window: int = 100        # ... of the candles before it (as-of, so later candles never reclassify an old gap)
     poi_mode: str = "liquidity_to_protection"   # D 12:21 / F 03:00: zone = liquidity taken by the displacement (X) -> gap -> P; legacy: sweep_to_gap
     poi_break_window: int = 3           # the displacement must close through X between P and this many candles after candle 3
     max_bars_sweep_to_balance: int = 40 # legacy mode: the balance level must form within this many candles after the sweep

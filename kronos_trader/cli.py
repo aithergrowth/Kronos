@@ -139,11 +139,29 @@ def cmd_backtest(args) -> int:
     bt = Backtester(settings, data, symbol, step_tf=args.step_tf, engine=_engine(settings),
                     start=args.start, end=args.end, use_spread=not args.no_spread, progress=args.progress,
                     quote_basis=args.quote_basis)
+    cal = getattr(bt.engine, "calendar", None)
+    if settings.news.enabled:
+        events = getattr(cal, "events", None) or []
+        if events:
+            times = [e.time for e in events]
+            print(f"news calendar: {len(events)} events {min(times)} -> {max(times)} ({settings.news.calendar_csv})")
+        else:
+            print(f"news calendar: ENABLED BUT EMPTY ({settings.news.calendar_csv}): no blackout applied")
     result = bt.run()
     print(format_report(result))
+    if result.zones_by_reason:
+        print("  distinct zones behind the rejections (bars above count every candle):")
+        for key, n in sorted(result.zones_by_reason.items(), key=lambda kv: -kv[1])[:12]:
+            print(f"    {n:6d}  {key}")
     if args.out:
+        from .backtest.provenance import write_provenance
         result.trades_frame().to_csv(args.out, index=False)
-        print(f"trades written to {args.out}")
+        out = Path(args.out)
+        pd.DataFrame(result.equity_curve, columns=["time", "equity"]).to_csv(out.with_suffix(".equity.csv"), index=False)
+        write_provenance(out.with_suffix(".provenance.json"), settings=settings, symbol=symbol,
+                         data_dir=getattr(args, "data_dir", None) or settings.tradingview.cache_dir, result=result,
+                         quote_basis=args.quote_basis)
+        print(f"trades written to {args.out} (+ .equity.csv, .provenance.json)")
     return 0
 
 

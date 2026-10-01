@@ -7,6 +7,7 @@ timeframe, so nothing in the analysis can peek into the future.
 """
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
@@ -38,6 +39,7 @@ class BacktestResult:
     rejected_by_guard: int = 0
     guard_reasons: Dict[str, int] = field(default_factory=dict)
     rejection_reasons: Dict[str, int] = field(default_factory=dict)
+    zones_by_reason: Dict[str, int] = field(default_factory=dict)      # distinct zones (not bars) behind each rejection bucket
     runtime_seconds: float = 0.0
 
     def trades_frame(self) -> pd.DataFrame:
@@ -51,10 +53,27 @@ class BacktestResult:
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
                 "tp_source": t.meta.get("tp_source"), "touched_at": t.meta.get("touched_at"), "confirmed_at": t.meta.get("confirmed_at"),
                 "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"), "lots_planned": t.meta.get("lots_planned"),
+                "poi_x": t.meta.get("poi_x"), "poi_b_low": (t.meta.get("poi_b") or (None, None))[0],
+                "poi_b_high": (t.meta.get("poi_b") or (None, None))[1], "poi_p": t.meta.get("poi_p"),
+                "poi_formed": t.meta.get("poi_formed"), "visit": t.meta.get("visit"),
+                "risk_amount": t.risk_amount, "risk_budget": t.meta.get("risk_budget"),
                 "poi_low": (t.meta.get("poi") or (None, None))[0],
                 "poi_high": (t.meta.get("poi") or (None, None))[1], "kronos": t.meta.get("kronos"),
             })
         return pd.DataFrame(rows)
+
+
+def visits_of(setup) -> Optional[int]:
+    return getattr(setup, "visit_number", None)
+
+
+ZONE_RE = re.compile(r"^(\S+ \S+ POI [\d.]+-[\d.]+) \(\w+, formed ([^)]+)\)")
+
+
+def zone_identity(reason: str) -> Optional[str]:
+    """The zone a rejection text is about (timeframe, side, bounds, formation time), status stripped."""
+    m = ZONE_RE.match(reason)
+    return f"{m.group(1)} formed {m.group(2)}" if m else None
 
 
 def _bucket(reason: str) -> str:
@@ -106,6 +125,7 @@ class Backtester:
         signals = rejected = steps = 0
         guard_reasons: Dict[str, int] = {}
         rejection_reasons: Dict[str, int] = {}
+        zones_by_reason: Dict[str, Set[str]] = {}
         first_ts = last_ts = None
         last_candle = None
 
@@ -130,6 +150,9 @@ class Backtester:
             for r in analysis.rejections:
                 key = _bucket(r)
                 rejection_reasons[key] = rejection_reasons.get(key, 0) + 1
+                zone = zone_identity(r)
+                if zone is not None:
+                    zones_by_reason.setdefault(key, set()).add(zone)
             if analysis.has_valid_signal:
                 setup = analysis.signal.setup
                 key = (setup.poi.key, str(setup.confirmation.timestamp))
@@ -162,6 +185,10 @@ class Backtester:
                     risk_distance_now, setup.breakeven_r,
                     meta={
                         "poi_tf": setup.poi.timeframe.label, "poi": (setup.poi.low, setup.poi.high),
+                        "poi_x": setup.poi.liquidity_level, "poi_p": setup.poi.protector_extreme,
+                        "poi_b": ((setup.poi.gap.low, setup.poi.gap.high) if setup.poi.gap is not None else
+                                  (setup.poi.balance.low, setup.poi.balance.high) if setup.poi.balance is not None else (None, None)),
+                        "poi_formed": setup.poi.created_at, "visit": visits_of(setup),
                         "confirmation": setup.confirmation.type.value, "confirmation_tf": setup.confirmation.timeframe.label,
                         "confirmed_at": setup.confirmation.timestamp, "touched_at": setup.touched_at, "entry_planned": setup.entry,
                         "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "lots_planned": setup.lots,
@@ -184,5 +211,6 @@ class Backtester:
             symbol=self.symbol, step_tf=self.step_tf, start=first_ts, end=last_ts,
             initial_equity=broker.initial_balance, final_equity=broker.balance(), trades=list(broker.closed),
             equity_curve=list(broker.equity_curve), steps=steps, signals=signals, rejected_by_guard=rejected,
-            guard_reasons=guard_reasons, rejection_reasons=rejection_reasons, runtime_seconds=time.time() - t0,
+            guard_reasons=guard_reasons, rejection_reasons=rejection_reasons,
+            zones_by_reason={k: len(v) for k, v in zones_by_reason.items()}, runtime_seconds=time.time() - t0,
         )
