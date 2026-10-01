@@ -71,3 +71,22 @@ def test_risk_guard_limits():
     broker._balance = 91_500.0
     ok, reason = guard.can_open(broker, ts + pd.Timedelta(1, unit="D"))
     assert not ok and "drawdown" in reason
+
+
+@pytest.mark.parametrize("raised_during_reconcile", [False, True])
+def test_broker_execution_halt_blocks_other_symbols_without_positions(monkeypatch, raised_during_reconcile):
+    settings = Settings()
+    settings.prop_firm.max_open_trades = 5
+    broker = PaperBroker(settings)
+    reason = "EURUSD partial fill requires reconciliation"
+    broker.execution_halt_reason = None if raised_during_reconcile else reason
+
+    def reconcile():
+        broker.execution_halt_reason = reason
+        return []
+
+    if raised_during_reconcile:
+        monkeypatch.setattr(broker, "open_positions", reconcile)
+    guard = RiskGuard(settings.prop_firm, settings.account_size)
+    ok, detail = guard.can_open(broker, pd.Timestamp("2026-10-01 09:00"), "USDJPY")
+    assert not ok and reason in detail

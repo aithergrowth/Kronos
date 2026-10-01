@@ -178,6 +178,7 @@ class LiveRunner:
         self.pending: Dict[str, PendingSetup] = {}
         self.known_positions: Dict[str, Position] = {}
         self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
+        self._attention_reports: Dict[str, tuple] = {}   # alert once per observed exposure/status change
         self.last_analysis: Optional[Analysis] = None
         self.stale: Dict[Timeframe, pd.Timedelta] = {}   # timeframe -> age of its last closed candle
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
@@ -187,15 +188,17 @@ class LiveRunner:
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
         now = pd.Timestamp(now) if now is not None else self.clock()
         views = self.fetch()
-        self.advance_paper(views, now)
+        if not self.dry_run:
+            self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=True)
         self.last_analysis = analysis
-        self.manage_positions(views)
-        self.process_decisions(now)
-        self.report_closes()
+        if not self.dry_run:
+            self.manage_positions(views)
+            self.process_decisions(now)
+            self.report_closes()
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
@@ -208,7 +211,11 @@ class LiveRunner:
             try:
                 self.step()
             except Exception as exc:  # keep the loop alive and say what broke
-                self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}")
+                try:
+                    self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}")
+                except Exception:
+                    # The transport may be the original failure; it must not terminate polling.
+                    print(f"[live] {self.symbol}: {type(exc).__name__}; notification unavailable, retrying next poll")
             if self.broker is not None:
                 self.broker.idle(poll)
             else:
@@ -265,15 +272,17 @@ class LiveRunner:
         key = (setup.poi.key, str(setup.confirmation.timestamp))
         if key in self.seen:
             return
-        self.seen.add(key)
         if self.stale and self.settings.live.require_fresh_data:
+            self.seen.add(key)
             self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
             return
         if self.broker is None or self.dry_run:
             self.notifier.send_setup(setup, forecast, self.spec)
+            self.seen.add(key)  # failed Telegram delivery must remain retryable
             if self.broker is not None:
                 self.notifier.send(f"{self.symbol}: dry-run, order not sent")
             return
+        self.seen.add(key)
         ok, reason = self.guard.can_open(self.broker, now, self.symbol)
         if not ok:
             self.notifier.send_setup(setup, forecast, self.spec)
@@ -288,6 +297,9 @@ class LiveRunner:
         self.execute(setup, forecast, now)
 
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
+        if self.dry_run or self.broker is None:
+            self.notifier.send(f"{self.symbol}: notification-only mode, order not sent")
+            return None
         if self.stale and self.settings.live.require_fresh_data:
             self.notifier.send(f"⛔ {self.symbol}: not executed - the data is stale ({self.stale_text()}); refresh the feed")
             return None
@@ -325,7 +337,9 @@ class LiveRunner:
         self.known_positions[pos.id] = pos
         side = "BUY" if pos.direction.sign > 0 else "SELL"
         d = self.spec.price_decimals
-        if getattr(pos, "status", "filled") == "filled":
+        if getattr(pos, "status", "filled") == "attention":
+            self.report_execution_attention(pos)
+        elif getattr(pos, "status", "filled") == "filled":
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
                                f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")
         else:
@@ -356,11 +370,29 @@ class LiveRunner:
                 self.notifier.send(f"⌛ {self.symbol}: setup {short_id} expired without approval")
 
     # ------------------------------------------------------------ positions
+    def report_execution_attention(self, pos: Position) -> None:
+        """Keep uncertain exposure visible without claiming a protected/full fill."""
+        self.known_positions[pos.id] = pos
+        self.unconfirmed.pop(pos.id, None)
+        reason = pos.meta.get("attention_reason", "broker exposure needs reconciliation")
+        unknown = pos.meta.get("exposure_unverified", False)
+        observed = (pos.meta.get("filled_units"), pos.meta.get("parent_status"), pos.lots, unknown, reason)
+        if self._attention_reports.get(pos.id) == observed:
+            return
+        quantity = "exposure quantity unverified" if unknown else f"observed {pos.lots:.2f} lots"
+        self.notifier.send(f"⚠️ {pos.symbol}: execution needs attention, {quantity}; "
+                           f"protection unverified, new entries halted. Check broker positions and orders. "
+                           f"{reason} (id {pos.id})")
+        self._attention_reports[pos.id] = observed
+
     def manage_positions(self, views: Dict[Timeframe, CandleSeries]) -> None:
         """Confirm pending fills and move stops to break-even per the exit rules (no partials)."""
-        if self.broker is None or not views:
+        if self.dry_run or self.broker is None or not views:
             return
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
+        for pos in open_by_id.values():
+            if getattr(pos, "status", "filled") == "attention":
+                self.report_execution_attention(pos)
         d = self.spec.price_decimals
         for pid in list(self.unconfirmed):
             current = open_by_id.get(pid)

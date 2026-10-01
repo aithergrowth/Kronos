@@ -13,6 +13,12 @@ Status legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## Research status — 2026-10-01, follow-up evidence check
 
+**Current stack update (2026-10-01):** Max confirmed **MT5 candles + Telegram notifications**. Preserved Claude's MT5 additions from `b747e7d` and corrected UTC handling, isolated notification-only mode from execution/stop management/approval polling, added the missing 1m feed request and made failed alert delivery retryable without stopping the monitoring loop. **141 offline tests pass**, one fixture test skips and one model test is deselected. Actual terminal connectivity and Telegram delivery remain unverified. See [the MT5/Telegram handoff](MT5_TELEGRAM_READINESS.md). The separate [IBKR partial-fill correction](PARTIAL_FILL_HANDLING_2026-10-01.md) retains uncertain exposure and halts new entries; it does not establish verified protection or autonomous recovery.
+
+**New K3 observation:** [the second short drawing at 03:48](examples/research/xauusd_2026-08-26_second_short_0348.md) has independently checked entry **4623.59**, stop **4633.72**, stop distance **10.13**, target distance **27.97** and displayed RR **2.76**. It is separate from the corrected first drawing at 02:40. The target-price label and chart timezone remain obscured, and chart crosshair/endpoint labels are not entry timestamps. Complete fixtures remain **0**; this sparse observation record does not count as another complete case.
+
+The following dated checks preserve earlier findings and are superseded where the current stack update explicitly says so.
+
 **Latest execution check (base `445cd25`):** preserved Claude's concurrent runtime changes; **103 offline tests pass**, one source-fixture test skips and one model-weights test is deselected. Added finite-positive quote and stale queued-approval guards plus a CI YAML correction and pandas timestamp compatibility fix. A separate fake-IBKR reproduction still loses tracking/protection requests after a partial fill is cancelled. See [current verification and remaining defect](EXECUTION_VERIFICATION_2026-10-01.md); older runtime reviews below are historical.
 
 **Current data/readiness update (base `375c16b`, 2026-10-01):** Claude delivered seven
@@ -437,7 +443,7 @@ The priority D/E videos and additional F video now have complete available Dutch
 - [x] **B8 - Dot on GitHub.** If Astra runs as a ChatGPT Dot: connect it to the `aithergrowth/kronos` repository, work on branches named `astra/<topic>`, open pull requests for Claude to review, and keep all secrets out of its computer. It should read `docs/STRATEGY.md` and `docs/ASTRA_TASKS.md` first.
   > status: GitHub repository access verified; research PRs #3 and #4 merged into `feature/kronos-trader`. This follow-up is prepared on `astra/definitions`; no master write.
 - [ ] **B9 - IBKR paper + Telegram on the desktop.** Follow `docs/LIVE_SETUP.md` sections 1 and 2, then run `python -m kronos_trader ibkr-test` and `python -m kronos_trader telegram-test`.
-  > status:
+  > status: Superseded as the active connection route by Max's MT5-candles/Telegram decision. Use `docs/MT5_TELEGRAM_READINESS.md`; actual terminal and Telegram delivery checks remain open. IBKR paper integration is optional and separate.
 
 ## C. What Claude did / will do
 
@@ -476,3 +482,5 @@ The priority D/E videos and additional F video now have complete available Dutch
 | 2026-10-01 | Added [source H](DORUS_ENTRY_METHODS.md) and Q5/Q8/Q10/BS cross-references; preserved prior decisions. All-video/all-academy review incomplete; complete fixtures zero. No runtime changes. | Codex/Astra |
 | 2026-10-01 | Independently verified latest `445cd25`; 101 offline tests pass after invalid-quote/stale-approval guards and CI YAML correction. Preserved Claude changes. Reproduced unresolved IBKR partial-cancel defect; see [verification](EXECUTION_VERIFICATION_2026-10-01.md). | Codex/Astra |
 | 2026-10-01 | First working hosted CI exposed pandas 3 StringDtype CSV parsing failure (98 pass, 1 fail, 2 errors). Added two reproducible regressions and pandas-compatible detection; full local suite now 103 pass, 1 skip, 1 deselection. Hosted follow-up pending. | Codex/Astra |
+| 2026-10-01 | Previous astra `400f30b` hosted CI passed (103/1 skipped/1 deselected). Preserved Claude MT5 `b747e7d`; UTC epochs retained, notification-only execution isolated, 1m requested, failed alert retry and loop resilience added. Current offline suite: 141 pass/1 skipped/1 deselected. MT5 terminal and Telegram delivery unverified. Separate IBKR attention containment added; durable recovery/protection still unverified. | Codex/Astra |
+| 2026-10-01 | Independently checked K3 second short at 03:48 and saved sparse observation metadata; target-price label and timezone remain unreadable. Does not replace the corrected first drawing, derive a target price, or create a complete fixture. | Codex/Astra |

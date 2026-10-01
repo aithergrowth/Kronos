@@ -236,15 +236,28 @@ class IBKRParams:
 
 
 @dataclass
+class MT5Params:
+    """MetaTrader 5 terminal (Windows). Credentials and the terminal path come from environment variables."""
+    login_env: str = "MT5_LOGIN"
+    password_env: str = "MT5_PASSWORD"
+    server_env: str = "MT5_SERVER"
+    path_env: str = "MT5_PATH"                    # terminal64.exe, only when the terminal is not found automatically
+    offset_env: str = "MT5_SERVER_OFFSET_HOURS"   # optional manual correction; native Python API epochs are UTC
+    magic: int = 20260930                         # marks the positions this program opened
+    deviation_points: int = 20                    # max slippage for market orders
+    filling: str = "ORDER_FILLING_IOC"            # ORDER_FILLING_FOK for brokers that reject IOC
+
+
+@dataclass
 class LiveParams:
     poll_seconds: int = 60
     require_approval: bool = True                  # human taps Approve in Telegram before an order is sent
     approval_timeout_minutes: Optional[int] = None  # None = one confirmation-timeframe candle (min 5 minutes)
     # every timeframe the engine needs comes from the broker; the TradingView cache is the fallback
-    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4,
+    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_1, Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4,
                                                 Timeframe.D_1, Timeframe.W_1, Timeframe.MN_1)
     broker_bar_counts: Dict[Timeframe, int] = field(default_factory=lambda: {
-        Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
+        Timeframe.MIN_1: 500, Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
     max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
@@ -268,6 +281,7 @@ class Settings:
     telegram: TelegramParams = field(default_factory=TelegramParams)
     tradingview: TradingViewParams = field(default_factory=TradingViewParams)
     ibkr: IBKRParams = field(default_factory=IBKRParams)
+    mt5: MT5Params = field(default_factory=MT5Params)
     live: LiveParams = field(default_factory=LiveParams)
 
     # ------------------------------------------------------------------ access

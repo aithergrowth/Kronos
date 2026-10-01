@@ -68,6 +68,7 @@ deliverables:
   complete_regression_fixtures: 0
   ohlc_csvs: 7
   intermediate_drawing_state_records: 1
+  additional_position_drawing_records: 1
   records_with_expect_fields: 0
   exact_retrieval_requests: 7
   cases_with_retrieval_metadata: 6
@@ -118,6 +119,8 @@ analysis_lesson_inventory:
     02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone and complete
     fixture remain unresolved. IMG_3573.PNG and IMG_3574.PNG attachments independently read on 2026-10-01;
     distinct .pro/M1 and .raw/M15 charts show quote labels, not explicit SL/TP or UTC anchors.
+    Follow-up 03:48 independently verifies second-short drawing labels in
+    xauusd_2026-08-26_second_short_0348.yaml; first-short target/clock remain unresolved.
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
   review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
@@ -248,6 +251,8 @@ focused_followup_results:
   gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target price/timezone
     still obscured. Two mobile attachments independently checked; no labeled TP or UTC anchor. No complete
     fixture.
+  gold_second_drawing: Separate 03:48 second-short observations independently checked; see
+    xauusd_2026-08-26_second_short_0348.md and matching YAML. No target price, UTC timestamp or complete fixture.
   entry_poi: K6 confirms local gap wick boundaries. D/F explicitly describe liquidity-to-protection; exact
     P endpoints still unresolved. K7 03:19–03:20 lower line meets first candle lower wick but has no readable
     P label.

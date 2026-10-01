@@ -103,6 +103,7 @@ class IBKRBroker(Broker):
         self._closed: List[ClosedTrade] = []
         self._close_cursor = 0
         self._quotes_blocked = False
+        self.execution_halt_reason: Optional[str] = None  # latched: unresolved exposure needs manual reconciliation
         if connect and not self.ib.isConnected():
             self.connect()
 
@@ -252,14 +253,99 @@ class IBKRBroker(Broker):
         return [p for p in self._positions.values() if symbol is None or p.symbol == symbol.upper()]
 
     def _order_state(self, trade, qty: float) -> str:
-        """'filled', 'rejected' (cancelled / inactive) or 'pending' for an ib_async Trade."""
+        """Classify fills before terminal status: cancellation does not erase an execution."""
         status = getattr(getattr(trade, "orderStatus", None), "status", "") or ""
-        filled = float(getattr(getattr(trade, "orderStatus", None), "filled", 0.0) or 0.0)
+        filled = self._filled_units(trade, qty)
+        if 0 < filled < qty:
+            return "partial_terminal" if status in DEAD_STATUSES or status == "Filled" else "partial_pending"
         if status == "Filled" or (qty > 0 and filled >= qty):
             return "filled"
         if status in DEAD_STATUSES:
             return "rejected"
         return "pending"
+
+    @staticmethod
+    def _filled_units(trade, requested: float) -> float:
+        order_status = getattr(trade, "orderStatus", None)
+        raw = getattr(order_status, "filled", None)
+        if raw is None:
+            return requested if getattr(order_status, "status", "") == "Filled" else 0.0
+        try:
+            units = float(raw)
+        except (TypeError, ValueError):
+            return 0.0
+        return units if math.isfinite(units) and units >= 0 else 0.0
+
+    def _account_holdings(self) -> Dict[str, float]:
+        held: Dict[str, float] = {}
+        for p in self.ib.positions():
+            if self.params.account and getattr(p, "account", None) != self.params.account:
+                continue
+            sym = symbol_of(p.contract)
+            held[sym] = held.get(sym, 0.0) + float(p.position)
+        return held
+
+    def _mark_attention(self, pos: Position, orders: Dict[str, Any], exposure_unverified: bool = False) -> None:
+        """Retain known exposure without guessing that attached children protect a partial fill.
+
+        Neither an empty position snapshot nor a later full parent fill clears this
+        state: child activation/quantity and exposure require manual reconciliation.
+        """
+        parent = orders["parent"]
+        requested = orders["requested_units"]
+        reported = self._filled_units(parent, requested)
+        previous = float(pos.meta.get("filled_units", 0.0))
+        filled = max(previous, reported)  # an older callback must not erase a known fill
+        status = getattr(parent.orderStatus, "status", "") or ""
+        try:
+            average = float(getattr(parent.orderStatus, "avgFillPrice", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            average = 0.0
+        if reported >= previous and reported > 0 and math.isfinite(average) and average > 0:
+            pos.entry = average
+            pos.meta.pop("entry_unconfirmed", None)
+
+        pos.status = "attention"
+        pos.lots = filled / self.spec(pos.symbol).contract_size
+        pos.meta.update({
+            "requested_units": requested, "filled_units": filled,
+            "requested_lots": orders["requested_lots"], "requested_entry": orders["requested_entry"],
+            "requested_risk_amount": orders["requested_risk_amount"],
+            "requested_risk_distance": orders["requested_risk_distance"],
+            "parent_status": status, "protection_verified": False,
+        })
+        if filled:
+            pos.meta.pop("exposure_unverified", None)
+            pos.meta["entry_fill_state"] = ("filled" if filled >= requested else
+                                            "partial_terminal" if status in DEAD_STATUSES or status == "Filled" else
+                                            "partial_pending")
+            reason = f"{pos.symbol} order {pos.id}: partial fill observed; child protection is unverified; manual reconciliation required"
+        else:
+            pos.meta["exposure_unverified"] = exposure_unverified or pos.meta.get("exposure_unverified", False)
+            pos.meta["entry_fill_state"] = "unknown"
+            pos.meta["entry_unconfirmed"] = True
+            reason = (f"{pos.symbol} order {pos.id}: account exposure exists but its quantity cannot be attributed to this order; "
+                      "child protection is unverified; manual reconciliation required")
+        original_distance = orders["requested_risk_distance"]
+        original_lots = orders["requested_lots"]
+        if filled and not pos.meta.get("entry_unconfirmed") and original_distance > 0 and original_lots > 0:
+            buffer = max(0.0, original_distance - abs(orders["requested_entry"] - pos.initial_stop))
+            pos.risk_distance = abs(pos.entry - pos.initial_stop) + buffer
+            pos.risk_amount = (orders["requested_risk_amount"] * pos.lots / original_lots *
+                               pos.risk_distance / original_distance)
+            pos.meta.pop("risk_unverified", None)
+        else:
+            pos.risk_distance = pos.risk_amount = 0.0
+            pos.meta["risk_unverified"] = True
+        pos.meta["attention_reason"] = reason
+        if self.execution_halt_reason is None:
+            self.execution_halt_reason = reason
+
+    def _require_managed_position(self, position_id: str) -> None:
+        self._reconcile()
+        pos = self._positions.get(str(position_id))
+        if pos is not None and pos.status == "attention":
+            raise RuntimeError(pos.meta["attention_reason"])
 
     def _await_fill(self, trade, qty: float) -> str:
         """Run the event loop for up to ``fill_wait_seconds`` until the order is filled or dead."""
@@ -286,8 +372,13 @@ class IBKRBroker(Broker):
         Returns a ``Position`` with ``status="filled"`` only when TWS confirmed the fill
         within ``fill_wait_seconds``; otherwise ``status="pending"`` with the quote as a
         provisional entry (``meta["entry_unconfirmed"]``), corrected by ``_reconcile``
-        once the fill arrives.  A cancelled / rejected parent raises ``RuntimeError``.
+        once the fill arrives.  A cancelled / rejected parent with no execution and
+        no conflicting account exposure raises ``RuntimeError``. Partial/unknown
+        exposure stays tracked in ``attention`` and latches an entry halt.
         """
+        self._reconcile()
+        if self.execution_halt_reason is not None:
+            raise RuntimeError(f"entry halted: {self.execution_halt_reason}")
         symbol = symbol.upper()
         contract = self.contract(symbol)
         qty = self.quantity(symbol, lots)
@@ -301,16 +392,20 @@ class IBKRBroker(Broker):
         tp_trade = self.ib.placeOrder(contract, tp_order)
         stop_order = self.api.StopOrder(reverse, qty, float(stop), parentId=parent_id, transmit=True, tif="GTC")
         stop_trade = self.ib.placeOrder(contract, stop_order)
-        orders = {"parent": parent_trade, "stop": stop_trade, "tp": tp_trade, "contract": contract}
+        orders = {"parent": parent_trade, "stop": stop_trade, "tp": tp_trade, "contract": contract,
+                  "requested_units": qty, "requested_lots": float(lots),
+                  "requested_risk_amount": float(risk_amount), "requested_risk_distance": float(risk_distance)}
 
         state = self._await_fill(parent_trade, qty)
-        if state == "rejected":
+        unknown_exposure = state == "rejected" and abs(self._account_holdings().get(symbol, 0.0)) > 1e-9
+        if state == "rejected" and not unknown_exposure:
             self._cancel_children(orders)
             status = getattr(parent_trade.orderStatus, "status", "?")
             raise RuntimeError(f"{symbol} {action} order {parent_id} not accepted by TWS (status {status})")
-        fill = float(getattr(parent_trade.orderStatus, "avgFillPrice", 0.0) or 0.0) if state == "filled" else 0.0
-        confirmed = fill > 0
+        fill = float(getattr(parent_trade.orderStatus, "avgFillPrice", 0.0) or 0.0) if state == "filled" or state.startswith("partial") else 0.0
+        confirmed = math.isfinite(fill) and fill > 0
         entry = fill if confirmed else (float(price) if price is not None else self.current_price(symbol))
+        orders["requested_entry"] = float(price) if price is not None else entry
         pos = Position(
             id=str(parent_id), symbol=symbol, direction=direction, lots=float(lots), entry=entry, stop=float(stop),
             take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now(tz="UTC").tz_localize(None),
@@ -321,9 +416,12 @@ class IBKRBroker(Broker):
             pos.meta["entry_unconfirmed"] = True
         self._positions[pos.id] = pos
         self._orders[pos.id] = orders
+        if state.startswith("partial") or unknown_exposure:
+            self._mark_attention(pos, orders, exposure_unverified=unknown_exposure)
         return pos
 
     def modify_stop(self, position_id: str, stop: float) -> None:
+        self._require_managed_position(position_id)
         orders = self._orders.get(str(position_id))
         if orders is None:
             raise KeyError(f"position {position_id} not tracked by this adapter")
@@ -334,6 +432,7 @@ class IBKRBroker(Broker):
         self._positions[str(position_id)].stop = float(stop)
 
     def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
+        self._require_managed_position(position_id)
         pid = str(position_id)
         pos = self._positions.get(pid)
         if pos is None:
@@ -367,15 +466,17 @@ class IBKRBroker(Broker):
 
     # ------------------------------------------------------------ reconciliation
     def _reconcile(self) -> None:
-        held: Dict[str, float] = {}
-        for p in self.ib.positions():
-            sym = symbol_of(p.contract)
-            held[sym] = held.get(sym, 0.0) + float(p.position)
+        held = self._account_holdings()
         for pid, pos in list(self._positions.items()):
             orders = self._orders.get(pid, {})
-            if pos.status == "pending":
+            if pos.status in {"pending", "attention"}:
                 parent = orders.get("parent")
-                state = self._order_state(parent, self.quantity(pos.symbol, pos.lots)) if parent is not None else "pending"
+                requested = orders["requested_units"]
+                state = self._order_state(parent, requested) if parent is not None else "pending"
+                unknown_exposure = state == "rejected" and abs(held.get(pos.symbol, 0.0)) > 1e-9
+                if pos.status == "attention" or state.startswith("partial") or unknown_exposure:
+                    self._mark_attention(pos, orders, exposure_unverified=unknown_exposure)
+                    continue
                 if state == "filled":
                     fill = float(getattr(parent.orderStatus, "avgFillPrice", 0.0) or 0.0)
                     if fill > 0:

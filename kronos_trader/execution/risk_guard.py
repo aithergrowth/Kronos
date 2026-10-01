@@ -54,7 +54,11 @@ class RiskGuard:
         equity = broker.equity()
         self.update(ts, equity)
         p = self.params
-        if len(broker.open_positions()) >= p.max_open_trades:
+        positions = broker.open_positions()  # reconciliation can discover an execution halt
+        execution_halt = getattr(broker, "execution_halt_reason", None)
+        if execution_halt:
+            return False, f"broker execution halted: {execution_halt}"
+        if len(positions) >= p.max_open_trades:
             return False, f"max {p.max_open_trades} open trade(s) per account"
         if self.daily_loss_pct(equity) >= p.daily_loss_limit_pct:
             return False, f"daily loss {self.daily_loss_pct(equity):.2f}% reached the {p.daily_loss_limit_pct}% limit"

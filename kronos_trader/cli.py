@@ -224,7 +224,8 @@ def cmd_live(args) -> int:
     fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
                         broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
-    runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
+    # In notification-only mode the adapter supplies candles but has no execution/management role.
+    runner = LiveRunner(settings, symbol, fetch, broker=broker if args.execute else None, notifier=notifier,
                         engine=StrategyEngine(settings, _forecaster(settings)),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan)
@@ -263,6 +264,23 @@ def cmd_ibkr_test(args) -> int:
         print("price:", broker.current_price(symbol))
     except Exception as exc:
         print("price: FAILED -", exc)
+    broker.disconnect()
+    return 0
+
+
+def cmd_mt5_test(args) -> int:
+    from .execution.mt5 import MT5Broker
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    broker = MT5Broker(settings)
+    d = broker.diagnostics()
+    print(f"connected: {d['connected']}  trade allowed: {d['trade_allowed']}  terminal {d['version']}")
+    print(f"account {d['login']} on {d['server']}  {d['currency']}  balance {d['balance']}  equity {d['equity']}  leverage 1:{d['leverage']}")
+    print(f"server time offset to UTC: {d['server_offset']}")
+    print(f"symbol: {broker.mt5_symbol(symbol)}")
+    bars = broker.get_candles(symbol, Timeframe.parse(args.tf), 5)
+    print(bars.df.to_string())
+    print("price:", broker.current_price(symbol))
     broker.disconnect()
     return 0
 
@@ -377,6 +395,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--symbol", default="EURUSD")
     sp.add_argument("--tf", default="15m")
     sp.set_defaults(func=cmd_feed_test)
+
+    sp = sub.add_parser("mt5-test", help="connect to the MetaTrader 5 terminal and print account, server time offset and bars")
+    sp.add_argument("--symbol", default="EURUSD")
+    sp.add_argument("--tf", default="15m")
+    sp.set_defaults(func=cmd_mt5_test)
     return p
 
 

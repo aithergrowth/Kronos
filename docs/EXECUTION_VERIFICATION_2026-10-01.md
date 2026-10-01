@@ -1,5 +1,9 @@
 # Independent execution verification — 1 October 2026
 
+> **Current active route:** [MT5 candles and Telegram notifications](MT5_TELEGRAM_READINESS.md), with 141 offline tests passing. No real terminal or message delivery has been verified.
+
+> **Follow-up:** [partial-fill handling](PARTIAL_FILL_HANDLING_2026-10-01.md) addresses the reproduced tracking/cancellation failure with retained exposure and an attention halt. This earlier report and its reproduction remain the historical baseline; autonomous protection recovery is still unverified.
+
 **103 offline tests pass after two execution guards, a workflow syntax correction and a CSV timestamp compatibility fix. A reproduced IBKR partial-fill cancellation defect and missing Dorus chart fixtures still prevent a readiness claim.**
 
 Base: [`445cd256b599ec9a0a1722b2049699b1ad923095`](https://github.com/aithergrowth/Kronos/commit/445cd256b599ec9a0a1722b2049699b1ad923095), on `feature/kronos-trader`. Claude's runtime update at `40ae003` and merged research PR #5 are preserved. An earlier local patch against `375c16b` was discarded when these concurrent changes arrived.

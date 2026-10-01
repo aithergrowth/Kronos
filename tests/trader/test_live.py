@@ -52,9 +52,61 @@ def test_dry_run_only_notifies(setup):
     broker.set_price("EURUSD", 1.1)
     runner, notifier = _runner(setup, broker)
     runner.dry_run = True
+    runner.settings.prop_firm.max_open_trades = 5
     runner.step()
     assert broker.open_positions() == [] and runner.pending == {}
     assert any("BUY" in m for m in notifier.sent) and any("dry-run" in m for m in notifier.sent)
+
+
+def test_dry_run_does_not_manage_existing_stops_or_execute_directly(setup, monkeypatch):
+    broker = PaperBroker(Settings())
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 0.25, 1.095, 1.12, 250, 0.0051, 0,
+                                    price=1.1, ts=NOW)
+    runner, notifier = _runner(setup, broker)
+    runner.dry_run = True
+    modify = Mock(wraps=broker.modify_stop)
+    submit = Mock(wraps=broker.place_market_order)
+    monkeypatch.setattr(broker, "modify_stop", modify)
+    monkeypatch.setattr(broker, "place_market_order", submit)
+    runner.manage_positions(runner.fetch())
+    runner.execute(setup, None, NOW)
+    modify.assert_not_called()
+    submit.assert_not_called()
+    assert pos.stop == 1.095 and not pos.breakeven_done
+
+
+def test_notification_only_scan_does_not_poll_approval_commands(setup, monkeypatch):
+    runner, notifier = _runner(setup, PaperBroker(Settings()))
+    runner.dry_run = True
+    poll = Mock(return_value=[])
+    monkeypatch.setattr(notifier, "poll_decisions", poll)
+    runner.step(NOW)
+    poll.assert_not_called()
+
+
+def test_notification_only_setup_retries_failure_and_deduplicates_success(setup, monkeypatch):
+    runner, notifier = _runner(setup, None)
+    runner.dry_run = True
+    analysis = runner.engine.analyze("EURUSD", runner.fetch(), now=NOW)
+    send = Mock(side_effect=[RuntimeError("temporary Telegram failure"), True])
+    monkeypatch.setattr(notifier, "send_setup", send)
+    with pytest.raises(RuntimeError, match="Telegram failure"):
+        runner.handle_signal(analysis, NOW)
+    runner.handle_signal(analysis, NOW)
+    runner.handle_signal(analysis, NOW)
+    assert send.call_count == 2 and len(runner.seen) == 1
+
+
+def test_notification_outage_does_not_stop_the_monitor_loop(setup, monkeypatch):
+    runner, notifier = _runner(setup, None)
+    runner.dry_run = True
+    step = Mock(side_effect=[RuntimeError("temporary feed failure"), KeyboardInterrupt()])
+    monkeypatch.setattr(runner, "step", step)
+    monkeypatch.setattr(notifier, "send", Mock(side_effect=RuntimeError("notification transport unavailable")))
+    monkeypatch.setattr("kronos_trader.live.time.sleep", Mock())
+    with pytest.raises(KeyboardInterrupt):
+        runner.run_forever(poll_seconds=1)
+    assert step.call_count == 2
 
 
 def test_approval_then_execution_and_close_report(setup):
@@ -109,6 +161,73 @@ def test_execution_rechecks_rr_and_guard(setup):
     runner2, notifier2 = _runner(setup, broker2, require_approval=False)
     runner2.step(NOW)
     assert len(broker2.open_positions()) == 1 and any("NOT executable" in m for m in notifier2.sent)
+
+
+@pytest.mark.parametrize("initially_pending", [False, True])
+@pytest.mark.parametrize("unknown_quantity", [False, True])
+def test_partial_fill_attention_is_reported_and_not_managed_as_confirmed(setup, monkeypatch, initially_pending, unknown_quantity):
+    class AttentionBroker(PaperBroker):
+        execution_halt_reason = None
+
+        def place_market_order(self, *args, **kwargs):
+            pos = super().place_market_order(*args, **kwargs)
+            pos.status = "pending" if initially_pending else "attention"
+            if not initially_pending:
+                mark_attention(pos)
+            return pos
+
+    def mark_attention(pos):
+        pos.status = "attention"
+        pos.lots = 0.0 if unknown_quantity else 0.25
+        pos.meta.update(filled_units=0 if unknown_quantity else 25000, requested_units=100000, parent_status="Cancelled",
+                        attention_reason="partial fill requires reconciliation", protection_verified=False,
+                        exposure_unverified=unknown_quantity)
+        broker.execution_halt_reason = pos.meta["attention_reason"]
+
+    broker = AttentionBroker(Settings())
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    if initially_pending:
+        assert pos.id in runner.unconfirmed
+        mark_attention(pos)
+    modify = Mock(wraps=broker.modify_stop)
+    monkeypatch.setattr(broker, "modify_stop", modify)
+    views = {T.MIN_15: CandleSeries.from_records([(1.1, 1.2, 1.09, 1.1)], T.MIN_15,
+                                               start="2026-10-01 09:00", symbol="EURUSD")}
+    runner.manage_positions(views)
+    runner.manage_positions(views)
+    messages = [m for m in notifier.sent if "protection unverified" in m]
+    assert len(messages) == 1 and "entries halted" in messages[0]
+    if unknown_quantity:
+        assert "exposure quantity unverified" in messages[0] and "0.00 lots" not in messages[0]
+    else:
+        assert "0.25" in messages[0]
+    assert pos.id in runner.known_positions and pos.id not in runner.unconfirmed
+    assert not any("did not fill" in m or "fill confirmed" in m for m in notifier.sent)
+    modify.assert_not_called()
+    assert not pos.breakeven_done
+
+    pos.lots = 0.5
+    pos.meta["filled_units"] = 50000
+    runner.manage_positions(views)
+    assert len([m for m in notifier.sent if "protection unverified" in m]) == 2
+
+
+def test_attention_alert_retries_after_notifier_failure(setup, monkeypatch):
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker)
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 0.25, 1.095, 1.12, 250, 0.0051, 4,
+                                    price=1.1, ts=NOW)
+    pos.status = "attention"
+    pos.meta.update(attention_reason="partial fill requires reconciliation", filled_units=25000)
+    send = Mock(side_effect=[RuntimeError("temporary notification failure"), None])
+    monkeypatch.setattr(notifier, "send", send)
+    with pytest.raises(RuntimeError, match="notification failure"):
+        runner.report_execution_attention(pos)
+    runner.report_execution_attention(pos)
+    assert send.call_count == 2
+    assert pos.id in runner.known_positions
 
 
 def test_build_fetch_combines_cache_and_broker(tmp_path):
