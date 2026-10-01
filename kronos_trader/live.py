@@ -239,8 +239,11 @@ class LiveRunner:
                 forecast = self.engine._forecast(series, [])
             bias = "  ".join(f"{t.label} {b.bias.name.lower()}" for t, b in sorted(analysis.biases.items())) if analysis.biases else ""
             zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
+            title = f"{self.symbol} {tf.label}  {kind}"
+            if setup is not None:
+                title += f"  R:R 1:{setup.rr:.1f}  {setup.lots:.2f} lots  risk {setup.risk_amount:,.0f}"
             path = render_chart(series, f"{self.settings.live.charts_dir}/{self.symbol}_{tf.label}_{kind}.png",
-                                pois=zones, setup=setup, forecast=forecast, title=f"{self.symbol} {tf.label}  {kind}",
+                                pois=zones, setup=setup, forecast=forecast, title=title,
                                 subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=self.settings.live.chart_lookback,
                                 price_decimals=self.spec.price_decimals)
             self.notifier.send_photo(path, f"{self.symbol} {tf.label} {kind}")

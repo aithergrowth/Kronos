@@ -216,6 +216,11 @@ trade, 1 % risk.
 
 ![EURUSD 15m briefing chart with zones and the Kronos fan](images/sample_chart_EURUSD_15m.png)
 
+With a setup the chart adds the position tool: the entry marker on the confirmation
+candle, the risk box to the stop and the reward box to the target, with the R:R.
+
+![EURUSD 1H setup chart with entry, stop, target and the Kronos fan](images/sample_setup_EURUSD_1H.png)
+
 Every briefing, POI touch and setup comes with a chart image on Telegram:
 the last 120 candles, the zones the bias allows, entry, stop and target when
 there is a setup, and Kronos's sampled paths as a fan to the right of the

@@ -60,7 +60,7 @@ def render_chart(
         start = max(0, view.index_at_or_after(poi.created_at) - 1) if poi.created_at is not None else 0
         ax.add_patch(Rectangle((start, poi.low), x_right - start, poi.high - poi.low, facecolor=colour, edgecolor="none", zorder=1))
         arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
-        ax.text(x_right - 0.3, poi.high, f"{poi.timeframe.label} {arrow} POI", fontsize=7.5, va="bottom", ha="right", color="#333", zorder=5)
+        ax.text(start + 0.3, poi.high, f"{poi.timeframe.label} {arrow} POI", fontsize=7.5, va="bottom", ha="left", color="#333", zorder=5)
 
     # candles -----------------------------------------------------------------------------
     for i in range(n):
@@ -70,12 +70,27 @@ def render_chart(
         body_low, body_high = min(opens[i], closes[i]), max(opens[i], closes[i])
         ax.add_patch(Rectangle((i - 0.3, body_low), 0.6, max(body_high - body_low, 1e-9), facecolor=colour, edgecolor=colour, zorder=3))
 
-    # setup ------------------------------------------------------------------------------
+    # setup: the position tool from the confirmation candle to the right edge -----------------
     if setup is not None:
-        for price, label, colour, style in ((setup.entry, "entry", "#333333", "-"), (setup.stop, "SL", DOWN, "--"),
-                                            (setup.take_profit, "TP", UP, "--")):
-            ax.axhline(price, color=colour, linestyle=style, linewidth=1.0, zorder=4)
-            ax.text(0.2, price, f"{label} {price:.{price_decimals}f}", fontsize=8, va="bottom", color=colour, zorder=5)
+        conf = getattr(setup, "confirmation", None)
+        ci = view.index_at_or_after(conf.timestamp) if conf is not None else n - 1
+        ci = min(max(ci, 0), n - 1)
+        x0, width = ci + 0.5, x_right - (ci + 0.5)
+        risk_lo, risk_hi = sorted((setup.entry, setup.stop))
+        reward_lo, reward_hi = sorted((setup.entry, setup.take_profit))
+        ax.add_patch(Rectangle((x0, risk_lo), width, risk_hi - risk_lo, facecolor=(0.85, 0.33, 0.31, 0.22), edgecolor=DOWN, linewidth=0.8, zorder=2))
+        ax.add_patch(Rectangle((x0, reward_lo), width, reward_hi - reward_lo, facecolor=(0.18, 0.62, 0.36, 0.22), edgecolor=UP, linewidth=0.8, zorder=2))
+        ax.axhline(setup.entry, color="#333333", linewidth=1.0, zorder=4)
+        short = setup.direction.sign < 0
+        ax.plot([ci], [setup.entry], marker="v" if short else "^", markersize=9, color="#333333", zorder=6)
+        d = price_decimals
+        how = f"{conf.type.value} on {conf.timeframe.label}" if conf is not None else "confirmation"
+        ax.text(x0 + 0.3, setup.entry, f" {'SELL' if short else 'BUY'} {setup.entry:.{d}f}  ({how})", fontsize=8,
+                va="bottom", color="#222222", zorder=5)
+        ax.text(x0 + 0.3, setup.stop, f" SL {setup.stop:.{d}f}  -1R", fontsize=8, va="bottom" if setup.stop > setup.entry else "top",
+                color=DOWN, zorder=5)
+        ax.text(x0 + 0.3, setup.take_profit, f" TP {setup.take_profit:.{d}f}  +{setup.rr:.1f}R", fontsize=8,
+                va="top" if setup.take_profit < setup.entry else "bottom", color=UP, zorder=5)
 
     # forecast fan ------------------------------------------------------------------------
     if paths:
@@ -84,15 +99,13 @@ def render_chart(
             c = p["close"].to_numpy(dtype=float)[:horizon]
             ax.plot(np.concatenate(([n - 1], xs_future[:len(c)])), np.concatenate(([last], c)), color="#7f8c8d", linewidth=0.7, alpha=0.6, zorder=2)
         mean = np.mean(np.stack([p["close"].to_numpy(dtype=float)[:horizon] for p in paths if len(p) >= horizon]), axis=0)
+        verdict = (f"{forecast.direction.name.lower()} {forecast.confidence:.0%}" if forecast.direction is not Bias.NEUTRAL else "neutral")
         ax.plot(np.concatenate(([n - 1], xs_future)), np.concatenate(([last], mean)), color="#1f4e79", linewidth=1.8, zorder=4,
-                label=f"Kronos mean of {len(paths)} paths")
+                label=f"Kronos: {verdict}, {forecast.pct_change:+.2f}% expected, mean of {len(paths)} paths")
         ax.add_patch(Rectangle((n - 0.5, forecast.expected_low), horizon + 1, forecast.expected_high - forecast.expected_low,
                                facecolor=(0.12, 0.31, 0.47, 0.10), edgecolor="none", zorder=1))
         ax.axvline(n - 0.5, color="#999999", linewidth=0.6, linestyle=":", zorder=2)
-        verdict = (f"Kronos {forecast.direction.name.lower()} {forecast.confidence:.0%}" if forecast.direction is not Bias.NEUTRAL
-                   else "Kronos neutral")
-        ax.text(n + 0.2, forecast.expected_high, f"{verdict}  {forecast.pct_change:+.2f}%", fontsize=8, va="bottom", color="#1f4e79", zorder=5)
-        ax.legend(loc="upper left", fontsize=8, frameon=False)
+        ax.legend(loc="upper right", fontsize=8, frameon=False)
 
     # axes --------------------------------------------------------------------------------
     ax.set_xlim(-1, x_right)
