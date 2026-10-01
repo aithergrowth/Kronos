@@ -1,4 +1,1130 @@
 time,currency,importance,title
+2017-01-06 10:00,EUR,1,Business Confidence
+2017-01-06 13:30,USD,1,Balance of Trade
+2017-01-06 13:30,USD,1,Non Farm Payrolls
+2017-01-09 07:00,EUR,1,Balance of Trade
+2017-01-12 09:00,EUR,1,Full Year GDP Growth
+2017-01-12 09:00,EUR,1,Government Budget
+2017-01-13 13:30,USD,1,Retail Sales MoM
+2017-01-17 10:00,EUR,1,ZEW Economic Sentiment Index
+2017-01-18 13:30,USD,1,Core Inflation Rate YoY
+2017-01-18 13:30,USD,1,Inflation Rate YoY
+2017-01-25 09:00,EUR,1,IFO Business Climate
+2017-01-26 07:00,EUR,1,GfK Consumer Confidence
+2017-01-27 13:30,USD,1,Durable Goods Orders MoM
+2017-01-30 10:00,EUR,1,Business Confidence
+2017-01-30 13:30,USD,1,Personal Income (MoM)
+2017-01-30 13:30,USD,1,Personal Spending MoM
+2017-02-03 13:30,USD,1,Non Farm Payrolls
+2017-02-07 13:30,USD,1,Balance of Trade
+2017-02-09 07:00,EUR,1,Balance of Trade
+2017-02-14 10:00,EUR,1,ZEW Economic Sentiment Index
+2017-02-15 13:30,USD,1,Core Inflation Rate YoY
+2017-02-15 13:30,USD,1,Inflation Rate YoY
+2017-02-15 13:30,USD,1,Retail Sales MoM
+2017-02-22 09:00,EUR,1,IFO Business Climate
+2017-02-23 07:00,EUR,1,GfK Consumer Confidence
+2017-02-27 10:00,EUR,1,Business Confidence
+2017-02-27 13:30,USD,1,Durable Goods Orders MoM
+2017-03-01 13:30,USD,1,Personal Income (MoM)
+2017-03-01 13:30,USD,1,Personal Spending MoM
+2017-03-07 13:30,USD,1,Balance of Trade
+2017-03-10 07:00,EUR,1,Balance of Trade
+2017-03-10 13:30,USD,1,Non Farm Payrolls
+2017-03-14 10:00,EUR,1,ZEW Economic Sentiment Index
+2017-03-15 12:30,USD,1,Core Inflation Rate YoY
+2017-03-15 12:30,USD,1,Inflation Rate YoY
+2017-03-15 12:30,USD,1,Retail Sales MoM
+2017-03-23 07:00,EUR,1,GfK Consumer Confidence
+2017-03-24 12:30,USD,1,Durable Goods Orders MoM
+2017-03-27 08:00,EUR,1,IFO Business Climate
+2017-03-30 09:00,EUR,1,Business Confidence
+2017-03-31 12:30,USD,1,Personal Income (MoM)
+2017-03-31 12:30,USD,1,Personal Spending MoM
+2017-04-04 12:30,USD,1,Balance of Trade
+2017-04-07 06:00,EUR,1,Balance of Trade
+2017-04-07 12:30,USD,1,Non Farm Payrolls
+2017-04-11 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-04-14 12:30,USD,1,Core Inflation Rate YoY
+2017-04-14 12:30,USD,1,Inflation Rate YoY
+2017-04-14 12:30,USD,1,Retail Sales MoM
+2017-04-24 08:00,EUR,1,IFO Business Climate
+2017-04-27 06:00,EUR,1,GfK Consumer Confidence
+2017-04-27 09:00,EUR,1,Business Confidence
+2017-04-27 12:30,USD,1,Durable Goods Orders MoM
+2017-05-01 12:30,USD,1,Personal Income MoM
+2017-05-01 12:30,USD,1,Personal Spending MoM
+2017-05-04 12:30,USD,1,Balance of Trade
+2017-05-05 12:30,USD,1,Non Farm Payrolls
+2017-05-09 06:00,EUR,1,Balance of Trade
+2017-05-12 12:30,USD,1,Core Inflation Rate YoY
+2017-05-12 12:30,USD,1,Inflation Rate YoY
+2017-05-12 12:30,USD,1,Retail Sales MoM
+2017-05-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-05-23 08:00,EUR,1,IFO Business Climate
+2017-05-24 06:00,EUR,1,GfK Consumer Confidence
+2017-05-26 12:30,USD,1,Durable Goods Orders MoM
+2017-05-30 09:00,EUR,1,Business Confidence
+2017-05-30 12:30,USD,1,Personal Income MoM
+2017-05-30 12:30,USD,1,Personal Spending MoM
+2017-06-02 12:30,USD,1,Balance of Trade
+2017-06-02 12:30,USD,1,Non Farm Payrolls
+2017-06-09 06:00,EUR,1,Balance of Trade
+2017-06-13 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-06-14 12:30,USD,1,Core Inflation Rate YoY
+2017-06-14 12:30,USD,1,Inflation Rate YoY
+2017-06-14 12:30,USD,1,Retail Sales MoM
+2017-06-26 08:00,EUR,1,IFO Business Climate
+2017-06-26 12:30,USD,1,Durable Goods Orders MoM
+2017-06-29 06:00,EUR,1,GfK Consumer Confidence
+2017-06-29 09:00,EUR,1,Business Confidence
+2017-06-30 12:30,USD,1,Personal Income MoM
+2017-06-30 12:30,USD,1,Personal Spending MoM
+2017-07-06 12:30,USD,1,Balance of Trade
+2017-07-07 12:30,USD,1,Non Farm Payrolls
+2017-07-10 06:00,EUR,1,Balance of Trade
+2017-07-14 12:30,USD,1,Core Inflation Rate YoY
+2017-07-14 12:30,USD,1,Inflation Rate YoY
+2017-07-14 12:30,USD,1,Retail Sales MoM
+2017-07-18 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-07-25 08:00,EUR,1,IFO Business Climate
+2017-07-27 06:00,EUR,1,GfK Consumer Confidence
+2017-07-27 12:30,USD,1,Durable Goods Orders MoM
+2017-07-28 09:00,EUR,1,Business Confidence
+2017-08-01 12:30,USD,1,Personal Income MoM
+2017-08-01 12:30,USD,1,Personal Spending MoM
+2017-08-04 12:30,USD,1,Balance of Trade
+2017-08-04 12:30,USD,1,Non Farm Payrolls
+2017-08-08 06:00,EUR,1,Balance of Trade
+2017-08-11 12:30,USD,1,Core Inflation Rate YoY
+2017-08-11 12:30,USD,1,Inflation Rate YoY
+2017-08-15 12:30,USD,1,Retail Sales MoM
+2017-08-22 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-08-25 08:00,EUR,1,IFO Business Climate
+2017-08-25 12:30,USD,1,Durable Goods Orders MoM
+2017-08-29 06:00,EUR,1,GfK Consumer Confidence
+2017-08-30 09:00,EUR,1,Business Confidence
+2017-08-31 12:30,USD,1,Personal Income MoM
+2017-08-31 12:30,USD,1,Personal Spending MoM
+2017-09-01 12:30,USD,1,Non Farm Payrolls
+2017-09-06 12:30,USD,1,Balance of Trade
+2017-09-08 06:00,EUR,1,Balance of Trade
+2017-09-14 12:30,USD,1,Core Inflation Rate YoY
+2017-09-14 12:30,USD,1,Inflation Rate YoY
+2017-09-15 12:30,USD,1,Retail Sales MoM
+2017-09-19 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-09-25 08:00,EUR,1,IFO Business Climate
+2017-09-27 12:30,USD,1,Durable Goods Orders MoM
+2017-09-28 06:00,EUR,1,GfK Consumer Confidence
+2017-09-28 09:00,EUR,1,Business Confidence
+2017-09-29 12:30,USD,1,Personal Income MoM
+2017-09-29 12:30,USD,1,Personal Spending MoM
+2017-10-05 12:30,USD,1,Balance of Trade
+2017-10-06 12:30,USD,1,Non Farm Payrolls
+2017-10-10 06:00,EUR,1,Balance of Trade
+2017-10-13 12:30,USD,1,Core Inflation Rate YoY
+2017-10-13 12:30,USD,1,Inflation Rate YoY
+2017-10-13 12:30,USD,1,Retail Sales MoM
+2017-10-17 09:00,EUR,1,ZEW Economic Sentiment Index
+2017-10-25 08:00,EUR,1,IFO Business Climate
+2017-10-25 12:30,USD,1,Durable Goods Orders MoM
+2017-10-26 06:00,EUR,1,GfK Consumer Confidence
+2017-10-30 10:00,EUR,1,Business Confidence
+2017-10-30 12:30,USD,1,Personal Income MoM
+2017-10-30 12:30,USD,1,Personal Spending MoM
+2017-11-03 12:30,USD,1,Balance of Trade
+2017-11-03 12:30,USD,1,Non Farm Payrolls
+2017-11-09 07:00,EUR,1,Balance of Trade
+2017-11-14 10:00,EUR,1,ZEW Economic Sentiment Index
+2017-11-15 13:30,USD,1,Core Inflation Rate YoY
+2017-11-15 13:30,USD,1,Inflation Rate YoY
+2017-11-15 13:30,USD,1,Retail Sales MoM
+2017-11-22 13:30,USD,1,Durable Goods Orders MoM
+2017-11-24 09:00,EUR,1,IFO Business Climate
+2017-11-28 12:00,EUR,1,GfK Consumer Confidence
+2017-11-29 10:00,EUR,1,Business Confidence
+2017-11-30 13:30,USD,1,Personal Income MoM
+2017-11-30 13:30,USD,1,Personal Spending MoM
+2017-12-05 13:30,USD,1,Balance of Trade
+2017-12-08 07:00,EUR,1,Balance of Trade
+2017-12-08 13:30,USD,1,Non Farm Payrolls
+2017-12-12 10:00,EUR,1,ZEW Economic Sentiment Index
+2017-12-13 13:30,USD,1,Core Inflation Rate YoY
+2017-12-13 13:30,USD,1,Inflation Rate YoY
+2017-12-14 13:30,USD,1,Retail Sales MoM
+2017-12-19 09:00,EUR,1,IFO Business Climate
+2017-12-22 07:00,EUR,1,GfK Consumer Confidence
+2017-12-22 13:30,USD,1,Durable Goods Orders MoM
+2017-12-22 13:30,USD,1,Personal Income MoM
+2017-12-22 13:30,USD,1,Personal Spending MoM
+2018-01-05 13:30,USD,1,Balance of Trade
+2018-01-05 13:30,USD,1,Non Farm Payrolls
+2018-01-08 10:00,EUR,1,Business Confidence
+2018-01-09 07:00,EUR,1,Balance of Trade
+2018-01-11 09:00,EUR,1,Full Year GDP Growth
+2018-01-11 09:00,EUR,1,Government Budget
+2018-01-12 13:30,USD,1,Core Inflation Rate YoY
+2018-01-12 13:30,USD,1,Inflation Rate YoY
+2018-01-12 13:30,USD,1,Retail Sales MoM
+2018-01-23 10:00,EUR,1,ZEW Economic Sentiment Index
+2018-01-25 07:00,EUR,1,GfK Consumer Confidence
+2018-01-25 09:00,EUR,1,IFO Business Climate
+2018-01-26 13:30,USD,1,Durable Goods Orders MoM
+2018-01-29 13:30,USD,1,Personal Income MoM
+2018-01-29 13:30,USD,1,Personal Spending MoM
+2018-01-30 10:00,EUR,1,Business Confidence
+2018-02-02 13:30,USD,1,Non Farm Payrolls
+2018-02-06 13:30,USD,1,Balance of Trade
+2018-02-08 07:00,EUR,1,Balance of Trade
+2018-02-14 13:30,USD,1,Core Inflation Rate YoY
+2018-02-14 13:30,USD,1,Inflation Rate YoY
+2018-02-14 13:30,USD,1,Retail Sales MoM
+2018-02-20 10:00,EUR,1,ZEW Economic Sentiment Index
+2018-02-22 09:00,EUR,1,Ifo Business Climate
+2018-02-27 10:00,EUR,1,Business Confidence
+2018-02-27 13:30,USD,1,Durable Goods Orders MoM
+2018-02-28 07:00,EUR,1,GfK Consumer Confidence
+2018-03-01 13:30,USD,1,Personal Income MoM
+2018-03-01 13:30,USD,1,Personal Spending MoM
+2018-03-07 13:30,USD,1,Balance of Trade
+2018-03-09 07:00,EUR,1,Balance of Trade
+2018-03-09 13:30,USD,1,Non Farm Payrolls
+2018-03-13 12:30,USD,1,Core Inflation Rate YoY
+2018-03-13 12:30,USD,1,Inflation Rate YoY
+2018-03-14 12:30,USD,1,Retail Sales MoM
+2018-03-20 10:00,EUR,1,ZEW Economic Sentiment Index
+2018-03-22 09:00,EUR,1,Ifo Business Climate
+2018-03-23 12:30,USD,1,Durable Goods Orders MoM
+2018-03-27 09:00,EUR,1,Business Confidence
+2018-03-28 06:00,EUR,1,GfK Consumer Confidence
+2018-03-29 12:30,USD,1,Personal Income MoM
+2018-03-29 12:30,USD,1,Personal Spending MoM
+2018-04-05 12:30,USD,1,Balance of Trade
+2018-04-06 12:30,USD,1,Non Farm Payrolls
+2018-04-09 06:00,EUR,1,Balance of Trade
+2018-04-11 12:30,USD,1,Core Inflation Rate YoY
+2018-04-11 12:30,USD,1,Inflation Rate YoY
+2018-04-16 12:30,USD,1,Retail Sales MoM
+2018-04-17 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-04-24 08:00,EUR,1,Ifo Business Climate
+2018-04-26 06:00,EUR,1,GfK Consumer Confidence
+2018-04-26 12:30,USD,1,Durable Goods Orders MoM
+2018-04-27 09:00,EUR,1,Business Confidence
+2018-04-30 12:30,USD,1,Personal Income MoM
+2018-04-30 12:30,USD,1,Personal Spending MoM
+2018-05-03 12:30,USD,1,Balance of Trade
+2018-05-04 12:30,USD,1,Non Farm Payrolls
+2018-05-08 06:00,EUR,1,Balance of Trade
+2018-05-10 12:30,USD,1,Core Inflation Rate YoY
+2018-05-10 12:30,USD,1,Inflation Rate YoY
+2018-05-15 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-05-15 12:30,USD,1,Retail Sales MoM
+2018-05-24 06:00,EUR,1,GfK Consumer Confidence
+2018-05-25 08:00,EUR,1,Ifo Business Climate
+2018-05-25 12:30,USD,1,Durable Goods Orders MoM
+2018-05-30 09:00,EUR,1,Business Confidence
+2018-05-31 12:30,USD,1,Personal Income MoM
+2018-05-31 12:30,USD,1,Personal Spending MoM
+2018-06-01 12:30,USD,1,Non Farm Payrolls
+2018-06-06 12:30,USD,1,Balance of Trade
+2018-06-08 06:00,EUR,1,Balance of Trade
+2018-06-12 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-06-12 12:30,USD,1,Core Inflation Rate YoY
+2018-06-12 12:30,USD,1,Inflation Rate YoY
+2018-06-14 12:30,USD,1,Retail Sales MoM
+2018-06-25 08:00,EUR,1,Ifo Business Climate
+2018-06-27 12:30,USD,1,Durable Goods Orders MoM
+2018-06-28 06:00,EUR,1,GfK Consumer Confidence
+2018-06-28 09:00,EUR,1,Business Confidence
+2018-06-29 12:30,USD,1,Personal Income MoM
+2018-06-29 12:30,USD,1,Personal Spending MoM
+2018-07-06 12:30,USD,1,Balance of Trade
+2018-07-06 12:30,USD,1,Non Farm Payrolls
+2018-07-09 06:00,EUR,1,Balance of Trade
+2018-07-10 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-07-12 12:30,USD,1,Core Inflation Rate YoY
+2018-07-12 12:30,USD,1,Inflation Rate YoY
+2018-07-16 12:30,USD,1,Retail Sales MoM
+2018-07-25 08:00,EUR,1,Ifo Business Climate
+2018-07-26 06:00,EUR,1,GfK Consumer Confidence
+2018-07-26 12:30,USD,1,Durable Goods Orders MoM
+2018-07-30 09:00,EUR,1,Business Confidence
+2018-07-31 12:30,USD,1,Personal Income MoM
+2018-07-31 12:30,USD,1,Personal Spending MoM
+2018-08-03 12:30,USD,1,Balance of Trade
+2018-08-03 12:30,USD,1,Non Farm Payrolls
+2018-08-07 06:00,EUR,1,Balance of Trade
+2018-08-10 12:30,USD,1,Core Inflation Rate YoY
+2018-08-10 12:30,USD,1,Inflation Rate YoY
+2018-08-14 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-08-15 12:30,USD,1,Retail Sales MoM
+2018-08-24 12:30,USD,1,Durable Goods Orders MoM
+2018-08-27 08:00,EUR,1,Ifo Business Climate
+2018-08-29 06:00,EUR,1,GfK Consumer Confidence
+2018-08-30 09:00,EUR,1,Business Confidence
+2018-08-30 12:30,USD,1,Personal Income MoM
+2018-08-30 12:30,USD,1,Personal Spending MoM
+2018-09-05 12:30,USD,1,Balance of Trade
+2018-09-07 06:00,EUR,1,Balance of Trade
+2018-09-07 12:30,USD,1,Non Farm Payrolls
+2018-09-11 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-09-13 12:30,USD,1,Core Inflation Rate YoY
+2018-09-13 12:30,USD,1,Inflation Rate YoY
+2018-09-14 12:30,USD,1,Retail Sales MoM
+2018-09-24 08:00,EUR,1,Ifo Business Climate
+2018-09-27 06:00,EUR,1,GfK Consumer Confidence
+2018-09-27 09:00,EUR,1,Business Confidence
+2018-09-27 12:30,USD,1,Durable Goods Orders MoM
+2018-09-28 12:30,USD,1,Personal Income MoM
+2018-09-28 12:30,USD,1,Personal Spending MoM
+2018-10-05 12:30,USD,1,Balance of Trade
+2018-10-05 12:30,USD,1,Non Farm Payrolls
+2018-10-09 06:00,EUR,1,Balance of Trade
+2018-10-11 12:30,USD,1,Core Inflation Rate YoY
+2018-10-11 12:30,USD,1,Inflation Rate YoY
+2018-10-15 12:30,USD,1,Retail Sales MoM
+2018-10-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2018-10-25 08:00,EUR,1,Ifo Business Climate
+2018-10-25 12:30,USD,1,Durable Goods Orders MoM
+2018-10-26 06:00,EUR,1,GfK Consumer Confidence
+2018-10-29 12:30,USD,1,Personal Income MoM
+2018-10-29 12:30,USD,1,Personal Spending MoM
+2018-10-30 10:00,EUR,1,Business Confidence
+2018-11-02 12:30,USD,1,Balance of Trade
+2018-11-02 12:30,USD,1,Non Farm Payrolls
+2018-11-08 07:00,EUR,1,Balance of Trade
+2018-11-13 10:00,EUR,1,ZEW Economic Sentiment Index
+2018-11-14 13:30,USD,1,Core Inflation Rate YoY
+2018-11-14 13:30,USD,1,Inflation Rate YoY
+2018-11-15 13:30,USD,1,Retail Sales MoM
+2018-11-21 13:30,USD,1,Durable Goods Orders MoM
+2018-11-26 09:00,EUR,1,Ifo Business Climate
+2018-11-28 07:00,EUR,1,GfK Consumer Confidence
+2018-11-29 10:00,EUR,1,Business Confidence
+2018-11-29 13:30,USD,1,Personal Income MoM
+2018-11-29 13:30,USD,1,Personal Spending MoM
+2018-12-06 13:30,USD,1,Balance of Trade
+2018-12-07 13:30,USD,1,Non Farm Payrolls
+2018-12-10 07:00,EUR,1,Balance of Trade
+2018-12-11 10:00,EUR,1,ZEW Economic Sentiment Index
+2018-12-12 13:30,USD,1,Core Inflation Rate YoY
+2018-12-12 13:30,USD,1,Inflation Rate YoY
+2018-12-14 13:30,USD,1,Retail Sales MoM
+2018-12-18 09:00,EUR,1,Ifo Business Climate
+2018-12-21 07:00,EUR,1,GfK Consumer Confidence
+2018-12-21 13:30,USD,1,Durable Goods Orders MoM
+2018-12-21 15:00,USD,1,Personal Income MoM
+2018-12-21 15:00,USD,1,Personal Spending MoM
+2019-01-04 13:30,USD,1,Non Farm Payrolls
+2019-01-08 10:00,EUR,1,Business Confidence
+2019-01-09 07:00,EUR,1,Balance of Trade
+2019-01-11 13:30,USD,1,Core Inflation Rate YoY
+2019-01-11 13:30,USD,1,Inflation Rate YoY
+2019-01-15 09:00,EUR,1,Full Year GDP Growth
+2019-01-15 09:00,EUR,1,Government Budget
+2019-01-22 10:00,EUR,1,ZEW Economic Sentiment Index
+2019-01-25 09:00,EUR,1,Ifo Business Climate
+2019-01-30 07:00,EUR,1,GfK Consumer Confidence
+2019-01-30 10:00,EUR,1,Business Confidence
+2019-02-01 13:30,USD,1,Non Farm Payrolls
+2019-02-06 13:30,USD,1,Balance of Trade
+2019-02-08 07:00,EUR,1,Balance of Trade
+2019-02-13 13:30,USD,1,Core Inflation Rate YoY
+2019-02-13 13:30,USD,1,Inflation Rate YoY
+2019-02-14 13:30,USD,1,Retail Sales MoM
+2019-02-19 10:00,EUR,1,ZEW Economic Sentiment Index
+2019-02-21 13:30,USD,1,Durable Goods Orders MoM
+2019-02-22 09:00,EUR,1,Ifo Business Climate
+2019-02-26 07:00,EUR,1,GfK Consumer Confidence
+2019-02-27 10:00,EUR,1,Business Confidence
+2019-03-01 13:30,USD,1,Personal Income MoM
+2019-03-01 13:30,USD,1,Personal Spending MoM
+2019-03-06 13:30,USD,1,Balance of Trade
+2019-03-08 13:30,USD,1,Non Farm Payrolls
+2019-03-11 07:00,EUR,1,Balance of Trade
+2019-03-11 12:30,USD,1,Retail Sales MoM
+2019-03-12 12:30,USD,1,Core Inflation Rate YoY
+2019-03-12 12:30,USD,1,Inflation Rate YoY
+2019-03-13 12:30,USD,1,Durable Goods Orders MoM
+2019-03-19 10:00,EUR,1,ZEW Economic Sentiment Index
+2019-03-25 09:00,EUR,1,Ifo Business Climate
+2019-03-26 07:00,EUR,1,GfK Consumer Confidence
+2019-03-27 12:30,USD,1,Balance of Trade
+2019-03-28 10:00,EUR,1,Business Confidence
+2019-03-29 12:30,USD,1,Personal Income MoM
+2019-03-29 12:30,USD,1,Personal Spending MoM
+2019-04-01 12:30,USD,1,Retail Sales MoM
+2019-04-02 12:30,USD,1,Durable Goods Orders MoM
+2019-04-05 12:30,USD,1,Non Farm Payrolls
+2019-04-08 06:00,EUR,1,Balance of Trade
+2019-04-10 12:30,USD,1,Core Inflation Rate YoY
+2019-04-10 12:30,USD,1,Inflation Rate YoY
+2019-04-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-04-17 12:30,USD,1,Balance of Trade
+2019-04-18 12:30,USD,1,Retail Sales MoM
+2019-04-24 08:00,EUR,1,Ifo Business Climate
+2019-04-25 12:30,USD,1,Durable Goods Orders MoM
+2019-04-29 09:00,EUR,1,Business Confidence
+2019-04-29 12:30,USD,1,Personal Income MoM
+2019-04-29 12:30,USD,1,Personal Spending MoM
+2019-04-30 06:00,EUR,1,GfK Consumer Confidence
+2019-05-03 12:30,USD,1,Non Farm Payrolls
+2019-05-09 12:30,USD,1,Balance of Trade
+2019-05-10 06:00,EUR,1,Balance of Trade
+2019-05-10 12:30,USD,1,Core Inflation Rate YoY
+2019-05-10 12:30,USD,1,Inflation Rate YoY
+2019-05-14 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-05-15 12:30,USD,1,Retail Sales MoM
+2019-05-23 08:00,EUR,1,Ifo Business Climate
+2019-05-24 12:30,USD,1,Durable Goods Orders MoM
+2019-05-28 06:00,EUR,1,GfK Consumer Confidence
+2019-05-28 09:00,EUR,1,Business Confidence
+2019-05-31 12:30,USD,1,Personal Income MoM
+2019-05-31 12:30,USD,1,Personal Spending MoM
+2019-06-06 12:30,USD,1,Balance of Trade
+2019-06-07 06:00,EUR,1,Balance of Trade
+2019-06-07 12:30,USD,1,Non Farm Payrolls
+2019-06-12 12:30,USD,1,Core Inflation Rate YoY
+2019-06-12 12:30,USD,1,Inflation Rate YoY
+2019-06-14 12:30,USD,1,Retail Sales MoM
+2019-06-18 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-06-24 08:00,EUR,1,Ifo Business Climate
+2019-06-26 06:00,EUR,1,GfK Consumer Confidence
+2019-06-26 12:30,USD,1,Durable Goods Orders MoM
+2019-06-27 09:00,EUR,1,Business Confidence
+2019-06-28 12:30,USD,1,Personal Income MoM
+2019-06-28 12:30,USD,1,Personal Spending MoM
+2019-07-03 12:30,USD,1,Balance of Trade
+2019-07-05 12:30,USD,1,Non Farm Payrolls
+2019-07-08 06:00,EUR,1,Balance of Trade
+2019-07-11 12:30,USD,1,Core Inflation Rate YoY
+2019-07-11 12:30,USD,1,Inflation Rate YoY
+2019-07-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-07-16 12:30,USD,1,Retail Sales MoM
+2019-07-25 08:00,EUR,1,Ifo Business Climate
+2019-07-25 12:30,USD,1,Durable Goods Orders MoM
+2019-07-30 06:00,EUR,1,GfK Consumer Confidence
+2019-07-30 09:00,EUR,1,Business Confidence
+2019-07-30 12:30,USD,1,Personal Income MoM
+2019-07-30 12:30,USD,1,Personal Spending MoM
+2019-08-02 12:30,USD,1,Balance of Trade
+2019-08-02 12:30,USD,1,Non Farm Payrolls
+2019-08-09 06:00,EUR,1,Balance of Trade
+2019-08-13 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-08-13 12:30,USD,1,Core Inflation Rate YoY
+2019-08-13 12:30,USD,1,Inflation Rate YoY
+2019-08-15 12:30,USD,1,Retail Sales MoM
+2019-08-26 08:00,EUR,1,Ifo Business Climate
+2019-08-26 12:30,USD,1,Durable Goods Orders MoM
+2019-08-28 06:00,EUR,1,GfK Consumer Confidence
+2019-08-29 09:00,EUR,1,Business Confidence
+2019-08-30 12:30,USD,1,Personal Income MoM
+2019-08-30 12:30,USD,1,Personal Spending MoM
+2019-09-04 12:30,USD,1,Balance of Trade
+2019-09-06 12:30,USD,1,Non Farm Payrolls
+2019-09-09 06:00,EUR,1,Balance of Trade
+2019-09-12 12:30,USD,1,Core Inflation Rate YoY
+2019-09-12 12:30,USD,1,Inflation Rate YoY
+2019-09-13 12:30,USD,1,Retail Sales MoM
+2019-09-17 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-09-24 08:00,EUR,1,Ifo Business Climate
+2019-09-26 06:00,EUR,1,GfK Consumer Confidence
+2019-09-27 09:00,EUR,1,Business Confidence
+2019-09-27 12:30,USD,1,Durable Goods Orders MoM
+2019-09-27 12:30,USD,1,Personal Income MoM
+2019-09-27 12:30,USD,1,Personal Spending MoM
+2019-10-04 12:30,USD,1,Balance of Trade
+2019-10-04 12:30,USD,1,Non Farm Payrolls
+2019-10-10 06:00,EUR,1,Balance of Trade
+2019-10-10 12:30,USD,1,Core Inflation Rate YoY
+2019-10-10 12:30,USD,1,Inflation Rate YoY
+2019-10-15 09:00,EUR,1,ZEW Economic Sentiment Index
+2019-10-16 12:30,USD,1,Retail Sales MoM
+2019-10-24 12:30,USD,1,Durable Goods Orders MoM
+2019-10-25 06:00,EUR,1,GfK Consumer Confidence
+2019-10-25 08:00,EUR,1,Ifo Business Climate
+2019-10-30 10:00,EUR,1,Business Confidence
+2019-10-31 12:30,USD,1,Personal Income MoM
+2019-10-31 12:30,USD,1,Personal Spending MoM
+2019-11-01 12:30,USD,1,Non Farm Payrolls
+2019-11-05 13:30,USD,1,Balance of Trade
+2019-11-08 07:00,EUR,1,Balance of Trade
+2019-11-12 10:00,EUR,1,ZEW Economic Sentiment Index
+2019-11-13 13:30,USD,1,Core Inflation Rate YoY
+2019-11-13 13:30,USD,1,Inflation Rate YoY
+2019-11-15 13:30,USD,1,Retail Sales MoM
+2019-11-25 09:00,EUR,1,Ifo Business Climate
+2019-11-26 07:00,EUR,1,GfK Consumer Confidence
+2019-11-27 13:30,USD,1,Durable Goods Orders MoM
+2019-11-27 15:00,USD,1,Personal Income MoM
+2019-11-27 15:00,USD,1,Personal Spending MoM
+2019-11-28 10:00,EUR,1,Business Confidence
+2019-12-05 13:30,USD,1,Balance of Trade
+2019-12-06 13:30,USD,1,Non Farm Payrolls
+2019-12-09 07:00,EUR,1,Balance of Trade
+2019-12-10 10:00,EUR,1,ZEW Economic Sentiment Index
+2019-12-11 13:30,USD,1,Core Inflation Rate YoY
+2019-12-11 13:30,USD,1,Inflation Rate YoY
+2019-12-13 13:30,USD,1,Retail Sales MoM
+2019-12-18 09:00,EUR,1,Ifo Business Climate
+2019-12-20 07:00,EUR,1,GfK Consumer Confidence
+2019-12-20 15:00,USD,1,Personal Income MoM
+2019-12-20 15:00,USD,1,Personal Spending MoM
+2019-12-23 13:30,USD,1,Durable Goods Orders MoM
+2020-01-03 19:00,USD,1,FOMC Minutes
+2020-01-07 13:30,USD,1,Balance of Trade
+2020-01-08 10:00,EUR,1,Business Confidence
+2020-01-09 07:00,EUR,1,Balance of Trade
+2020-01-10 13:30,USD,1,Non Farm Payrolls
+2020-01-14 13:30,USD,1,Core Inflation Rate YoY
+2020-01-14 13:30,USD,1,Inflation Rate YoY
+2020-01-15 09:00,EUR,1,Full Year GDP Growth
+2020-01-15 09:00,EUR,1,Government Budget
+2020-01-15 16:30,USD,1,US-China Phase 1 Trade Deal Signature
+2020-01-16 13:30,USD,1,Retail Sales MoM
+2020-01-21 10:00,EUR,1,ZEW Economic Sentiment Index
+2020-01-27 09:00,EUR,1,Ifo Business Climate
+2020-01-28 13:30,USD,1,Durable Goods Orders MoM
+2020-01-29 07:00,EUR,1,GfK Consumer Confidence
+2020-01-29 12:00,USD,1,USMCA Trade Deal Signature
+2020-01-30 10:00,EUR,1,Business Confidence
+2020-01-31 13:30,USD,1,Personal Income MoM
+2020-01-31 13:30,USD,1,Personal Spending MoM
+2020-02-05 13:30,USD,1,Balance of Trade
+2020-02-07 07:00,EUR,1,Balance of Trade
+2020-02-07 13:30,USD,1,Non Farm Payrolls
+2020-02-13 13:30,USD,1,Core Inflation Rate YoY
+2020-02-13 13:30,USD,1,Inflation Rate YoY
+2020-02-14 13:30,USD,1,Retail Sales MoM
+2020-02-18 10:00,EUR,1,ZEW Economic Sentiment Index
+2020-02-20 07:00,EUR,1,GfK Consumer Confidence
+2020-02-24 09:00,EUR,1,Ifo Business Climate
+2020-02-26 23:00,USD,1,President Trump Speech
+2020-02-27 10:00,EUR,1,Business Confidence
+2020-02-27 13:30,USD,1,Durable Goods Orders MoM
+2020-02-28 13:30,USD,1,Personal Income MoM
+2020-02-28 13:30,USD,1,Personal Spending MoM
+2020-03-03 16:00,USD,1,Fed Press Conference
+2020-03-06 13:30,USD,1,Balance of Trade
+2020-03-06 13:30,USD,1,Non Farm Payrolls
+2020-03-09 07:00,EUR,1,Balance of Trade
+2020-03-11 12:30,USD,1,Core Inflation Rate YoY
+2020-03-11 12:30,USD,1,Inflation Rate YoY
+2020-03-12 01:00,USD,1,President Trump Statement on Coronavirus
+2020-03-13 19:00,USD,1,President Trump Statement on Coronavirus
+2020-03-15 22:30,USD,1,Fed Press Conference
+2020-03-17 10:00,EUR,1,ZEW Economic Sentiment Index
+2020-03-17 12:30,USD,1,Retail Sales MoM
+2020-03-19 09:00,EUR,1,Ifo Business Climate Prel
+2020-03-25 09:00,EUR,1,Ifo Business Climate Final
+2020-03-25 12:30,USD,1,Durable Goods Orders MoM
+2020-03-26 07:00,EUR,1,GfK Consumer Confidence
+2020-03-27 12:30,USD,1,Personal Income MoM
+2020-03-27 12:30,USD,1,Personal Spending MoM
+2020-03-30 09:00,EUR,1,Business Confidence
+2020-04-02 12:30,USD,1,Balance of Trade
+2020-04-03 12:30,USD,1,Non Farm Payrolls
+2020-04-07 08:00,EUR,1,Eurogroup Meeting
+2020-04-09 06:00,EUR,1,Balance of Trade
+2020-04-09 08:00,EUR,1,Eurogroup Meeting
+2020-04-10 12:30,USD,1,Core Inflation Rate YoY
+2020-04-10 12:30,USD,1,Inflation Rate YoY
+2020-04-15 12:30,USD,1,Retail Sales MoM
+2020-04-21 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-04-23 06:00,EUR,1,GfK Consumer Confidence
+2020-04-24 08:00,EUR,1,Ifo Business Climate
+2020-04-24 12:30,USD,1,Durable Goods Orders MoM
+2020-04-29 09:25,EUR,1,Business Confidence
+2020-04-30 12:30,USD,1,Personal Income MoM
+2020-04-30 12:30,USD,1,Personal Spending MoM
+2020-05-05 12:30,USD,1,Balance of Trade
+2020-05-08 06:00,EUR,1,Balance of Trade
+2020-05-08 12:30,USD,1,Non Farm Payrolls
+2020-05-12 12:30,USD,1,Core Inflation Rate YoY
+2020-05-12 12:30,USD,1,Inflation Rate YoY
+2020-05-15 12:30,USD,1,Retail Sales MoM
+2020-05-19 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-05-25 08:00,EUR,1,Ifo Business Climate
+2020-05-26 06:00,EUR,1,GfK Consumer Confidence
+2020-05-27 13:00,EUR,1,European Commission Recovery Fund Proposal
+2020-05-28 09:00,EUR,1,Business Confidence
+2020-05-28 12:30,USD,1,Durable Goods Orders MoM
+2020-05-29 12:30,USD,1,Personal Income MoM
+2020-05-29 12:30,USD,1,Personal Spending MoM
+2020-06-04 12:30,USD,1,Balance of Trade
+2020-06-05 12:30,USD,1,Non Farm Payrolls
+2020-06-09 06:00,EUR,1,Balance of Trade
+2020-06-10 12:30,USD,1,Core Inflation Rate YoY
+2020-06-10 12:30,USD,1,Inflation Rate YoY
+2020-06-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-06-16 12:30,USD,1,Retail Sales MoM
+2020-06-24 08:00,EUR,1,Ifo Business Climate
+2020-06-25 06:00,EUR,1,GfK Consumer Confidence
+2020-06-25 12:30,USD,1,Durable Goods Orders MoM
+2020-06-26 12:30,USD,1,Personal Income MoM
+2020-06-26 12:30,USD,1,Personal Spending MoM
+2020-07-02 12:30,USD,1,Balance of Trade
+2020-07-02 12:30,USD,1,Non Farm Payrolls
+2020-07-09 06:00,EUR,1,Balance of Trade
+2020-07-09 08:00,EUR,1,Eurogroup Meeting
+2020-07-14 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-07-14 12:30,USD,1,Core Inflation Rate YoY
+2020-07-14 12:30,USD,1,Inflation Rate YoY
+2020-07-16 12:30,USD,1,Retail Sales MoM
+2020-07-17 08:00,EUR,1,EU Meeting on Common Recovery Plan
+2020-07-18 08:00,EUR,1,EU Meeting on Common Recovery Plan
+2020-07-19 00:00,EUR,1,EU Meeting on Common Recovery Plan
+2020-07-20 00:00,EUR,1,EU Meeting on Common Recovery Plan
+2020-07-23 06:00,EUR,1,GfK Consumer Confidence
+2020-07-27 08:00,EUR,1,Ifo Business Climate
+2020-07-27 12:30,USD,1,Durable Goods Orders MoM
+2020-07-31 12:30,USD,1,Personal Income MoM
+2020-07-31 12:30,USD,1,Personal Spending MoM
+2020-08-05 12:30,USD,1,Balance of Trade
+2020-08-07 06:00,EUR,1,Balance of Trade
+2020-08-07 12:30,USD,1,Non Farm Payrolls
+2020-08-11 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-08-12 12:30,USD,1,Core Inflation Rate YoY
+2020-08-12 12:30,USD,1,Inflation Rate YoY
+2020-08-14 12:30,USD,1,Retail Sales MoM
+2020-08-25 08:00,EUR,1,Ifo Business Climate
+2020-08-26 12:30,USD,1,Durable Goods Orders MoM
+2020-08-28 06:00,EUR,1,GfK Consumer Confidence
+2020-08-28 12:30,USD,1,Personal Income MoM
+2020-08-28 12:30,USD,1,Personal Spending MoM
+2020-09-03 12:30,USD,1,Balance of Trade
+2020-09-04 12:30,USD,1,Non Farm Payrolls
+2020-09-08 06:00,EUR,1,Balance of Trade
+2020-09-11 08:00,EUR,1,Eurogroup Meeting
+2020-09-11 12:30,USD,1,Core Inflation Rate YoY
+2020-09-11 12:30,USD,1,Inflation Rate YoY
+2020-09-15 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-09-16 12:30,USD,1,Retail Sales MoM
+2020-09-23 06:00,EUR,1,GfK Consumer Confidence
+2020-09-24 08:00,EUR,1,Ifo Business Climate
+2020-09-25 12:30,USD,1,Durable Goods Orders MoM
+2020-10-01 12:30,USD,1,Personal Income MoM
+2020-10-01 12:30,USD,1,Personal Spending MoM
+2020-10-02 12:30,USD,1,Non Farm Payrolls
+2020-10-05 08:00,EUR,1,Eurogroup Video Conference
+2020-10-06 12:30,USD,1,Balance of Trade
+2020-10-08 06:00,EUR,1,Balance of Trade
+2020-10-13 09:00,EUR,1,ZEW Economic Sentiment Index
+2020-10-13 12:30,USD,1,Core Inflation Rate YoY
+2020-10-13 12:30,USD,1,Inflation Rate YoY
+2020-10-16 12:30,USD,1,Retail Sales MoM
+2020-10-22 06:00,EUR,1,GfK Consumer Confidence
+2020-10-26 09:00,EUR,1,Ifo Business Climate
+2020-10-27 12:30,USD,1,Durable Goods Orders MoM
+2020-10-30 12:30,USD,1,Personal Income MoM
+2020-10-30 12:30,USD,1,Personal Spending MoM
+2020-11-03 00:00,USD,1,Presidential Election
+2020-11-03 08:00,EUR,1,Eurogroup Video Conference
+2020-11-04 13:30,USD,1,Balance of Trade
+2020-11-06 13:30,USD,1,Non Farm Payrolls
+2020-11-09 07:00,EUR,1,Balance of Trade
+2020-11-10 10:00,EUR,1,ZEW Economic Sentiment Index
+2020-11-12 13:30,USD,1,Core Inflation Rate YoY
+2020-11-12 13:30,USD,1,Inflation Rate YoY
+2020-11-17 13:30,USD,1,Retail Sales MoM
+2020-11-24 09:00,EUR,1,Ifo Business Climate
+2020-11-25 13:30,USD,1,Durable Goods Orders MoM
+2020-11-25 15:00,USD,1,Personal Income MoM
+2020-11-25 15:00,USD,1,Personal Spending MoM
+2020-11-26 07:00,EUR,1,GfK Consumer Confidence
+2020-11-30 08:00,EUR,1,Eurogroup Video Conference
+2020-12-04 13:30,USD,1,Balance of Trade
+2020-12-04 13:30,USD,1,Non Farm Payrolls
+2020-12-08 10:00,EUR,1,ZEW Economic Sentiment Index
+2020-12-09 07:00,EUR,1,Balance of Trade
+2020-12-10 13:30,USD,1,Core Inflation Rate YoY
+2020-12-10 13:30,USD,1,Inflation Rate YoY
+2020-12-16 08:00,EUR,1,Eurogroup Video Conference
+2020-12-16 13:30,USD,1,Retail Sales MoM
+2020-12-18 09:00,EUR,1,Ifo Business Climate
+2020-12-22 07:00,EUR,1,GfK Consumer Confidence
+2020-12-23 13:30,USD,1,Durable Goods Orders MoM
+2020-12-23 13:30,USD,1,Personal Income MoM
+2020-12-23 13:30,USD,1,Personal Spending MoM
+2021-01-07 13:30,USD,1,Balance of Trade
+2021-01-08 07:00,EUR,1,Balance of Trade
+2021-01-08 13:30,USD,1,Non Farm Payrolls
+2021-01-13 13:30,USD,1,Core Inflation Rate YoY
+2021-01-13 13:30,USD,1,Inflation Rate YoY
+2021-01-15 13:30,USD,1,Retail Sales MoM
+2021-01-19 10:00,EUR,1,ZEW Economic Sentiment Index
+2021-01-19 15:00,USD,1,Treasury Secretary Yellen Senate Confirmation Hearing
+2021-01-25 09:00,EUR,1,Ifo Business Climate
+2021-01-27 07:00,EUR,1,GfK Consumer Confidence
+2021-01-27 13:30,USD,1,Durable Goods Orders MoM
+2021-01-27 19:30,USD,1,Fed Press Conference
+2021-01-29 13:30,USD,1,Personal Income MoM
+2021-01-29 13:30,USD,1,Personal Spending MoM
+2021-02-05 13:30,USD,1,Balance of Trade
+2021-02-05 13:30,USD,1,Non Farm Payrolls
+2021-02-09 07:00,EUR,1,Balance of Trade
+2021-02-10 13:30,USD,1,Core Inflation Rate YoY
+2021-02-10 13:30,USD,1,Inflation Rate YoY
+2021-02-16 10:00,EUR,1,ZEW Economic Sentiment Index
+2021-02-17 13:30,USD,1,Retail Sales MoM
+2021-02-17 19:00,USD,1,FOMC Minutes
+2021-02-22 09:00,EUR,1,Ifo Business Climate
+2021-02-25 07:00,EUR,1,GfK Consumer Confidence
+2021-02-25 13:30,USD,1,Durable Goods Orders MoM
+2021-02-26 13:30,USD,1,Personal Income MoM
+2021-02-26 13:30,USD,1,Personal Spending MoM
+2021-03-05 13:30,USD,1,Balance of Trade
+2021-03-05 13:30,USD,1,Non Farm Payrolls
+2021-03-09 07:00,EUR,1,Balance of Trade
+2021-03-10 13:30,USD,1,Core Inflation Rate YoY
+2021-03-10 13:30,USD,1,Inflation Rate YoY
+2021-03-16 10:00,EUR,1,ZEW Economic Sentiment Index
+2021-03-16 12:30,USD,1,Retail Sales MoM
+2021-03-17 18:30,USD,1,Fed Press Conference
+2021-03-24 12:30,USD,1,Durable Goods Orders MoM
+2021-03-25 07:00,EUR,1,GfK Consumer Confidence
+2021-03-26 09:00,EUR,1,Ifo Business Climate
+2021-03-26 12:30,USD,1,Personal Income MoM
+2021-03-26 12:30,USD,1,Personal Spending MoM
+2021-03-31 00:00,USD,1,President Biden Speech on Recovery Package
+2021-04-02 12:30,USD,1,Non Farm Payrolls
+2021-04-07 12:30,USD,1,Balance of Trade
+2021-04-07 18:00,USD,1,FOMC Minutes
+2021-04-09 06:00,EUR,1,Balance of Trade
+2021-04-13 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-04-13 12:30,USD,1,Core Inflation Rate YoY
+2021-04-13 12:30,USD,1,Inflation Rate YoY
+2021-04-15 12:30,USD,1,Retail Sales MoM
+2021-04-26 08:00,EUR,1,Ifo Business Climate
+2021-04-26 12:30,USD,1,Durable Goods Orders MoM
+2021-04-28 06:00,EUR,1,GfK Consumer Confidence
+2021-04-28 18:30,USD,1,Fed Press Conference
+2021-04-30 12:30,USD,1,Personal Income MoM
+2021-04-30 12:30,USD,1,Personal Spending MoM
+2021-05-04 12:30,USD,1,Balance of Trade
+2021-05-07 06:00,EUR,1,Balance of Trade
+2021-05-07 12:30,USD,1,Non Farm Payrolls
+2021-05-11 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-05-12 12:30,USD,1,Core Inflation Rate YoY
+2021-05-12 12:30,USD,1,Inflation Rate YoY
+2021-05-14 12:30,USD,1,Retail Sales MoM
+2021-05-19 18:00,USD,1,FOMC Minutes
+2021-05-25 08:00,EUR,1,Ifo Business Climate
+2021-05-27 06:00,EUR,1,GfK Consumer Confidence
+2021-05-27 12:30,USD,1,Durable Goods Orders MoM
+2021-05-28 12:30,USD,1,Personal Income MoM
+2021-05-28 12:30,USD,1,Personal Spending MoM
+2021-06-04 12:30,USD,1,Non Farm Payrolls
+2021-06-08 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-06-08 12:30,USD,1,Balance of Trade
+2021-06-09 06:00,EUR,1,Balance of Trade
+2021-06-10 12:30,USD,1,Core Inflation Rate YoY
+2021-06-10 12:30,USD,1,Inflation Rate YoY
+2021-06-15 12:30,USD,1,Retail Sales MoM
+2021-06-16 18:30,USD,1,Fed Press Conference
+2021-06-24 08:00,EUR,1,Ifo Business Climate
+2021-06-24 12:30,USD,1,Durable Goods Orders MoM
+2021-06-25 06:00,EUR,1,GfK Consumer Confidence
+2021-06-25 12:30,USD,1,Personal Income MoM
+2021-06-25 12:30,USD,1,Personal Spending MoM
+2021-07-02 12:30,USD,1,Balance of Trade
+2021-07-02 12:30,USD,1,Non Farm Payrolls
+2021-07-06 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-07-07 18:00,USD,1,FOMC Minutes
+2021-07-08 06:00,EUR,1,Balance of Trade
+2021-07-13 12:30,USD,1,Core Inflation Rate YoY
+2021-07-13 12:30,USD,1,Inflation Rate YoY
+2021-07-16 12:30,USD,1,Retail Sales MoM
+2021-07-26 08:00,EUR,1,Ifo Business Climate
+2021-07-27 12:30,USD,1,Durable Goods Orders MoM
+2021-07-28 06:00,EUR,1,GfK Consumer Confidence
+2021-07-28 18:30,USD,1,Fed Press Conference
+2021-07-30 12:30,USD,1,Personal Income MoM
+2021-07-30 12:30,USD,1,Personal Spending MoM
+2021-08-05 12:30,USD,1,Balance of Trade
+2021-08-06 12:30,USD,1,Non Farm Payrolls
+2021-08-09 06:00,EUR,1,Balance of Trade
+2021-08-10 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-08-11 12:30,USD,1,Core Inflation Rate YoY
+2021-08-11 12:30,USD,1,Inflation Rate YoY
+2021-08-17 12:30,USD,1,Retail Sales MoM
+2021-08-18 18:00,USD,1,FOMC Minutes
+2021-08-25 08:00,EUR,1,Ifo Business Climate
+2021-08-25 12:30,USD,1,Durable Goods Orders MoM
+2021-08-26 06:00,EUR,1,GfK Consumer Confidence
+2021-08-27 12:30,USD,1,Personal Income MoM
+2021-08-27 12:30,USD,1,Personal Spending MoM
+2021-09-02 12:30,USD,1,Balance of Trade
+2021-09-03 12:30,USD,1,Non Farm Payrolls
+2021-09-07 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-09-09 06:00,EUR,1,Balance of Trade
+2021-09-14 12:30,USD,1,Core Inflation Rate YoY
+2021-09-14 12:30,USD,1,Inflation Rate YoY
+2021-09-16 12:30,USD,1,Retail Sales MoM
+2021-09-22 18:30,USD,1,Fed Press Conference
+2021-09-24 08:00,EUR,1,Ifo Business Climate
+2021-09-26 00:00,EUR,1,Federal Election
+2021-09-27 12:30,USD,1,Durable Goods Orders MoM
+2021-09-28 06:00,EUR,1,GfK Consumer Confidence
+2021-09-30 12:00,EUR,1,Inflation Rate YoY Prel
+2021-10-01 09:00,EUR,1,Inflation Rate YoY Flash
+2021-10-01 12:30,USD,1,Personal Income MoM
+2021-10-01 12:30,USD,1,Personal Spending MoM
+2021-10-01 14:00,USD,1,ISM Manufacturing PMI
+2021-10-05 12:30,USD,1,Balance of Trade
+2021-10-08 06:00,EUR,1,Balance of Trade
+2021-10-08 12:30,USD,1,Non Farm Payrolls
+2021-10-12 09:00,EUR,1,ZEW Economic Sentiment Index
+2021-10-12 14:00,USD,1,JOLTs Job Openings
+2021-10-13 12:30,USD,1,Core Inflation Rate YoY
+2021-10-13 12:30,USD,1,Inflation Rate YoY
+2021-10-13 18:00,USD,1,FOMC Minutes
+2021-10-15 12:30,USD,1,Retail Sales MoM
+2021-10-15 14:00,USD,1,Michigan Consumer Sentiment Prel
+2021-10-19 12:30,USD,1,Building Permits
+2021-10-22 07:30,EUR,1,Markit Composite PMI Flash
+2021-10-22 08:00,EUR,1,Markit Composite PMI Flash
+2021-10-25 08:00,EUR,1,Ifo Business Climate
+2021-10-27 06:00,EUR,1,GfK Consumer Confidence
+2021-10-27 12:30,USD,1,Durable Goods Orders MoM
+2021-10-28 12:00,EUR,1,Inflation Rate YoY Prel
+2021-10-29 09:00,EUR,1,Inflation Rate YoY Flash
+2021-10-29 12:30,USD,1,Personal Income MoM
+2021-10-29 12:30,USD,1,Personal Spending MoM
+2021-11-01 14:00,USD,1,ISM Manufacturing PMI
+2021-11-03 18:30,USD,1,Fed Press Conference
+2021-11-04 12:30,USD,1,Balance of Trade
+2021-11-05 12:30,USD,1,Non Farm Payrolls
+2021-11-09 07:00,EUR,1,Balance of Trade
+2021-11-09 10:00,EUR,1,ZEW Economic Sentiment Index
+2021-11-09 13:30,USD,1,PPI MoM
+2021-11-10 13:30,USD,1,Core Inflation Rate YoY
+2021-11-10 13:30,USD,1,Inflation Rate YoY
+2021-11-11 10:00,EUR,1,ECB Macroeconomic Projections
+2021-11-12 15:00,USD,1,JOLTs Job Openings
+2021-11-12 15:00,USD,1,Michigan Consumer Sentiment Prel
+2021-11-15 00:00,USD,1,President Biden and President Xi Jinping Virtual Meeting
+2021-11-16 13:30,USD,1,Retail Sales MoM
+2021-11-17 13:30,USD,1,Building Permits
+2021-11-23 08:30,EUR,1,Markit Composite PMI Flash
+2021-11-23 09:00,EUR,1,Markit Composite PMI Flash
+2021-11-23 14:45,USD,1,Markit Manufacturing PMI Flash
+2021-11-23 14:45,USD,1,Markit Services PMI Flash
+2021-11-24 09:00,EUR,1,Ifo Business Climate
+2021-11-24 13:30,USD,1,Durable Goods Orders MoM
+2021-11-24 15:00,USD,1,Personal Income MoM
+2021-11-24 15:00,USD,1,Personal Spending MoM
+2021-11-24 19:00,USD,1,FOMC Minutes
+2021-11-25 07:00,EUR,1,GfK Consumer Confidence
+2021-11-29 13:00,EUR,1,Inflation Rate YoY Prel
+2021-11-29 20:05,USD,1,Fed Chair Powell Speech
+2021-11-30 10:00,EUR,1,Inflation Rate YoY Flash
+2021-11-30 15:00,USD,1,Fed Chair Powell Testimony
+2021-12-01 15:00,USD,1,ISM Manufacturing PMI
+2021-12-03 13:30,USD,1,Non Farm Payrolls
+2021-12-03 15:00,USD,1,ISM Non-Manufacturing PMI
+2021-12-07 10:00,EUR,1,ZEW Economic Sentiment Index
+2021-12-07 13:30,USD,1,Balance of Trade
+2021-12-08 15:00,USD,1,JOLTs Job Openings
+2021-12-09 07:00,EUR,1,Balance of Trade
+2021-12-10 13:30,USD,1,Core Inflation Rate YoY
+2021-12-10 13:30,USD,1,Inflation Rate YoY
+2021-12-10 15:00,USD,1,Michigan Consumer Sentiment Prel
+2021-12-15 13:30,USD,1,Retail Sales MoM
+2021-12-15 19:30,USD,1,Fed Press Conference
+2021-12-16 08:30,EUR,1,Markit Composite PMI Flash
+2021-12-16 09:00,EUR,1,Markit Composite PMI Flash
+2021-12-16 13:30,USD,1,Building Permits
+2021-12-16 14:45,USD,1,Markit Manufacturing PMI Flash
+2021-12-16 14:45,USD,1,Markit Services PMI Flash
+2021-12-17 09:00,EUR,1,Ifo Business Climate
+2021-12-21 07:00,EUR,1,GfK Consumer Confidence
+2021-12-23 13:30,USD,1,Durable Goods Orders MoM
+2021-12-23 13:30,USD,1,Personal Income MoM
+2021-12-23 13:30,USD,1,Personal Spending MoM
+2022-01-04 15:00,USD,1,ISM Manufacturing PMI
+2022-01-04 15:00,USD,1,JOLTs Job Openings
+2022-01-05 19:00,USD,1,FOMC Minutes
+2022-01-06 13:00,EUR,1,Inflation Rate YoY Prel
+2022-01-06 13:30,USD,1,Balance of Trade
+2022-01-06 15:00,USD,1,ISM Non-Manufacturing PMI
+2022-01-07 07:00,EUR,1,Balance of Trade
+2022-01-07 10:00,EUR,1,Inflation Rate YoY Flash
+2022-01-07 13:30,USD,1,Non Farm Payrolls
+2022-01-11 15:00,USD,1,Fed Chair Powell Testimony
+2022-01-12 13:30,USD,1,Core Inflation Rate YoY
+2022-01-12 13:30,USD,1,Inflation Rate YoY
+2022-01-14 09:00,EUR,1,Full Year GDP Growth
+2022-01-14 13:30,USD,1,Retail Sales MoM
+2022-01-14 15:00,USD,1,Michigan Consumer Sentiment Prel
+2022-01-18 10:00,EUR,1,ZEW Economic Sentiment Index
+2022-01-19 13:30,USD,1,Building Permits
+2022-01-24 08:30,EUR,1,Markit Composite PMI Flash
+2022-01-24 09:00,EUR,1,Markit Composite PMI Flash
+2022-01-24 14:45,USD,1,Markit Composite PMI Flash
+2022-01-25 09:00,EUR,1,Ifo Business Climate
+2022-01-26 19:30,USD,1,Fed Press Conference
+2022-01-27 07:00,EUR,1,GfK Consumer Confidence
+2022-01-27 13:30,USD,1,Durable Goods Orders MoM
+2022-01-28 13:30,USD,1,Personal Income MoM
+2022-01-28 13:30,USD,1,Personal Spending MoM
+2022-01-31 13:00,EUR,1,Inflation Rate YoY Prel
+2022-02-01 15:00,USD,1,ISM Manufacturing PMI
+2022-02-01 15:00,USD,1,JOLTs Job Openings
+2022-02-02 10:00,EUR,1,Inflation Rate YoY Flash
+2022-02-03 15:00,USD,1,ISM Non-Manufacturing PMI
+2022-02-04 13:30,USD,1,Non Farm Payrolls
+2022-02-08 13:30,USD,1,Balance of Trade
+2022-02-09 07:00,EUR,1,Balance of Trade
+2022-02-10 13:30,USD,1,Core Inflation Rate YoY
+2022-02-10 13:30,USD,1,Inflation Rate YoY
+2022-02-11 15:00,USD,1,Michigan Consumer Sentiment Prel
+2022-02-15 10:00,EUR,1,ZEW Economic Sentiment Index
+2022-02-16 13:30,USD,1,Retail Sales MoM
+2022-02-16 19:00,USD,1,FOMC Minutes
+2022-02-17 13:30,USD,1,Building Permits
+2022-02-21 08:30,EUR,1,Markit Manufacturing PMI Flash
+2022-02-22 09:00,EUR,1,Ifo Business Climate
+2022-02-23 07:00,EUR,1,GfK Consumer Confidence
+2022-02-25 13:30,USD,1,Durable Goods Orders MoM
+2022-02-25 13:30,USD,1,Personal Income MoM
+2022-02-25 13:30,USD,1,Personal Spending MoM
+2022-03-01 13:00,EUR,1,Inflation Rate YoY Prel
+2022-03-01 15:00,USD,1,ISM Manufacturing PMI
+2022-03-02 10:00,EUR,1,Inflation Rate YoY Flash
+2022-03-03 15:00,USD,1,Fed Chair Powell Testimony
+2022-03-03 15:00,USD,1,ISM Non-Manufacturing PMI
+2022-03-04 07:00,EUR,1,Balance of Trade
+2022-03-04 13:30,USD,1,Non Farm Payrolls
+2022-03-08 13:30,USD,1,Balance of Trade
+2022-03-09 15:00,USD,1,JOLTs Job Openings
+2022-03-10 13:30,USD,1,Core Inflation Rate YoY
+2022-03-10 13:30,USD,1,Inflation Rate YoY
+2022-03-11 15:00,USD,1,Michigan Consumer Sentiment Prel
+2022-03-15 10:00,EUR,1,ZEW Economic Sentiment Index
+2022-03-15 12:30,USD,1,PPI MoM
+2022-03-16 12:30,USD,1,Retail Sales MoM
+2022-03-16 18:30,USD,1,Fed Press Conference
+2022-03-17 12:30,USD,1,Building Permits
+2022-03-24 08:30,EUR,1,Markit Manufacturing PMI Flash
+2022-03-24 12:30,USD,1,Durable Goods Orders MoM
+2022-03-25 09:00,EUR,1,Ifo Business Climate
+2022-03-29 06:00,EUR,1,GfK Consumer Confidence
+2022-03-29 14:00,USD,1,JOLTs Job Openings
+2022-03-30 12:00,EUR,1,Inflation Rate YoY Prel
+2022-03-31 12:30,USD,1,Personal Income MoM
+2022-03-31 12:30,USD,1,Personal Spending MoM
+2022-04-01 09:00,EUR,1,Inflation Rate YoY Flash
+2022-04-01 12:30,USD,1,Non Farm Payrolls
+2022-04-01 14:00,USD,1,ISM Manufacturing PMI
+2022-04-04 06:00,EUR,1,Balance of Trade
+2022-04-05 12:30,USD,1,Balance of Trade
+2022-04-05 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-04-06 18:00,USD,1,FOMC Minutes
+2022-04-12 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-04-12 12:30,USD,1,Core Inflation Rate YoY
+2022-04-12 12:30,USD,1,Inflation Rate YoY
+2022-04-13 12:30,USD,1,PPI MoM
+2022-04-14 12:30,USD,1,Retail Sales MoM
+2022-04-14 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-04-19 12:30,USD,1,Building Permits
+2022-04-22 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2022-04-25 08:00,EUR,1,Ifo Business Climate
+2022-04-26 12:30,USD,1,Durable Goods Orders MoM
+2022-04-27 06:00,EUR,1,GfK Consumer Confidence
+2022-04-28 12:00,EUR,1,Inflation Rate YoY Prel
+2022-04-29 09:00,EUR,1,Inflation Rate YoY Flash
+2022-04-29 12:30,USD,1,Personal Income MoM
+2022-04-29 12:30,USD,1,Personal Spending MoM
+2022-05-02 14:00,USD,1,ISM Manufacturing PMI
+2022-05-03 14:00,USD,1,JOLTs Job Openings
+2022-05-04 06:00,EUR,1,Balance of Trade
+2022-05-04 12:30,USD,1,Balance of Trade
+2022-05-04 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-05-04 18:30,USD,1,Fed Press Conference
+2022-05-06 12:30,USD,1,Non Farm Payrolls
+2022-05-10 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-05-11 12:30,USD,1,Core Inflation Rate YoY
+2022-05-11 12:30,USD,1,Inflation Rate YoY
+2022-05-12 12:30,USD,1,PPI MoM
+2022-05-13 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-05-16 09:00,EUR,1,European Commission Spring Forecasts
+2022-05-17 12:30,USD,1,Retail Sales MoM
+2022-05-17 18:00,USD,1,Fed Chair Powell Speech
+2022-05-18 12:30,USD,1,Building Permits
+2022-05-23 08:00,EUR,1,Ifo Business Climate
+2022-05-24 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2022-05-25 06:00,EUR,1,GfK Consumer Confidence
+2022-05-25 12:30,USD,1,Durable Goods Orders MoM
+2022-05-25 18:00,USD,1,FOMC Minutes
+2022-05-27 12:30,USD,1,Personal Income MoM
+2022-05-27 12:30,USD,1,Personal Spending MoM
+2022-05-30 12:00,EUR,1,Inflation Rate YoY Prel
+2022-05-31 09:00,EUR,1,Inflation Rate YoY Flash
+2022-06-01 14:00,USD,1,ISM Manufacturing PMI
+2022-06-01 14:00,USD,1,JOLTs Job Openings
+2022-06-03 06:00,EUR,1,Balance of Trade
+2022-06-03 12:30,USD,1,Non Farm Payrolls
+2022-06-03 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-06-07 12:30,USD,1,Balance of Trade
+2022-06-10 12:30,USD,1,Core Inflation Rate YoY
+2022-06-10 12:30,USD,1,Inflation Rate YoY
+2022-06-10 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-06-14 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-06-14 12:30,USD,1,PPI MoM
+2022-06-15 00:00,EUR,1,ECB Unscheduled Meeting to Discuss Markets
+2022-06-15 12:30,USD,1,Retail Sales MoM
+2022-06-15 18:30,USD,1,Fed Press Conference
+2022-06-16 12:30,USD,1,Building Permits
+2022-06-22 13:30,USD,1,Fed Chair Powell Testimony
+2022-06-23 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2022-06-23 14:00,USD,1,Fed Chair Powell Testimony
+2022-06-24 08:00,EUR,1,Ifo Business Climate
+2022-06-27 00:00,EUR,1,ECB Forum on Central Banking
+2022-06-27 12:30,USD,1,Durable Goods Orders MoM
+2022-06-28 00:00,EUR,1,ECB Forum on Central Banking
+2022-06-28 06:00,EUR,1,GfK Consumer Confidence
+2022-06-29 00:00,EUR,1,ECB Forum on Central Banking
+2022-06-29 12:00,EUR,1,Inflation Rate YoY Prel
+2022-06-29 13:00,EUR,1,ECB President Lagarde Speech
+2022-06-29 13:00,USD,1,Fed Chair Powell Speech
+2022-06-30 12:30,USD,1,Personal Income MoM
+2022-06-30 12:30,USD,1,Personal Spending MoM
+2022-06-30 13:30,EUR,1,ECB President Lagarde Speech
+2022-07-01 09:00,EUR,1,Inflation Rate YoY Flash
+2022-07-01 14:00,USD,1,ISM Manufacturing PMI
+2022-07-04 06:00,EUR,1,Balance of Trade
+2022-07-06 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-07-06 14:00,USD,1,JOLTs Job Openings
+2022-07-06 18:00,USD,1,FOMC Minutes
+2022-07-07 12:30,USD,1,Balance of Trade
+2022-07-08 12:30,USD,1,Non Farm Payrolls
+2022-07-12 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-07-13 12:30,USD,1,Core Inflation Rate YoY
+2022-07-13 12:30,USD,1,Inflation Rate YoY
+2022-07-14 12:30,USD,1,PPI MoM
+2022-07-15 12:30,USD,1,Retail Sales MoM
+2022-07-15 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-07-19 12:30,USD,1,Building Permits
+2022-07-22 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2022-07-25 08:00,EUR,1,Ifo Business Climate
+2022-07-27 06:00,EUR,1,GfK Consumer Confidence
+2022-07-27 12:30,USD,1,Durable Goods Orders MoM
+2022-07-27 18:30,USD,1,Fed Press Conference
+2022-07-28 12:00,EUR,1,Inflation Rate YoY Prel
+2022-07-29 09:00,EUR,1,Inflation Rate YoY Flash
+2022-07-29 12:30,USD,1,Personal Income MoM
+2022-07-29 12:30,USD,1,Personal Spending MoM
+2022-08-01 14:00,USD,1,ISM Manufacturing PMI
+2022-08-02 14:00,USD,1,JOLTs Job Openings
+2022-08-03 06:00,EUR,1,Balance of Trade
+2022-08-03 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-08-04 12:30,USD,1,Balance of Trade
+2022-08-05 12:30,USD,1,Non Farm Payrolls
+2022-08-10 12:30,USD,1,Core Inflation Rate YoY
+2022-08-10 12:30,USD,1,Inflation Rate YoY
+2022-08-11 12:30,USD,1,PPI MoM
+2022-08-12 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-08-16 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-08-16 12:30,USD,1,Building Permits
+2022-08-17 12:30,USD,1,Retail Sales MoM
+2022-08-17 18:00,USD,1,FOMC Minutes
+2022-08-23 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2022-08-24 12:30,USD,1,Durable Goods Orders MoM
+2022-08-25 08:00,EUR,1,Ifo Business Climate
+2022-08-26 06:00,EUR,1,GfK Consumer Confidence
+2022-08-26 12:30,USD,1,Personal Income MoM
+2022-08-26 12:30,USD,1,Personal Spending MoM
+2022-08-26 14:00,USD,1,Fed Chair Powell Speech
+2022-08-30 12:00,EUR,1,Inflation Rate YoY Prel
+2022-08-30 14:00,USD,1,JOLTs Job Openings
+2022-08-31 09:00,EUR,1,Inflation Rate YoY Flash
+2022-09-01 14:00,USD,1,ISM Manufacturing PMI
+2022-09-02 06:00,EUR,1,Balance of Trade
+2022-09-02 12:30,USD,1,Non Farm Payrolls
+2022-09-06 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-09-07 12:30,USD,1,Balance of Trade
+2022-09-13 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-09-13 12:30,USD,1,Core Inflation Rate YoY
+2022-09-13 12:30,USD,1,Inflation Rate YoY
+2022-09-14 12:30,USD,1,PPI MoM
+2022-09-15 12:30,USD,1,Retail Sales MoM
+2022-09-16 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-09-20 12:30,USD,1,Building Permits
+2022-09-21 18:30,USD,1,Fed Press Conference
+2022-09-26 08:00,EUR,1,Ifo Business Climate
+2022-09-27 12:30,USD,1,Durable Goods Orders MoM
+2022-09-28 06:00,EUR,1,GfK Consumer Confidence
+2022-09-29 12:00,EUR,1,Inflation Rate YoY Prel
+2022-09-30 09:00,EUR,1,Inflation Rate YoY Flash
+2022-09-30 12:30,USD,1,Personal Income MoM
+2022-09-30 12:30,USD,1,Personal Spending MoM
+2022-10-03 14:00,USD,1,ISM Manufacturing PMI
+2022-10-04 14:00,USD,1,JOLTs Job Openings
+2022-10-05 06:00,EUR,1,Balance of Trade
+2022-10-05 12:30,USD,1,Balance of Trade
+2022-10-05 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-10-07 12:30,USD,1,Non Farm Payrolls
+2022-10-12 12:30,USD,1,PPI MoM
+2022-10-12 18:00,USD,1,FOMC Minutes
+2022-10-13 12:30,USD,1,Core Inflation Rate YoY
+2022-10-13 12:30,USD,1,Inflation Rate YoY
+2022-10-14 12:30,USD,1,Retail Sales MoM
+2022-10-14 14:00,USD,1,Michigan Consumer Sentiment Prel
+2022-10-18 09:00,EUR,1,ZEW Economic Sentiment Index
+2022-10-19 12:30,USD,1,Building Permits
+2022-10-25 08:00,EUR,1,Ifo Business Climate
+2022-10-27 06:00,EUR,1,GfK Consumer Confidence
+2022-10-27 12:30,USD,1,Durable Goods Orders MoM
+2022-10-28 12:00,EUR,1,Inflation Rate YoY Prel
+2022-10-28 12:30,USD,1,Personal Income MoM
+2022-10-28 12:30,USD,1,Personal Spending MoM
+2022-10-31 10:00,EUR,1,Inflation Rate YoY Flash
+2022-11-01 14:00,USD,1,ISM Manufacturing PMI
+2022-11-01 14:00,USD,1,JOLTs Job Openings
+2022-11-02 07:00,EUR,1,Balance of Trade
+2022-11-02 18:30,USD,1,Fed Press Conference
+2022-11-03 12:30,USD,1,Balance of Trade
+2022-11-03 14:00,USD,1,ISM Non-Manufacturing PMI
+2022-11-04 12:30,USD,1,Non Farm Payrolls
+2022-11-10 13:30,USD,1,Core Inflation Rate YoY
+2022-11-10 13:30,USD,1,Inflation Rate YoY
+2022-11-11 15:00,USD,1,Michigan Consumer Sentiment Prel
+2022-11-15 10:00,EUR,1,ZEW Economic Sentiment Index
+2022-11-15 13:30,USD,1,PPI MoM
+2022-11-16 13:30,USD,1,Retail Sales MoM
+2022-11-17 13:30,USD,1,Building Permits Prel
+2022-11-23 13:30,USD,1,Durable Goods Orders MoM
+2022-11-23 19:00,USD,1,FOMC Minutes
+2022-11-24 09:00,EUR,1,Ifo Business Climate
+2022-11-25 07:00,EUR,1,GfK Consumer Confidence
+2022-11-29 13:00,EUR,1,Inflation Rate YoY Prel
+2022-11-30 10:00,EUR,1,Inflation Rate YoY Flash
+2022-11-30 15:00,USD,1,JOLTs Job Openings
+2022-11-30 18:30,USD,1,Fed Chair Powell Speech
+2022-12-01 13:30,USD,1,Personal Income MoM
+2022-12-01 13:30,USD,1,Personal Spending MoM
+2022-12-01 15:00,USD,1,ISM Manufacturing PMI
+2022-12-02 07:00,EUR,1,Balance of Trade
+2022-12-02 13:30,USD,1,Non Farm Payrolls
+2022-12-05 15:00,USD,1,ISM Non-Manufacturing PMI
+2022-12-06 13:30,USD,1,Balance of Trade
+2022-12-09 13:30,USD,1,PPI MoM
+2022-12-09 15:00,USD,1,Michigan Consumer Sentiment Prel
+2022-12-13 10:00,EUR,1,ZEW Economic Sentiment Index
+2022-12-13 13:30,USD,1,Core Inflation Rate YoY
+2022-12-13 13:30,USD,1,Inflation Rate YoY
+2022-12-14 19:00,USD,1,Fed Interest Rate Decision
+2022-12-14 19:30,USD,1,Fed Press Conference
+2022-12-15 13:15,EUR,1,Deposit Facility Rate
+2022-12-15 13:15,EUR,1,ECB Interest Rate Decision
+2022-12-15 13:30,USD,1,Retail Sales MoM
+2022-12-19 09:00,EUR,1,Ifo Business Climate
+2022-12-20 13:30,USD,1,Building Permits Prel
+2022-12-21 07:00,EUR,1,GfK Consumer Confidence
+2022-12-23 13:30,USD,1,Durable Goods Orders MoM
+2022-12-23 13:30,USD,1,Personal Income MoM
+2022-12-23 13:30,USD,1,Personal Spending MoM
 2023-01-03 13:00,EUR,1,Inflation Rate YoY Prel
 2023-01-04 15:00,USD,1,ISM Manufacturing PMI
 2023-01-04 15:00,USD,1,JOLTs Job Openings
