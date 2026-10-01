@@ -1,4 +1,6 @@
 """Live loop: approve / skip / expire flow, execution through the paper broker, close reports, composite fetch."""
+from unittest.mock import Mock
+
 import pandas as pd
 import pytest
 
@@ -168,6 +170,46 @@ def test_no_current_price_means_no_order(setup):
     runner, notifier = _runner(setup, RaisingPriceBroker(Settings()), require_approval=False)
     runner.step(NOW)
     assert runner.broker.open_positions() == [] and any("no current price" in m for m in notifier.sent)
+
+
+@pytest.mark.parametrize("price", [float("inf"), float("-inf"), float("nan"), None, "not-a-price", 0.0, -1.0],
+                         ids=["positive_infinity", "negative_infinity", "nan", "none", "non_numeric", "zero", "negative"])
+def test_invalid_executable_quote_blocks_order(setup, monkeypatch, price):
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    submit = Mock(wraps=broker.place_market_order)
+    monkeypatch.setattr(broker, "place_market_order", submit)
+    monkeypatch.setattr(broker, "current_price", lambda symbol: price)
+
+    runner.step(NOW)
+
+    submit.assert_not_called()
+    assert broker.open_positions() == [] and runner.known_positions == {}
+    assert any("no current price" in m for m in notifier.sent)
+    assert not any("filled" in m or "submitted" in m for m in notifier.sent)
+
+
+def test_queued_approval_rechecks_data_freshness_before_expiry(setup, monkeypatch):
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker)
+    runner.fetch = lambda: {T.MIN_5: CandleSeries.from_records(
+        [(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_5, start="2026-10-01 08:45", symbol="EURUSD")}
+    submit = Mock(wraps=broker.place_market_order)
+    monkeypatch.setattr(broker, "place_market_order", submit)
+    assert runner.settings.live.require_fresh_data and runner.settings.live.max_data_age_bars == 2
+    runner.step(NOW)
+    assert not runner.stale and len(runner.pending) == 1
+    sid = next(iter(runner.pending))
+    approved_at = NOW + pd.Timedelta(11, unit="min")
+    assert approved_at < runner.pending[sid].expires_at
+
+    notifier.queue_decision(sid, approved=True)
+    runner.step(approved_at)
+
+    assert T.MIN_5 in runner.stale and runner.pending == {}
+    submit.assert_not_called()
+    assert broker.open_positions() == [] and runner.known_positions == {}
+    assert any("not executed" in m and "stale" in m for m in notifier.sent)
 
 
 def test_order_failure_is_reported_not_raised(setup):

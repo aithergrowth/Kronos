@@ -2,7 +2,7 @@ as_of: '2026-10-01'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Complete available A/B/C/D/E/F/G automatic Dutch-caption text review; rendered academy pages,
+method: Complete available A/B/C/D/E/F/G/H automatic Dutch-caption text review; rendered academy pages,
   selected plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
   verified.
 retrieved_caption_sources:
@@ -13,6 +13,8 @@ retrieved_caption_sources:
 - F5ciF74Uzr8
 - O6IgD2llrq0
 - 6NLVf8P-xP8
+- oe0tBQ47r3M
+youtube_caption_reviewed_source_count: 8
 caption_audio_audited: false
 youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports
   reviewed. D requested video frame still black/buffering after one ordinary player recovery.
@@ -376,6 +378,34 @@ source_G:
   report: ../../DORUS_HTF_CONTEXT.md
   q5_finding: '10:49–10:55: first bullish candle after a shift in this example; does not establish a candle-only
     alternative or exact order timing.'
+source_H:
+  id: oe0tBQ47r3M
+  title: Hoe Je Entries 5x Beter Worden Als Je Dít Ene Ding Begrijpt
+  published: '2025-08-12'
+  publication_date_source: Expanded YouTube description
+  url: https://www.youtube.com/watch?v=oe0tBQ47r3M
+  duration: '13:43'
+  language: nl
+  automatic: true
+  reviewed_on: '2026-10-01'
+  dutch_auto_caption_segments: 414
+  caption_lines: 419
+  caption_bytes: 18329
+  first_caption: '00:00'
+  last_caption_start: '13:37'
+  full_available_caption_text_reviewed: true
+  audio_verified: false
+  chart_frames_verified: false
+  raw_transcript_delivered: false
+  caption_sha256: e5ddad66ded7f653513850422d9df388d046292b41c587bc512d3dc3b94e88a1
+  report: ../../DORUS_ENTRY_METHODS.md
+  finding_locators:
+    q5: 08:10–08:39
+    bs: 07:24–07:39; 09:28–10:05
+    q8: 05:38–06:02
+    q10: 04:23–04:43; 10:46–10:53; 12:18–12:29
+  playback_result: Black player at 00:00 after one Play action; no audio or chart verification
+  complete_fixtures_added: 0
 candle_delivery_followup:
   source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
   validated_csv_files: 7

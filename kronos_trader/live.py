@@ -18,6 +18,7 @@ reported with P&L.  ``dry_run=True`` never sends an order.
 from __future__ import annotations
 
 import hashlib
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
@@ -287,12 +288,17 @@ class LiveRunner:
         self.execute(setup, forecast, now)
 
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
+        if self.stale and self.settings.live.require_fresh_data:
+            self.notifier.send(f"⛔ {self.symbol}: not executed - the data is stale ({self.stale_text()}); refresh the feed")
+            return None
         ok, reason = self.guard.can_open(self.broker, now, self.symbol)
         if not ok:
             self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
             return None
         try:
-            price = self.broker.current_price(self.symbol)
+            price = float(self.broker.current_price(self.symbol))
+            if not math.isfinite(price) or price <= 0:
+                raise ValueError("current price must be finite and positive")
         except Exception as exc:
             self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
             return None

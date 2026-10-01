@@ -13,6 +13,8 @@ Status legend: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## Research status — 2026-10-01, follow-up evidence check
 
+**Latest execution check (base `445cd25`):** preserved Claude's concurrent runtime changes; **101 offline tests pass**, one source-fixture test skips and one model-weights test is deselected. Added finite-positive quote and stale queued-approval guards plus a CI YAML correction. A separate fake-IBKR reproduction still loses tracking/protection requests after a partial fill is cancelled. See [current verification and remaining defect](EXECUTION_VERIFICATION_2026-10-01.md); older runtime reviews below are historical.
+
 **Current data/readiness update (base `375c16b`, 2026-10-01):** Claude delivered seven
 CSV datasets through the TradingView MCP. An independent audit checked **13,599
 rows**: all seven match the column schema, have increasing unique timestamps and
@@ -28,6 +30,9 @@ below describe that earlier route; they do not mean no data is now delivered.
 375-segment Dutch-caption review. At 10:49–10:55 he describes first-bullish-candle
 entry **after a shift** in the gold example. This supports that sequence without
 proving candle-only confirmation, exact order timing or the P/BS boundary.
+
+**New primary source H:** [entry-method review](DORUS_ENTRY_METHODS.md), 414 Dutch
+caption segments; see Q5/Q8/Q10 and the BS addendum. No audiovisual verification.
 
 
 **Partial source audit. Every question is addressed, but this is not a completed
@@ -118,6 +123,7 @@ are evidence notes, not a complete verbatim transcript.
 | E | [How to Trade Liquidity (Like a Pro)](https://www.youtube.com/watch?v=F5ciF74Uzr8), 14:15 player | Published 2026-09-02. All 391 Dutch automatic-caption segments reviewed through 14:13; English export excluded. |
 | F | [How to Use Fair Value Gaps to Find Better Trades](https://www.youtube.com/watch?v=O6IgD2llrq0), 10:28 | Published 2026-09-28. All 288 Dutch automatic-caption segments reviewed through 10:26. |
 | G | [De Kracht van HTF Context in LTF Trades](https://www.youtube.com/watch?v=6NLVf8P-xP8), 12:38 | Published 2025-08-20. All 375 available Dutch automatic-caption segments reviewed, 00:00–12:31 (last segment start). Player black; audio and charts unverified. |
+| H | [Hoe Je Entries 5x Beter Worden Als Je Dít Ene Ding Begrijpt](https://www.youtube.com/watch?v=oe0tBQ47r3M), 13:43 | Published 2025-08-12. All 414 available Dutch automatic-caption segments reviewed, 00:00–13:37 (last segment start). Player black; audio and charts unverified. [Report](DORUS_ENTRY_METHODS.md). |
 | K1 | [2. De strategie leren → Tradingplan](https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83), 18:19 | Publication date not displayed. Written slides inspected at 02:17, 03:54, 04:30, 06:30, 06:37, 06:49 and 06:55. |
 | K2 | [Analyses → Bitcoin analyse ∣ 27-09-2026](https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd), Loom title *Mijn Bitcoin visie en weekly kansen*, 2:57 | Lesson date 2026-09-27. Public playback captions reviewed continuously through the 02:57 end; selected monthly/weekly frames; no independent audio verification. |
 | K3 | [Analyses → €8.000 verdiend binnen één uur.](https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411), Loom title *Goud scalps, liquiditeitsruns en twee shorts*, 4:05 | Chart date 2026-08-26. Public playback captions reviewed continuously through the 04:05 end; selected 4H/1m frames, including the corrected 02:40 entry/stop, distance and RR labels, independently checked; later frames through 03:20 did not resolve target-price label or timezone. No independent audio verification. |
@@ -170,6 +176,7 @@ No missing rule is converted into a Dorus-attributed default.
   > **Source:** A 55:18, 01:21:02–01:21:11, 01:29:29–01:31:01; K1 06:30–06:37; B 08:49–09:20; D 13:48–14:01. Full linked titles are in the source register.
   > **Confidence:** High for the named options; medium for example-specific sequencing.
   > **Additional source G:** 10:49–10:55 explicitly places the first bullish candle after a shift; 09:00–09:20 describes a 1m gold entry context and liquidity-then-shift sequence. High for the captioned sequence, with audio/chart verification outstanding. See [source G](DORUS_HTF_CONTEXT.md); this does not establish first-candle confirmation independent of a shift.
+  > **Additional source H:** Alternative method versus G's personal sequence: [H 08:10–08:39](DORUS_ENTRY_METHODS.md). Conditions remain incomplete.
   > **Notes:** Exact timeframe eligibility is **not stated**. At A 43:24–43:34 a hoped-for additional liquidity take does not occur, yet the discussion proceeds to entry. This does not prove there was no earlier sweep, but it does not support requiring every extra local sweep.
 
 - [x] **Q6 - TP choice.** Liquidity line vs. unmitigated balance block when both exist: nearest, or always liquidity?
@@ -188,6 +195,7 @@ No missing rule is converted into a Dorus-attributed default.
   > **Answer:** 4RR intraday/scalp and 2RR swing break-even thresholds are confirmed in K1. A universal minimum 3R is contradicted by accepted examples, including A’s 0.73R, B’s 1.47R/1.3R and C’s 1.7R. D 11:01–11:34 also gives a hypothetical 60% win rate → 0.67 minimum RR; it is not his measured win rate or the project threshold.
   > **Source:** K1 06:49–06:55; A 01:43:58–01:47:06; B 05:46–05:57, 09:23–09:58; C 35:35–36:33; D 11:01–11:34 and 14:56–15:17. Full linked titles are in the source register.
   > **Confidence:** High for the written thresholds and explicitly described examples.
+  > **Additional source H:** [H 05:38–06:02](DORUS_ENTRY_METHODS.md) has ambiguous numbers; no new threshold.
   > **Notes:** A connects attractive RR with his claimed win rate. These are source statements, not verified performance or a new project threshold. A fixed 3R target closes before 4R; that arithmetic is not his stated explanation for the exit table.
 
 - [~] **Q9 - Entry style.** Market on the confirmation close, or a limit back at the break level?
@@ -200,6 +208,7 @@ No missing rule is converted into a Dorus-attributed default.
   > **Answer:** The all-sessions assumption is contradicted by his stated entry windows. A’s replay selects Amsterdam time, then uses 09:00–11:00 and 13:00–17:00. C instead gives 08:00–17:00 through London’s close. Broker daily/4H candle anchoring is **not stated**.
   > **Source:** A 03:54–04:15, 02:20:59–02:21:07, 02:24:03–02:24:20 and 02:30:48–02:32:02; published 2026-02-18. C 10:28–10:53; publication date unverified. Full linked titles are in the source register.
   > **Confidence:** High for the stated windows and A’s explicit replay timezone; medium for extending that clock to other examples; not assessed for broker anchoring.
+  > **Additional source H:** Dated session variation and unknown timezone: [H 04:23–04:43](DORUS_ENTRY_METHODS.md).
   > **Notes:** A rejects a 17:00 entry and demonstrates it only as a violation to journal. C advises timezone adjustment when travelling without naming its displayed timezone in the captions. Europe/Amsterdam is not a fixed UTC offset. The differing windows must not be silently merged or assigned a chronology.
 
 - [~] **Q11 - Prop firm.** Which firm, account size, daily loss %, max drawdown %, min trading days, news and weekend rules?
@@ -250,6 +259,9 @@ No missing rule is converted into a Dorus-attributed default.
 | 10 | Scalp / intraday / swing | Written K1 categories below; K3’s scalp qualification in the conflict log. | High for written category labels. Duration cutoffs and exact POI permissions within the scalp-only bias branch remain **not stated**. |
 
 **New priority-source reconciliation:** [DORUS_PRIORITY_SOURCES.md](DORUS_PRIORITY_SOURCES.md) supplies the D/E/F findings, the exact coded endpoint comparison, and K7’s limited diagram observation. D adds a no-trade example and a narration inconsistency; neither produces a complete fixture.
+
+**BS addendum — source H:** [07:24–07:39 and 09:28–10:05](DORUS_ENTRY_METHODS.md)
+support balance crossing; close/wick and gap choice remain unresolved.
 
 ### Verified plan table — K1, written slides
 
@@ -460,6 +472,6 @@ The priority D/E videos and additional F video now have complete available Dutch
 | 2026-09-30 | User handoff cleared YouTube verification. Reviewed all available Dutch captions for D/E/F (419/391/288 segments). D/F clarify POI starts at liquidity and can reach protection; D explicitly includes M+D+4H. Exact P endpoint/BS algorithm and complete fixtures remain unresolved; no runtime change. | Codex/Astra |
 | 2026-10-01 | Independently checked K3 mobile chart attachments; preserved `.pro/M1` and `.raw/M15` separately and excluded quote-as-target/timezone inference. Checked later K7 frames and attempted A's completed replay; no new exact P or fixture values established. Added precise remaining-evidence locations. Illustration fixtures do not require verified broker fills, but do require readable chart values and adequate candle/retrieval metadata. | Codex/Astra |
 | 2026-10-01 | Added seven exact retrieval requests across six source cases, distinct from runnable fixtures; independently checked K5's Jan 30 daily OHLC anchor. Native INDEX:BTCUSD daily export opened an upgrade prompt recommending Premium and produced no CSV. The official plan comparison subsequently confirmed Plus as the minimum listed export plan; Basic and Essential exclude it. Gold-recap/coaching transcript attempts supplied metadata only, not new strategy claims. No runtime changes. | Codex/Astra |
-
-
 | 2026-10-01 | Independently audited seven MCP-derived datasets (13,599 rows), separated six exact-timeframe deliveries from the gold 15m substitute, and matched K5 OHLC. Added source G first-candle-after-shift evidence plus a pinned code/readiness review. Complete source fixtures remain zero; no runtime changes or paper performance claimed. | Codex/Astra |
+| 2026-10-01 | Added [source H](DORUS_ENTRY_METHODS.md) and Q5/Q8/Q10/BS cross-references; preserved prior decisions. All-video/all-academy review incomplete; complete fixtures zero. No runtime changes. | Codex/Astra |
+| 2026-10-01 | Independently verified latest `445cd25`; 101 offline tests pass after invalid-quote/stale-approval guards and CI YAML correction. Preserved Claude changes. Reproduced unresolved IBKR partial-cancel defect; see [verification](EXECUTION_VERIFICATION_2026-10-01.md). | Codex/Astra |

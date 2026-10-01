@@ -1,0 +1,151 @@
+{
+  "case_1_partial_cancel_before_submit_returns": {
+    "exception": "EURUSD BUY order 100 not accepted by TWS (status Cancelled)",
+    "after": {
+      "held_units": {
+        "EURUSD": 25000.0
+      },
+      "tracked_position_ids": [],
+      "tracked_order_ids": [],
+      "child_cancel_requests": [
+        {
+          "id": 102,
+          "kind": "STP"
+        },
+        {
+          "id": 101,
+          "kind": "LMT"
+        }
+      ],
+      "orders": [
+        {
+          "id": 100,
+          "kind": "MKT",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": 25000.0,
+          "remaining_units": 75000.0,
+          "avg_fill_price": 1.1002
+        },
+        {
+          "id": 101,
+          "kind": "LMT",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        },
+        {
+          "id": 102,
+          "kind": "STP",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        }
+      ],
+      "closed_trade_count": 0,
+      "fake_connection_opened": false
+    }
+  },
+  "case_2_partial_cancel_after_pending_return": {
+    "before_reconciliation": {
+      "held_units": {
+        "EURUSD": 25000.0
+      },
+      "tracked_position_ids": [
+        "100"
+      ],
+      "tracked_order_ids": [
+        "100"
+      ],
+      "child_cancel_requests": [],
+      "orders": [
+        {
+          "id": 100,
+          "kind": "MKT",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": 25000.0,
+          "remaining_units": 75000.0,
+          "avg_fill_price": 1.1002
+        },
+        {
+          "id": 101,
+          "kind": "LMT",
+          "requested_units": 100000.0,
+          "status": "Submitted",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        },
+        {
+          "id": 102,
+          "kind": "STP",
+          "requested_units": 100000.0,
+          "status": "Submitted",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        }
+      ],
+      "closed_trade_count": 0,
+      "fake_connection_opened": false
+    },
+    "reported_open_positions_after_reconciliation": [],
+    "after_reconciliation": {
+      "held_units": {
+        "EURUSD": 25000.0
+      },
+      "tracked_position_ids": [],
+      "tracked_order_ids": [],
+      "child_cancel_requests": [
+        {
+          "id": 102,
+          "kind": "STP"
+        },
+        {
+          "id": 101,
+          "kind": "LMT"
+        }
+      ],
+      "orders": [
+        {
+          "id": 100,
+          "kind": "MKT",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": 25000.0,
+          "remaining_units": 75000.0,
+          "avg_fill_price": 1.1002
+        },
+        {
+          "id": 101,
+          "kind": "LMT",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        },
+        {
+          "id": 102,
+          "kind": "STP",
+          "requested_units": 100000.0,
+          "status": "Cancelled",
+          "filled_units": null,
+          "remaining_units": null,
+          "avg_fill_price": 0.0
+        }
+      ],
+      "closed_trade_count": 0,
+      "fake_connection_opened": false
+    }
+  },
+  "limitation": "Injected fake TWS state establishes adapter behavior only; actual IBKR execution, status-event ordering and child order handling were not exercised.",
+  "base_commit": "445cd256b599ec9a0a1722b2049699b1ad923095",
+  "adapter_sha256": "972185035d707f75182cde341593fa8d46b65b9fc027e583abfe7549995c57e2",
+  "reproduction_script": "ibkr_partial_cancel_repro.py"
+}
