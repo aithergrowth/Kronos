@@ -266,3 +266,24 @@ def test_setup_comes_with_a_chart(setup, tmp_path):
     runner.step(NOW)
     photos = [m for m in notifier.sent if m.startswith("[photo]")]
     assert len(photos) == 1 and "EURUSD_15m_setup.png" in photos[0] and (tmp_path / "EURUSD_15m_setup.png").exists()
+
+
+def test_journal_records_the_whole_sequence(setup, tmp_path):
+    from kronos_trader.journal import summary
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker)
+    runner.settings.live.briefing_time = None
+    runner.settings.live.send_charts = False
+    runner.journal = __import__("kronos_trader.journal", fromlist=["Journal"]).Journal(tmp_path / "trades.csv", clock=lambda: NOW)
+    runner.step(NOW)
+    sid = next(iter(runner.pending))
+    notifier.queue_decision(sid, approved=True)
+    runner.step(NOW + pd.Timedelta(1, unit="min"))
+    broker.on_candle("EURUSD", Candle(0, NOW + pd.Timedelta(15, unit="min"), 1.1, 1.125, 1.099, 1.124))
+    runner.step(NOW + pd.Timedelta(16, unit="min"))
+    rows = pd.read_csv(tmp_path / "trades.csv")
+    assert list(rows["event"]) == ["setup", "approval_requested", "approved", "filled", "closed"]
+    assert rows.iloc[0]["rr"] == 3.85 and rows.iloc[0]["poi_tf"] == "1H" and rows.iloc[-1]["reason"] == "take_profit"
+    s = summary(tmp_path / "trades.csv")
+    assert s["closed"] == 1 and s["wins"] == 1 and s["win_rate"] == 1.0 and s["avg_r"] > 3

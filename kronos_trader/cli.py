@@ -308,8 +308,17 @@ def cmd_dukascopy(args) -> int:
         counts = fetch_days(instrument, dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.end), args.raw_dir,
                             pause=args.pause, progress=print)
         print("download:", counts)
-    written = build_cache(symbol, instrument, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset)
+    kwargs = {}
+    if args.timeframes:
+        kwargs["timeframes"] = [Timeframe.parse(t.strip()) for t in args.timeframes.split(",") if t.strip()]
+    written = build_cache(symbol, instrument, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset, **kwargs)
     print("cache written:", written, "->", args.out_dir)
+    return 0
+
+
+def cmd_journal(args) -> int:
+    from .journal import format_summary, summary
+    print(format_summary(summary(args.path)))
     return 0
 
 
@@ -438,7 +447,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--pause", type=float, default=0.4, help="seconds between requests (the feed rate-limits)")
     sp.add_argument("--session-offset", type=float, default=3.0, help="hours: 3 = the day and the 4H bins start at 21:00 UTC")
     sp.add_argument("--build-only", action="store_true", help="skip the download, decode what is on disk")
+    sp.add_argument("--timeframes", help="comma list to write, e.g. 5m,15m,1H,4H (default: 5m to 1M)")
     sp.set_defaults(func=cmd_dukascopy)
+
+    sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")
+    sp.add_argument("--path", default="journal/trades.csv")
+    sp.set_defaults(func=cmd_journal)
     return p
 
 

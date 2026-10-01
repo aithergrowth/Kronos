@@ -212,6 +212,19 @@ Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
 at 5 % daily and 10 % total loss, the guard stops at 4 % and 8 %, one open
 trade, 1 % risk.
 
+### The journal
+
+Every setup, approval, skip, expiry, fill, break-even move and close is
+appended to `journal/trades.csv` as it happens (`live.journal_path`). The
+forward test's numbers come from that file alone:
+
+```shell
+python -m kronos_trader journal
+```
+
+prints closed trades, win rate, expectancy per trade, average winner, total R
+and P&L, plus the counts of setups, approvals, skips and expiries, by month.
+
 ### Charts and Kronos on the chart
 
 ![EURUSD 15m briefing chart with zones and the Kronos fan](images/sample_chart_EURUSD_15m.png)

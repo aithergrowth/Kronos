@@ -31,6 +31,7 @@ from .core.types import Analysis, Bias, ForecastSummary, TradeSetup
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
+from .journal import Journal
 from .notify.telegram import TelegramNotifier
 from .strategy.engine import StrategyEngine
 from .strategy.exits import breakeven_reached
@@ -182,6 +183,7 @@ class LiveRunner:
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
+        self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._views: Dict[Timeframe, CandleSeries] = {}
         self._touched: set = set()                          # POI keys already announced as entered
@@ -209,6 +211,13 @@ class LiveRunner:
             self.notifier.send_analysis(analysis, self.spec)
         return analysis
 
+    def note(self, event: str, now: Optional[pd.Timestamp] = None, **fields) -> None:
+        if self.journal is not None:
+            try:
+                self.journal.log(event, self.symbol, time=now, **fields)
+            except Exception as exc:
+                print(f"[live] journal failed ({exc})")
+
     # ------------------------------------------------------------ Dorus's routine
     def morning_briefing(self, analysis: Analysis, now: pd.Timestamp) -> None:
         """Once per weekday at ``live.briefing_time`` local time: the bias, the decision and the POI map for the day."""
@@ -220,6 +229,7 @@ class LiveRunner:
         if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._briefed_on == local.date():
             return
         self._briefed_on = local.date()
+        self.note("briefing", now, price=float(analysis.price), note=analysis.decision.reason)
         self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
         self.notifier.send_analysis(analysis, self.spec)
         self.send_chart(analysis, "briefing")
@@ -265,6 +275,8 @@ class LiveRunner:
             if poi.key in self._touched:
                 continue
             self._touched.add(poi.key)
+            self.note("poi_touch", analysis.timestamp, poi_tf=poi.timeframe.label, direction=poi.direction.name,
+                      price=float(analysis.price), note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
             arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
             self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
                                f"({analysis.decision.reason}); waiting for a confirmation")
@@ -350,9 +362,13 @@ class LiveRunner:
         if key in self.seen:
             return
         self.seen.add(key)
+        sid = short_id_for(key)
+        sf = self.journal.setup_fields(setup) if self.journal is not None else {}
         if self.stale and self.settings.live.require_fresh_data:
+            self.note("stale", now, id=sid, note=self.stale_text(), **sf)
             self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
             return
+        self.note("setup", now, id=sid, reason=setup.tp_source, **sf)
         calendar = getattr(self.engine, "calendar", None)
         if calendar is not None:
             soon = calendar.upcoming(self.symbol, now, within_minutes=240)
@@ -375,19 +391,23 @@ class LiveRunner:
             timeout = self.approval_timeout_minutes or max(5, setup.confirmation.timeframe.minutes)
             pending = PendingSetup(short_id_for(key), key, setup, forecast, now, now + pd.Timedelta(int(timeout), unit="min"))
             self.pending[pending.short_id] = pending
+            self.note("approval_requested", now, id=pending.short_id, note=f"expires {pending.expires_at:%H:%M} UTC")
             self.notifier.send_approval_request(setup, pending.short_id, forecast, self.spec, pending.expires_at)
             self.send_chart(analysis, "setup", setup=setup, forecast=forecast)
             return
         self.execute(setup, forecast, now)
 
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
+        sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
         ok, reason = self.guard.can_open(self.broker, now, self.symbol)
         if not ok:
+            self.note("not_executed", now, id=sid, reason=reason)
             self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
             return None
         try:
             price = self.broker.current_price(self.symbol)
         except Exception as exc:
+            self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
             return None
         risk_now = abs(price - setup.stop) + self.settings.risk.spread_buffer_pips * self.spec.pip_size
@@ -395,6 +415,7 @@ class LiveRunner:
         rr_now = reward_now / risk_now if risk_now > 0 else 0.0
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         if wrong_side or rr_now < self.settings.risk.min_rr:
+            self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                                f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
             return None
@@ -407,13 +428,18 @@ class LiveRunner:
                 price=price, ts=now,
             )
         except Exception as exc:
+            self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
             return None
         self.guard.record_trade(now)
         self.known_positions[pos.id] = pos
         side = "BUY" if pos.direction.sign > 0 else "SELL"
         d = self.spec.price_decimals
-        if getattr(pos, "status", "filled") == "filled":
+        filled = getattr(pos, "status", "filled") == "filled"
+        self.note("filled" if filled else "submitted", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
+                  stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
+                  note=f"setup {sid}")
+        if filled:
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
                                f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")
         else:
@@ -430,17 +456,21 @@ class LiveRunner:
                 self.notifier.send(f"{self.symbol}: no pending setup with id {decision.short_id} (expired or already handled)")
                 continue
             if not decision.approved:
+                self.note("skipped", now, id=pending.short_id)
                 self.notifier.send(f"❌ {self.symbol}: setup {pending.short_id} skipped")
                 continue
             if now >= pending.expires_at:
+                self.note("approved_late", now, id=pending.short_id)
                 self.notifier.send(f"⌛ {self.symbol}: setup {pending.short_id} approved too late "
                                    f"(expired {pending.expires_at:%H:%M} UTC), not executed")
                 continue
+            self.note("approved", now, id=pending.short_id)
             self.notifier.send(f"✅ {self.symbol}: setup {pending.short_id} approved, sending order")
             self.execute(pending.setup, pending.forecast, now)
         for short_id, pending in list(self.pending.items()):
             if now >= pending.expires_at:
                 self.pending.pop(short_id)
+                self.note("expired", now, id=short_id)
                 self.notifier.send(f"⌛ {self.symbol}: setup {short_id} expired without approval")
 
     # ------------------------------------------------------------ positions
@@ -455,9 +485,11 @@ class LiveRunner:
             if current is None:
                 self.unconfirmed.pop(pid)
                 self.known_positions.pop(pid, None)
+                self.note("did_not_fill", id=pid)
                 self.notifier.send(f"❌ {self.symbol}: order {pid} did not fill (cancelled or rejected)")
             elif getattr(current, "status", "filled") == "filled":
                 self.unconfirmed.pop(pid)
+                self.note("fill_confirmed", id=pid, entry=float(current.entry))
                 self.notifier.send(f"💸 {self.symbol}: fill confirmed @ {current.entry:.{d}f}  (id {pid})")
         lowest = views[min(views)]
         if len(lowest) == 0:
@@ -471,6 +503,7 @@ class LiveRunner:
             if breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):
                 self.broker.modify_stop(pos.id, pos.entry)
                 pos.breakeven_done = True
+                self.note("breakeven", id=pos.id, stop=float(pos.entry))
                 self.notifier.send(f"🔒 {self.symbol}: stop moved to break-even on {pos.id} ({pos.breakeven_r:.0f}R reached)")
 
     def report_closes(self) -> None:
@@ -478,6 +511,8 @@ class LiveRunner:
             return
         for trade in self.broker.recent_closes():
             self.known_positions.pop(trade.id, None)
+            self.note("closed", trade.closed_at, id=trade.id, direction=trade.direction.name, entry=float(trade.entry),
+                      price=float(trade.exit), pnl=float(trade.pnl), r=float(trade.r), reason=trade.reason, lots=float(trade.lots))
             icon = "🎯" if trade.reason == "take_profit" else "🛑" if trade.reason == "stop" else "➖"
             self.notifier.send(f"{icon} {self.symbol} closed ({trade.reason}) @ {trade.exit:.{self.spec.price_decimals}f}  "
                                f"P&L {trade.pnl:+,.0f}  ({trade.r:+.2f}R)  id {trade.id}")

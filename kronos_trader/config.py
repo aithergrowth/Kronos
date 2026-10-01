@@ -283,6 +283,7 @@ class LiveParams:
     charts_dir: str = "charts"
     chart_lookback: int = 120                # candles on the image
     mt5_overlay: bool = True                 # with --broker mt5: write the forecast file the KronosForecast indicator draws
+    journal_path: Optional[str] = "journal/trades.csv"   # every setup, decision, fill and close of the forward test
     max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
     require_fresh_data: bool = True     # stale data: analyse and manage positions, but open no new setups
     feed_retry_seconds: int = 600       # after the live feed fails for every timeframe, leave it alone this long
