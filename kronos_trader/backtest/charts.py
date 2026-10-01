@@ -36,6 +36,7 @@ def render_trade_charts(
     engine: Optional[StrategyEngine] = None,
     max_charts: int = 20,
     lookback: int = 120,
+    max_zones: int = 3,
 ) -> List[Path]:
     from ..notify.chart import render_chart
 
@@ -63,5 +64,6 @@ def render_trade_charts(
             title += "  (setup not reproduced: zones only)"
         name = f"{symbol}_{seq:03d}_{now:%Y%m%d_%H%M}_{tf.label}.png"
         paths.append(render_chart(views[tf], out / name, pois=zones, setup=setup, title=title,
-                                  subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=lookback, price_decimals=decimals))
+                                  subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=lookback, price_decimals=decimals,
+                                  max_zones=max_zones))
     return paths
