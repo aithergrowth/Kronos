@@ -1,11 +1,11 @@
 {
   "local_test_command": "PYTHONPATH=<tested_snapshot>:<test_deps> python -m pytest tests/trader -q -m 'not slow'",
   "result": {
-    "passed": 221,
+    "passed": 222,
     "skipped": 1,
     "deselected": 1
   },
-  "test_output": "...................................................................s.... [ 32%]\n........................................................................ [ 64%]\n........................................................................ [ 97%]\n......                                                                   [100%]\n221 passed, 1 skipped, 1 deselected in 9.12s\n",
+  "test_output": "....................................................................s... [ 32%]\n........................................................................ [ 64%]\n........................................................................ [ 96%]\n.......                                                                  [100%]\n222 passed, 1 skipped, 1 deselected in 7.87s\n",
   "python": "3.12.14",
   "pandas": "2.2.3",
   "numpy": "2.3.5",
@@ -46,8 +46,8 @@
       "git_blob_sha1": "105cf680a6e8753616d89c1333f5672a99d20802"
     },
     "kronos_trader/core/candles.py": {
-      "sha256": "1f4e75db8f7b9f7084c19a717adfb6426132f2f04479f4d30cd9190b9d771eb1",
-      "git_blob_sha1": "d2f0f429d064d8a7357ad17c8853cc0ae5b062d0"
+      "sha256": "9fc23180c2153d95d7a37e664cce710a2dcc41cfff08420b9fb19eb3bf20fffd",
+      "git_blob_sha1": "d6ff25a8f3329f079230d7dfe82ac69a4bff51ab"
     },
     "kronos_trader/core/timeframe.py": {
       "sha256": "eaddacde63a60afdd0ba51d7ecba072a373856c6311f05c13b3f10aaee03c9b0",
@@ -242,8 +242,8 @@
       "git_blob_sha1": "887c89e4acbfcdbf65b8be12be22c0f73877d15f"
     },
     "tests/trader/test_candles.py": {
-      "sha256": "a2d3716c666c1f669979cd44e37d42ae69763cb6c3a9548bcae61debf8ede703",
-      "git_blob_sha1": "930148ac4049d08f2b2c1c6602b00eac5a90bbcc"
+      "sha256": "753ac17cf8d612a957fa70b97be808fd5ba9315e84170232c3a3821254b3468a",
+      "git_blob_sha1": "c53244acc4635493eb6890f2c9961c5808341525"
     },
     "tests/trader/test_oanda.py": {
       "sha256": "9b22ad05b0efa3431d433e1fe25b124e27005ce7e0ec9a43873195e52ddbb816",
@@ -261,5 +261,10 @@
       "sha256": "5d6e96135b157c9a24c6ffd37431768b900f3d79655a072dcbba81eb9e40e0b0",
       "git_blob_sha1": "98c0e7d564a4e7ec64967cd52a70b2be951d2a30"
     }
+  },
+  "precision_followup": {
+    "trigger": "Hosted CI run 36828794809 with pandas 3.0.6 failed four nanosecond-before-month-close regressions because the stored array retained microsecond resolution.",
+    "correction": "Search explicitly at nanosecond resolution for closed_as_of and index_at_or_after; add microsecond-storage boundary regression.",
+    "ci_verification": "Pending follow-up commit workflow; local 222 passed."
   }
 }

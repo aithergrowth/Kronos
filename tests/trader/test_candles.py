@@ -95,3 +95,15 @@ def test_to_kronos_inputs_adds_amount():
     assert list(x.columns) == ["open", "high", "low", "close", "volume", "amount"]
     assert x["amount"].iloc[0] == 100 * (1 + 2 + 0.5 + 1.5) / 4
     assert len(ts) == 1
+
+
+def test_nanosecond_boundary_with_microsecond_storage():
+    series = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 2, Timeframe.H_1,
+                                      timestamps=[pd.Timestamp('2026-10-01 00:00'), pd.Timestamp('2026-10-01 01:00')])
+    frame = series.df.copy()
+    frame['timestamp'] = frame['timestamp'].astype('datetime64[us]')
+    series = CandleSeries(frame, Timeframe.H_1, validate=False)
+    boundary = pd.Timestamp('2026-10-01 01:00')
+    assert len(series.closed_as_of(boundary - pd.Timedelta(1, unit='ns'))) == 0
+    assert len(series.closed_as_of(boundary)) == 1
+    assert series.index_at_or_after(boundary + pd.Timedelta(1, unit='ns')) == 2

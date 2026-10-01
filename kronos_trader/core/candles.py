@@ -184,14 +184,16 @@ class CandleSeries:
         # Calendar-month subtraction is not the inverse of addition at month
         # ends (Jan 31 + one month can close on Feb 28).
         close_times = self.timestamps + self.timeframe.delta()
-        n = int(close_times.searchsorted(ts, side="right"))
+        # pandas 3 may retain microsecond-resolution arrays. Searching those
+        # with a nanosecond boundary must not round or raise on conversion.
+        n = int(close_times.to_numpy(dtype="datetime64[ns]").searchsorted(ts.to_datetime64(), side="right"))
         if n >= len(self):
             return self
         return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
 
     def index_at_or_after(self, ts: pd.Timestamp) -> int:
         """Index of the first candle opening at or after ``ts`` (``len`` if none)."""
-        return int(self.timestamps.searchsorted(pd.Timestamp(ts), side="left"))
+        return int(self.timestamps.to_numpy(dtype="datetime64[ns]").searchsorted(pd.Timestamp(ts).to_datetime64(), side="left"))
 
     def to_kronos_inputs(self) -> Tuple[pd.DataFrame, pd.Series]:
         """``(x_df, x_timestamp)`` in the layout ``KronosPredictor.predict`` expects."""

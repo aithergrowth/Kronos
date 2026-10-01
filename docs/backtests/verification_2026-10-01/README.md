@@ -60,7 +60,7 @@ Total: **11 completed trades, -4.88R**, with 1 winner(s), 9 losses and 1 break-e
 | Briefing/POI alerts marked as sent before delivery | Sent-state now updates only on successful delivery; offline retry regressions cover both notifications. |
 | Approval could cross into a news blackout | Execution rechecks the existing calendar before broker access. Missing/stale calendar coverage remains an independent limitation. |
 
-**Local test result: 221 passed, 1 skipped, 1 deselected** (`tests/trader`, excluding `slow`). The skipped test is the absent complete source-fixture case; the deselected test requires real Kronos weights/input. Focused failing-before/passing-after regressions support the corrections. Full test log and tested runtime hashes are in `validation.json`. Hosted CI is checked separately on the published commit; a local pass is not a claim of live connectivity.
+**Local test result: 222 passed, 1 skipped, 1 deselected** (`tests/trader`, excluding `slow`). The skipped test is the absent complete source-fixture case; the deselected test requires real Kronos weights/input. Focused failing-before/passing-after regressions support the corrections. Full test log and tested runtime hashes are in `validation.json`. Hosted CI on the initial publication exposed a pandas 3 microsecond/nanosecond search incompatibility. The follow-up explicitly normalizes search resolution and adds a before/at/after boundary regression. Hosted CI is checked separately on the follow-up commit; a local pass is not a claim of live connectivity.
 
 ## Kronos, TradingView, MT5 and Telegram
 
