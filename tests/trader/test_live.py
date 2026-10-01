@@ -72,7 +72,7 @@ def test_approval_then_execution_and_close_report(setup):
     runner.step(NOW + pd.Timedelta(1, unit="min"))
     assert runner.pending == {} and len(broker.open_positions()) == 1
     pos = broker.open_positions()[0]
-    assert pos.lots == 1.92 and pos.stop == 1.0949 and pos.take_profit == 1.12
+    assert pos.lots == pytest.approx(1.90) and pos.stop == 1.0949 and pos.take_profit == 1.12   # re-sized on the ask 1.10005
     assert any("filled" in m for m in notifier.sent)
 
     broker.on_candle("EURUSD", Candle(0, NOW + pd.Timedelta(15, unit="min"), 1.1, 1.125, 1.099, 1.124))
@@ -117,8 +117,9 @@ def test_execution_resizes_to_the_current_price(setup):
     runner, notifier = _runner(setup, broker, last_close=1.1010, require_approval=False)   # 10 pips above the planned entry
     runner.step(NOW)
     pos = broker.open_positions()[0]
-    assert pos.lots == pytest.approx(1.61) and pos.risk_amount == pytest.approx(1000.0)    # 1 % over 62 pips, not the 1.92 planned
-    assert pos.risk_distance == pytest.approx(0.0062)
+    assert pos.entry == pytest.approx(1.10105)                                           # the ask: close plus half the spread
+    assert pos.lots == pytest.approx(1.60) and pos.meta["risk_budget"] == pytest.approx(1000.0)   # 1 % over 61.5 + 1 pips, not 1.92
+    assert pos.risk_distance == pytest.approx(0.00615) and pos.risk_amount == pytest.approx(61.5 * 10 * 1.60)
     assert any("1.92 -> 1.61" in str(r) for r in runner.journal.rows) if hasattr(runner.journal, "rows") else True
 
 

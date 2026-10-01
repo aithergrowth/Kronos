@@ -410,12 +410,12 @@ class LiveRunner:
             self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
             return None
         try:
-            price = self.broker.current_price(self.symbol)
+            price = self.broker.fill_price(self.symbol, setup.direction)       # the ask for a buy, the bid for a sell
         except Exception as exc:
             self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
             return None
-        from .strategy.risk import resize_at
+        from .strategy.risk import reconcile_risk, resize_at
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
                                                                 self.spec, self.settings.risk)
@@ -435,13 +435,15 @@ class LiveRunner:
                 risk_distance, setup.breakeven_r,
                 meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
                       "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
-                price=price, ts=now,
+                price=price, ts=now, price_is_fill=True,
             )
         except Exception as exc:
             self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
             return None
         self.guard.record_trade(now)
+        if getattr(pos, "status", "filled") == "filled" and hasattr(self.broker, "pnl_for"):
+            reconcile_risk(pos, self.broker, risk_amount)
         self.known_positions[pos.id] = pos
         side = "BUY" if pos.direction.sign > 0 else "SELL"
         d = self.spec.price_decimals

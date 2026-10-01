@@ -20,7 +20,7 @@ from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
 from ..execution.risk_guard import RiskGuard
 from ..strategy.engine import StrategyEngine
-from ..strategy.risk import resize_at
+from ..strategy.risk import reconcile_risk, resize_at
 
 
 @dataclass
@@ -145,7 +145,7 @@ class Backtester:
                 # market order at the price of this moment (the close of the candle that just closed), with the
                 # same re-check the live runner makes: the confirmation close may be older than ``now`` when a
                 # session or news gate held the signal back
-                price_now = float(candle.close)
+                price_now = broker.fill_price(self.symbol, setup.direction, float(candle.close))   # the ask / the bid
                 wrong_side = (setup.direction.sign > 0 and price_now <= setup.stop) or (setup.direction.sign < 0 and price_now >= setup.stop)
                 lots_now, risk_amount_now, risk_distance_now, rr_now, _ = resize_at(
                     price_now, setup.stop, setup.take_profit, broker.equity(), spec, s.risk)
@@ -157,7 +157,7 @@ class Backtester:
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     continue
                 fc = analysis.signal.forecast
-                broker.place_market_order(
+                pos = broker.place_market_order(
                     self.symbol, setup.direction, lots_now, setup.stop, setup.take_profit, risk_amount_now,
                     risk_distance_now, setup.breakeven_r,
                     meta={
@@ -168,8 +168,9 @@ class Backtester:
                         "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
                     },
-                    price=price_now, ts=now,
+                    price=price_now, ts=now, price_is_fill=True,
                 )
+                reconcile_risk(pos, broker, risk_amount_now)
                 guard.record_trade(now)
             if self.progress and i % report_every == 0:
                 print(f"  {i}/{n} {ts} equity={broker.equity():,.0f} trades={len(broker.closed)}", flush=True)

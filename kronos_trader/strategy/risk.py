@@ -101,6 +101,18 @@ def resize_at(
     return lots, risk_amount, risk_distance, rr, stop_pips
 
 
+def reconcile_risk(position, broker, budget: float) -> None:
+    """Measure the position's risk on its actual fill: ``risk_distance`` becomes entry-to-stop and
+    ``risk_amount`` the cash lost at the stop, so R and break-even use what is really at stake.
+    The sizing budget and the planned numbers stay in ``meta`` for the record."""
+    position.meta.setdefault("risk_budget", float(budget))
+    position.meta.setdefault("risk_distance_sized", float(position.risk_distance))
+    position.risk_distance = abs(float(position.entry) - float(position.stop))
+    position.risk_amount = abs(broker.pnl_for(position.symbol, position.direction, position.entry, position.stop, position.lots))
+    position.meta["rr_at_fill"] = (abs(float(position.take_profit) - float(position.entry)) / position.risk_distance
+                                   if position.risk_distance > 0 else 0.0)
+
+
 def size_position(
     equity: float,
     entry: float,

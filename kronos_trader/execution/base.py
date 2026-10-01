@@ -75,7 +75,15 @@ class Broker(ABC):
     def place_market_order(self, symbol: str, direction: Direction, lots: float, stop: float, take_profit: float,
                            risk_amount: float, risk_distance: float, breakeven_r: float,
                            meta: Optional[Dict[str, Any]] = None, price: Optional[float] = None,
-                           ts: Optional[pd.Timestamp] = None) -> Position: ...
+                           ts: Optional[pd.Timestamp] = None, price_is_fill: bool = False) -> Position: ...
+
+    def fill_price(self, symbol: str, direction: Direction, base: Optional[float] = None) -> float:
+        """The executable price for a market order now: the ask for a long, the bid for a short.
+
+        Brokers with a quote override this; the default is the current (mid) price, so sizing on it
+        understates the spread by half.
+        """
+        return float(base if base is not None else self.current_price(symbol))
 
     @abstractmethod
     def modify_stop(self, position_id: str, stop: float) -> None: ...

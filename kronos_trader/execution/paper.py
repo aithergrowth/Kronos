@@ -91,12 +91,20 @@ class PaperBroker(Broker):
     def current_price(self, symbol: str) -> float:
         return self._last_price[symbol.upper()]
 
-    def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
-                           meta=None, price=None, ts=None) -> Position:
+    def fill_price(self, symbol: str, direction: Direction, base: Optional[float] = None) -> float:
         symbol = symbol.upper()
-        mid = float(price if price is not None else self.current_price(symbol))
+        base = float(base if base is not None else self.current_price(symbol))
         bid_off, ask_off = self._offsets(symbol)
-        fill = mid + (ask_off if direction is Direction.LONG else bid_off)
+        return base + (ask_off if direction is Direction.LONG else bid_off)
+
+    def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
+                           meta=None, price=None, ts=None, price_is_fill=False) -> Position:
+        """``price`` is a candle/mid price unless ``price_is_fill`` says it already is the executable quote."""
+        symbol = symbol.upper()
+        base = float(price if price is not None else self.current_price(symbol))
+        fill = base if price_is_fill else self.fill_price(symbol, direction, base)
+        bid_off, ask_off = self._offsets(symbol)
+        mid = fill - (ask_off if direction is Direction.LONG else bid_off)
         pos = Position(
             id=f"P{next(self._ids)}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
             stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None),

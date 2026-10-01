@@ -214,8 +214,15 @@ class MT5Broker(Broker):
             raise RuntimeError(f"no price for {symbol}: {self.mt5.last_error()}")
         return float((tick.bid + tick.ask) / 2.0)
 
+    def fill_price(self, symbol: str, direction: Direction, base: Optional[float] = None) -> float:
+        """The live ask for a long, the live bid for a short (``base`` is ignored: the terminal has the quote)."""
+        tick = self.mt5.symbol_info_tick(self.mt5_symbol(symbol))
+        if tick is None or not tick.bid or not tick.ask:
+            raise RuntimeError(f"no price for {symbol}: {self.mt5.last_error()}")
+        return float(tick.ask if direction is Direction.LONG else tick.bid)
+
     def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
-                           meta=None, price=None, ts=None) -> Position:
+                           meta=None, price=None, ts=None, price_is_fill=False) -> Position:
         """Market order with stop and target attached; ``status="filled"`` only on TRADE_RETCODE_DONE with a price."""
         mt5 = self.mt5
         name = self.mt5_symbol(symbol)

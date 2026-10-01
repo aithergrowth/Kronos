@@ -280,7 +280,7 @@ class IBKRBroker(Broker):
                     pass
 
     def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
-                           meta=None, price=None, ts=None) -> Position:
+                           meta=None, price=None, ts=None, price_is_fill=False) -> Position:
         """Bracket order (market parent, limit target, stop child).
 
         Returns a ``Position`` with ``status="filled"`` only when TWS confirmed the fill

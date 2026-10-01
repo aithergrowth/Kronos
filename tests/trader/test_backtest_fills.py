@@ -46,11 +46,12 @@ def test_fill_is_at_the_current_price_not_the_stale_confirmation_close(scenario)
     trade = result.trades[0]
     assert trade.entry == pytest.approx(1.1100 + 0.00005)       # the candle that just closed, plus half the spread
     assert trade.meta["entry_planned"] == pytest.approx(1.1000)
-    assert trade.meta["rr_at_fill"] == pytest.approx(round(0.06 / 0.0152, 2))
-    # sized on the executable entry: 1 % of 100,000 over 152 pips -> 0.65 lots, not the 1.92 planned at 1.1000
+    assert trade.meta["rr_at_fill"] == pytest.approx((1.17 - 1.11005) / (1.11005 - 1.0949), rel=1e-4)   # on the real fill
+    # sized on the executable entry (the ask 1.11005): 1 % of 100,000 over 151.5 + 1 pips -> 0.65 lots, not 1.92
     assert trade.lots == pytest.approx(0.65) and trade.meta["lots_planned"] == pytest.approx(1.92)
-    assert trade.risk_amount == pytest.approx(1000.0)
-    assert abs(trade.pnl) == pytest.approx(abs(trade.r) * 1000.0, rel=0.05)      # R is measured on the real risk
+    assert trade.meta["risk_budget"] == pytest.approx(1000.0)
+    assert trade.risk_amount == pytest.approx(151.5 * 10 * 0.65)              # the cash actually lost at the stop
+    assert trade.pnl == pytest.approx(trade.r * trade.risk_amount, rel=1e-6)   # R measured on that risk
 
 
 def test_signal_is_skipped_when_the_move_leaves_too_little_reward(scenario):
@@ -76,3 +77,21 @@ def test_stop_too_wide_at_the_moved_price_is_skipped(scenario):
     bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)))
     result = bt.run()
     assert result.trades == [] and "price moved: stop too wide for the minimum lot" in result.guard_reasons
+
+
+def test_gold_is_sized_and_judged_on_the_ask(scenario):
+    """Astra's probe: bid 2500.00, ask 2500.20, stop 2499.00, target 2501.66 passes 1.5 on the bid, not on the ask."""
+    from kronos_trader.config import RiskParams
+    from kronos_trader.execution import PaperBroker
+    from kronos_trader.strategy.risk import resize_at
+    s = Settings()
+    broker = PaperBroker(s, quote_basis="bid")
+    spec = s.symbol("XAUUSD")
+    fill = broker.fill_price("XAUUSD", Direction.LONG, 2500.0)
+    assert fill == pytest.approx(2500.2)
+    params = RiskParams(min_rr=1.5, sl_offset_pips=0.0)
+    _, _, _, rr_bid, _ = resize_at(2500.0, 2499.0, 2501.66, 100_000, spec, params)
+    lots, budget, _, rr_ask, _ = resize_at(fill, 2499.0, 2501.66, 100_000, spec, params)
+    assert rr_bid > 1.5 > rr_ask                                       # the old sizing let it through
+    cash_at_stop = abs(broker.pnl_for("XAUUSD", Direction.LONG, fill, 2499.0, lots))
+    assert cash_at_stop <= budget                                      # never more than the 1 % budget
