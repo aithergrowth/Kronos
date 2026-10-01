@@ -33,6 +33,7 @@ def render_chart(
     price_decimals: int = 5,
     max_zones: int = 6,
     extra_boxes: Iterable = (),
+    extra_lines: Iterable = (),
 ) -> Path:
     """Draw ``series`` (last ``lookback`` candles) with zones, setup lines and the forecast fan; return the PNG path."""
     import matplotlib
@@ -100,6 +101,16 @@ def render_chart(
     for low, high, label in extra_boxes:          # e.g. the recorded zone of a trade the replay could not reproduce
         ax.add_patch(Rectangle((0, low), x_right, high - low, facecolor="none", edgecolor="#555555", linestyle="--", linewidth=1.0, zorder=2))
         ax.text(0.3, high, f" {label}", fontsize=7, va="bottom", color="#555555", zorder=5)
+
+    for price, label, from_ts in extra_lines:     # e.g. the 1H P the stop sits behind when it is not the zone's own P
+        xs = 0
+        if from_ts is not None:
+            try:
+                xs = min(max(view.index_at_or_after(pd.Timestamp(from_ts)), 0), n - 1)
+            except Exception:
+                xs = 0
+        ax.hlines(price, xs, x_right, colors="#8B0000", linestyles="dashdot", linewidth=1.0, zorder=4)
+        ax.text(xs + 0.3, price, f" {label}", fontsize=7, va="bottom", color="#8B0000", zorder=5)
 
     # setup: the position tool from the confirmation candle to the right edge -----------------
     if setup is not None:

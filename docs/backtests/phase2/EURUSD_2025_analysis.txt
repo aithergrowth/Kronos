@@ -17,7 +17,9 @@ zone
 1H 2025-06-05 15:00:00 1.14181-1.14542       1 -1.000000 2025-06-06 07:50:00 2025-06-06 07:50:00
 
 touch -> entry hours: median 21.2, mean 137.4, max 1435.3
-confirmation close -> entry hours: median 0.08, max 40.00 (0 = filled on the confirmation candle)
+confirmation candle OPEN -> entry hours: median 0.08, max 40.00 (confirmed_at is the candle's open label, so this includes the candle's own duration)
+confirmation candle CLOSE -> entry hours: median 0.00, max 16.00 (0 = filled at the close of the confirmation candle)
+rows with entry before the nominal close: 0
                       size   sum  mean
 hours_touch_to_entry                  
 <1h                      6 -3.94 -0.66

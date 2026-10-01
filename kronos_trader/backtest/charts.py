@@ -37,6 +37,7 @@ def render_trade_charts(
     max_charts: int = 20,
     lookback: int = 120,
     max_zones: int = 3,
+    blind: bool = False,
 ) -> List[Path]:
     from ..notify.chart import render_chart
 
@@ -59,17 +60,32 @@ def render_trade_charts(
         zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
         bias = "  ".join(f"{t.label} {b.bias.name.lower()}" for t, b in sorted(analysis.biases.items())) if analysis.biases else ""
         result = f"{float(row['r']):+.2f}R ({row['reason']})" if pd.notna(row.get("r")) else "open"
-        title = f"{symbol} {tf.label}  trade {row.get('id', '')} {row['direction']}  R:R 1:{drawn.rr:.1f}  result {result}"
+        title = f"{symbol} {tf.label}  trade {row.get('id', '')} {row['direction']}  R:R 1:{drawn.rr:.1f}"
+        title += "  outcome hidden" if blind else f"  result {result}"
         if flags:
             title += "  [" + "; ".join(flags) + "]"
         boxes = []
         if "ledger zone drawn dashed" in " ".join(flags) and pd.notna(row.get("poi_low")):
             boxes.append((float(row["poi_low"]), float(row["poi_high"]), f"{row.get('poi_tf', '')} zone of the trade"))
+        lines = stop_p_lines(row)
         name = f"{symbol}_{seq:03d}_{now:%Y%m%d_%H%M}_{tf.label}.png"
         paths.append(render_chart(views[tf], out / name, pois=zones, setup=drawn, title=title,
                                   subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=lookback, price_decimals=decimals,
-                                  max_zones=max_zones, extra_boxes=boxes))
+                                  max_zones=max_zones, extra_boxes=boxes, extra_lines=lines))
     return paths
+
+
+def stop_p_lines(row) -> List[tuple]:
+    """The P the stop sits behind, as a separate line when the ledger says it is not the zone's own P."""
+    if not ("stop_p" in row and pd.notna(row.get("stop_p")) and pd.notna(row.get("stop_tf"))):
+        return []
+    stop_p = float(row["stop_p"])
+    zone_p = float(row["poi_p"]) if "poi_p" in row and pd.notna(row.get("poi_p")) else None
+    if zone_p is not None and abs(stop_p - zone_p) <= 1e-9:
+        return []
+    opened = pd.Timestamp(row["stop_p_open"]) if "stop_p_open" in row and pd.notna(row.get("stop_p_open")) else None
+    label = f"stop P on {row['stop_tf']}" + (f", candle {opened:%d %b %H:%M}" if opened is not None else "")
+    return [(stop_p, label, opened)]
 
 
 def ledger_setup(row, regenerated, symbol: str):

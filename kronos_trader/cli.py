@@ -132,6 +132,9 @@ def cmd_scan(args) -> int:
 def cmd_backtest(args) -> int:
     from .backtest.runner import Backtester
     from .backtest.report import format_report
+    from .backtest.provenance import code_snapshot, write_provenance
+    code = code_snapshot()          # the program loaded now, before the run; recorded as such in the provenance
+    print(f"code: {code.get('commit')} source {code['source_sha256'][:12]}{' (uncommitted changes)' if code.get('dirty') else ''}")
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     data = _load_data(args, settings, symbol)
@@ -154,13 +157,12 @@ def cmd_backtest(args) -> int:
         for key, n in sorted(result.zones_by_reason.items(), key=lambda kv: -kv[1])[:12]:
             print(f"    {n:6d}  {key}")
     if args.out:
-        from .backtest.provenance import write_provenance
         result.trades_frame().to_csv(args.out, index=False)
         out = Path(args.out)
         pd.DataFrame(result.equity_curve, columns=["time", "equity"]).to_csv(out.with_suffix(".equity.csv"), index=False)
         write_provenance(out.with_suffix(".provenance.json"), settings=settings, symbol=symbol,
                          data_dir=getattr(args, "data_dir", None) or settings.tradingview.cache_dir, result=result,
-                         quote_basis=args.quote_basis)
+                         quote_basis=args.quote_basis, code=code)
         print(f"trades written to {args.out} (+ .equity.csv, .provenance.json)")
     return 0
 
@@ -174,7 +176,7 @@ def cmd_trade_charts(args) -> int:
     if "symbol" in trades.columns:
         trades = trades[trades["symbol"].str.upper() == symbol.upper()]
     paths = render_trade_charts(settings, data, symbol, trades, args.out, engine=_engine(settings),
-                                max_charts=args.max, lookback=args.lookback, max_zones=args.zones)
+                                max_charts=args.max, lookback=args.lookback, max_zones=args.zones, blind=args.blind)
     for path in paths:
         print(path)
     print(f"{len(paths)} charts in {args.out}")
@@ -187,7 +189,7 @@ def cmd_decision_dossier(args) -> int:
     symbol = _ensure_symbol(settings, args.symbol)
     data = _load_data(args, settings, symbol)
     out = write_decision_dossier(settings, data, symbol, args.at, args.out, engine=_engine(settings), lookback=args.lookback,
-                                 warmup_days=args.warmup_days)
+                                 warmup_days=args.warmup_days, assume=args.assume)
     print(f"dossier written to {out}")
     return 0
 
@@ -455,6 +457,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--max", type=int, default=20, help="at most this many charts, spread over the list (0 = all)")
     sp.add_argument("--lookback", type=int, default=120, help="candles on each image")
     sp.add_argument("--zones", type=int, default=3, help="other zones drawn besides the trade's own")
+    sp.add_argument("--blind", action="store_true", help="hide the outcome (result, exit reason): for judging a chart against a source example")
     sp.set_defaults(func=cmd_trade_charts)
 
     sp = sub.add_parser("decision-dossier", help="everything the engine saw at one moment: a chart per timeframe, bias notes, gaps kept and dropped, zones, rejections, setup")
@@ -463,6 +466,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--out", required=True, help="folder for README.md, dossier.json and the charts")
     sp.add_argument("--lookback", type=int, default=120, help="candles on each chart")
     sp.add_argument("--warmup-days", type=float, default=0.0, help="replay this many days before the moment first, so zone visits are counted with history (slow: ~15 s per day)")
+    sp.add_argument("--assume", choices=["long", "short"], help="diagnostic: walk on in this direction past a refusing bias/session/news gate and report every later refusal (never a signal)")
     sp.set_defaults(func=cmd_decision_dossier)
 
     sp = sub.add_parser("forecast", help="run the Kronos indicator on a CSV")

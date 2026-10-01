@@ -54,9 +54,12 @@ class BacktestResult:
                 "poi_tf": t.meta.get("poi_tf"), "confirmation": t.meta.get("confirmation"),
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
                 "tp_source": t.meta.get("tp_source"), "touched_at": t.meta.get("touched_at"), "confirmed_at": t.meta.get("confirmed_at"),
+                "confirmed_close_at": t.meta.get("confirmed_close_at"),
                 "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"), "lots_planned": t.meta.get("lots_planned"),
                 "poi_x": t.meta.get("poi_x"), "poi_b_low": (t.meta.get("poi_b") or (None, None))[0],
                 "poi_b_high": (t.meta.get("poi_b") or (None, None))[1], "poi_p": t.meta.get("poi_p"),
+                "stop_p": t.meta.get("stop_p"), "stop_tf": t.meta.get("stop_tf"), "stop_p_open": t.meta.get("stop_p_open"),
+                "stop_p_close": t.meta.get("stop_p_close"), "stop_basis": t.meta.get("stop_basis"),
                 "poi_formed": t.meta.get("poi_formed"), "visit": t.meta.get("visit"),
                 "risk_amount": t.risk_amount, "risk_budget": t.meta.get("risk_budget"),
                 "poi_low": (t.meta.get("poi") or (None, None))[0],
@@ -67,6 +70,13 @@ class BacktestResult:
 
 def visits_of(setup) -> Optional[int]:
     return getattr(setup, "visit_number", None)
+
+
+def _close_of(confirmation) -> Optional[pd.Timestamp]:
+    try:
+        return confirmation.timeframe.close_time(pd.Timestamp(confirmation.timestamp))
+    except Exception:
+        return None
 
 
 ZONE_RE = re.compile(r"^(\S+ \S+ POI [\d.]+-[\d.]+) \(\w+, formed ([^)]+)\)")
@@ -212,7 +222,10 @@ class Backtester:
                                   (setup.poi.balance.low, setup.poi.balance.high) if setup.poi.balance is not None else (None, None)),
                         "poi_formed": setup.poi.created_at, "visit": visits_of(setup),
                         "confirmation": setup.confirmation.type.value, "confirmation_tf": setup.confirmation.timeframe.label,
-                        "confirmed_at": setup.confirmation.timestamp, "touched_at": setup.touched_at, "entry_planned": setup.entry,
+                        "confirmed_at": setup.confirmation.timestamp,           # the confirmation candle's open label
+                        "confirmed_close_at": _close_of(setup.confirmation),    # when that candle closed = when it could be acted on
+                        "touched_at": setup.touched_at, "entry_planned": setup.entry,
+                        **(getattr(setup, "stop_detail", None) or {}),          # stop_p, stop_tf, stop_p_open, stop_p_close, stop_basis
                         "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "lots_planned": setup.lots,
                         "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",

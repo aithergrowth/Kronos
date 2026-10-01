@@ -71,6 +71,19 @@ def test_backtest_two_weeks_is_consistent(hk_data):
             assert t.stop == pytest.approx(t.entry)
         assert t.reason in {"stop", "take_profit", "breakeven", "end_of_data"}
         assert t.lots > 0
+        # the ledger says which P the stop sits behind and when the confirmation candle closed
+        assert t.meta["stop_tf"] and t.meta["stop_basis"] and t.meta["stop_p"] is not None
+        spec = s.symbol("09988")
+        if t.direction is Direction.LONG:            # the stop sits behind the recorded P, within the offset and the spread
+            assert t.initial_stop <= t.meta["stop_p"] + 1e-9
+        else:
+            assert t.initial_stop >= t.meta["stop_p"] - 1e-9
+        assert abs(t.meta["stop_p"] - t.initial_stop) <= (s.risk.sl_offset_pips + spec.typical_spread_pips + 1) * spec.pip_size
+        assert pd.Timestamp(t.meta["confirmed_close_at"]) > pd.Timestamp(t.meta["confirmed_at"])
+        assert pd.Timestamp(t.meta["confirmed_close_at"]) <= t.opened_at
+    frame = result.trades_frame()
+    if len(frame):
+        assert {"stop_p", "stop_tf", "stop_p_open", "stop_p_close", "stop_basis", "confirmed_close_at"} <= set(frame.columns)
     stats = summarize(result)
     assert stats["trades"] == len(result.trades)
     assert result.rejected_by_guard <= result.signals
@@ -109,3 +122,23 @@ def test_news_blackout_blocks_new_entries(hk_data):
     quiet = StrategyEngine(_settings(), calendar=NewsCalendar([]))
     a2 = quiet.analyze("09988", hk_data.as_of(reached, lookback=400), now=reached)
     assert not any("news blackout" in r for r in a2.rejections)
+
+
+def test_assume_direction_walks_past_a_refusing_gate_without_making_a_signal(hk_data):
+    """Diagnostic mode: the refusal is recorded, the later gates still report, nothing becomes a signal."""
+    from kronos_trader.core import Direction
+    from kronos_trader.strategy.engine import StrategyEngine
+    s = _settings()
+    s.session.enabled = True
+    s.session.windows = [["03:00", "03:05"]]              # a window the moment is outside of: the session gate refuses
+    engine = StrategyEngine(s)
+    now = pd.Timestamp("2024-06-03 10:00")
+    plain = engine.analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+    assert not plain.has_valid_signal and getattr(plain, "diagnostic_setup", None) is None
+    diag = StrategyEngine(s).analyze("09988", hk_data.as_of(now, lookback=400), now=now, assume_direction=Direction.SHORT)
+    assert not diag.has_valid_signal
+    assert any(r.startswith("outside the entry windows") for r in diag.rejections)
+    later = [r for r in diag.rejections if r.startswith("outside") is False and r != plain.rejections[0]]
+    assert later, "the walk-through must report the gates after the refusing one"
+    assert all("not a signal" in r or "diagnostic" in r or "POI" in r or "visit" in r or "confirmation" in r or "fewer" in r or "zones" in r
+               for r in later)

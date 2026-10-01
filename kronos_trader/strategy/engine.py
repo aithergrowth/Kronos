@@ -43,6 +43,24 @@ from .risk import build_setup
 from .structure import StructureAnalysis, analyze_structure
 
 
+def _candle_open(series: CandleSeries, index: int) -> Optional[pd.Timestamp]:
+    """Open time of the candle at ``index`` of ``series`` (None when the index is not in the view)."""
+    try:
+        return pd.Timestamp(series.ts_list[index])
+    except Exception:
+        return None
+
+
+def _diagnostic_zone_notes(pois: List[POI], side: Bias, allowed: Tuple[Timeframe, ...], price: float) -> List[str]:
+    """The same-side zones that were not candidates (tested, fresh, invalidated) and where price sits relative to them."""
+    others = [p for p in pois if p.direction is side and p.timeframe in allowed and p.status is not POIStatus.ACTIVE]
+    notes = []
+    for p in sorted(others, key=lambda p: (p.timeframe, p.created_at), reverse=True)[:8]:
+        where = "below" if price < p.low else "above" if price > p.high else "inside"
+        notes.append(f"diagnostic: {p.describe()} is {p.status.name.lower()}, price {where} it")
+    return notes
+
+
 def in_session(now: pd.Timestamp, params: SessionParams) -> Tuple[bool, str]:
     """Is ``now`` (naive UTC) inside one of the entry windows?  Returns ``(inside, local time label)``."""
     ts = pd.Timestamp(now)
@@ -142,15 +160,35 @@ class StrategyEngine:
         return pois
 
     def _protection_level(self, poi: POI, direction: Direction, touch_ts, structures: Dict[Timeframe, StructureAnalysis]) -> float:
-        """The P the stop sits behind: the most recent 1H balance level in the trade direction formed
-        since the touch, else the POI's own protector ("SL ALTIJD op minimale 1H P")."""
+        """The P the stop sits behind (see :meth:`_protection`)."""
+        return self._protection(poi, direction, touch_ts, structures)[0]
+
+    def _protection(self, poi: POI, direction: Direction, touch_ts, structures: Dict[Timeframe, StructureAnalysis]) -> Tuple[float, Dict[str, object]]:
+        """The P the stop sits behind, and where it comes from: the most recent 1H balance level in the
+        trade direction formed since the touch and not yet violated, else the POI's own protector
+        ("SL ALTIJD op minimale 1H P").  The detail names the timeframe, the P candle's open and close
+        and the selection ground, so a ledger can show which P a stop belongs to."""
         h1 = structures.get(Timeframe.H_1)
         if h1 is not None and poi.timeframe > Timeframe.H_1:
             start = h1.series.index_at_or_after(touch_ts)
             recent = [g for g in h1.gaps_in(direction.bias) if g.index >= start and not g.is_violated]
             if recent:
-                return recent[-1].protection_level
-        return poi.protector_extreme
+                gap = recent[-1]
+                opened = _candle_open(h1.series, gap.protector_index)
+                return gap.protection_level, {
+                    "stop_tf": Timeframe.H_1.label, "stop_p_open": opened,
+                    "stop_p_close": None if opened is None else Timeframe.H_1.close_time(opened),
+                    "stop_basis": "P of the most recent 1H balance level in the trade direction formed since the touch and not violated",
+                }
+        own = structures.get(poi.timeframe)
+        opened = _candle_open(own.series, poi.gap.protector_index) if (own is not None and poi.gap is not None) else None
+        why = ("no 1H balance level in the trade direction formed since the touch" if poi.timeframe > Timeframe.H_1
+               else f"the zone is on the {poi.timeframe.label}")
+        return poi.protector_extreme, {
+            "stop_tf": poi.timeframe.label, "stop_p_open": opened,
+            "stop_p_close": None if opened is None else poi.timeframe.close_time(opened),
+            "stop_basis": f"P of the POI itself ({why})",
+        }
 
     def _forecast(self, view: CandleSeries, notes: List[str]) -> Optional[ForecastSummary]:
         if self.forecaster is None or self.settings.kronos.mode == "off":
@@ -170,7 +208,12 @@ class StrategyEngine:
         now: Optional[pd.Timestamp] = None,
         max_confirmation_age: int = 0,
         compute_forecasts: bool = False,
+        assume_direction: Optional[Direction] = None,
     ) -> Analysis:
+        """``assume_direction`` is diagnostic only: when the bias, session or news gate refuses, the analysis
+        records that refusal and walks on in the given direction through the remaining gates, so a dossier can
+        show every later refusal too (is the bias really the only obstacle?).  Nothing found that way is a
+        signal; a setup reached is kept as ``analysis.diagnostic_setup`` and listed under the rejections."""
         s = self.settings
         spec = s.symbol(symbol)
         equity = s.account_size if equity is None else equity
@@ -224,36 +267,54 @@ class StrategyEngine:
                     if fc is not None:
                         analysis.forecasts[tf] = fc
 
+        diagnostic = False
         if not decision.tradable:
             analysis.rejections.append(decision.reason)
-            return analysis
-
-        direction = Direction.from_bias(decision.direction)
-        allowed_poi_tfs = tuple(POI_TIMEFRAMES) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
+            if assume_direction is None:
+                return analysis
+            diagnostic = True
+            direction = assume_direction
+            allowed_poi_tfs = tuple(POI_TIMEFRAMES)
+            analysis.rejections.append(f"diagnostic: walking on as {direction.name} past the bias gate; nothing below is a signal")
+        else:
+            direction = Direction.from_bias(decision.direction)
+            allowed_poi_tfs = tuple(POI_TIMEFRAMES) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
+            if assume_direction is not None and assume_direction is not direction:
+                diagnostic = True
+                direction = assume_direction
+                allowed_poi_tfs = tuple(POI_TIMEFRAMES)
+                analysis.rejections.append(f"diagnostic: the bias allows {decision.direction}, walking on as {direction.name}; nothing below is a signal")
+        bias_side = direction.bias
 
         # session windows: no new entries outside them (A 02:30:56 rejects a 17:00 entry) ---------
         if s.session.enabled:
             inside, local_label = in_session(now, s.session)
             if not inside:
                 analysis.rejections.append(f"outside the entry windows ({local_label} {s.session.timezone}); open trades run on")
-                return analysis
+                if assume_direction is None:
+                    return analysis
+                diagnostic = True
 
         # news blackout: no new entries around high-impact news of the symbol's currencies (G 11:08) ---
         if self.calendar is not None and s.news.enabled:
             event = self.calendar.blackout(symbol, now)
             if event is not None:
                 analysis.rejections.append(f"news blackout: {event.title} ({event.currency}) at {event.time:%H:%M} UTC; open trades run on")
-                return analysis
+                if assume_direction is None:
+                    return analysis
+                diagnostic = True
 
         # 4: POIs being visited now, highest timeframe first ------------------------------
         candidates = [p for p in pois
-                      if p.direction is decision.direction and p.timeframe in allowed_poi_tfs
+                      if p.direction is bias_side and p.timeframe in allowed_poi_tfs
                       and p.status is POIStatus.ACTIVE]
         candidates.sort(key=lambda p: p.timeframe, reverse=True)
         if not candidates:
-            n_dir = sum(1 for p in pois if p.direction is decision.direction and p.timeframe in allowed_poi_tfs
+            n_dir = sum(1 for p in pois if p.direction is bias_side and p.timeframe in allowed_poi_tfs
                         and p.status is not POIStatus.INVALIDATED)
-            analysis.rejections.append(f"price is not inside a {decision.direction} POI ({n_dir} valid zones mapped)")
+            analysis.rejections.append(f"price is not inside a {bias_side} POI ({n_dir} valid zones mapped)")
+            if diagnostic:
+                analysis.rejections.extend(_diagnostic_zone_notes(pois, bias_side, allowed_poi_tfs, price))
             return analysis
 
         for poi in candidates:
@@ -287,15 +348,24 @@ class StrategyEngine:
 
             # 5: the setup ---------------------------------------------------------------
             entry = spec.round_price(confirmation.close)
-            protection = self._protection_level(poi, direction, touch_ts, structures)
+            protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
                                          s.risk, equity, breakeven_trigger_r(poi.timeframe, s.exits),
                                          protection_level=protection)
             if setup is None:
-                analysis.rejections.append(f"{label}: {'; '.join(reasons)}")
+                note = f" [stop would be {spec.round_price(protection)} = {stop_detail.get('stop_basis')}]" if diagnostic else ""
+                analysis.rejections.append(f"{label}: {'; '.join(reasons)}{note}")
                 continue
             setup.touched_at = pd.Timestamp(touch_ts)
             setup.visit_number = visits
+            setup.stop_detail = {"stop_p": protection, **stop_detail}
+            if diagnostic:
+                analysis.diagnostic_setup = setup
+                analysis.rejections.append(
+                    f"diagnostic: {label} would give {direction.name} entry {setup.entry} stop {setup.stop} target {setup.take_profit} "
+                    f"({setup.confirmation.type.value} on {setup.confirmation.timeframe.label} at {setup.confirmation.timestamp}, "
+                    f"R:R 1:{setup.rr:.2f}); not a signal")
+                return analysis
 
             # 6: Kronos as an extra indicator ---------------------------------------------------
             notes: List[str] = []
@@ -317,4 +387,6 @@ class StrategyEngine:
             analysis.signal = Signal(now, SignalStatus.VALID, setup, forecast, [])
             return analysis
 
+        if diagnostic:
+            analysis.rejections.extend(_diagnostic_zone_notes(pois, bias_side, allowed_poi_tfs, price))
         return analysis

@@ -22,6 +22,32 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+PACKAGE_DIR = Path(__file__).resolve().parents[1]      # kronos_trader/
+
+
+def source_manifest(package_dir=None) -> Dict[str, Any]:
+    """SHA-256 of every source file of the package on disk, and one hash over all of them."""
+    root = Path(package_dir) if package_dir else PACKAGE_DIR
+    files: Dict[str, str] = {}
+    for p in sorted(root.rglob("*.py")):
+        if "__pycache__" in p.parts:
+            continue
+        files[p.relative_to(root.parent).as_posix()] = _sha256(p)
+    combined = hashlib.sha256("".join(f"{k}:{v}\n" for k, v in files.items()).encode("utf-8")).hexdigest()
+    return {"files": files, "sha256": combined}
+
+
+def code_snapshot(cwd: Optional[str] = None) -> Dict[str, Any]:
+    """The code identity *now*.  Call it when the process starts, before the run: Python imports the
+    package once, so the files on disk at that moment are the program that runs, whatever the checkout
+    holds hours later when the results are written."""
+    doc = git_revision(cwd)
+    manifest = source_manifest()
+    doc.update({"captured": "at start", "taken_at": str(pd.Timestamp.now("UTC").tz_localize(None)),
+                "source_sha256": manifest["sha256"], "source_files": manifest["files"]})
+    return doc
+
+
 def git_revision(cwd: Optional[str] = None) -> Dict[str, Any]:
     try:
         rev = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=cwd, check=True).stdout.strip()
@@ -70,10 +96,24 @@ def calendar_manifest(path) -> Dict[str, Any]:
 
 
 def write_provenance(path, *, settings, symbol: str, data_dir, result=None, quote_basis: str = "mid",
-                     command: Optional[str] = None, extra: Optional[Dict[str, Any]] = None) -> Path:
+                     command: Optional[str] = None, extra: Optional[Dict[str, Any]] = None,
+                     code: Optional[Dict[str, Any]] = None) -> Path:
+    """``code`` is the :func:`code_snapshot` taken when the process started; without it the record can
+    only name the checkout at write time, which is flagged as such."""
+    at_write = git_revision()
+    manifest_now = source_manifest()
+    at_write["source_sha256"] = manifest_now["sha256"]
+    if code is None:
+        code_doc: Dict[str, Any] = {**at_write, "captured": "at write: names the checkout when the results were written; "
+                                    "the process may have been started on an earlier revision"}
+    else:
+        code_doc = dict(code)
+        code_doc["changed_since_start"] = (code.get("commit") != at_write.get("commit")
+                                           or code.get("source_sha256") != manifest_now["sha256"])
     doc: Dict[str, Any] = {
         "written": str(pd.Timestamp.now("UTC").tz_localize(None)),
-        "code": git_revision(),
+        "code": code_doc,
+        "code_at_write": at_write,
         "command": command if command is not None else " ".join(sys.argv),
         "versions": {"python": platform.python_version(), "pandas": pd.__version__, "numpy": np.__version__},
         "symbol": symbol.upper(),

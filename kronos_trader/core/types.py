@@ -379,6 +379,8 @@ class Signal:
 
 @dataclass
 class Analysis:
+    # ``diagnostic_setup`` (set by the engine's assume_direction walk-through) is never a signal
+
     symbol: str
     timestamp: pd.Timestamp
     price: float

@@ -54,3 +54,4 @@ def test_warm_up_replays_steps_before_the_moment(scenario):
     eng = StrategyEngine(s)
     n = warm_up(eng, data, "EURUSD", scenario.last_timestamp, days=1.0)
     assert n > 0
+

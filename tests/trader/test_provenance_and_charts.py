@@ -80,3 +80,39 @@ def test_gap_threshold_is_as_of_so_later_candles_do_not_reclassify_old_gaps():
     longer = CandleSeries.from_records(wide, Timeframe.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
     after = {g.index for g in analyze_structure(longer, StructureParams()).gaps}
     assert before <= after                                   # old gaps keep their classification
+
+
+def test_code_identity_is_taken_at_start_and_compared_at_write(tmp_path):
+    from kronos_trader.backtest.provenance import code_snapshot
+    code = code_snapshot()
+    assert code["captured"] == "at start" and len(code["source_sha256"]) == 64
+    assert "kronos_trader/strategy/engine.py" in code["source_files"]
+    doc = json.loads(write_provenance(tmp_path / "a.json", settings=Settings(), symbol="EURUSD", data_dir=tmp_path, code=code)
+                     .read_text(encoding="utf-8"))
+    assert doc["code"]["captured"] == "at start" and doc["code"]["changed_since_start"] is False
+    assert doc["code_at_write"]["source_sha256"] == code["source_sha256"]
+    stale = dict(code, source_sha256="0" * 64)                     # the files changed after the process started
+    doc2 = json.loads(write_provenance(tmp_path / "b.json", settings=Settings(), symbol="EURUSD", data_dir=tmp_path, code=stale)
+                      .read_text(encoding="utf-8"))
+    assert doc2["code"]["changed_since_start"] is True
+    legacy = json.loads(write_provenance(tmp_path / "c.json", settings=Settings(), symbol="EURUSD", data_dir=tmp_path)
+                        .read_text(encoding="utf-8"))
+    assert legacy["code"]["captured"].startswith("at write")       # no snapshot given: the record says so
+
+
+def test_stop_p_line_is_drawn_only_when_it_is_not_the_zones_own_p():
+    from kronos_trader.backtest.charts import stop_p_lines
+    row = _row(poi_p=1.0950, stop_p=1.1000, stop_tf="1H", stop_p_open="2024-01-02 09:00")
+    (price, label, opened), = stop_p_lines(row)
+    assert price == 1.1000 and label.startswith("stop P on 1H") and opened == pd.Timestamp("2024-01-02 09:00")
+    assert stop_p_lines(_row(poi_p=1.0950, stop_p=1.0950, stop_tf="4H")) == []
+    assert stop_p_lines(_row()) == []                               # ledgers written before the column existed
+
+
+def test_chart_accepts_extra_lines(tmp_path):
+    from kronos_trader.notify.chart import render_chart
+    rows = [(1.0 + i * 0.001, 1.0 + i * 0.001 + 0.002, 1.0 + i * 0.001 - 0.002, 1.0 + i * 0.001) for i in range(30)]
+    series = CandleSeries.from_records(rows, Timeframe.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    path = render_chart(series, tmp_path / "c.png", extra_lines=[(1.010, "stop P on 1H, candle 02 Jan 10:00", pd.Timestamp("2024-01-02 10:00")),
+                                                                  (1.005, "no start", None)])
+    assert path.exists() and path.stat().st_size > 1000

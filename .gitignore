@@ -80,3 +80,4 @@ journal/
 # multi-year history caches: rebuilt with `python -m kronos_trader histdata` / `dukascopy` (raw zips and 1-minute files are large)
 data/histdata/
 data/dukascopy/
+data/histdata_1m/

@@ -1,11 +1,20 @@
 # Phase 2, frozen run: Dorus's second pure profile on four markets, 2023-03 to 2026-09
 
-Run of 1 October 2026 (started 14:35 UTC, finished 16:23 UTC) on code commit `1f7e2b5` with the settings in
-`profile_pure_frozen.yaml` next to this file: `config/dorus_pure.yaml` of that commit, with the prop-firm halt lifted so the
-whole period is walked. Bid quotes, one simulated account of 100,000 per market, 1 % of the balance at risk per trade,
-every closed 5-minute candle from 2023-03-01 to 2026-09-25. Nothing was changed while the batch ran. The four
-`.provenance.json` files carry the git revision, the exact command, the package versions, the settings and the SHA-256
-of every data file the run read, so the run can be repeated bit for bit.
+Run of 1 October 2026 (started 14:35 UTC, finished 16:23 UTC) with the settings in `profile_pure_frozen.yaml` next to
+this file: `config/dorus_pure.yaml` of commit `1f7e2b5`, with the prop-firm halt lifted so the whole period is walked.
+Bid quotes, one simulated account of 100,000 per market, 1 % of the balance at risk per trade, every closed 5-minute
+candle from 2023-03-01 to 2026-09-25. The four `.provenance.json` files carry the exact command, the package versions,
+the settings and the SHA-256 of every data file the run read.
+
+**Which code ran (Astra, control of 1 October).** The four provenance files name commit `aef7c65` in their `code` field.
+That field was captured when the results were written (16:22 UTC), not when the processes started (14:35 UTC on
+`1f7e2b5`, logged in the batch status file); the eight commits in between changed `engine.py`, `confirmation.py`,
+`runner.py`, `cli.py`, `config.py` and added `dossier.py`. Python imports a package once, at start, so the four processes
+ran the modules of `1f7e2b5`; only the provenance writer itself is imported at the end, and that file did not change between
+the two commits. This is reasoning about the interpreter, not a record: the provenance file cannot prove which program
+ran. Fixed for every later run: the code identity (commit, dirty flag, SHA-256 of every source file) is now taken at
+process start and the file flags whether the sources changed before the results were written. For this run, the same
+EURUSD slice (May to September 2025) was re-run on checkouts of both commits; the outcome is in the section "Slice check" below.
 
 Data: HistData.com 1-minute bid candles resampled to 5m, 15m, 1H and 4H (4H bins anchored to 17:00 New York, daylight
 saving followed); daily, weekly and monthly candles from TradingView (OANDA for EURUSD, FOREX.com for the others; the EURUSD
@@ -17,9 +26,19 @@ recorded (first breach per market, in Europe/Prague days) but did not halt the r
 Profile, every line with its source in `profile_pure_frozen.yaml` and `docs/DORUS_RULES_FROM_TRANSCRIPTS.md`: bias 3 of 5 with
 the four listed combinations only; POI from liquidity (X) to protection (P) on 1M, 1W, 1D, 4H and 1H; confirmation on the
 timeframe table = balance shift with a close or BMS (first candle off, BOS off); minimum R:R 0.7 ("attractive"; his lowest
-accepted example is 0.73); stop on P without buffer; target on the nearest liquidity above the confirmation timeframe and
-never below the 1H; entries 09:00-11:00 and 13:00-17:00 Amsterdam; one trade at a time; break-even per the rule table;
+accepted example is 0.73); stop on the P of the most recent 1H balance level in the trade direction since the touch, else the
+zone's own P, without buffer ("SL ALTIJD op minimale 1H P"); target on the nearest liquidity above the confirmation timeframe
+and never below the 1H; entries 09:00-11:00 and 13:00-17:00 Amsterdam; one trade at a time; break-even per the rule table;
 only the first return to a zone is traded; Kronos off.
+
+**Coverage the run does not have (Astra, finding 2).** No 1-minute candles were loaded: the steps are 5-minute candles and
+the smallest confirmation timeframe is the 5m. The written table puts the confirmation for a 1H zone on the 1m; all 168
+trades on 1H zones in this run were confirmed on the 5m (113) or the 15m (55) instead, and those 168 trades carry -32.4R of
+the -36.7R. The code reads the table as the lowest allowed timeframe and accepts anything between it and the zone's
+timeframe, smallest first: 223 of the 324 trades were confirmed above the table's minimum (-31.9R, of which the 168
+1H-zone trades are -32.4R, so outside the 1H zones the effect is nil); 101 trades sat exactly on it (-4.7R). A 5-minute
+run cannot judge a 1-minute confirmation or the exact entry moment; it can only say what the rules do when the 1m is
+replaced by the 5m. A 1-minute cache is being built for the source comparison.
 
 ## Headline
 
@@ -66,14 +85,22 @@ first-profile list had 44; a count of 41 belongs to neither list in this folder.
 - **Zones.** 32 distinct zones. Four were traded more than once (three twice, the weekly zone three times), all within the same visit (visit 1,
   same touch time): after the first trade closed, a new BMS inside the same zone gave another entry. Twice this was a re-entry the day after a stop:
   the 4H zone of 30 June (stopped 7 July, stopped again 8 July) and the 4H zone of 22 August (stopped 25 August, stopped again
-  26 August). The stop sits on P, so a stop means price traded through P; the zone stays valid because invalidation in the code
-  needs a 4H close beyond P ("wanneer die onder de P komt", source K1/D, wick or close not stated). The weekly zone of 29 June
-  was traded three times over two months (-1R, 0R, +3.1R). Whether a stop ends the zone, and when a visit ends, are both
-  interpretations (Astra's finding 2).
+  26 August). An earlier version of this paragraph said that these stops proved price had traded through the zone's P; Astra
+  refuted that from the ledger and the correction stands: only the first July stop (1.17075) sat on the zone's P. The other
+  three sat on a 1H P above it (1.17088; 1.16970, 99.7 pips above the zone's P; 1.16176, 20.3 pips above), so a stop there says
+  nothing about the zone's P. The five later entries on already-traded zones made +1.9R together; the other 32 trades of
+  2025 made -9.3R. Re-entries are therefore not the cause of the EURUSD 2025 loss (this is a contribution sum, not a
+  simulation of a no-re-entry rule). When a visit ends, and whether a wick through the zone's P ends the zone, stay
+  interpretations (Astra's finding 2); the ledger of later runs names the P behind every stop (`stop_tf`, `stop_p_open`,
+  `stop_basis`) so this can be read off instead of inferred.
 - **Touch to entry.** Median 21 h, mean 137 h, longest 1,435 h (60 days, the weekly zone). By band: under 1 h, 6 trades -3.9R;
   1-4 h, 3 trades +0.8R; 4-24 h, 12 trades -6.4R; 1-3 days, 6 trades +2.2R; over 3 days, 10 trades -0.2R.
-- **Confirmation to entry.** Median 5 minutes: the fill is on the close of the confirmation candle. Longest 40 h (a daily BMS
-  filled two days later).
+- **Confirmation to entry.** `confirmed_at` is the confirmation candle's open label (Astra, finding 5). From that open to the
+  entry the median is 5 minutes, which is the 5m candle's own length: the fill is at the candle's close. Measured from the
+  candle's close the median is 0 h and the longest 16 h (a daily BMS that closed on a Wednesday evening and was filled the
+  next trading afternoon; the 40 h quoted earlier included the daily candle itself). No trade in the 324 records was entered
+  before its confirmation candle's nominal close (Astra checked all four ledgers; `EURUSD_2025_analysis.txt` checks the 37).
+  Later runs write `confirmed_close_at` next to `confirmed_at`.
 - **Confirmations that lost.** BMS: 31 trades, -3.5R. Balance shift: 6 trades, -3.9R (5 of 6 lost). By confirmation timeframe:
   the five 15m confirmations all lost (-5.0R); 5m 28 trades -3.6R; 4H 2 trades +3.1R; 1D and 1H one trade each, both lost.
 - **Targets that lost.** 1H liquidity: 29 trades, -6.3R. Daily liquidity: 3 trades, +3.9R. Weekly and monthly liquidity:
@@ -82,6 +109,23 @@ first-profile list had 44; a count of 41 belongs to neither list in this folder.
   (-5.0R); below 1, 13 trades, -0.3R; above 3, 7 trades, -2.9R.
 - **Months.** June +1.2R (9 trades), January +0.7R, March +0.8R, September +0.1R; April -2.2R, July -2.3R, August -3.0R,
   December -2.0R. Nothing in February, October and November.
+
+## Slice check
+
+EURUSD, 2025-05-01 to 2025-10-01, re-run with the frozen settings on separate checkouts of `1f7e2b5` (the commit the batch
+was started on) and `aef7c65` (the commit the provenance files name), and on the working tree after the tooling changes
+below (`slice_check/`, with each run's provenance and the comparison script).
+
+| Run | Trades in the window | Sum R | Signals | Final equity | Against the frozen ledger (26 rows) | Against the `1f7e2b5` slice |
+|---|---|---|---|---|---|---|
+| checkout `1f7e2b5` | 26 | -4.66R | 52 | 95,624.81 | all 26 rows identical (entry, stop, target, exit, R) | - |
+| checkout `aef7c65` | 26 | -4.66R | 52 | 95,624.81 | all 26 rows identical | every column of the ledger identical; equity series identical at all 31,392 steps |
+| working tree after the tooling changes | running at the time of this commit; its ledger and comparison follow in `slice_check/` with the next commit | | | | | |
+
+Within this window the two commits are indistinguishable, and the cold start reproduces the frozen ledger row for row, so
+the visit memory did not matter here. This is evidence for one window, not a proof for the whole period; it is the
+strongest check available without re-running the batch, and later runs no longer need it because the code identity is
+taken at start.
 
 ## Programming errors and interpretations, kept apart
 
@@ -92,17 +136,27 @@ Status per finding, with evidence, is in `docs/ASTRA_FINDINGS_STATUS_2026-10-01.
   price; stops that could not gap through; position size not recomputed when the entry moved; shorts valued without the ask;
   visit memory lost when a zone was refused by a later gate; the balance-level threshold looking ahead. Each changed the trade
   list, which is why the diagnostic run and this run differ in code as well as profile.
+- **Registration weaknesses found by Astra's control of this run, fixed after it** (tooling, not strategy): the code identity
+  was captured at write time (now at start, with per-file hashes and a changed-since-start flag); the ledger did not name the P
+  behind the stop (now `stop_p`, `stop_tf`, `stop_p_open`, `stop_p_close`, `stop_basis`, and charts draw a stop P that is not
+  the zone's P as its own line); `confirmed_at` was an open label without the close (now `confirmed_close_at` beside it);
+  charts for source matching can hide the outcome (`trade-charts --blind`). The frozen ledgers predate these columns.
 - **Interpretations, unchanged and open**: the size below which a three-candle gap is ignored (20 % of the median range; he
   names no size); when a visit ends (1.5 zone heights; he names no distance); the P candle (always candle 2) and the outer
-  edge of the zone; whether a wick through P ends a zone; "attractive" R:R (0.7); the nearest-liquidity target with the 1H
-  floor; the session windows and the 30-minute news gap; the first-candle entry. Each carries its source lines in
-  `profile_pure_frozen.yaml`; a change needs a quote or chart of his own, then a run on data not used here.
+  edge of the zone (the top of B above X: P57 entered 98 pips above X); which 1H P the stop takes when the zone is higher
+  (the most recent 1H balance level since the touch: K1 06:28 supports "at least the 1H P", not this selection); whether a
+  wick through P ends a zone; the confirmation table as a lowest timeframe rather than the one timeframe; "attractive" R:R
+  (0.7); the nearest-liquidity target with the 1H floor; the session windows and the 30-minute news gap; the first-candle
+  entry. Each carries its source lines in `profile_pure_frozen.yaml`; a change needs a quote or chart of his own, then a run
+  on data not used here.
 
 ## Files
 
 - `profile_pure_frozen.yaml`: the settings, line by line with sources.
 - `<market>_5m_pure.csv`: the trade list (entry, exit, stop, target, lots, P&L, R, exit reason, POI timeframe and zone X/B/P,
   confirmation and its timeframe, planned R:R and R:R at the fill, touch and confirmation times, visit number, risk amount).
+  `confirmed_at` is the confirmation candle's open label. Ledgers written after commit `345cc77` also carry
+  `confirmed_close_at` and the stop's P (`stop_p`, `stop_tf`, `stop_p_open`, `stop_p_close`, `stop_basis`).
 - `<market>_5m_pure.equity.csv.gz`: equity after every 5-minute step (gzip); `<market>_5m_pure.equity_1H.csv`: the same hourly.
 - `<market>_5m_pure.provenance.json`: code revision, command, versions, settings, data hashes, calendar, costs, run summary
   and first breach.

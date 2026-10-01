@@ -70,7 +70,7 @@ def warm_up(engine: StrategyEngine, data: MultiTimeframeData, symbol: str, at, d
 
 def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol: str, at, out_dir,
                            engine: Optional[StrategyEngine] = None, lookback: int = 120, warmup_days: float = 0.0,
-                           memory_label: Optional[str] = None) -> Path:
+                           memory_label: Optional[str] = None, assume: Optional[str] = None) -> Path:
     from ..notify.chart import render_chart
     engine = engine or StrategyEngine(settings)
     symbol = symbol.upper()
@@ -81,7 +81,10 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
     spec = settings.symbols.get(symbol)
     decimals = spec.price_decimals if spec else 5
     views = data.as_of(at, lookback=settings.structure.lookback)
-    analysis = engine.analyze(symbol, views, equity=settings.account_size, now=at)
+    from ..core.types import Direction
+    assume_direction = None if not assume else (Direction.LONG if str(assume).lower().startswith(("l", "b")) else Direction.SHORT)
+    kwargs = {"assume_direction": assume_direction} if assume_direction is not None else {}
+    analysis = engine.analyze(symbol, views, equity=settings.account_size, now=at, **kwargs)
     tracker = getattr(engine, "visits", {}).get(symbol)
     structure_for = getattr(engine, "structure_for", None)
     if structure_for is None:                       # a stub engine in tests: analyse the structure here
@@ -149,13 +152,35 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
     lines += ["## Rejections at this moment", ""] + ([f"- {r}" for r in analysis.rejections] or ["- none"]) + [""]
     if analysis.has_valid_signal:
         s = analysis.signal.setup
-        doc["setup"] = {"direction": s.direction.name, "poi_tf": s.poi.timeframe.label, "poi": (s.poi.low, s.poi.high),
-                        "confirmation": s.confirmation.type.value, "confirmation_tf": s.confirmation.timeframe.label,
-                        "confirmed_at": str(s.confirmation.timestamp), "entry": s.entry, "stop": s.stop, "take_profit": s.take_profit,
-                        "rr": s.rr, "tp_source": s.tp_source, "touched_at": str(s.touched_at), "visit": s.visit_number}
+        doc["setup"] = _setup_doc(s)
         lines += ["## Setup", "", f"{s.direction.name} from the {s.poi.timeframe.label} zone {s.poi.low:.{decimals}f}-{s.poi.high:.{decimals}f}, "
                   f"{s.confirmation.type.value} on {s.confirmation.timeframe.label} at {s.confirmation.timestamp}, entry {s.entry:.{decimals}f}, "
                   f"stop {s.stop:.{decimals}f}, target {s.take_profit:.{decimals}f} ({s.tp_source}), R:R 1:{s.rr:.2f}, visit {s.visit_number}.", ""]
+    diag = getattr(analysis, "diagnostic_setup", None)
+    if diag is not None:
+        doc["diagnostic_setup"] = _setup_doc(diag)
+        doc["diagnostic_setup"]["note"] = "reached by walking past a refusing gate (--assume); not a signal"
+        d = diag.stop_detail if hasattr(diag, "stop_detail") else {}
+        lines += ["## Diagnostic setup (not a signal)", "",
+                  f"Walking on as {diag.direction.name} past the refusing gate(s): {diag.poi.timeframe.label} zone "
+                  f"{diag.poi.low:.{decimals}f}-{diag.poi.high:.{decimals}f}, {diag.confirmation.type.value} on {diag.confirmation.timeframe.label} "
+                  f"at {diag.confirmation.timestamp}, entry {diag.entry:.{decimals}f}, stop {diag.stop:.{decimals}f} "
+                  f"({d.get('stop_basis', 'P')}; candle {d.get('stop_p_open')}), target {diag.take_profit:.{decimals}f} ({diag.tp_source}), "
+                  f"R:R 1:{diag.rr:.2f}, visit {diag.visit_number}.", ""]
+    if assume:
+        doc["assume"] = assume
     (out / "README.md").write_text("\n".join(lines), encoding="utf-8")
     (out / "dossier.json").write_text(json.dumps(doc, indent=2, default=str), encoding="utf-8")
     return out
+
+
+def _setup_doc(s) -> dict:
+    d = getattr(s, "stop_detail", None) or {}
+    return {"direction": s.direction.name, "poi_tf": s.poi.timeframe.label, "poi": (s.poi.low, s.poi.high),
+            "poi_x": s.poi.liquidity_level, "poi_p": s.poi.protector_extreme,
+            "confirmation": s.confirmation.type.value, "confirmation_tf": s.confirmation.timeframe.label,
+            "confirmed_at": str(s.confirmation.timestamp),
+            "confirmed_close_at": str(s.confirmation.timeframe.close_time(pd.Timestamp(s.confirmation.timestamp))),
+            "entry": s.entry, "stop": s.stop, "stop_p": d.get("stop_p"), "stop_tf": d.get("stop_tf"),
+            "stop_p_open": str(d.get("stop_p_open")), "stop_p_close": str(d.get("stop_p_close")), "stop_basis": d.get("stop_basis"),
+            "take_profit": s.take_profit, "rr": s.rr, "tp_source": s.tp_source, "touched_at": str(s.touched_at), "visit": s.visit_number}
