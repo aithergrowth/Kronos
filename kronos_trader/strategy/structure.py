@@ -57,7 +57,7 @@ def find_swings(series: CandleSeries, left: int = 2, right: int = 2) -> List[Swi
     swings: List[SwingPoint] = []
     for i in idx[is_high | is_low]:
         i = int(i)
-        ts = series.timestamps.iloc[i]
+        ts = series.ts_list[i]
         if is_high[i - left]:
             swings.append(SwingPoint(i, ts, float(highs[i]), SwingKind.HIGH))
         if is_low[i - left]:
@@ -144,6 +144,7 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
 
     opens, highs, lows, closes = series.open, series.high, series.low, series.close
     ts = series.timestamps
+    ts_list = series.ts_list
     swings = find_swings(series, params.swing_left, params.swing_right)
     analysis.swings = swings
 
@@ -188,7 +189,7 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
                 active_high.remove(lvl)
             elif not lvl.is_swept and body_hi <= lvl.price:
                 lvl.swept_index = j
-                analysis.sweeps.append(Sweep(level=lvl, index=j, timestamp=ts.iloc[j], extreme=float(h), close=float(c)))
+                analysis.sweeps.append(Sweep(level=lvl, index=j, timestamp=ts_list[j], extreme=float(h), close=float(c)))
         if broken_highs:
             lvl = max(broken_highs, key=lambda x: x.swing.index)   # the most recent structure
             trend = _record_break(analysis, j, Bias.BULLISH, lvl, swing_lows_seen, trend, params)
@@ -205,7 +206,7 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
                 active_low.remove(lvl)
             elif not lvl.is_swept and body_lo >= lvl.price:
                 lvl.swept_index = j
-                analysis.sweeps.append(Sweep(level=lvl, index=j, timestamp=ts.iloc[j], extreme=float(l), close=float(c)))
+                analysis.sweeps.append(Sweep(level=lvl, index=j, timestamp=ts_list[j], extreme=float(l), close=float(c)))
         if broken_lows:
             lvl = max(broken_lows, key=lambda x: x.swing.index)
             trend = _record_break(analysis, j, Bias.BEARISH, lvl, swing_highs_seen, trend, params)
@@ -214,10 +215,10 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
         if j >= 2:
             min_gap = min_gap_at[j]
             if lows[j] > highs[j - 2] and (lows[j] - highs[j - 2]) >= min_gap:
-                analysis.gaps.append(Gap(Bias.BULLISH, float(highs[j - 2]), float(lows[j]), j, ts.iloc[j],
+                analysis.gaps.append(Gap(Bias.BULLISH, float(highs[j - 2]), float(lows[j]), j, ts_list[j],
                                          j - 1, float(lows[j - 1]), float(highs[j - 1]), j - 2))
             elif highs[j] < lows[j - 2] and (lows[j - 2] - highs[j]) >= min_gap:
-                analysis.gaps.append(Gap(Bias.BEARISH, float(highs[j]), float(lows[j - 2]), j, ts.iloc[j],
+                analysis.gaps.append(Gap(Bias.BEARISH, float(highs[j]), float(lows[j - 2]), j, ts_list[j],
                                          j - 1, float(lows[j - 1]), float(highs[j - 1]), j - 2))
 
     _update_block_states(analysis)
@@ -268,7 +269,7 @@ def _record_break(
     kind = BreakKind.BOS if trend is None or trend is direction else BreakKind.BMS
     brk = StructureBreak(
         index=j,
-        timestamp=series.timestamps.iloc[j],
+        timestamp=series.ts_list[j],
         direction=direction,
         kind=kind,
         broken_level=float(lvl.price),
@@ -294,7 +295,7 @@ def _record_break(
     else:
         lo, hi = float(series.low[block_idx]), float(series.high[block_idx])
     block = BalanceBlock(direction=direction, low=lo, high=hi, index=block_idx,
-                         timestamp=series.timestamps.iloc[block_idx], break_index=j)
+                         timestamp=series.ts_list[block_idx], break_index=j)
     analysis.blocks.append(block)
     analysis._block_by_break[j] = block
     return direction

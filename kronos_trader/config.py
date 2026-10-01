@@ -139,6 +139,7 @@ class RiskParams:
     sl_offset_pips: float = 1.0         # ASSUMPTION: 1 pip beyond the protection level
     tp_policy: str = "liquidity"        # "Dus ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40): nearest liquidity on the POI timeframe or higher;
                                         # liquidity_nearest: nearest liquidity on any timeframe above the confirmation timeframe (dorus_pure.yaml); legacy: nearest | liquidity_first | balance_first
+    tp_floor_tf: Optional[Timeframe] = None   # with liquidity_nearest: only liquidity on this timeframe or higher counts ("we willen echt de highs en de lows", not local liquidity, A 01:54:49)
     stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
 

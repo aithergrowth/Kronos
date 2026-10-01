@@ -190,6 +190,15 @@ class CandleSeries:
             return self
         return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
 
+    @property
+    def ts_list(self) -> list:
+        """The candle open times as a plain list of Timestamps (built once per series; scalar ``.iloc`` is slow)."""
+        cached = self.__dict__.get("_ts_list")
+        if cached is None or len(cached) != len(self.df):
+            cached = self.timestamps.tolist()
+            self.__dict__["_ts_list"] = cached
+        return cached
+
     def index_at_or_after(self, ts: pd.Timestamp) -> int:
         """Index of the first candle opening at or after ``ts`` (``len`` if none)."""
         return int(self.timestamps.searchsorted(pd.Timestamp(ts), side="left"))

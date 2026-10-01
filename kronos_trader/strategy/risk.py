@@ -45,9 +45,10 @@ def find_take_profit(
     liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
     nearest_policy = params.tp_policy == "liquidity_nearest" and confirmation_tf is not None
+    floor_tf = params.tp_floor_tf
     for tf, st in structures.items():
         if nearest_policy:
-            if tf <= confirmation_tf:
+            if tf <= confirmation_tf or (floor_tf is not None and tf < floor_tf):
                 continue
         elif tf < poi_tf:
             continue

@@ -54,3 +54,12 @@ def test_nearest_policy_short_side():
     params = RiskParams(tp_policy="liquidity_nearest")
     price, source = find_take_profit(Direction.SHORT, 1.1000, structures, Timeframe.H_4, params, confirmation_tf=Timeframe.MIN_15)
     assert price == 1.0950 and source.startswith("1H")
+
+
+def test_target_floor_skips_local_liquidity_below_the_floor_timeframe():
+    params = RiskParams(tp_policy="liquidity_nearest", tp_floor_tf=Timeframe.H_1)
+    price, source = find_take_profit(Direction.LONG, 1.1000, STRUCTURES, Timeframe.H_4, params, confirmation_tf=Timeframe.MIN_5)
+    assert price == 1.1080 and source.startswith("1H")      # the 15m swing at 1.1030 is local liquidity and does not count
+    params2 = RiskParams(tp_policy="liquidity_nearest", tp_floor_tf=Timeframe.H_1)
+    price2, source2 = find_take_profit(Direction.LONG, 1.1000, STRUCTURES, Timeframe.MN_1, params2, confirmation_tf=Timeframe.H_4)
+    assert price2 == 1.1900 and source2.startswith("1M")    # above a 4H confirmation only the monthly level remains

@@ -33,7 +33,7 @@ def _far_edge(gap: Gap, direction: Bias, mode: str) -> float:
 
 
 def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams) -> List[POI]:
-    ts = st.series.timestamps
+    ts_list = st.series.ts_list
     by_break: Dict[int, POI] = {}
     for gap in st.gaps:
         d = gap.direction
@@ -55,7 +55,7 @@ def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams)
         created = max(gap.index, brk.index)
         by_break[brk.index] = POI(
             timeframe=st.series.timeframe, direction=d, low=float(low), high=float(high), sweep=sweep,
-            balance=st.block_for_break(brk), created_index=created, created_at=ts.iloc[created], gap=gap,
+            balance=st.block_for_break(brk), created_index=created, created_at=ts_list[created], gap=gap,
             liquidity_level=float(x), liquidity_break=brk,
         )
     return sorted(by_break.values(), key=lambda p: p.created_index)
@@ -181,10 +181,10 @@ def current_visit(poi: POI, ltf: CandleSeries, max_extension_zones: float) -> Tu
     state = VisitState()
     start_index: Optional[int] = None
     for k in range(_visit_scan_start(poi, ltf), n):
-        state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.timestamps.iloc[k], ext, check_invalid)
+        state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.ts_list[k], ext, check_invalid)
         if state.invalid:
             return None, state.visits, True
-        start_index = k if state.visit_start_ts is not None and state.visit_start_ts == ltf.timestamps.iloc[k] else start_index
+        start_index = k if state.visit_start_ts is not None and state.visit_start_ts == ltf.ts_list[k] else start_index
         if state.visit_start_ts is None:
             start_index = None
     return start_index, state.visits, False
@@ -222,7 +222,7 @@ class VisitTracker:
         else:
             start = int(ltf.timestamps.searchsorted(state.last_ts, side="right"))
         for k in range(start, n):
-            state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.timestamps.iloc[k], ext, check_invalid)
+            state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.ts_list[k], ext, check_invalid)
             if state.invalid:
                 break
         return state.visit_start_ts, state.visits, state.invalid

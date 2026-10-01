@@ -1,0 +1,40 @@
+# Dorus's rules as he states them: the transcript pass of 1 October 2026
+
+Read directly from the Dutch automatic captions of his YouTube videos (fetched with timestamps; the raw
+transcripts stay out of the repository). Sources: **A** the 4.5-hour course (HRPgdK8VhMc), **B** strategy
+walkthrough (xWR8M46iSW8), **C** A-Z (R07fGFejJ5w), **D** trading plan (81LThMAtj5o), **G** HTF context
+(6NLVf8P-xP8), **H** entries (oe0tBQ47r3M). E and F could not be fetched this pass; Astra's reviews cover
+them. The academy (Skool) needs a member login and is covered by Astra's screenshots only.
+
+This pass answers the decisions that the diagnostic backtest showed to matter most. Each row gives the
+quote, where it is, what the second pure profile (`config/dorus_pure.yaml`) now does, and what stays open.
+
+| Decision | What he says | Where | Profile | Still open |
+|---|---|---|---|---|
+| Confirmation | "Opties qua confirmatie: een balance shift, een break of market structure, daar ben ik niet zo heel erg fan van, of de eerste bullish of bearish candle. Wat ik zelf meestal doe is dus een balance shift." | D 13:48-14:01 | balance shift and BMS on; BOS off (not in his list) | whether BMS should be off too ("niet zo'n fan") |
+| First candle | "na de shift ga ik altijd bij de eerste beste bullish candle erin" | A 01:21:00 | first candle **off** as a confirmation: it is his entry timing after a shift | entering one candle after the shift instead of on its close |
+| The shift needs a close | "Ik vind het wel belangrijk dat we een closure hebben. Dat hebben we nog niet... Ja, nu wel. Oké, dan kunnen we de trade erbij pakken." | A 02:26:00 | close through the opposing balance level (`bs_threshold: gap_edge`) | gap edge versus the origin candle (A 01:07:49) |
+| Stop | "Stop loss op de P... de candle die dit gat heeft veroorzaakt. Dus daar wil je de stoploss onder zetten." "als je stoploss niet op de candle die het gat heeft veroorzaakt, dan ga je veel vaker stoplosses krijgen." "Stoploss altijd op een minimale 1 uur P" | A 01:08:10-01:09:30, D 13:30 | behind P, at least the 1H P, no buffer | exact wick of P |
+| Target | "Dus ik zet ten alle tijden mijn take profit op liquiditeit." "dit is meer lokale liquiditeit. We willen uiteindelijk echt de highs en de lows meenemen." Replays: "take profit bij de vorige high" on the 1H chart, "op de vorige Asia high" on the 1H | A 01:50:40, A 01:54:49, A 02:26:10, H 09:00 | nearest liquidity above the confirmation timeframe **and at least on the 1H** | which previous high when several qualify |
+| R:R | "dan hebben we een 1,4 risk reward. Mogen we deze trade plaatsen." "Ik ben het meest gaan verdienen... doordat ik ben gaan focussen op de lage risk rewards. Dus op de consistentie, dus op de hogere winrate." | A 02:26:20-02:26:50 | floor 1.3 (lowest accepted example) | none; a higher floor is Max's choice, not his |
+| Session | "ik mag alleen een trade executeren van 9 tot en met 11 en van 1 tot en met 5." "nu mogen we niet meer de trade plaatsen, want het is 5 uur." "Nu gaan we naar de zone met wat minder prijsactie. Dus wachten we even. Wachten we op 1 uur." | A 02:30:56, A 02:30:30, A 01:20:20 | entries 09:00-11:00 and 13:00-17:00 Amsterdam | H says 09-17 with 11-13 quieter; C says 08-17; the replay plan is the explicit one |
+| News | "ik ga met nieuws traden niet 1 minuut voor nieuws traden. Dat doe ik niet. Maar... als ik een trade heb om 1:30, dan laat ik gewoon lopen tot het nieuws event." | A 01:21:20 | no entry 30 minutes before or after high-impact news; open trades run | his "after" window is not stated |
+| Frequency | "Ik plaats gemiddeld, laat ik zeggen, 2 tot 8 trades per maand. Soms heb ik ook maanden dat ik misschien maar één of geen trade heb." | A 04:09:09 | not a rule; a check: the profile should land in this range across the traded markets | |
+| Returns | "als jij 1 tot 2% per maand kan behalen op een consistente basis kan jij supergoed verdienen" | A 02:27:30 | the benchmark for the forward test | |
+| Balance level | "vanaf de eerste candle, dus de bovenste... naar de derde candle. En het gat hiertussen, dit is voor ons het balance level." Price may react before filling it, in the middle, after filling it, or at the candle that made it | A 00:52:10-00:53:30 | gap between candle 1 and 3, wick to wick; zone from X to P | which of several gaps |
+| Journal | "Heb je je aan je tradingplan gehouden... dit is dus buiten mijn tijdslot. Dus dit is een trade die eigenlijk niet volgens mijn strategie zou zijn." | A 02:31:10 | the journal records every rule check | |
+
+## Why this matters for the numbers
+
+The diagnostic run of the first pure profile (first candle on, no target floor, 09-17) made 397 trades:
+202 of them were first-candle entries and they lost 35.7R, while balance-shift and BMS entries were
+near break-even. Entries within an hour of the zone touch, which is what a first candle usually is, lost
+56.7R; entries one to four hours after the touch made 14.6R. Targets on 15m swings lost; targets on 4H
+and higher levels won. The second profile does not use any of those numbers: it follows the quotes above.
+That the quotes and the numbers point the same way is the reason to expect the second run to differ.
+
+## Not changed, still interpretation
+
+X and P selection among nearby candidates, the 20 % gap threshold, first-return-only, the inside-zone
+requirement for a confirmation, the 1.5-zone-height visit allowance, and the news "after" window. Each is
+named in `config/dorus_pure.yaml` or `kronos_trader/config.py` as an assumption.
