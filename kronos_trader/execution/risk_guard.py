@@ -76,7 +76,8 @@ class RiskGuard:
     def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None) -> Tuple[bool, str]:
         ts = pd.Timestamp(ts)
         equity = broker.equity()
-        self.update(ts, equity, broker.balance())
+        balance = getattr(broker, "balance", None)
+        self.update(ts, equity, balance() if callable(balance) else None)
         p = self.params
         if len(broker.open_positions()) >= p.max_open_trades:
             return False, f"max {p.max_open_trades} open trade(s) per account"
