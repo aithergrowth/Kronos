@@ -11,7 +11,7 @@ Status legend: `[ ]` open · `[~]` in progress · `[x]` done
 ---
 
 
-## Research status — 2026-09-30, full course-caption audit
+## Research status — 2026-10-01, follow-up evidence check
 
 **Partial source audit. Every question is addressed, but this is not a completed
 review of every YouTube video, every academy lesson, or five complete test cases.**
@@ -30,6 +30,15 @@ now have complete available Dutch-caption reviews. D/F explicitly describe POI
 as liquidity to protection, which exposes a conceptual mismatch with the coded
 sweep-extreme/gap-edge object pair. Exact P wick/body and invalidation predicates
 remain unresolved. D independently includes M+D+4H. Complete fixtures: **0**.
+
+**Latest check (2026-10-01):** K3's two mobile chart attachments were read and
+independently checked. They show `XAUUSD.pro/M1` and `XAUUSD.raw/M15`, with quote
+labels rather than explicit SL/TP values. Neither establishes a chart timezone
+or the corrected first trade's target. Additional K7 frames do not identify P's
+exact candle boundary. A's completed-replay candidate was opened at 02:24:30,
+but the chart video remained black/buffering. The focused audit now lists the
+exact source intervals and fields needed to finish these items. No runtime rule
+or complete fixture has been inferred from the missing evidence.
 
 Skool sign-in succeeded. Its academy is now accessible. The earlier access-block
 assessment is superseded. This update adds direct inspection of the **Tradingplan**
@@ -402,3 +411,4 @@ The priority D/E videos and additional F video now have complete available Dutch
 | 2026-09-30 | M+D+4H combination kept available but off (`bias.extra_combos_enabled`) because K1's written table omits it. | Claude |
 | 2026-09-30 | Focused follow-up: independently checked K3 corrected entry/stop/distance/RR and K6 wick-to-wick bearish gap; rechecked A’s explicit close-based BS examples. Full POI boundary, universal BS threshold, gold target/clock and priority-video access remain unresolved. No runtime change or completed fixture claimed. | Codex/Astra |
 | 2026-09-30 | User handoff cleared YouTube verification. Reviewed all available Dutch captions for D/E/F (419/391/288 segments). D/F clarify POI starts at liquidity and can reach protection; D explicitly includes M+D+4H. Exact P endpoint/BS algorithm and complete fixtures remain unresolved; no runtime change. | Codex/Astra |
+| 2026-10-01 | Independently checked K3 mobile chart attachments; preserved `.pro/M1` and `.raw/M15` separately and excluded quote-as-target/timezone inference. Checked later K7 frames and attempted A's completed replay; no new exact P or fixture values established. Added precise remaining-evidence locations. Illustration fixtures do not require verified broker fills, but do require readable chart values and adequate candle/retrieval metadata. | Codex/Astra |

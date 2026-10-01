@@ -3,6 +3,9 @@
 Source: [K3, academy lesson](https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411), *Goud scalps, liquiditeitsruns en twee shorts*.
 Chart date 2026-08-26. Confidence: **medium** for drawn prices; **high** for
 captioned scalp qualification. This is not a verified broker execution record.
+A fixture may describe a source-verified illustration without broker fills;
+its labels and timestamps must still be established. The remaining chart and
+candle-data gaps below keep this record incomplete.
 
 At 00:39–00:43 he qualifies the higher-timeframe emphasis; see the workboard
 conflict log. At 01:45 the chart is FOREXCOM:XAUUSD, 4H. At 02:34 it is 1m and
@@ -39,3 +42,28 @@ on the same formally defined, previously visited POI.
 At **02:40**, the corrected drawing directly shows entry **4624.53**, stop **4639.55**, stop distance **15.02**, target distance **29.55**, and RR **1.97**. These labels received an independent second visual check (medium confidence). The target axis price and chart timezone remain behind the recorded webcam; only `17:23…` of the recording clock is readable. That clock is not an execution timestamp. The separate **4629.48** label is the crosshair.
 
 Later frames at 02:43, 02:57, 03:08, 03:20 did not resolve the missing target price/timezone. The latest corrected state is now preserved alongside the earlier, superseded states; no expected target price is invented from subtraction. See [the focused audit](../../DORUS_FOCUSED_AUDIT.md). The fixture remains incomplete.
+
+## Lesson attachment check — 2026-10-01
+
+The same K3 lesson contains two additional chart images. Their readable labels
+received an independent second visual check; confidence is **medium**. These are
+separate chart observations, not replacements for the FOREXCOM drawing.
+
+| Lesson attachment | Displayed symbol / timeframe | Phone clock | Green chart quote | Readable chart-axis labels |
+|---|---|---|---:|---|
+| `IMG_3573.PNG` | `XAUUSD.pro` / M1 | 17:02 | 4602.10 | 26 Aug 16:42; 17:14; 17:46; 18:18 |
+| `IMG_3574.PNG` | `XAUUSD.raw` / M15 | 17:03 | 4596.58 | 25 Aug 21:00; 26 Aug 14:00; 26 Aug 22:00 |
+
+Marker connectors are visible, but neither image supplies a readable order
+ticket, stop, target or numeric fill. The green quotes cannot be assigned as
+entry fills, exit fills or TP prices. The readable labels also do not associate
+either image with the corrected first short at K3 02:40.
+
+Neither attachment establishes a readable year, chart timezone or broker name.
+The phone clocks are not chart candle clocks or execution timestamps. Preserve
+`XAUUSD.pro` and `XAUUSD.raw` separately; do not substitute FOREXCOM or transfer
+the public S5 recording's UTC-4 clock. No uncertain axis tick is recorded.
+
+The sourced observations are in the YAML under `lesson_attachment_observations`.
+Raw academy attachments remain excluded from the repository. No `expect` fields
+or CSV were added; `regression_ready` remains false.

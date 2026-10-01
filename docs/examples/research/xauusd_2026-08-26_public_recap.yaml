@@ -8,11 +8,14 @@ media_url: https://www.loom.com/embed/eb80cbd1ed424a6d8d6690da7e2ea3e5?autoplay=
 source_author: Dorus Wanders
 chart_author: Dorus Wanders
 notes: Corrected 02:40 illustration shows entry 4624.53, stop 4639.55, target distance 29.55 and
-  RR 1.97. Target axis price and chart timezone remain obscured. No complete execution fixture.
+  RR 1.97. Target axis price and chart timezone remain obscured. The K3 lesson attachments
+  add separate XAUUSD.pro/M1 and XAUUSD.raw/M15 chart observations, not verified fills
+  or the missing corrected target. No complete chart fixture.
 confidence:
   chart_identity: medium
   position_tool_prices: medium
   scalp_qualification: high
+  attachment_chart_labels: medium
   complete_strategy_interpretation: not_assessed
 observations:
   displayed_chart_timeframe: 1m
@@ -36,11 +39,16 @@ missing:
 - Formal POI classification and relation to K1 minimum-confirmation table
 - sweep and break candle identity/levels
 - balance and POI bounds
-- verified UTC execution time
+- identifiable entry candle and verified chart-to-UTC time conversion
 - academy chart timezone
 - complete historical interval including 60 pre-sweep bars and post-break return
 - directly readable final target price after correction
-- verified broker execution prices, distinguished from the corrected drawing
+illustration_fixture_scope:
+  actual_broker_fills_required: false
+  explanation: A source-verified illustration can support a fixture without verified broker fills.
+    This record remains incomplete because its final target label, chart clock conversion,
+    POI/event identities and candle-data interval are unresolved. Actual execution claims
+    must remain separate from the drawing.
 data_request:
   symbol: XAUUSD
   feed: FOREXCOM
@@ -100,5 +108,40 @@ caption_review:
 evidence_images:
 - assets/gold_public_0005.jpg
 academy_evidence_location: K3 02:40 corrected position labels independently checked; later frames
-  02:43, 02:57, 03:08, 03:20 inspected. Raw academy screenshots excluded from repository.
+  02:43, 02:57, 03:08, 03:20 inspected. K3 lesson attachments IMG_3573.PNG and IMG_3574.PNG
+  independently checked on 2026-10-01. Raw academy images excluded from repository.
+lesson_attachment_observations:
+  reviewed: '2026-10-01'
+  source: K3 lesson attachments at source_url
+  independent_second_visual_check: true
+  raw_images_in_repository: false
+  attachments:
+  - filename: IMG_3573.PNG
+    displayed_symbol: XAUUSD.pro
+    displayed_timeframe: M1
+    phone_clock_text: '17:02'
+    green_chart_quote: 4602.10
+    readable_chart_time_labels:
+    - 26 Aug 16:42
+    - 26 Aug 17:14
+    - 26 Aug 17:46
+    - 26 Aug 18:18
+  - filename: IMG_3574.PNG
+    displayed_symbol: XAUUSD.raw
+    displayed_timeframe: M15
+    phone_clock_text: '17:03'
+    green_chart_quote: 4596.58
+    readable_chart_time_labels:
+    - 25 Aug 21:00
+    - 26 Aug 14:00
+    - 26 Aug 22:00
+  interpretation_limits:
+  - Marker connectors are visible, but no readable order ticket, stop, target or numeric fill
+    establishes their trade association.
+  - Green chart quotes are not identified as entry fills, exit fills or targets.
+  - Neither attachment establishes a readable year, chart timezone or broker name.
+  - Phone display clocks are not chart candle clocks or execution timestamps.
+  - The attachments cannot be mapped to the corrected first-short drawing from the readable labels.
+  - Preserve XAUUSD.pro and XAUUSD.raw as separate displayed symbols; do not substitute
+    FOREXCOM or import the separate S5 UTC-4 clock.
 focused_followup: ../../DORUS_FOCUSED_AUDIT.md

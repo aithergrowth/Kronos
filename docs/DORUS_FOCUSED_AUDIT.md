@@ -1,6 +1,6 @@
 # Dorus source check — four requested follow-ups
 
-Reviewed 2026-09-30; updated after restored YouTube access. See
+Reviewed 2026-09-30; follow-up inspected 2026-10-01. See
 [DORUS_PRIORITY_SOURCES.md](DORUS_PRIORITY_SOURCES.md) for the complete D/E/F caption review and stronger POI evidence. This supplements `ASTRA_TASKS.md`; it does not change the
 trading code. The implementation was read at `feature/kronos-trader` commit
 `dd79d29cda7b569f41b4e5dff62804de8eb72392`.
@@ -42,9 +42,30 @@ The two readable prices and the target distance are preserved in
 and presented as a direct chart reading. `expect` remains absent and
 `regression_ready` remains false.
 
-Still needed: an unobscured final target label or explicit execution record;
+### Attachment check — 2026-10-01
+
+The same K3 lesson contains two mobile chart images. Both were inspected and
+independently checked. These are separate feed observations, not replacements
+for the corrected FOREXCOM drawing:
+
+| Attachment | Symbol / chart timeframe | Phone clock | Green displayed quote | Reliably readable axis labels |
+|---|---|---|---:|---|
+| `IMG_3573.PNG` | `XAUUSD.pro` / M1 | 17:02 | 4602.10 | 26 Aug 16:42, 17:14, 17:46, 18:18 |
+| `IMG_3574.PNG` | `XAUUSD.raw` / M15 | 17:03 | 4596.58 | 25 Aug 21:00; 26 Aug 14:00; 26 Aug 22:00 |
+
+The green labels mark displayed quotes. Red/blue markers and connecting paths
+have no numeric fill labels; neither image labels a stop or target. No year,
+chart timezone, or broker/server identity is readable. Phone time does not
+establish chart time. Consequently neither quote is a verified TP or fill, and
+neither image resolves the final K3 target or authorizes copying S5's UTC−4.
+Confidence: **medium**, visual evidence. The images remain private research
+material; their factual readings are recorded in the gold YAML.
+
+Still needed for the illustrated example: an unobscured final target label;
 verified chart timezone and entry candle; formal POI timeframe, sweep/break
 identities and zone bounds; and real candle data covering the required interval.
+Verified broker fills are not a prerequisite for a clearly labeled illustration
+or replay fixture; no broker execution claim would be made for such a fixture.
 The displayed 4H context and 1m entry drawing alone do not establish a valid
 4H-POI/1m-confirmation case under K1. A completed gold fixture has not been claimed.
 
@@ -87,6 +108,12 @@ choice of sweep-wick extreme rather than swept liquidity level at the other end.
 No readable P annotation in the inspected frame establishes P's wick/body bounds
 or its deterministic candle index.
 
+**Additional check, 2026-10-01:** K7 was inspected at 03:46, 07:50 and 08:50.
+The later chart frames show gap rectangles but no readable P label that resolves
+the full-zone boundary. The authenticated embedded player works; opening the
+same Vimeo media standalone was refused by its privacy settings. The lesson
+was therefore inspected within Skool. No endpoint was inferred from that refusal.
+
 ## 4. BS: what can be confirmed for the function
 
 Source **A**: [Hoe Start Je Met Traden in 2026 (Volledige 4-Uur Beginnerscursus)](https://www.youtube.com/watch?v=HRPgdK8VhMc),
@@ -118,6 +145,21 @@ for bullish or `close < gap.low` for bearish. The source does not fully verify:
 Therefore the close-based interpretation is supported, while the precise
 threshold/selection assumptions must stay labeled provisional. This source
 review supplies no justified replacement boundary for that function yet.
+
+## Exact evidence still needed
+
+| Open item | Source location to inspect | Evidence required before using it as a code expectation |
+|---|---|---|
+| Corrected gold drawing | K3 02:35–02:43, plus its entry and chart clock | Unobscured final target price, chart timezone, entry candle; separate identification of the first and second short. The mobile attachments do not supply these. |
+| Alternative completed replay fixture | A 02:19:00–02:27:41, particularly 02:25:43–02:26:34 | Readable replay date/feed/timeframe, entry/SL/TP and event/zone labels. Caption references to Amsterdam and 1.4R do not supply the missing chart values. |
+| Exact POI endpoints | K6 diagram; K7 03:19–03:35; D 12:21–12:54; F 03:00–03:36 | An unambiguous P annotation identifying the candle and wick/body boundary, together with the liquidity endpoint. |
+| Deterministic BS threshold | A 01:07:49–01:08:30 and 02:25:40–02:26:15 | The labeled opposing boundary and its originating candle, sufficient to distinguish gap edge from candle edge; a stated or repeated candidate-selection rule. |
+
+On 2026-10-01 A was opened directly at **02:24:30** and playback was attempted.
+The watch page loaded, but the video remained black/buffering. No replay chart
+values were read. This is a playback limitation, not a new CAPTCHA claim or
+evidence that the source is silent. The earlier complete available-caption
+review remains valid. Complete fixtures remain **0**.
 
 ## Verification and limits
 
