@@ -72,7 +72,7 @@ def test_bounded_run_flattens_at_its_own_last_candle(scenario):
 
 def test_stop_too_wide_at_the_moved_price_is_skipped(scenario):
     s = Settings()
-    s.account_size = 2_000.0                          # 1 % = 20: at 152 pips that is under the 0.01-lot minimum
+    s.account_size = 1_000.0                          # 1 % = 10: at 152 pips that is under the 0.01-lot minimum
     bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)))
     result = bt.run()
     assert result.trades == [] and "price moved: stop too wide for the minimum lot" in result.guard_reasons
