@@ -171,7 +171,11 @@ price and live quote are separate objects and are excluded.
 
 On 2026-10-01 the exact INDEX:BTCUSD daily chart and UTC clock were selected in
 TradingView, and the 2025-01-01–2026-09-07 retrieval range was applied. The native
-**Download chart data → Download** action opened a **Premium upgrade gate**.
+**Download chart data → Download** action opened an upgrade prompt recommending
+**Premium**. The [official plan comparison](https://www.tradingview.com/pricing/?source=header_goass%3D),
+checked 2026-10-01, includes chart-data download on **Plus, Premium and Ultimate**,
+and excludes it on **Basic and Essential**. Plus is the minimum listed plan;
+the session's Premium upsell was a recommendation, not the feature minimum.
 No CSV was produced, no account or payment change was made, and no alternative
 extraction was attempted. Consequently the source candle has not yet been
 matched against exported OHLC. Coverage and regression readiness remain open.

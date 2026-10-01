@@ -32,8 +32,12 @@ No raw academy screenshot is included. All source descriptions and numerical obs
 
 On 2026-10-01 the exact `INDEX:BTCUSD` daily chart was opened in TradingView
 with a UTC clock and the requested 2025-01-01–2026-09-07 range. The native
-Download action required a Premium upgrade and produced no CSV. No account,
-payment or alternative-extraction action was taken.
+Download action opened an upgrade prompt recommending Premium and produced no
+CSV. The [official plan comparison](https://www.tradingview.com/pricing/?source=header_goass%3D),
+checked 2026-10-01, lists chart-data download on **Plus, Premium and Ultimate**,
+but not **Basic or Essential**. Plus is the minimum listed plan; the Premium
+upsell was a recommendation. No account, payment or alternative-extraction
+action was taken.
 
 K5 at 00:09 supplies a useful independent matching anchor: selected daily
 candle **2026-01-30**, **O 84550.82 / H 84638.35 / L 81047.80 / C 84149.17**.
