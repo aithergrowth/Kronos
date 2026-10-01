@@ -54,6 +54,38 @@ the size of the real one: orders under roughly 25,000 units are odd lots with
 worse fills. Gold and indices go through IBKR CFDs (`ibkr_contract` in the
 symbol spec); check they are enabled for your region.
 
+## 1b. MetaTrader 5 demo: live candles and a paper venue without a live account
+
+Any MT5 demo account gives real-time candles for every timeframe plus a
+paper account that fills orders, and MT5 is what the prop firms run. This is
+the route when IBKR has no market data.
+
+1. Install MetaTrader 5 from metatrader5.com (or the terminal of the broker
+   or prop firm you will use later). On first start it offers a demo account
+   on the MetaQuotes-Demo server; accept, or open one under File, Open an
+   Account. Note the login, the password and the server name.
+2. Keep the terminal running and logged in.
+3. On the laptop:
+
+   ```powershell
+   pip install MetaTrader5
+   setx MT5_LOGIN "12345678"
+   setx MT5_PASSWORD "your-password"
+   setx MT5_SERVER "MetaQuotes-Demo"
+   ```
+
+   Open a new terminal. If the terminal is not found automatically, also set
+   `MT5_PATH` to `C:\Program Files\MetaTrader 5\terminal64.exe`.
+4. `python -m kronos_trader mt5-test --symbol EURUSD --tf 15m` prints the
+   account, the server-time offset to UTC and the last five bars.
+5. `python -m kronos_trader live --symbol EURUSD --broker mt5` runs the loop
+   with MT5 candles and MT5 paper orders.
+
+Brokers name symbols differently (`EURUSD.r`, `XAUUSD.m`): set
+`mt5_symbol` in the symbol spec. The server-time offset is estimated from
+the latest tick and rounded to half hours; pin it with
+`MT5_SERVER_OFFSET_HOURS` if it looks wrong on a weekend.
+
 ## 2. Telegram (10 minutes)
 
 Telegram is what makes the phone workflow possible: setups, the
@@ -86,7 +118,8 @@ The loop needs live candles for every timeframe the rules use (1M down to
 `--feed`:
 
 - `broker` (default with `--broker ibkr` or `mt5`): the broker's own bars.
-  IBKR needs market data permissions for that (section 1).
+  MT5 always has them (section 1b); IBKR needs market data permissions
+  (section 1).
 - `oanda`: a free OANDA practice account. Open one at oanda.com, create a
   token under *Manage API Access*, then
 
@@ -116,7 +149,10 @@ positions but opens no new setups and says why
 # 1) dry-run: setups to Telegram (or the terminal) only, no orders
 python -m kronos_trader live --symbol EURUSD --broker ibkr
 
-# same, with candles from OANDA because IBKR has no market data permissions
+# same on an MT5 demo account: candles and paper orders from MetaTrader 5
+python -m kronos_trader live --symbol EURUSD --broker mt5
+
+# IBKR orders with candles from OANDA (only where OANDA hands out API tokens)
 python -m kronos_trader live --symbol EURUSD --broker ibkr --feed oanda
 
 # 2) execute with the Approve step (the mode for the challenge)
@@ -158,7 +194,7 @@ on mains power, awake and logged in to TWS:
 3. Start the loop in a terminal that stays open (mode 1 first, then 2):
 
    ```shell
-   python -m kronos_trader live --symbol EURUSD --broker ibkr
+   python -m kronos_trader live --symbol EURUSD --broker mt5
    ```
 
    Windows Task Scheduler ("at log on", restart on failure) brings it back

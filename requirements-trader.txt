@@ -7,4 +7,4 @@ requests        # Telegram bot API
 
 # brokers (install the one you use)
 ib_async>=2.0   # Interactive Brokers: python -m kronos_trader live --broker ibkr
-# MetaTrader5   # prop-firm MT5 platforms, Windows only: --broker mt5
+# MetaTrader5   # MT5 demo / prop-firm accounts, Windows only: pip install MetaTrader5 (--broker mt5)
