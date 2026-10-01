@@ -48,28 +48,56 @@ def geometric_gaps(series: CandleSeries, params) -> List[dict]:
     return out
 
 
+def warm_up(engine: StrategyEngine, data: MultiTimeframeData, symbol: str, at, days: float, step_tf: Optional[Timeframe] = None) -> int:
+    """Replay the lowest timeframe from ``days`` before ``at`` so the engine's visit memory is not cold-started.
+    Returns the number of steps replayed."""
+    at = pd.Timestamp(at)
+    step = data[step_tf] if step_tf is not None else data.lowest
+    start = at - pd.Timedelta(days=float(days))
+    i0 = int(step.timestamps.searchsorted(start))
+    n = 0
+    for i in range(i0, len(step)):
+        ts = step.timestamps.iloc[i]
+        now = step.timeframe.close_time(ts)
+        if now >= at:
+            break
+        views = data.as_of(now, lookback=engine.settings.structure.lookback)
+        if views:
+            engine.analyze(symbol, views, now=now)
+            n += 1
+    return n
+
+
 def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol: str, at, out_dir,
-                           engine: Optional[StrategyEngine] = None, lookback: int = 120) -> Path:
+                           engine: Optional[StrategyEngine] = None, lookback: int = 120, warmup_days: float = 0.0) -> Path:
     from ..notify.chart import render_chart
     engine = engine or StrategyEngine(settings)
     symbol = symbol.upper()
     at = pd.Timestamp(at)
+    warmed = warm_up(engine, data, symbol, at, warmup_days) if warmup_days else 0
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     spec = settings.symbols.get(symbol)
     decimals = spec.price_decimals if spec else 5
     views = data.as_of(at, lookback=settings.structure.lookback)
     analysis = engine.analyze(symbol, views, equity=settings.account_size, now=at)
-    tracker = engine.visits.get(symbol)
-    doc: Dict[str, object] = {"symbol": symbol, "at": str(at), "price": analysis.price,
+    tracker = getattr(engine, "visits", {}).get(symbol)
+    structure_for = getattr(engine, "structure_for", None)
+    if structure_for is None:                       # a stub engine in tests: analyse the structure here
+        from ..strategy.structure import analyze_structure
+        structure_for = lambda sym, view: analyze_structure(view, settings.structure)
+    doc: Dict[str, object] = {"symbol": symbol, "at": str(at), "price": analysis.price, "warmup_steps": warmed,
+                              "visit_memory": "the run's own engine" if warmed == 0 and tracker is not None else
+                                              (f"replayed {warmed} steps before this moment" if warmed else "cold start: visits counted from the analysis window only"),
                               "decision": {"direction": analysis.decision.direction.name, "mode": analysis.decision.mode.value,
                                            "reason": analysis.decision.reason},
                               "rejections": list(analysis.rejections), "timeframes": {}}
     lines = [f"# {symbol} at {at:%Y-%m-%d %H:%M} UTC", "",
-             f"Price {analysis.price:.{decimals}f}. Decision: **{analysis.decision.direction.name.lower()}**, {analysis.decision.mode.value}: {analysis.decision.reason}", ""]
+             f"Price {analysis.price:.{decimals}f}. Decision: **{analysis.decision.direction.name.lower()}**, {analysis.decision.mode.value}: {analysis.decision.reason}", "",
+             f"Visit memory: {doc['visit_memory']}.", ""]
     for tf in sorted(views):
         view = views[tf].tail(settings.structure.lookback_by_timeframe.get(tf, settings.structure.lookback))
-        st = engine.structure_for(symbol, view)
+        st = structure_for(symbol, view)
         tb = analysis.biases.get(tf)
         gaps = geometric_gaps(view, settings.structure)
         zones = [p for p in analysis.pois if p.timeframe is tf]

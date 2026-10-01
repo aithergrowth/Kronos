@@ -28,3 +28,29 @@ def test_dossier_writes_charts_notes_and_json(tmp_path, scenario):
     assert "## 1H" in readme and "Rejections at this moment" in readme
     assert (out / "1H.png").exists() and doc["timeframes"]["1H"]["candles"] > 0
     assert "gaps_geometric" in doc["timeframes"]["1H"] and "decision" in doc
+
+
+def test_backtest_writes_a_dossier_at_each_signal(tmp_path, scenario):
+    from kronos_trader.backtest.runner import Backtester
+    from kronos_trader.core import Direction
+    import sys
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
+    from test_backtest_fills import StaleEngine, _setup, _data
+    s = Settings()
+    bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=Timeframe.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)),
+                    dossier_dir=tmp_path / "d")
+    result = bt.run()
+    assert len(result.trades) == 1
+    written = list((tmp_path / "d").glob("*/README.md"))
+    assert len(written) == 1 and "Visit memory" in written[0].read_text(encoding="utf-8")
+
+
+def test_warm_up_replays_steps_before_the_moment(scenario):
+    from kronos_trader.backtest.dossier import warm_up
+    from kronos_trader.strategy.engine import StrategyEngine
+    s = Settings()
+    s.kronos.mode = "off"
+    data = MultiTimeframeData.from_base(scenario, [Timeframe.H_1, Timeframe.H_4, Timeframe.D_1])
+    eng = StrategyEngine(s)
+    n = warm_up(eng, data, "EURUSD", scenario.last_timestamp, days=1.0)
+    assert n > 0

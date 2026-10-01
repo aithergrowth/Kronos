@@ -104,6 +104,8 @@ class Backtester:
         use_spread: bool = True,
         progress: bool = False,
         quote_basis: str = "mid",
+        dossier_dir=None,
+        dossier_limit: int = 200,
     ):
         self.settings = settings
         self.data = data
@@ -115,6 +117,22 @@ class Backtester:
         self.use_spread = use_spread
         self.progress = progress
         self.quote_basis = quote_basis
+        self.dossier_dir = dossier_dir            # write a decision dossier at every signal, with this run's own engine state
+        self.dossier_limit = dossier_limit
+        self._dossiers_written = 0
+
+    def _write_dossier(self, now) -> None:
+        """A decision dossier for this moment from the running engine (its visit memory included), never fatal."""
+        if self.dossier_dir is None or self._dossiers_written >= self.dossier_limit:
+            return
+        try:
+            from pathlib import Path
+            from .dossier import write_decision_dossier
+            out = Path(self.dossier_dir) / f"{pd.Timestamp(now):%Y-%m-%d_%H%M}"
+            write_decision_dossier(self.settings, self.data, self.symbol, now, out, engine=self.engine)
+            self._dossiers_written += 1
+        except Exception as exc:   # pragma: no cover - diagnostics must not stop a run
+            print(f"  dossier at {now} failed: {exc}", flush=True)
 
     def run(self) -> BacktestResult:
         t0 = time.time()
@@ -162,6 +180,7 @@ class Backtester:
                     continue
                 seen.add(key)
                 signals += 1
+                self._write_dossier(now)
                 ok, reason = guard.can_open(broker, now, self.symbol)
                 if not ok:
                     rejected += 1

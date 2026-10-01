@@ -138,7 +138,7 @@ def cmd_backtest(args) -> int:
     print(data.describe())
     bt = Backtester(settings, data, symbol, step_tf=args.step_tf, engine=_engine(settings),
                     start=args.start, end=args.end, use_spread=not args.no_spread, progress=args.progress,
-                    quote_basis=args.quote_basis)
+                    quote_basis=args.quote_basis, dossier_dir=args.dossier_dir, dossier_limit=args.dossier_limit)
     cal = getattr(bt.engine, "calendar", None)
     if settings.news.enabled:
         events = getattr(cal, "events", None) or []
@@ -186,7 +186,8 @@ def cmd_decision_dossier(args) -> int:
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     data = _load_data(args, settings, symbol)
-    out = write_decision_dossier(settings, data, symbol, args.at, args.out, engine=_engine(settings), lookback=args.lookback)
+    out = write_decision_dossier(settings, data, symbol, args.at, args.out, engine=_engine(settings), lookback=args.lookback,
+                                 warmup_days=args.warmup_days)
     print(f"dossier written to {out}")
     return 0
 
@@ -442,6 +443,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--quote-basis", choices=("mid", "bid"), default="mid",
                     help="what the candles are: mid prices (default) or bid quotes (HistData, Dukascopy bid files)")
     sp.add_argument("--progress", action="store_true")
+    sp.add_argument("--dossier-dir", help="write a decision dossier (charts, bias notes, gaps, zones, rejections) at every signal, from the run's own engine state")
+    sp.add_argument("--dossier-limit", type=int, default=200, help="at most this many dossiers per run")
     sp.add_argument("--out", help="write the trade list to this CSV")
     sp.set_defaults(func=cmd_backtest)
 
@@ -459,6 +462,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--at", required=True, help="UTC timestamp, e.g. '2024-03-13 10:35'")
     sp.add_argument("--out", required=True, help="folder for README.md, dossier.json and the charts")
     sp.add_argument("--lookback", type=int, default=120, help="candles on each chart")
+    sp.add_argument("--warmup-days", type=float, default=0.0, help="replay this many days before the moment first, so zone visits are counted with history (slow: ~15 s per day)")
     sp.set_defaults(func=cmd_decision_dossier)
 
     sp = sub.add_parser("forecast", help="run the Kronos indicator on a CSV")
