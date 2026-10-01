@@ -238,9 +238,12 @@ class LiveParams:
     poll_seconds: int = 60
     require_approval: bool = True                  # human taps Approve in Telegram before an order is sent
     approval_timeout_minutes: Optional[int] = None  # None = one confirmation-timeframe candle (min 5 minutes)
-    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4)
+    # every timeframe the engine needs comes from the broker; the TradingView cache is the fallback
+    broker_timeframes: Tuple[Timeframe, ...] = (Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timeframe.H_4,
+                                                Timeframe.D_1, Timeframe.W_1, Timeframe.MN_1)
     broker_bar_counts: Dict[Timeframe, int] = field(default_factory=lambda: {
-        Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400})
+        Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
+        Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
 
 

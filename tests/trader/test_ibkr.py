@@ -76,7 +76,7 @@ class FakeIB:
         return [c]
 
     def sleep(self, s):
-        pass
+        self.slept = getattr(self, "slept", 0) + s
 
     def placeOrder(self, contract, order):
         existing = next((t for t in self.trades if t.order is order), None)
@@ -198,3 +198,8 @@ def test_get_candles_parses_bars(broker):
     assert s.timestamps.iloc[0] == pd.Timestamp("2026-10-01 09:00") and s.timestamps.dt.tz is None
     assert s.volume.tolist() == [0.0, 12.0]
     assert broker.ib.hist_calls[0] == ("6 D", "15 mins", "MIDPOINT", False)
+
+
+def test_idle_runs_the_ib_event_loop(broker):
+    broker.idle(2)
+    assert broker.ib.slept == 2

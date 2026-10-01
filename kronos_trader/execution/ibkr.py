@@ -108,6 +108,9 @@ class IBKRBroker(Broker):
     def disconnect(self) -> None:
         self.ib.disconnect()
 
+    def idle(self, seconds: float) -> None:
+        self.ib.sleep(seconds)      # runs the ib_async event loop so order updates and fills keep arriving
+
     # ------------------------------------------------------------ helpers
     def spec(self, symbol: str) -> SymbolSpec:
         return self.settings.symbol(symbol)

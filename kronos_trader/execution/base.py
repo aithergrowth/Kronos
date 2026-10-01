@@ -1,6 +1,7 @@
 """Broker abstraction shared by the paper broker, MetaTrader 5 and the backtester."""
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -89,6 +90,10 @@ class Broker(ABC):
     def recent_closes(self) -> List[ClosedTrade]:
         """Trades closed since the last call (stop / target hits at the broker)."""
         return []
+
+    def idle(self, seconds: float) -> None:
+        """Wait between polls; brokers with an event loop override this so it keeps running."""
+        time.sleep(seconds)
 
     def get_candles(self, symbol: str, timeframe: Timeframe, count: int = 500) -> CandleSeries:
         raise NotImplementedError(f"{type(self).__name__} does not provide candles")

@@ -124,3 +124,24 @@ def test_build_fetch_combines_cache_and_broker(tmp_path):
     assert len(views[T.D_1]) == 5 and views[T.MIN_15].symbol == "EURUSD"
     with pytest.raises(RuntimeError):
         build_fetch(settings, "GBPUSD", cache_dir=tmp_path, broker=None, broker_timeframes=[])()
+
+
+def test_build_fetch_falls_back_to_cache_when_broker_fails(tmp_path):
+    settings = Settings()
+    assert T.MN_1 in settings.live.broker_timeframes          # the broker feeds every timeframe by default
+    for tf, lookback in settings.structure.lookback_by_timeframe.items():
+        assert settings.live.broker_bar_counts[tf] >= lookback
+    daily = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 5, T.D_1, start="2026-09-20", symbol="OANDA:EURUSD")
+    save_series(daily, tmp_path)
+
+    class FlakyBroker(PaperBroker):
+        def get_candles(self, symbol, timeframe, count=500):
+            if timeframe is T.D_1:
+                raise RuntimeError("IBKR returned no bars")
+            return CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 3, timeframe, start="2026-10-01", symbol=symbol)
+
+    fetch = build_fetch(settings, "EURUSD", cache_dir=tmp_path, broker=FlakyBroker(settings), broker_timeframes=[T.H_1, T.D_1])
+    views = fetch()
+    assert len(views[T.D_1]) == 5 and len(views[T.H_1]) == 3      # cached daily candles, live hourly ones
+    with pytest.raises(RuntimeError):                               # nothing cached to fall back on
+        build_fetch(settings, "EURUSD", cache_dir=None, broker=FlakyBroker(settings), broker_timeframes=[T.D_1])()

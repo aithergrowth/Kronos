@@ -73,8 +73,8 @@ live:
   poll_seconds: 60
   require_approval: true          # Approve / Skip buttons in Telegram before an order is sent
   approval_timeout_minutes: null  # null = one confirmation-timeframe candle (min 5)
-  broker_timeframes: [5m, 15m, 1H, 4H]
-  broker_bar_counts: {5m: 500, 15m: 500, 1H: 500, 4H: 400}
+  broker_timeframes: [5m, 15m, 1H, 4H, 1D, 1W, 1M]   # all from the broker; data/tv_cache is the fallback
+  broker_bar_counts: {5m: 500, 15m: 500, 1H: 500, 4H: 400, 1D: 300, 1W: 120, 1M: 72}
 
 ibkr:
   default_port: 7497              # paper TWS; 4002 for paper IB Gateway

@@ -71,7 +71,12 @@ def build_fetch(
             views.update(load_all(cache_dir, tv_symbol) or load_all(cache_dir, symbol))
         if broker is not None:
             for tf in tfs:
-                views[tf] = broker.get_candles(symbol, tf, counts.get(tf, 500))
+                try:
+                    views[tf] = broker.get_candles(symbol, tf, counts.get(tf, 500))
+                except Exception as exc:
+                    if tf not in views:
+                        raise
+                    print(f"[live] {symbol} {tf.label}: broker bars failed ({exc}); using the cached candles")
         if not views:
             raise RuntimeError(f"no candles for {symbol}: cache {cache_dir!r} empty and no broker feed")
         return views
@@ -136,7 +141,10 @@ class LiveRunner:
                 self.step()
             except Exception as exc:  # keep the loop alive and say what broke
                 self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}")
-            time.sleep(poll)
+            if self.broker is not None:
+                self.broker.idle(poll)
+            else:
+                time.sleep(poll)
 
     # ------------------------------------------------------------ signals
     def handle_signal(self, analysis: Analysis, now: pd.Timestamp) -> None:

@@ -1,0 +1,10 @@
+# kronos_trader runtime (the strategy, backtester, live loop). Kronos itself (torch, the
+# model loader) is in requirements.txt and only needed for the forecast indicator.
+pandas>=2.2
+numpy
+pyyaml          # config/*.yaml and docs/examples/*.yaml
+requests        # Telegram bot API
+
+# brokers (install the one you use)
+ib_async>=2.0   # Interactive Brokers: python -m kronos_trader live --broker ibkr
+# MetaTrader5   # prop-firm MT5 platforms, Windows only: --broker mt5
