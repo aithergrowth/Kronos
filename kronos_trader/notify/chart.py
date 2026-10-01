@@ -55,12 +55,38 @@ def render_chart(
     # zones -------------------------------------------------------------------------------
     last = float(closes[-1])
     zones = sorted(pois, key=lambda p: abs((p.low + p.high) / 2 - last))[:max_zones]
+    if setup is not None and getattr(setup, "poi", None) is not None and setup.poi not in zones:
+        zones.append(setup.poi)
+    marked = {setup.poi.key} if setup is not None and getattr(setup, "poi", None) is not None else {p.key for p in zones}
     for poi in zones:
         colour = BULL_ZONE if poi.direction is Bias.BULLISH else BEAR_ZONE
         start = max(0, view.index_at_or_after(poi.created_at) - 1) if poi.created_at is not None else 0
         ax.add_patch(Rectangle((start, poi.low), x_right - start, poi.high - poi.low, facecolor=colour, edgecolor="none", zorder=1))
-        arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
-        ax.text(start + 0.3, poi.high, f"{poi.timeframe.label} {arrow} POI", fontsize=7.5, va="bottom", ha="left", color="#333", zorder=5)
+        bullish = poi.direction is Bias.BULLISH
+        arrow = "▲" if bullish else "▼"
+        ax.text(start + 0.3, (poi.low + poi.high) / 2, f"{poi.timeframe.label} {arrow} POI", fontsize=7.5, va="center", ha="left",
+                color="#333", zorder=5)
+        # Dorus's three marks on the zone's left edge: X the liquidity taken, B the balance level (the gap), P the protected candle.
+        # With a setup only its own zone carries the marks, the other zones stay plain bands.
+        if poi.key not in marked:
+            continue
+        line_colour = "#1f6f3f" if bullish else "#a3312b"
+        x_level = getattr(poi, "liquidity_level", None)
+        if x_level:
+            ax.hlines(x_level, start, x_right, colors=line_colour, linestyles="--", linewidth=0.9, zorder=4)
+            ax.text(start + 0.3, x_level, "X", fontsize=8, fontweight="bold", va="top" if bullish else "bottom", ha="left",
+                    color=line_colour, zorder=5)
+        gap = getattr(poi, "gap", None)
+        if gap is not None:
+            ax.add_patch(Rectangle((start, gap.low), x_right - start, gap.high - gap.low, facecolor="none", edgecolor=line_colour,
+                                   linewidth=0.9, linestyle=":", zorder=4))
+            ax.text(start + 1.2, (gap.low + gap.high) / 2, "B", fontsize=8, fontweight="bold", va="center", ha="left",
+                    color=line_colour, zorder=5)
+        p_level = getattr(poi, "protection_level", None)
+        if p_level:
+            ax.hlines(p_level, start, x_right, colors=line_colour, linestyles="-", linewidth=1.1, zorder=4)
+            ax.text(start + 0.3, p_level, "P", fontsize=8, fontweight="bold", va="bottom" if bullish else "top", ha="left",
+                    color=line_colour, zorder=5)
 
     # candles -----------------------------------------------------------------------------
     for i in range(n):

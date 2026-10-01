@@ -297,6 +297,22 @@ def cmd_mt5_test(args) -> int:
     return 0
 
 
+def cmd_dukascopy(args) -> int:
+    """Pull Dukascopy day files and build the engine cache for a symbol."""
+    import datetime as dt
+    from .data.dukascopy import build_cache, fetch_days
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    instrument = args.instrument or symbol
+    if not args.build_only:
+        counts = fetch_days(instrument, dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.end), args.raw_dir,
+                            pause=args.pause, progress=print)
+        print("download:", counts)
+    written = build_cache(symbol, instrument, args.raw_dir, args.out_dir, session_offset_hours=args.session_offset)
+    print("cache written:", written, "->", args.out_dir)
+    return 0
+
+
 def cmd_feed_test(args) -> int:
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
@@ -412,6 +428,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--symbol", default="EURUSD")
     sp.add_argument("--tf", default="15m")
     sp.set_defaults(func=cmd_mt5_test)
+    sp = sub.add_parser("dukascopy", help="free Dukascopy history: pull 1-minute day files and build the cache for a symbol")
+    sp.add_argument("--symbol", required=True)
+    sp.add_argument("--instrument", help="Dukascopy instrument name (default: the symbol)")
+    sp.add_argument("--start", required=True, help="first day, YYYY-MM-DD")
+    sp.add_argument("--end", required=True, help="last day, YYYY-MM-DD")
+    sp.add_argument("--raw-dir", default="data/dukascopy/raw")
+    sp.add_argument("--out-dir", default="data/dukascopy")
+    sp.add_argument("--pause", type=float, default=0.4, help="seconds between requests (the feed rate-limits)")
+    sp.add_argument("--session-offset", type=float, default=3.0, help="hours: 3 = the day and the 4H bins start at 21:00 UTC")
+    sp.add_argument("--build-only", action="store_true", help="skip the download, decode what is on disk")
+    sp.set_defaults(func=cmd_dukascopy)
     return p
 
 
