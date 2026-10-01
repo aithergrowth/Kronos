@@ -1,0 +1,2 @@
+id,symbol,direction,opened_at,closed_at,entry,exit,stop,final_stop,take_profit,lots,pnl,r,reason,poi_tf,confirmation,confirmation_tf,planned_rr,kronos
+P1,GBPUSD,LONG,2026-07-21 14:15:00,2026-07-21 14:30:00,1.3399699999999999,1.33792,1.33792,1.33792,1.35582,4.78,-979.8999999999452,-0.9808612440191139,stop,1D,BMS,15m,7.61,

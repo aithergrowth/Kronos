@@ -1,0 +1,82 @@
+{
+  "symbol": "NAS100",
+  "feed": "OANDA:NAS100USD",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": true,
+  "profile": "forward",
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-07-16 17:00:00",
+    "2026-10-01 05:45:00"
+  ],
+  "steps": 5000,
+  "signals": 0,
+  "trades_including_end_marks": 0,
+  "decided_trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "breakeven": 0,
+  "realized_r": 0,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 56.92803239822388,
+  "input_files": [
+    {
+      "path": "OANDA_NAS100USD_15min.csv",
+      "sha256": "bde8891270208a6867e0aefd97c11afa87dbd814ec2e3ba7248b7724f5e00b14",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-07-16 17:00:00",
+      "last_open": "2026-10-01 05:45:00"
+    },
+    {
+      "path": "OANDA_NAS100USD_1H.csv",
+      "sha256": "ee939219271e89f0aa3e29f0e7546e01a52a4501bc78f0cc7313412bd6c37a5d",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2025-11-25 17:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_NAS100USD_4H.csv",
+      "sha256": "53fefbc005f036419317b32cd84d7c14706d5d29da31994ed38393de705469c2",
+      "timeframe": "4H",
+      "rows": 5000,
+      "first_open": "2023-07-05 21:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_NAS100USD_1D.csv",
+      "sha256": "8e7d91485d89752cbe6117dae18499ae9444511566ba27e8dd0ea21b2ea5e554",
+      "timeframe": "1D",
+      "rows": 5000,
+      "first_open": "2007-05-29 21:00:00",
+      "last_open": "2026-09-30 21:00:00"
+    },
+    {
+      "path": "OANDA_NAS100USD_1W.csv",
+      "sha256": "88a07e9ba9d028d33391d3c8f74c4afd5a32cc7db980f01b87bef03a34e35f13",
+      "timeframe": "1W",
+      "rows": 1010,
+      "first_open": "2007-05-28 00:00:00",
+      "last_open": "2026-09-28 00:00:00"
+    },
+    {
+      "path": "OANDA_NAS100USD_1MO.csv",
+      "sha256": "0c88b6baaafaecaf7acc2fb1f54baa39696d5eaad13828c7c1a2cfdb72b9c5eb",
+      "timeframe": "1M",
+      "rows": 233,
+      "first_open": "2007-05-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00"
+    }
+  ],
+  "guard_rejection_counts": {},
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "efbf6568134d0413ef7029206e3974d44e664d6a167ff572200883ad854d89e7",
+  "calendar_sha256": "195c053423e63a475f29712342c1b8d6331aaf4aa0eb76a9e4ab67a606fe978f",
+  "news_window_minutes": [
+    30,
+    30
+  ]
+}

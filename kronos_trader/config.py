@@ -106,14 +106,14 @@ class SessionParams:
     """Entries only inside Dorus's stated windows (A 02:24:03 / 02:30:48, Amsterdam clock); open trades run on."""
     enabled: bool = True
     timezone: str = "Europe/Amsterdam"
-    windows: Tuple[Tuple[str, str], ...] = (("09:00", "11:00"), ("13:00", "17:00"))   # C 10:28 gives 08:00-17:00 instead
+    windows: Tuple[Tuple[str, str], ...] = (("09:00", "17:00"),)   # Forward-test profile; A's split windows and C's 08-17 are source variants.
     weekdays: Tuple[int, ...] = (0, 1, 2, 3, 4)
 
 
 @dataclass
 class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
-    allow_first_candle: bool = True     # K1 06:30 option "Eerste bullish of bearish candle"
+    allow_first_candle: bool = False    # Forward-test choice. K1/H list this alternative; G's after-shift example is not a universal restriction.
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
@@ -151,7 +151,7 @@ class ExitParams:
 
 @dataclass
 class KronosParams:
-    mode: str = "advisory"              # off | advisory | filter
+    mode: str = "off"                   # off | advisory | filter. Forward-test choice; not a conclusion from a validated model comparison.
     model: str = "NeoQuasar/Kronos-small"
     tokenizer: str = "NeoQuasar/Kronos-Tokenizer-base"
     device: Optional[str] = None        # None = auto (cuda / mps / cpu)
@@ -165,13 +165,16 @@ class KronosParams:
     neutral_band_pct: float = 0.1       # |expected move| below this % of price counts as neutral
     min_confidence: float = 0.6         # filter mode: reject when the forecast conflicts with >= this confidence
     forecast_timeframes: Tuple[Timeframe, ...] = (Timeframe.H_4, Timeframe.H_1)  # extra advisory forecasts
+    # Known canonical/default-cache aliases only; broker aliases require explicit configuration.
+    weekend_symbols: Tuple[str, ...] = ("BTCUSD", "BTCUSDT", "BINANCE:BTCUSDT")  # not a holiday calendar
 
 
 @dataclass
 class PropFirmParams:
+    """Project guard limits. The selected firm's current contract and account-specific rules remain to be verified."""
     max_open_trades: int = 1            # rule: max 1 trade per funded account
-    daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
-    max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
+    daily_loss_limit_pct: float = 4.0   # project choice; not a verified firm requirement
+    max_drawdown_pct: float = 8.0       # project choice; not a verified firm requirement
     news_blackout_minutes: int = 0      # optional: block entries N minutes around high-impact news
     min_minutes_between_trades: int = 0
 
@@ -236,6 +239,23 @@ class IBKRParams:
 
 
 @dataclass
+class NewsParams:
+    """Configurable entry blackout around high-impact news of the symbol's currencies.
+
+    The 30-minute windows are implementation choices, not durations specified by Dorus in source G.
+    Open trades run on. Events come from ``calendar_csv`` (filled from the TradingView economic calendar) and,
+    in the live loop, from the free ForexFactory weekly feed when ``forexfactory`` is on.
+    """
+    enabled: bool = True
+    before_minutes: int = 30
+    after_minutes: int = 30
+    min_importance: int = 1                      # 1 = high-impact only, 0 = medium and high
+    calendar_csv: str = "data/calendar/high_impact.csv"
+    forexfactory: bool = True                    # live loop refreshes this week's events from ForexFactory
+    refresh_minutes: int = 60
+
+
+@dataclass
 class MT5Params:
     """MetaTrader 5 terminal (Windows). Credentials and the terminal path come from environment variables."""
     login_env: str = "MT5_LOGIN"
@@ -260,6 +280,8 @@ class LiveParams:
         Timeframe.MIN_1: 500, Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
+    briefing_time: Optional[str] = "08:45"   # project-selected local time (session timezone), not a quoted Dorus schedule
+    notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
     max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
     require_fresh_data: bool = True     # stale data: analyse and manage positions, but open no new setups
     feed_retry_seconds: int = 600       # after the live feed fails for every timeframe, leave it alone this long
@@ -282,6 +304,7 @@ class Settings:
     tradingview: TradingViewParams = field(default_factory=TradingViewParams)
     ibkr: IBKRParams = field(default_factory=IBKRParams)
     mt5: MT5Params = field(default_factory=MT5Params)
+    news: NewsParams = field(default_factory=NewsParams)
     live: LiveParams = field(default_factory=LiveParams)
 
     # ------------------------------------------------------------------ access

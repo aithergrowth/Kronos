@@ -180,9 +180,11 @@ class CandleSeries:
         ts = pd.Timestamp(ts)
         if len(self) == 0:
             return self
-        # open + delta <= ts  <=>  open <= ts - delta  (candle opens sit on bin starts, so this is exact)
-        cutoff = ts - (pd.DateOffset(months=1) if self.timeframe is Timeframe.MN_1 else self.timeframe.delta())
-        n = int(self.timestamps.searchsorted(cutoff, side="right"))
+        # Compare forward close times, as MultiTimeframeData.as_of does.
+        # Calendar-month subtraction is not the inverse of addition at month
+        # ends (Jan 31 + one month can close on Feb 28).
+        close_times = self.timestamps + self.timeframe.delta()
+        n = int(close_times.searchsorted(ts, side="right"))
         if n >= len(self):
             return self
         return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)

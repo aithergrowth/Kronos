@@ -1,0 +1,265 @@
+{
+  "local_test_command": "PYTHONPATH=<tested_snapshot>:<test_deps> python -m pytest tests/trader -q -m 'not slow'",
+  "result": {
+    "passed": 221,
+    "skipped": 1,
+    "deselected": 1
+  },
+  "test_output": "...................................................................s.... [ 32%]\n........................................................................ [ 64%]\n........................................................................ [ 97%]\n......                                                                   [100%]\n221 passed, 1 skipped, 1 deselected in 9.12s\n",
+  "python": "3.12.14",
+  "pandas": "2.2.3",
+  "numpy": "2.3.5",
+  "source_baseline": "6ccfd06dd767e0d8e13a760bb2fb7b39a9719fff",
+  "integrated_feature": "a2a29aa12c0284ead7fea356717b51a921d27f8e",
+  "prior_astra": "4daf88d75823c569b5083bf50427ab008406ed72",
+  "real_model_inference_verified": false,
+  "mt5_terminal_connection_verified": false,
+  "telegram_delivery_verified": false,
+  "fresh_tradingview_connection_verified": false,
+  "tested_files": {
+    "kronos_trader/config.py": {
+      "sha256": "5a204303a479b3c69a0e55e29a2ddf03ff3998655b198c6110d1cdf43942e550",
+      "git_blob_sha1": "815c98d5fb1ed2ac3acf2727607553f8f8c7ceeb"
+    },
+    "kronos_trader/cli.py": {
+      "sha256": "5246730601869f9da57b34c85fac915ae1ae3bf1b942cfbf9a33fd47119ed69a",
+      "git_blob_sha1": "20e8db6655ef9d084e2ebee80804ae7f483f0d2f"
+    },
+    "kronos_trader/__init__.py": {
+      "sha256": "2a57c04c490edf368da1f86ae49238b4d890b2289edb29644ce14a68bbfc56c5",
+      "git_blob_sha1": "6ba4af19bf15982523d57a4fe64c3c3d45239fe9"
+    },
+    "kronos_trader/__main__.py": {
+      "sha256": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "git_blob_sha1": "bfdcd0c1158dff4fcc25157b317419f0a89dd33f"
+    },
+    "kronos_trader/live.py": {
+      "sha256": "35d4e6afa95d6c166ee88d650f0faa7bb03a34c80a7c6fb2ed6d619679207434",
+      "git_blob_sha1": "41481c32b00d18d6f588628bdc6d3e653b990eec"
+    },
+    "kronos_trader/examples.py": {
+      "sha256": "80978c60d84de2ea48901bc9e4ea8f5b1dc056b119c076fe310b3c6f8cf288e7",
+      "git_blob_sha1": "fa5475d09e26e9e2dce7e498e252d8856e39c83e"
+    },
+    "kronos_trader/core/__init__.py": {
+      "sha256": "371ae0166a3de1089ef76e60cf0b89eabe888a79b7cc482565c7a605ef56a9e5",
+      "git_blob_sha1": "105cf680a6e8753616d89c1333f5672a99d20802"
+    },
+    "kronos_trader/core/candles.py": {
+      "sha256": "1f4e75db8f7b9f7084c19a717adfb6426132f2f04479f4d30cd9190b9d771eb1",
+      "git_blob_sha1": "d2f0f429d064d8a7357ad17c8853cc0ae5b062d0"
+    },
+    "kronos_trader/core/timeframe.py": {
+      "sha256": "eaddacde63a60afdd0ba51d7ecba072a373856c6311f05c13b3f10aaee03c9b0",
+      "git_blob_sha1": "a3afffe5144c6a5952effe2b86c7d35c8bd6273f"
+    },
+    "kronos_trader/core/types.py": {
+      "sha256": "7b68515c1b8627acb4191da9df255c291c87f2eab767d52e692e74befd08e05f",
+      "git_blob_sha1": "92be2ac58b04db0532509f25ca7e9a591e55cdd3"
+    },
+    "kronos_trader/strategy/bias.py": {
+      "sha256": "5fd97375e5cc27f619c447633b822bdee8dd172e17cf5680696fbeec60f54394",
+      "git_blob_sha1": "5604ce002de35e6c8dfa2c3ef2ddf05bac2ddb0f"
+    },
+    "kronos_trader/strategy/exits.py": {
+      "sha256": "cde136c63b9e615d91f97e17566ca60ed90cfcce9231ffe323c99445a5001082",
+      "git_blob_sha1": "d575ad50ef02ef8d6c1d7da4c7b962ccc887561b"
+    },
+    "kronos_trader/strategy/engine.py": {
+      "sha256": "f5db797673ed15304bd14f0e269755870c24e741348a35e5de5f9ae9f1624f96",
+      "git_blob_sha1": "4dae467df09413c5fd2ee1cd561cd2a7e340ef06"
+    },
+    "kronos_trader/strategy/risk.py": {
+      "sha256": "62fb98b165674926df6b9f9b20f4ba090f89a0a1528e3211c38f0499bb273484",
+      "git_blob_sha1": "ea7ae9f3ad3f82acb1b375e636943a9b0948fb9b"
+    },
+    "kronos_trader/strategy/poi.py": {
+      "sha256": "77d75368befaffb182f5f9f75487fd8cb7de307b7b9dfc0d3f240085581d1094",
+      "git_blob_sha1": "c0870cabb2379e22bd086f9f7edbc4d044511cb7"
+    },
+    "kronos_trader/strategy/__init__.py": {
+      "sha256": "14d50b960a3f3b852fc9c99162391228e0f38b51ca95dfc07e5ddbec67b072e2",
+      "git_blob_sha1": "93f03116f94763f68e732c869ae3b87e6e303444"
+    },
+    "kronos_trader/strategy/confirmation.py": {
+      "sha256": "947c5cacad4487fd052aadc9be53d9ade98678eabb745bfa7012ce42f85882fd",
+      "git_blob_sha1": "7daa37795bebc4fedec2a0b803b86a88a3e62009"
+    },
+    "kronos_trader/strategy/structure.py": {
+      "sha256": "05a9b74c1ced3b309e863300275e9ea0d3f11b84bf1884ac20d6e8efde6b12ea",
+      "git_blob_sha1": "dcbad922279d311e2c399b6fe4c10c657042de5e"
+    },
+    "kronos_trader/backtest/runner.py": {
+      "sha256": "0155d6f1e7c0b1505b1f7676c3a8e985a7a26e42bc937885fc7490ea0e012990",
+      "git_blob_sha1": "18ae6e6790db0c89945a2b63e1f51715c3e1b3de"
+    },
+    "kronos_trader/backtest/report.py": {
+      "sha256": "188fdd50e4dfad4e99cc64c1aa3f4834d84791602b2e29584b667f9e553f4b00",
+      "git_blob_sha1": "3714b813d4037336c326e61031b816e4b0ba9731"
+    },
+    "kronos_trader/backtest/__init__.py": {
+      "sha256": "c8fa8c282ed3313baf593c690982f165ef947f628cae3006c79e3711fef6d521",
+      "git_blob_sha1": "520ec2d1236ae71fa065b4c205da1401d0368cde"
+    },
+    "kronos_trader/data/calendar.py": {
+      "sha256": "506996634e4e775a79f43345331a0abd281a8d66f48fa7ed4c5b68e11b075a90",
+      "git_blob_sha1": "fda9909d5495a41ea73328740c0999d594600920"
+    },
+    "kronos_trader/data/oanda.py": {
+      "sha256": "f48aed5460594515bb12ee844f5ae7663826cc63af1809db20bf13e72e9c6f66",
+      "git_blob_sha1": "9f4b50bd4947d93f5c6185778d32a0d9e17beda4"
+    },
+    "kronos_trader/data/resample.py": {
+      "sha256": "e4358763e7795588ef2fbc3ce6a9cf4930e6b0d2654596e019767ca678426714",
+      "git_blob_sha1": "0d182ec5ea68455a181f0c59c5162f518e8968cd"
+    },
+    "kronos_trader/data/tv_cache.py": {
+      "sha256": "0128bf8ed49c90e4b17820035f1e7bd59053b9a375f9650fe57e11771ca6b01c",
+      "git_blob_sha1": "419b13a4769827b585aea6dbfef72f9c119302d1"
+    },
+    "kronos_trader/data/__init__.py": {
+      "sha256": "cb6bc315a3bf29cf9e59312e3eaa65b01013a5b86e5286537306fb1c7d25a406",
+      "git_blob_sha1": "50acb222d3309f7fb58ed7c4e63ee17731c04761"
+    },
+    "kronos_trader/data/tradingview_mcp.py": {
+      "sha256": "874771e8e0ba5bd03eb9b9f469b65dbe0056615c20d7d208a5eeb8b49e3ef2db",
+      "git_blob_sha1": "d674455f3327403645e70ca1f2e9ced209ffd1ae"
+    },
+    "kronos_trader/indicators/kronos_forecast.py": {
+      "sha256": "475e3546c2a8fc84444b2eb229bb4d352dd9d6ffcf5752e58c3d4255f8bfcf61",
+      "git_blob_sha1": "33592fad49beea2ab1fb93e5a44c14416b7724ca"
+    },
+    "kronos_trader/indicators/__init__.py": {
+      "sha256": "ce8d80c8e985aeaa406b47cc79eeedadf469716994f982a3acf4e0cdd712d9ba",
+      "git_blob_sha1": "15c4f708e142ba3146b9046a8f1dfbb6bf40e8d6"
+    },
+    "kronos_trader/execution/mt5.py": {
+      "sha256": "09b041628008e745c93f55a19f243d862bd0a513b406fd985448da6af584663e",
+      "git_blob_sha1": "333c23dc8a033d309650a76ceac0b5485c2a5307"
+    },
+    "kronos_trader/execution/base.py": {
+      "sha256": "f89f878408cafa4e33012d85a1c14909019641525bc0c35570543508416d76b1",
+      "git_blob_sha1": "5a4b1bc43c88d62c78f11e192975b2f58f64076a"
+    },
+    "kronos_trader/execution/risk_guard.py": {
+      "sha256": "d7b514c560e3953b1d8deac12e7870083a15bab8e9dbee4b326e1a532aa6f26c",
+      "git_blob_sha1": "12c4b8888645941a6479ec08237a14b3a578c77c"
+    },
+    "kronos_trader/execution/__init__.py": {
+      "sha256": "9c0613c36513dca817e62f15e2b5a9969b80a5d96988a603543ed66a4694b079",
+      "git_blob_sha1": "d30dd6a0a5ea6b388716b0e6cf1f1dfc08d15f08"
+    },
+    "kronos_trader/execution/ibkr.py": {
+      "sha256": "1d70c5cb21c29f31f276709d229a591d24db69aad92b52b63eae4822743a1054",
+      "git_blob_sha1": "27b0e5f13d5e6ea542bce250ac461f20cceda71d"
+    },
+    "kronos_trader/execution/paper.py": {
+      "sha256": "039d388aaed7aa7d88cd2db011ea3606f1a8954f63f7989bc594903952ef940f",
+      "git_blob_sha1": "3440e8fca5e2367424d5fab6bec04028df0c6cab"
+    },
+    "kronos_trader/notify/formatting.py": {
+      "sha256": "84a65b09572951ffd7099825511d4295f7109797f61c0fa18b35e13a81184aa9",
+      "git_blob_sha1": "3ced1cc763aaef09255e58d7e1bb2d69df38282a"
+    },
+    "kronos_trader/notify/telegram.py": {
+      "sha256": "c04ee08f3d4e28f7d6c334866b0a80fe94f099e141a0352ab22231220d841aed",
+      "git_blob_sha1": "0c66b59c0476d648fef7c2617f700482bac96a02"
+    },
+    "kronos_trader/notify/__init__.py": {
+      "sha256": "e5db027796ea54b8dad7f30bf2371be6435f1c0a736415ae2b958ee0272dd522",
+      "git_blob_sha1": "ce7e05199b438219649f42299f4658f180a7702c"
+    },
+    "tests/trader/test_calendar.py": {
+      "sha256": "fa266da70922f055655c65dd42934f55468a8b78ecf3bea80899b7d4fc9b18c8",
+      "git_blob_sha1": "283fd0f3c60489d546fa1069dac470cbd087d67d"
+    },
+    "tests/trader/test_structure.py": {
+      "sha256": "a9898bce8a15443af662b185ade19fc6bbe350fc858d8fd8a91545c9f2e8fa8f",
+      "git_blob_sha1": "f8c17c701e4b8047afad4a4a80b80bcccdf80c32"
+    },
+    "tests/trader/test_bias.py": {
+      "sha256": "ecdeea18dbcb23db682546d8bbeeebb70447c58ded0604f7c4a2fb87e6fd0a4b",
+      "git_blob_sha1": "730bae9a7ce248f42693b4ab5c565f94a0f3ece7"
+    },
+    "tests/trader/test_examples.py": {
+      "sha256": "e02f2bf648dff3795e42cc2ca64bb50abdf7bfb39ac7fc3da0596d79097c8103",
+      "git_blob_sha1": "f9450de45fc6c5db900ad1d6783eaf0132dd8212"
+    },
+    "tests/trader/conftest.py": {
+      "sha256": "7570c126f14d70390e2985bbf523d58fbd89ddcd22764339bbd53cdb612d85a1",
+      "git_blob_sha1": "b3f9b704a9f4e03c0535508443463002401e7a6c"
+    },
+    "tests/trader/test_timeframe.py": {
+      "sha256": "7122acf78e422c460de3f15339bd9443d8a4a51b2ec71d2b443dec351fbdc5f7",
+      "git_blob_sha1": "0bdad656fadb678588bb54579b566a1f125de1e9"
+    },
+    "tests/trader/test_live.py": {
+      "sha256": "ae25ce1cde8dae16ca5418f73baa862170a37caaa32e890fa286d7c4282e0996",
+      "git_blob_sha1": "1142e68687be420b0b7c258bc56388e42d6284a2"
+    },
+    "tests/trader/test_data_layer.py": {
+      "sha256": "353017d16e12e464d4381141a2bcb02f0480036ad9636ceff896c69abbf80444",
+      "git_blob_sha1": "23a11b36cdede979466e4c242f7617658184382a"
+    },
+    "tests/trader/test_live_cli.py": {
+      "sha256": "379d3a36fca7f6a8f38aed6b89199e5f05fcb5a5abc495d4e81c340975342f27",
+      "git_blob_sha1": "fe16fb8422dfb70cd6082ef27b615b1df924092a"
+    },
+    "tests/trader/test_mt5.py": {
+      "sha256": "6d521e187c69e46112080fac90ecdf62aba246948755cbaa11a96b8972ea0a90",
+      "git_blob_sha1": "1e4f21c1ba131b81cbb9bb442d2672780e86ecd9"
+    },
+    "tests/trader/test_poi.py": {
+      "sha256": "902893f8478877798e08b4ce6c0ab5bcacfd7e432688dc8de9f01d043141ef12",
+      "git_blob_sha1": "8dae663dc27606637de72d0336d80972a724a9f3"
+    },
+    "tests/trader/test_risk.py": {
+      "sha256": "b0d829b52a623841278f021ae3d07590b7e36f47cbd452fd663444dfbe0a0756",
+      "git_blob_sha1": "eb0db616ff88dfff56002793972d8809b8d2e403"
+    },
+    "tests/trader/test_ibkr.py": {
+      "sha256": "af0548f7bb5f5dd56eaee3a93871552c438845e9fc9dc7f951fff3a59729c2b3",
+      "git_blob_sha1": "8f839a3b42733df45c4de1e46d97727be92e5e47"
+    },
+    "tests/trader/test_exits_and_broker.py": {
+      "sha256": "4366c7e8a31d3eaeaa6d5efed613abe68d01b68994ee7c8a011e762a851b92df",
+      "git_blob_sha1": "b32595a5728ce01a141636a06d5f81d47ccf5b5b"
+    },
+    "tests/trader/test_engine_and_notify.py": {
+      "sha256": "7c44d187513a532807f0a2c5f71f2e3c1aa5fcd0c4ff49b5180911390708d429",
+      "git_blob_sha1": "cafb956bcb6e1d7271b8159791aef4b8d964f107"
+    },
+    "tests/trader/test_backtest_market_pricing.py": {
+      "sha256": "ef6089a9ea475ec787c0226e22cb4e3c20043db3a8a9566eee26404947049e6e",
+      "git_blob_sha1": "83fedaccca2a5d2ae256f33dcae2b7769786464b"
+    },
+    "tests/trader/test_confirmation.py": {
+      "sha256": "f37a319791527528b3162ecda3ec0d66b7e4fe4b1115e9f775050cdf7c389127",
+      "git_blob_sha1": "8de3b2838fe9fd4eb6fc892b7aaaa3692d4a2d7c"
+    },
+    "tests/trader/test_kronos_indicator.py": {
+      "sha256": "6143607878fbed4493290c79fd964f1afe24883ce13c828ffe08de06c0e0407b",
+      "git_blob_sha1": "887c89e4acbfcdbf65b8be12be22c0f73877d15f"
+    },
+    "tests/trader/test_candles.py": {
+      "sha256": "a2d3716c666c1f669979cd44e37d42ae69763cb6c3a9548bcae61debf8ede703",
+      "git_blob_sha1": "930148ac4049d08f2b2c1c6602b00eac5a90bbcc"
+    },
+    "tests/trader/test_oanda.py": {
+      "sha256": "9b22ad05b0efa3431d433e1fe25b124e27005ce7e0ec9a43873195e52ddbb816",
+      "git_blob_sha1": "8be3932d22bee1e360a9be3b96af6dd8ed27f7c2"
+    },
+    "tests/trader/test_backtest_boundaries.py": {
+      "sha256": "a98aca7593983013ed38d6e3ac2b4c8cd0fbde906ee6c9cea9f5714760859df4",
+      "git_blob_sha1": "14ad3156b435e0b43108e3533e14c0d77cbf943e"
+    },
+    "config/example.yaml": {
+      "sha256": "9b07c878ae337288c9b3594096e83864b2d5ae95651035ac8eee51d678260906",
+      "git_blob_sha1": "929dd448dbba164649f747453097f2c18a3e90a0"
+    },
+    ".github/workflows/tests.yml": {
+      "sha256": "5d6e96135b157c9a24c6ffd37431768b900f3d79655a072dcbba81eb9e40e0b0",
+      "git_blob_sha1": "98c0e7d564a4e7ec64967cd52a70b2be951d2a30"
+    }
+  }
+}

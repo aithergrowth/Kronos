@@ -2,9 +2,9 @@ as_of: '2026-10-01'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Complete available A/B/C/D/E/F/G/H automatic Dutch-caption text review; rendered academy pages,
-  selected plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
-  verified.
+method: Complete available A–I Dutch automatic-caption text review, with A/D–H full recheck and B/C excerpt recheck
+  on 2026-10-01; selected academy written slides/diagrams. No independent audio verification or complete academy/channel
+  review.
 retrieved_caption_sources:
 - HRPgdK8VhMc
 - xWR8M46iSW8
@@ -14,24 +14,25 @@ retrieved_caption_sources:
 - O6IgD2llrq0
 - 6NLVf8P-xP8
 - oe0tBQ47r3M
-youtube_caption_reviewed_source_count: 8
+- FZPN1jEGWH4
+youtube_caption_reviewed_source_count: 9
 caption_audio_audited: false
-youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports
-  reviewed. D requested video frame still black/buffering after one ordinary player recovery.
-youtube_playback_followup: On 2026-10-01 A was opened at 02:24:30 and playback attempted; the watch page
-  loaded but the chart remained black/buffering. No new chart values read; no new bot block claimed.
+youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports reviewed.
+  D requested video frame still black/buffering after one ordinary player recovery.
+youtube_playback_followup: On 2026-10-01 A was opened at 02:24:30 and playback attempted; the watch page loaded
+  but the chart remained black/buffering. No new chart values read; no new bot block claimed.
 skool_classroom:
   1. Beginnen met traden: all three lesson pages inventoried; spoken content not reviewed
-  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides verified;
-    Entry & Poi diagram sampled
-  3. De juiste route: both lesson pages inventoried; Route video sampled at 01:30 and 04:23; no subtitles
-    exposed; spoken content not reviewed
-  Analyses: five lessons inventoried; K2/K3/K4/K5 public playback captions reviewed continuously from
-    beginning to end; selected chart frames only; native Aug 19 player sampled
-  Student interviews: 13 lesson links inventoried; first page is a 32:32 YouTube player. Interview content
-    not reviewed; previous YouTube challenge has since cleared.
-  Bibliotheek: Claude Journal Prompt lesson/resource located; separate linked Google Drive file blocked
-    by automatic approval review; substantive contents not reviewed
+  2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides verified; Entry
+    & Poi diagram sampled
+  3. De juiste route: both lesson pages inventoried; Route video sampled at 01:30 and 04:23; no subtitles exposed;
+    spoken content not reviewed
+  Analyses: five lessons inventoried; K2/K3/K4/K5 public playback captions reviewed continuously from beginning
+    to end; selected chart frames only; native Aug 19 player sampled
+  Student interviews: 13 lesson links inventoried; first page is a 32:32 YouTube player. Interview content not
+    reviewed; previous YouTube challenge has since cleared.
+  Bibliotheek: Claude Journal Prompt lesson/resource located; separate linked Google Drive file blocked by automatic
+    approval review; substantive contents not reviewed
 skool_public_profile_pages_inspected:
 - 1
 - 2
@@ -40,24 +41,20 @@ skool_public_profile_pages_inspected:
 - 5
 - 6
 priority_videos_discovered_not_reviewed:
-- id: FZPN1jEGWH4
-  displayed_title: How to Use Claude to Become Profitable with Trading
-  reason: channel title only
 - id: EEC5Y3dH46c
   displayed_title: How to Start Trading (Alongside Your Job)
   reason: channel title and Skool announcement only
 - id: ZGwP57Xd2TU
   displayed_title: I Made a Student Profitable in 79 Minutes (Live Coaching)
-  reason: Dutch automatic-caption option selected, but exports returned no transcript and visible panel
-    stayed empty after one ordinary reload. Playback black at 00:00. No content reviewed; no new bot-block
-    claim.
+  reason: Dutch automatic-caption option selected, but exports returned no transcript and visible panel stayed
+    empty after one ordinary reload. Playback black at 00:00. No content reviewed; no new bot-block claim.
   published: '2026-05-16'
   duration: '1:19:33'
   last_attempt: '2026-10-01'
 - id: XJ0iAKv0amQ
   displayed_title: Deze Goud Trade Leverde Mij €3.313,46 Op (Trade Recap)
-  reason: Watch page and description inspected; transcript export returned no transcript and the transcript
-    panel exposed no readable text. No chart or strategy content reviewed.
+  reason: Watch page and description inspected; transcript export returned no transcript and the transcript panel
+    exposed no readable text. No chart or strategy content reviewed.
   published: '2026-04-25'
   duration: 09:00
   last_attempt: '2026-10-01'
@@ -99,16 +96,16 @@ strategy_lesson_inventory:
   review: located, 13:34; content not reviewed
 - lesson: Balance levels
   url: https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8
-  review: 'K7: earlier selected frames plus 03:00, 03:19–03:20, 03:24–03:25, 03:34–03:35. Lower line at
-    first drawn candle lower wick independently checked; no readable P label and no complete spoken review.
-    Additional 2026-10-01 frames at 03:46, 07:50 and 08:50 do not establish an exact P boundary.'
+  review: 'K7: earlier selected frames plus 03:00, 03:19–03:20, 03:24–03:25, 03:34–03:35. Lower line at first
+    drawn candle lower wick independently checked; no readable P label and no complete spoken review. Additional
+    2026-10-01 frames at 03:46, 07:50 and 08:50 do not establish an exact P boundary.'
 - lesson: Bias analyse
   url: https://www.skool.com/dorusview/classroom/1924b124?md=e661788b9bd849b6b4f5a3ec10c0b6d8
   review: 8:50; player opened and selected frames sampled; no complete spoken review
 - lesson: Entry & Poi
   url: https://www.skool.com/dorusview/classroom/1924b124?md=cb63d3041eac47caa148cbf218e0dde8
-  review: 'K6: selected line sketches and chart frames inspected through 09:01; 07:30–07:31 bearish gap
-    wick boundaries independently checked. Full POI/P endpoint and complete spoken review remain unresolved.'
+  review: 'K6: selected line sketches and chart frames inspected through 09:01; 07:30–07:31 bearish gap wick boundaries
+    independently checked. Full POI/P endpoint and complete spoken review remain unresolved.'
 - lesson: Tradingplan
   url: https://www.skool.com/dorusview/classroom/1924b124?md=0eb0cc9b327e47db845b3fcfb4b64f83
   review: 18:19; selected written slides verified, not complete spoken-content review
@@ -116,11 +113,10 @@ analysis_lesson_inventory:
 - lesson: €8.000 verdiend binnen één uur.
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
   review: K3 continuous public playback captions through 4:05 end; selected chart frames now include corrected
-    02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone and complete
-    fixture remain unresolved. IMG_3573.PNG and IMG_3574.PNG attachments independently read on 2026-10-01;
-    distinct .pro/M1 and .raw/M15 charts show quote labels, not explicit SL/TP or UTC anchors.
-    Follow-up 03:48 independently verifies second-short drawing labels in
-    xauusd_2026-08-26_second_short_0348.yaml; first-short target/clock remain unresolved.
+    02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone and complete fixture
+    remain unresolved. IMG_3573.PNG and IMG_3574.PNG attachments independently read on 2026-10-01; distinct .pro/M1
+    and .raw/M15 charts show quote labels, not explicit SL/TP or UTC anchors. Follow-up 03:48 independently verifies
+    second-short drawing labels in xauusd_2026-08-26_second_short_0348.yaml; first-short target/clock remain unresolved.
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
   review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
@@ -130,28 +126,27 @@ analysis_lesson_inventory:
     daily frames; no complete trade expectations
 - lesson: €21.000 verdiend met bitcoin
   url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
-  review: K4 continuous public playback captions through 2:27 end; selected daily/4H frames; no complete
-    order record
+  review: K4 continuous public playback captions through 2:27 end; selected daily/4H frames; no complete order
+    record
 - lesson: Bitcoin analyse | 27-09-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
   review: K2 continuous public playback captions through 2:57 end; selected monthly/weekly frames; conditional
     scenario, no executed trade
 media_limits:
-- Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone embed refused
-  playback under its privacy settings, so inspection stayed in authorized Skool embed.
-- Loom full transcript/download requires separate account. Gated transcript content excluded from findings;
-  public playback captions and charts used.
+- Vimeo Tradingplan settings exposed Quality, no captions in inspected menu; standalone embed refused playback
+  under its privacy settings, so inspection stayed in authorized Skool embed.
+- Loom full transcript/download requires separate account. Gated transcript content excluded from findings; public
+  playback captions and charts used.
 - Native Skool Aug 19 media export returned no file.
-- No complete OHLC export obtained. Chart-frame inspection does not establish every event, POI timeframe
-  or UTC interval.
-- Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option in
-  the inspected menus.
-- Entry & Poi video-element media export produced no downloadable file; no unseen audio or transcript
-  was attributed.
+- No complete OHLC export obtained. Chart-frame inspection does not establish every event, POI timeframe or UTC
+  interval.
+- Entry & Poi and De juiste route player Settings also exposed Quality only, with no subtitle option in the inspected
+  menus.
+- Entry & Poi video-element media export produced no downloadable file; no unseen audio or transcript was attributed.
 academy_screenshots_in_pr: false
-publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially private
-  source material. All raw academy screenshots were excluded from the PR; only requested sourced documentation
-  and chart-value YAMLs are included.
+publication_limit: Automatic approval review rejected two raw academy-image uploads as potentially private source
+  material. All raw academy screenshots were excluded from the PR; only requested sourced documentation and chart-value
+  YAMLs are included.
 main_course_caption_audit: course_caption_audit.yaml
 main_course_all_available_captions_reviewed: true
 main_course_all_frames_reviewed: false
@@ -194,8 +189,8 @@ external_resource_block:
   resource: Bibliotheek → Claude Prompt
   url: https://drive.google.com/file/d/1yVDpc4Fv6abD5fiP5ccVCNGIHoGpa7wa/view
   status: not_read
-  reason: Automatic approval review denied browser opening of a separate potentially private Google Drive
-    resource without explicit authorization for that resource. No workaround attempted.
+  reason: Automatic approval review denied browser opening of a separate potentially private Google Drive resource
+    without explicit authorization for that resource. No workaround attempted.
 visible_classroom_course_count: 6
 visible_classroom_lesson_link_count: 30
 lesson_link_inventory_complete_for_visible_courses: true
@@ -249,19 +244,17 @@ focused_followup: ../../DORUS_FOCUSED_AUDIT.md
 focused_followup_date: '2026-10-01'
 focused_followup_results:
   gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target price/timezone
-    still obscured. Two mobile attachments independently checked; no labeled TP or UTC anchor. No complete
-    fixture.
-  gold_second_drawing: Separate 03:48 second-short observations independently checked; see
-    xauusd_2026-08-26_second_short_0348.md and matching YAML. No target price, UTC timestamp or complete fixture.
-  entry_poi: K6 confirms local gap wick boundaries. D/F explicitly describe liquidity-to-protection; exact
-    P endpoints still unresolved. K7 03:19–03:20 lower line meets first candle lower wick but has no readable
-    P label.
+    still obscured. Two mobile attachments independently checked; no labeled TP or UTC anchor. No complete fixture.
+  gold_second_drawing: Separate 03:48 second-short observations independently checked; see xauusd_2026-08-26_second_short_0348.md
+    and matching YAML. No target price, UTC timestamp or complete fixture.
+  entry_poi: K6 confirms local gap wick boundaries. D/F explicitly describe liquidity-to-protection; exact P endpoints
+    still unresolved. K7 03:19–03:20 lower line meets first candle lower wick but has no readable P label.
   bs: Opposing balance concept and close requirement supported in A examples; exact universal far-edge/latest-gap
     algorithm unresolved
-  priority_video_access: User handoff restored access; D/E complete Dutch-caption review plus F dedicated
-    gap lesson. English E track excluded after selecting Dutch.
-youtube_access_block_history: Earlier unusual-traffic challenge on 81LThMAtj5o persisted after one reload;
-  navigation stopped until user handoff.
+  priority_video_access: User handoff restored access; D/E complete Dutch-caption review plus F dedicated gap
+    lesson. English E track excluded after selecting Dutch.
+youtube_access_block_history: Earlier unusual-traffic challenge on 81LThMAtj5o persisted after one reload; navigation
+  stopped until user handoff.
 priority_videos_caption_reviewed:
 - id: 81LThMAtj5o
   displayed_title: Mijn Winstgevende Tradingplan Waarmee Ik Elke Dag Trade
@@ -324,8 +317,7 @@ caption_reviews:
     sha256: 59e8a378caf71677a35ced8aef44812fde8e9a7ad3cf8ffc067f25034a44252e
 additional_caption_only_locators:
   D_rejected_setup: 03:48–10:28; instrument/date/feed/prices unverified
-  E_btc_weekly_context: 09:00–11:19; entry reference 09:53–10:12; no captioned price fragment promoted
-    to expectation
+  E_btc_weekly_context: 09:00–11:19; entry reference 09:53–10:12; no captioned price fragment promoted to expectation
   F_btc_daily_context: 06:48–08:23; Daily named 07:58
   F_gold_daily: 08:58–09:23
 retrieval_handoff: RETRIEVAL_REQUESTS.md; retrieval_requests.yaml. Researcher-selected exact request windows,
@@ -338,8 +330,8 @@ native_candle_export_attempt:
   chart_timezone: UTC
   requested_from: '2025-01-01'
   requested_to: '2026-09-07'
-  result: Download chart data -> Download opened an upgrade prompt recommending Premium; no CSV produced.
-    Premium was the session recommendation, not the minimum plan listed for the feature.
+  result: Download chart data -> Download opened an upgrade prompt recommending Premium; no CSV produced. Premium
+    was the session recommendation, not the minimum plan listed for the feature.
   official_plan_check:
     checked_on: '2026-10-01'
     source_url: https://www.tradingview.com/pricing/?source=header_goass%3D
@@ -396,7 +388,7 @@ source_H:
   dutch_auto_caption_segments: 414
   caption_lines: 419
   caption_bytes: 18329
-  first_caption: '00:00'
+  first_caption: 00:00
   last_caption_start: '13:37'
   full_available_caption_text_reviewed: true
   audio_verified: false
@@ -418,8 +410,37 @@ candle_delivery_followup:
   exact_timeframes: 6
   gold_entry_requested: 1m
   gold_entry_delivered_substitute: 15m
-  source_anchor_match: K5 selected INDEX:BTCUSD daily 2026-01-30 OHLC exactly matches all four displayed
-    values
+  source_anchor_match: K5 selected INDEX:BTCUSD daily 2026-01-30 OHLC exactly matches all four displayed values
   full_event_coverage_verified: false
   completed_fixtures: 0
   report: candle_validation_2026-10-01.json
+source_I:
+  id: FZPN1jEGWH4
+  title: Zo Gebruik Je Claude Om Winstgevend Te Worden Met Traden
+  displayed_english_title: How to Use Claude to Become Profitable with Trading
+  url: https://www.youtube.com/watch?v=FZPN1jEGWH4
+  published: '2026-05-19'
+  duration: '19:20'
+  dutch_auto_caption_segments: 515
+  first_caption: 00:00
+  last_caption_start: '19:19'
+  full_available_caption_text_reviewed: true
+  audio_verified: false
+  chart_frames_verified: false
+  caption_sha256: ff000f90bb913f7290a60bb1be77859ea01392efdf11d3a38c1080c7f3d9b411
+  report: ../../STRATEGY.md
+  quoted_words_in_canonical_bank: 17
+  academy_or_drive_content_equivalence_verified: false
+verification_pass_2026_10_01:
+  canonical_strategy: ../../STRATEGY.md
+  quote_ledger: quote_verification_2026-10-01.json
+  source_A_all_saved_caption_lines_rechecked: 2097
+  sources_D_to_H_segments_rechecked: 1887
+  source_B_C: Prior full review; selected exact excerpts and definitions rechecked this pass.
+  source_I: New complete available Dutch automatic-caption review.
+  academy: K1/K6/K7 selected fresh written/visual checks; no readable captions and no full spoken review.
+  academy_report: skool_verification_2026-10-01.md
+  complete_fixtures: 0
+  full_channel_review: false
+  full_academy_review: false
+  audio_verified: false

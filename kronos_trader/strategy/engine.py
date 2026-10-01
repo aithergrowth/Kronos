@@ -60,9 +60,10 @@ def in_session(now: pd.Timestamp, params: SessionParams) -> Tuple[bool, str]:
 
 
 class StrategyEngine:
-    def __init__(self, settings: Optional[Settings] = None, forecaster=None):
+    def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
         self.forecaster = forecaster
+        self.calendar = calendar            # Optional configured news gate; window durations are project choices.
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
 
     # ------------------------------------------------------------------ helpers
@@ -168,6 +169,13 @@ class StrategyEngine:
                 analysis.rejections.append(f"outside the entry windows ({local_label} {s.session.timezone}); open trades run on")
                 return analysis
 
+        # Configured news blackout: reject new signals around relevant high-impact events. ---
+        if self.calendar is not None and s.news.enabled:
+            event = self.calendar.blackout(symbol, now)
+            if event is not None:
+                analysis.rejections.append(f"news blackout: {event.title} ({event.currency}) at {event.time:%H:%M} UTC; open trades run on")
+                return analysis
+
         # 4: POIs being visited now, highest timeframe first ------------------------------
         candidates = [p for p in pois
                       if p.direction is decision.direction and p.timeframe in allowed_poi_tfs
@@ -222,6 +230,13 @@ class StrategyEngine:
             # 6: Kronos as an extra indicator ---------------------------------------------------
             notes: List[str] = []
             forecast = self._forecast(views[confirmation.timeframe], notes)
+            if s.kronos.mode == "filter" and forecast is None:
+                reason = f"{label}: Kronos forecast unavailable; filter mode requires a forecast"
+                setup.notes.extend(notes)
+                analysis.rejections.extend(notes)
+                analysis.rejections.append(reason)
+                analysis.signal = Signal(now, SignalStatus.REJECTED, setup, None, [reason])
+                continue
             if forecast is not None:
                 analysis.forecasts.setdefault(confirmation.timeframe, forecast)
                 if s.kronos.mode == "filter" and forecast.conflicts_with(decision.direction) \

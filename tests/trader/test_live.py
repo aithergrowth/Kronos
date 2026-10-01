@@ -20,15 +20,18 @@ NOW = pd.Timestamp("2026-10-01 09:00")
 class FakeEngine:
     """Returns a fixed valid signal on the first call, then no signal."""
 
-    def __init__(self, setup):
+    def __init__(self, setup, pois=(), price=1.1000, signal_on_first_call=True):
         self.setup = setup
+        self.pois = list(pois)
+        self.price = price
+        self.signal_on_first_call = signal_on_first_call
         self.calls = 0
 
     def analyze(self, symbol, views, equity=None, now=None, max_confirmation_age=0, compute_forecasts=False):
         self.calls += 1
         decision = BiasDecision(Bias.BULLISH, TradeMode.FULL, (T.MN_1, T.W_1, T.D_1), (), (T.H_4, T.H_1), (T.MN_1, T.W_1, T.D_1), "test")
-        signal = Signal(now, SignalStatus.VALID, self.setup, None, []) if self.calls == 1 else None
-        return Analysis(symbol, now, 1.1000, {}, decision, [], signal)
+        signal = Signal(now, SignalStatus.VALID, self.setup, None, []) if self.calls == 1 and self.signal_on_first_call else None
+        return Analysis(symbol, now, self.price, {}, decision, self.pois, signal)
 
 
 @pytest.fixture
@@ -130,6 +133,40 @@ def test_approval_then_execution_and_close_report(setup):
     runner.step(NOW + pd.Timedelta(16, unit="min"))
     assert broker.open_positions() == []
     assert any("take_profit" in m and "P&L" in m for m in notifier.sent)
+
+
+@pytest.mark.parametrize("news_enabled", [True, False])
+def test_approval_rechecks_news_at_execution_time(setup, monkeypatch, news_enabled):
+    from kronos_trader.data.calendar import NewsCalendar, NewsEvent
+
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker)
+    runner.settings.news.enabled = news_enabled
+    runner.settings.news.forexfactory = False  # exercise only the loaded calendar; no network
+    event = NewsEvent(NOW + pd.Timedelta(31, unit="min"), "USD", "Test release")
+    calendar = NewsCalendar([event], before_minutes=30, after_minutes=30)
+    runner.engine.calendar = calendar
+    assert calendar.blackout("EURUSD", NOW) is None
+    runner.step(NOW)
+    sid = next(iter(runner.pending))
+
+    approval_time = NOW + pd.Timedelta(2, unit="min")
+    assert approval_time < runner.pending[sid].expires_at
+    assert calendar.blackout("EURUSD", approval_time) is event
+    submit = Mock(wraps=broker.place_market_order)
+    monkeypatch.setattr(broker, "place_market_order", submit)
+    notifier.queue_decision(sid, approved=True)
+    runner.step(approval_time)
+
+    assert runner.pending == {}
+    if news_enabled:
+        submit.assert_not_called()
+        assert broker.open_positions() == []
+        assert any("not executed - news blackout: Test release (USD)" in m for m in notifier.sent)
+    else:
+        submit.assert_called_once()
+        assert len(broker.open_positions()) == 1
 
 
 def test_skip_and_expiry(setup):
@@ -387,3 +424,60 @@ def test_build_fetch_skips_missing_timeframes_and_backs_off(tmp_path):
     assert len(calls) == 2
     fetch()                                                   # the broker is left alone while it is down
     assert len(calls) == 2 and "cache" in fetch.report.describe()
+
+
+def test_morning_briefing_once_per_weekday(setup):
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 06:00", symbol="EURUSD")}
+    runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=FakeEngine(setup, signal_on_first_call=False),
+                        clock=lambda: NOW)
+    runner.step(pd.Timestamp("2026-10-01 06:30"))            # 08:30 Amsterdam: too early
+    assert not any("morning analysis" in m for m in notifier.sent)
+    runner.step(pd.Timestamp("2026-10-01 06:45"))            # 08:45: the briefing
+    runner.step(pd.Timestamp("2026-10-01 07:00"))            # not again today
+    assert sum("morning analysis" in m for m in notifier.sent) == 1
+    runner.step(pd.Timestamp("2026-10-03 07:00"))            # Saturday: nothing
+    runner.step(pd.Timestamp("2026-10-05 06:50"))            # Monday: again
+    assert sum("morning analysis" in m for m in notifier.sent) == 2
+
+
+def test_poi_touch_is_announced_once(setup):
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)   # price inside the bullish POI
+    runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+    runner.step(NOW)
+    runner.step(NOW + pd.Timedelta(15, unit="min"))
+    touches = [m for m in notifier.sent if "inside the" in m and "POI" in m]
+    assert len(touches) == 1 and "waiting for a confirmation" in touches[0]
+
+
+def test_morning_briefing_retries_failed_analysis_delivery(setup, monkeypatch):
+    runner, notifier = _runner(setup, None)
+    analysis = runner.engine.analyze("EURUSD", runner.fetch(), now=NOW)
+    send_analysis = Mock(side_effect=[RuntimeError("temporary delivery failure"), None])
+    monkeypatch.setattr(notifier, "send_analysis", send_analysis)
+
+    with pytest.raises(RuntimeError, match="temporary delivery failure"):
+        runner.morning_briefing(analysis, NOW)
+    assert runner._briefed_on is None
+    runner.morning_briefing(analysis, NOW)
+    runner.morning_briefing(analysis, NOW)
+    assert send_analysis.call_count == 2
+    assert runner._briefed_on == NOW.date()
+
+
+def test_poi_touch_retries_failed_delivery(setup, monkeypatch):
+    runner, notifier = _runner(setup, None)
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)
+    analysis = engine.analyze("EURUSD", runner.fetch(), now=NOW)
+    send = Mock(side_effect=[RuntimeError("temporary delivery failure"), None])
+    monkeypatch.setattr(notifier, "send", send)
+
+    with pytest.raises(RuntimeError, match="temporary delivery failure"):
+        runner.announce_poi_touch(analysis)
+    assert setup.poi.key not in runner._touched
+    runner.announce_poi_touch(analysis)
+    runner.announce_poi_touch(analysis)
+    assert send.call_count == 2
+    assert setup.poi.key in runner._touched

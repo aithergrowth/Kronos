@@ -1,0 +1,108 @@
+time,currency,importance,title
+2026-07-16 06:00,GBP,1,GDP MoM
+2026-07-16 12:30,USD,1,Retail Sales MoM
+2026-07-17 12:30,USD,1,Building Permits Prel
+2026-07-17 12:30,USD,1,Housing Starts
+2026-07-17 14:00,USD,1,Michigan Consumer Sentiment Prel
+2026-07-21 06:00,GBP,1,Unemployment Rate
+2026-07-21 23:50,JPY,1,Balance of Trade
+2026-07-22 06:00,GBP,1,Inflation Rate YoY
+2026-07-23 12:15,EUR,1,ECB Interest Rate Decision
+2026-07-23 12:15,EUR,1,Deposit Facility Rate
+2026-07-23 12:45,EUR,1,ECB Press Conference
+2026-07-23 23:30,JPY,1,Inflation Rate YoY
+2026-07-24 06:00,GBP,1,Retail Sales MoM
+2026-07-24 08:30,GBP,1,S&P Global Manufacturing PMI Flash
+2026-07-24 08:30,GBP,1,S&P Global Services PMI Flash
+2026-07-27 12:30,USD,1,Durable Goods Orders MoM
+2026-07-29 18:00,USD,1,Fed Interest Rate Decision
+2026-07-29 18:30,USD,1,Fed Press Conference
+2026-07-30 05:00,JPY,1,Consumer Confidence
+2026-07-30 09:00,EUR,1,GDP Growth Rate QoQ Flash
+2026-07-30 09:00,EUR,1,GDP Growth Rate YoY Flash
+2026-07-30 11:00,GBP,1,BoE Interest Rate Decision
+2026-07-30 12:30,USD,1,GDP Growth Rate QoQ Adv
+2026-07-30 12:30,USD,1,Core PCE Price Index MoM
+2026-07-30 12:30,USD,1,Personal Income MoM
+2026-07-30 12:30,USD,1,Personal Spending MoM
+2026-07-31 03:00,JPY,1,BoJ Interest Rate Decision
+2026-07-31 09:00,EUR,1,Inflation Rate YoY Flash
+2026-08-03 14:00,USD,1,ISM Manufacturing PMI
+2026-08-04 14:00,USD,1,JOLTs Job Openings
+2026-08-05 14:00,USD,1,ISM Services PMI
+2026-08-07 12:30,USD,1,Non Farm Payrolls
+2026-08-07 12:30,USD,1,Unemployment Rate
+2026-08-11 14:00,USD,1,Existing Home Sales
+2026-08-12 12:30,USD,1,Inflation Rate YoY
+2026-08-12 12:30,USD,1,Core Inflation Rate YoY
+2026-08-12 12:30,USD,1,Inflation Rate MoM
+2026-08-12 12:30,USD,1,Core Inflation Rate MoM
+2026-08-13 06:00,GBP,1,GDP MoM
+2026-08-13 06:00,GBP,1,GDP Growth Rate QoQ Prel
+2026-08-13 06:00,GBP,1,GDP Growth Rate YoY Prel
+2026-08-13 12:30,USD,1,PPI MoM
+2026-08-14 12:30,USD,1,Retail Sales MoM
+2026-08-14 14:00,USD,1,Michigan Consumer Sentiment Prel
+2026-08-16 23:50,JPY,1,GDP Growth Rate QoQ Prel
+2026-08-18 06:00,GBP,1,Unemployment Rate
+2026-08-18 12:30,USD,1,Building Permits Prel
+2026-08-18 12:30,USD,1,Housing Starts
+2026-08-19 06:00,GBP,1,Inflation Rate YoY
+2026-08-19 18:00,USD,1,FOMC Minutes
+2026-08-19 23:50,JPY,1,Balance of Trade
+2026-08-20 23:30,JPY,1,Inflation Rate YoY
+2026-08-21 06:00,GBP,1,Retail Sales MoM
+2026-08-21 08:30,GBP,1,S&P Global Manufacturing PMI Flash
+2026-08-21 08:30,GBP,1,S&P Global Services PMI Flash
+2026-08-26 12:30,USD,1,GDP Growth Rate QoQ 2nd Est
+2026-08-26 12:30,USD,1,Core PCE Price Index MoM
+2026-08-26 12:30,USD,1,Durable Goods Orders MoM
+2026-08-26 12:30,USD,1,Personal Income MoM
+2026-08-26 12:30,USD,1,Personal Spending MoM
+2026-08-28 14:00,USD,1,Non Farm Payrolls Annual Revision Prel
+2026-08-28 14:00,USD,1,Fed Chair Warsh Speech
+2026-09-01 05:00,JPY,1,Consumer Confidence
+2026-09-01 09:00,EUR,1,Inflation Rate YoY Flash
+2026-09-01 14:00,USD,1,JOLTs Job Openings
+2026-09-01 14:00,USD,1,ISM Manufacturing PMI
+2026-09-03 14:00,USD,1,ISM Services PMI
+2026-09-04 12:30,USD,1,Non Farm Payrolls
+2026-09-04 12:30,USD,1,Unemployment Rate
+2026-09-10 12:15,EUR,1,ECB Interest Rate Decision
+2026-09-10 12:15,EUR,1,Deposit Facility Rate
+2026-09-10 12:30,USD,1,PPI MoM
+2026-09-10 12:45,EUR,1,ECB Press Conference
+2026-09-10 14:00,USD,1,Existing Home Sales
+2026-09-11 06:00,GBP,1,GDP MoM
+2026-09-11 12:30,USD,1,Inflation Rate YoY
+2026-09-11 12:30,USD,1,Core Inflation Rate YoY
+2026-09-11 12:30,USD,1,Inflation Rate MoM
+2026-09-11 12:30,USD,1,Core Inflation Rate MoM
+2026-09-11 14:00,USD,1,Michigan Consumer Sentiment Prel
+2026-09-15 06:00,GBP,1,Unemployment Rate
+2026-09-15 23:50,JPY,1,Balance of Trade
+2026-09-16 06:00,GBP,1,Inflation Rate YoY
+2026-09-16 12:30,USD,1,Retail Sales MoM
+2026-09-16 18:00,USD,1,Fed Interest Rate Decision
+2026-09-16 18:00,USD,1,FOMC Economic Projections
+2026-09-16 18:30,USD,1,Fed Press Conference
+2026-09-17 11:00,GBP,1,BoE Interest Rate Decision
+2026-09-17 12:30,USD,1,Building Permits Prel
+2026-09-17 12:30,USD,1,Housing Starts
+2026-09-17 23:30,JPY,1,Inflation Rate YoY
+2026-09-18 03:00,JPY,1,BoJ Interest Rate Decision
+2026-09-18 06:00,GBP,1,Retail Sales MoM
+2026-09-23 08:30,GBP,1,S&P Global Manufacturing PMI Flash
+2026-09-23 08:30,GBP,1,S&P Global Services PMI Flash
+2026-09-24 00:00,USD,1,President Trump and President Xi Summit
+2026-09-25 12:30,USD,1,Durable Goods Orders MoM
+2026-09-29 14:00,USD,1,JOLTs Job Openings
+2026-09-30 12:30,USD,1,GDP Growth Rate QoQ Final
+2026-09-30 12:30,USD,1,Core PCE Price Index MoM
+2026-09-30 12:30,USD,1,Personal Income MoM
+2026-09-30 12:30,USD,1,Personal Spending MoM
+2026-09-30 23:50,JPY,1,Tankan Large Manufacturers Index
+2026-10-01 14:00,USD,1,ISM Manufacturing PMI
+2026-10-02 09:00,EUR,1,Inflation Rate YoY Flash
+2026-10-02 12:30,USD,1,Non Farm Payrolls
+2026-10-02 12:30,USD,1,Unemployment Rate

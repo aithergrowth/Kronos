@@ -25,6 +25,25 @@ def test_closed_as_of_excludes_forming_candle():
     assert len(m.closed_as_of(pd.Timestamp("2024-03-15"))) == 2
 
 
+@pytest.mark.parametrize("opened,closed", [
+    ("2026-01-31 22:00", "2026-02-28 22:00"),
+    ("2024-01-31 22:00", "2024-02-29 22:00"),
+    ("2026-03-31 21:00", "2026-04-30 21:00"),
+    ("2026-01-01 00:00", "2026-02-01 00:00"),
+])
+def test_monthly_closed_as_of_uses_forward_calendar_close(opened, closed):
+    from kronos_trader.data import MultiTimeframeData
+
+    series = CandleSeries.from_records([(1, 2, 0.5, 1.5)], Timeframe.MN_1,
+                                      timestamps=[pd.Timestamp(opened)])
+    boundary = pd.Timestamp(closed)
+    assert series.last_close_time == boundary
+    assert len(series.closed_as_of(boundary - pd.Timedelta(1, unit="ns"))) == 0
+    assert len(series.closed_as_of(boundary)) == 1
+    bundled = MultiTimeframeData({Timeframe.MN_1: series}).as_of(boundary)[Timeframe.MN_1]
+    pd.testing.assert_frame_equal(series.closed_as_of(boundary).df, bundled.df)
+
+
 def test_from_csv_handles_bom_and_metatrader_columns(tmp_path):
     p = tmp_path / "EURUSD_M1.csv"
     p.write_text("﻿<DATE>\t<TIME>\t<OPEN>\t<HIGH>\t<LOW>\t<CLOSE>\t<TICKVOL>\n"

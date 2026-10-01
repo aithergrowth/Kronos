@@ -43,6 +43,39 @@ def test_multi_timeframe_as_of_has_no_lookahead():
     assert len(views[T.H_1]) == 5 and views[T.D_1].last_timestamp == pd.Timestamp("2024-01-01")
 
 
+@pytest.mark.parametrize("offset", [2, -5.5])
+def test_shifted_monthly_resample_rejects_unrepresentable_close_boundaries(offset):
+    # With +2, March was labeled Feb 28 22:00 and falsely considered closed
+    # on Mar 28, exposing this final Mar 31 high before it occurred.
+    rows = [(1, 2, 0.5, 1.5)] * (31 * 24)
+    rows[-1] = (1, 99, 0.5, 1.5)
+    hourly = CandleSeries.from_records(rows, T.H_1, start="2026-02-28 22:00", symbol="X")
+    assert hourly.last_timestamp == pd.Timestamp("2026-03-31 21:00")
+    with pytest.raises(ValueError, match="Use native higher-timeframe candles"):
+        resample(hourly, T.MN_1, session_offset_hours=offset)
+
+
+def test_unshifted_monthly_resample_waits_for_calendar_month_end():
+    hourly = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * (31 * 24), T.H_1,
+                                      start="2026-03-01", symbol="X")
+    monthly = resample(hourly, T.MN_1)
+    data = MultiTimeframeData({T.MN_1: monthly})
+    assert monthly.last_timestamp == pd.Timestamp("2026-03-01")
+    assert T.MN_1 not in data.as_of(pd.Timestamp("2026-03-31 23:59"))
+    assert len(data.as_of(pd.Timestamp("2026-04-01"))[T.MN_1]) == 1
+
+
+def test_native_monthly_override_avoids_shifted_resampling():
+    hourly = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 48, T.H_1,
+                                      start="2026-03-01", symbol="X")
+    native = CandleSeries.from_records([(1, 3, 0.5, 2)], T.MN_1, start="2026-02-01", symbol="X")
+    assert resample(native, T.MN_1, session_offset_hours=2) is native
+    data = MultiTimeframeData.from_base(hourly, [T.D_1, T.MN_1], extra={T.MN_1: native},
+                                        session_offset_hours=2)
+    assert data[T.MN_1] is native
+    assert data[T.D_1].timestamps.iloc[0] == pd.Timestamp("2026-02-28 22:00")
+
+
 def test_parse_tradingview_payload():
     s = parse_ohlcv_payload(SAMPLE_PAYLOAD, T.D_1)
     assert s.symbol == "FX:EURUSD" and len(s) == 3
@@ -73,6 +106,34 @@ def test_cache_names_are_case_safe_and_spacing_is_checked(tmp_path):
     with pytest.raises(ValueError):
         load_series(tmp_path, "X", T.MIN_1)
     assert set(load_all(tmp_path, "X")) == {T.MN_1}
+
+
+@pytest.mark.parametrize("count", [2, 4])
+def test_cache_rejects_half_hour_candles_labeled_hourly(tmp_path, count):
+    mislabeled = CandleSeries.from_records(
+        [(1, 2, 0.5, 1.5)] * count, T.H_1, symbol="X",
+        timestamps=pd.date_range("2026-01-02 09:00", periods=count, freq="30min"),
+    )
+    save_series(mislabeled, tmp_path)
+    with pytest.raises(ValueError, match="does not contain 1H candles"):
+        load_series(tmp_path, "X", T.H_1)
+
+
+@pytest.mark.parametrize("timeframe,timestamps", [
+    (T.H_1, ["2026-01-02 20:00", "2026-01-02 21:00", "2026-01-02 22:00",
+             "2026-01-05 00:00", "2026-01-05 01:00", "2026-01-05 02:00"]),
+    (T.H_1, ["2026-01-02 22:00", "2026-01-05 00:00"]),
+    (T.D_1, ["2026-03-06 22:00", "2026-03-09 21:00", "2026-03-10 21:00", "2026-03-11 21:00"]),
+    (T.W_1, ["2026-03-01 22:00", "2026-03-08 21:00", "2026-03-15 21:00"]),
+    (T.MN_1, ["2026-01-31 22:00", "2026-02-28 22:00", "2026-03-31 21:00", "2026-04-30 21:00"]),
+    (T.MN_1, ["2026-01-01 00:00", "2026-02-01 00:00", "2026-03-01 00:00"]),
+])
+def test_cache_preserves_calendar_anchors_and_normal_session_gaps(tmp_path, timeframe, timestamps):
+    series = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * len(timestamps), timeframe,
+                                      symbol="X", timestamps=timestamps)
+    save_series(series, tmp_path)
+    loaded = load_series(tmp_path, "X", timeframe)
+    pd.testing.assert_frame_equal(loaded.df, series.df)
 
 
 def test_news_blackout_windows():

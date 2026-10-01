@@ -14,6 +14,7 @@ correction for a separately verified nonstandard feed, with zero as the default.
 """
 from __future__ import annotations
 
+import glob
 import os
 from typing import Any, Dict, List, Optional
 
@@ -34,6 +35,18 @@ MT5_TIMEFRAMES = {
 
 def utc_now() -> pd.Timestamp:
     return pd.Timestamp.now(tz="UTC").tz_localize(None)
+
+
+def terminal_candidates() -> List[str]:
+    """Where a 64-bit MT5 terminal usually lives on Windows (used when MT5_PATH is not set)."""
+    patterns = [r"C:\Program Files\MetaTrader 5\terminal64.exe", r"C:\Program Files\*\terminal64.exe",
+                os.path.expandvars(r"%LOCALAPPDATA%\Programs\*\terminal64.exe")]
+    found: List[str] = []
+    for pattern in patterns:
+        for hit in sorted(glob.glob(pattern)):
+            if hit not in found:
+                found.append(hit)
+    return found
 
 
 class MT5Broker(Broker):
@@ -59,16 +72,25 @@ class MT5Broker(Broker):
 
     # ------------------------------------------------------------ connection
     def connect(self) -> None:
+        """Attach to the terminal (MT5_PATH, else the running one, else the usual install paths), then log in."""
         p = self.params
-        kwargs: Dict[str, Any] = {}
         path = os.environ.get(p.path_env)
-        if path:
-            kwargs["path"] = path
+        attempts: List[Optional[str]] = [path] if path else [None] + terminal_candidates()
+        errors = []
+        for candidate in attempts:
+            kwargs: Dict[str, Any] = {"path": candidate} if candidate else {}
+            if self.mt5.initialize(**kwargs):
+                self.terminal_path = candidate
+                break
+            errors.append(f"{candidate or 'running terminal'}: {self.mt5.last_error()}")
+        else:
+            raise RuntimeError("MT5 initialize failed: " + "; ".join(errors) + ". Start the terminal and log in, run "
+                               "PowerShell and the terminal as the same user (not one of them as administrator), "
+                               "and set MT5_PATH to the full path of terminal64.exe")
         login, password, server = os.environ.get(p.login_env), os.environ.get(p.password_env), os.environ.get(p.server_env)
         if login and password and server:
-            kwargs.update(login=int(login), password=password, server=server)
-        if not self.mt5.initialize(**kwargs):
-            raise RuntimeError(f"MT5 initialize failed: {self.mt5.last_error()} (is the terminal installed and logged in?)")
+            if not self.mt5.login(int(login), password=password, server=server):
+                raise RuntimeError(f"MT5 login failed for {login} on {server}: {self.mt5.last_error()}")
 
     def disconnect(self) -> None:
         self.mt5.shutdown()

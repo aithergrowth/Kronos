@@ -30,11 +30,11 @@ bias:
 session:
   enabled: true
   timezone: Europe/Amsterdam
-  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # course variant; the A-Z video says 08:00-17:00
+  windows: [["09:00", "17:00"]]   # forward-test profile; A has split windows and C has 08:00-17:00
 
 confirmation:
   allow_balance_shift: true       # BS (balance shift), the plan's primary confirmation
-  allow_first_candle: true        # "Eerste bullish of bearish candle"
+  allow_first_candle: false       # forward-test choice; K1/H list the alternative, G's after-shift example is not a universal restriction
   accept_bos: true
   allow_retest: false
   max_extension_zones: 1.5
@@ -53,7 +53,7 @@ exits:
   partials: false
 
 kronos:
-  mode: advisory                  # off | advisory | filter
+  mode: off                       # off | advisory | filter; forward-test choice, not a validated model-comparison result
   model: NeoQuasar/Kronos-small
   tokenizer: NeoQuasar/Kronos-Tokenizer-base
   horizon: 12
@@ -78,6 +78,16 @@ live:
   max_data_age_bars: 2            # newest candle closed more than 2 candles ago -> stale
   require_fresh_data: true        # stale data: analyse and manage, open no new setups
   feed_retry_seconds: 600         # leave a live feed alone this long after it failed on every timeframe
+  briefing_time: "08:45"          # project-selected local time, not a quoted Dorus schedule
+  notify_poi_touch: true          # heads-up when price enters a POI in the bias direction, before the confirmation
+
+news:
+  enabled: true                   # configurable gate for relevant high-impact news
+  before_minutes: 30              # project choice; Dorus does not specify this duration in source G
+  after_minutes: 30               # project choice; not a verified Dorus rule
+  min_importance: 1               # 1 = high-impact only
+  calendar_csv: data/calendar/high_impact.csv   # from the TradingView economic calendar (backtests)
+  forexfactory: true              # the live loop refreshes this and next week from ForexFactory hourly
 
 ibkr:
   default_port: 7497              # paper TWS; 4002 for paper IB Gateway

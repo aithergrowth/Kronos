@@ -2,11 +2,13 @@
 
 Walks the ``step_tf`` candles one closed candle at a time.  At every step the
 paper broker first processes the candle (stops, targets, break-even), then the
-engine sees exactly the candles that were closed at that moment on every
-timeframe, so nothing in the analysis can peek into the future.
+engine receives slices whose candle close timestamps are no later than that
+step. Candle completeness and correct session anchoring remain the caller's
+responsibility.
 """
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
@@ -20,6 +22,7 @@ from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
 from ..execution.risk_guard import RiskGuard
 from ..strategy.engine import StrategyEngine
+from ..strategy.risk import size_position
 
 
 @dataclass
@@ -48,6 +51,7 @@ class BacktestResult:
                 "pnl": t.pnl, "r": t.r, "reason": t.reason,
                 "poi_tf": t.meta.get("poi_tf"), "confirmation": t.meta.get("confirmation"),
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
+                "signal_entry": t.meta.get("signal_entry"), "signal_rr": t.meta.get("signal_rr"),
                 "kronos": t.meta.get("kronos"),
             })
         return pd.DataFrame(rows)
@@ -100,6 +104,7 @@ class Backtester:
         guard_reasons: Dict[str, int] = {}
         rejection_reasons: Dict[str, int] = {}
         first_ts = last_ts = None
+        last_processed_candle = None
 
         n = len(step)
         report_every = max(1, n // 20)
@@ -112,6 +117,7 @@ class Backtester:
                 break
             first_ts = first_ts or ts
             last_ts = ts
+            last_processed_candle = candle
             steps += 1
             broker.on_candle(self.symbol, candle)
             now = self.step_tf.close_time(ts)
@@ -132,27 +138,53 @@ class Backtester:
                     rejected += 1
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     continue
+                # A higher-timeframe confirmation can still be the latest one
+                # after its close. It is a signal reference, not today's fill.
+                entry = broker.market_fill_price(self.symbol, setup.direction, candle.close)
+                spec = s.symbol(self.symbol)
+                reason = None
+                if not all(math.isfinite(x) for x in (entry, setup.stop, setup.take_profit)):
+                    reason = "execution - non-finite entry, stop or target"
+                elif setup.direction.sign * (entry - setup.stop) <= 0:
+                    reason = "execution - stop already crossed"
+                elif setup.direction.sign * (setup.take_profit - entry) <= 0:
+                    reason = "execution - target already crossed"
+                else:
+                    lots, risk_amount, risk_distance, _ = size_position(
+                        broker.equity(), entry, setup.stop, spec, s.risk)
+                    rr_distance = risk_distance if s.risk.rr_includes_buffer else abs(entry - setup.stop)
+                    rr = abs(setup.take_profit - entry) / rr_distance
+                    if rr < s.risk.min_rr:
+                        reason = "execution - R:R below minimum at current price"
+                    elif lots <= 0:
+                        reason = "execution - position below minimum lot at current price"
+                if reason is not None:
+                    rejection_reasons[reason] = rejection_reasons.get(reason, 0) + 1
+                    continue
                 fc = analysis.signal.forecast
                 broker.place_market_order(
-                    self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
-                    setup.risk_distance, setup.breakeven_r,
+                    self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
+                    risk_distance, setup.breakeven_r,
                     meta={
                         "poi_tf": setup.poi.timeframe.label, "poi": (setup.poi.low, setup.poi.high),
                         "confirmation": setup.confirmation.type.value, "confirmation_tf": setup.confirmation.timeframe.label,
-                        "planned_rr": round(setup.rr, 2), "tp_source": setup.tp_source,
+                        "planned_rr": round(rr, 2), "signal_rr": round(setup.rr, 2),
+                        "signal_entry": setup.entry, "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
                     },
-                    price=setup.entry, ts=now,
+                    price=candle.close, ts=now,
                 )
                 guard.record_trade(now)
             if self.progress and i % report_every == 0:
                 print(f"  {i}/{n} {ts} equity={broker.equity():,.0f} trades={len(broker.closed)}", flush=True)
 
         # flatten at the end so every trade has an outcome
-        if broker.open_positions():
-            last_price = step.last.close
+        if broker.open_positions() and last_processed_candle is not None:
+            # A bounded run must not mark positions using candles after ``end``.
+            last_price = last_processed_candle.close
             for pos in list(broker.open_positions()):
-                broker.close_position(pos.id, "end_of_data", last_price, self.step_tf.close_time(step.last_timestamp))
+                broker.close_position(pos.id, "end_of_data", last_price,
+                                      self.step_tf.close_time(last_processed_candle.timestamp))
 
         return BacktestResult(
             symbol=self.symbol, step_tf=self.step_tf, start=first_ts, end=last_ts,

@@ -206,9 +206,30 @@ on mains power, awake and logged in to TWS:
 4. While testing, add `--notify-every-scan` to get one message per poll on
    the phone; drop it once you trust the loop.
 
+Configured notifications: morning analysis on the first weekday scan at or
+after 08:45 Amsterdam (bias, decision, POI map), a heads-up for a POI touch,
+and confirmed setups. Approval buttons, fills, break-even moves and closes
+belong to execution mode; notification-only mode sends setup alerts. The
+forward-test profile uses 09:00–17:00 Amsterdam, first-candle confirmation off
+and Kronos off. These are project choices. The news gate uses loaded events
+and does not establish complete calendar coverage.
+
+The guard uses 4 % daily loss, 8 % total drawdown, one open trade and 1 %
+planned risk. These are project settings; the selected firm's current
+contract and account-specific calculation rules remain unverified.
+
 Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if
 the laptop cannot stay on.
+
+News: the engine rejects new signals from 30 minutes before to 30 minutes
+after a loaded high-impact event of the symbol's currencies (`news:` in the
+config). These durations are project choices, not verified Dorus rules. It
+loads `data/calendar/high_impact.csv` and attempts to refresh this and next
+week from the free ForexFactory feed every hour. Setup messages name the
+next loaded event within four hours. A missing CSV supplies no events; a
+failed refresh retains the events already loaded. This does not verify that
+calendar coverage is complete or current.
 
 ## 6. Prop-firm phase
 

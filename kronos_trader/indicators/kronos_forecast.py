@@ -67,7 +67,11 @@ class KronosForecaster:
         if len(context) < 32:
             raise ValueError(f"need at least 32 candles for a Kronos forecast, got {len(context)}")
         x_df, x_ts = context.to_kronos_inputs()
-        y_ts = series.timeframe.future_timestamps(context.last_timestamp, horizon)
+        # Explicit instrument configuration: broker/feed aliases must be listed;
+        # do not infer exchange hours or holidays from arbitrary symbol names.
+        weekend_symbols = {symbol.upper() for symbol in p.weekend_symbols}
+        skip_weekends = (series.symbol or "").upper() not in weekend_symbols
+        y_ts = series.timeframe.future_timestamps(context.last_timestamp, horizon, skip_weekends=skip_weekends)
         last_close = float(context.last.close)
 
         paths: List[pd.DataFrame] = []

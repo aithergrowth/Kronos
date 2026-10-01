@@ -1,0 +1,79 @@
+{
+  "symbol": "BTCUSD",
+  "feed": "BINANCE:BTCUSDT",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": false,
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-08-10 04:00:00",
+    "2026-10-01 05:45:00"
+  ],
+  "steps": 5000,
+  "signals": 5,
+  "trades_including_end_marks": 1,
+  "decided_trades": 1,
+  "wins": 0,
+  "losses": 1,
+  "breakeven": 0,
+  "realized_r": -0.9980818291677057,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 65.89651322364807,
+  "input_files": [
+    {
+      "path": "BINANCE_BTCUSDT_15min.csv",
+      "sha256": "e62618535bad2335ab5513f75380e63fe08ce9f6ffb6404aa9664dc38aeea4d7",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-08-10 04:00:00",
+      "last_open": "2026-10-01 05:45:00"
+    },
+    {
+      "path": "BINANCE_BTCUSDT_1H.csv",
+      "sha256": "c5e68581ba70f4ad31f8bbabc8671249c85a7d297731421f4e95b1f510b95aa6",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2026-03-06 22:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "BINANCE_BTCUSDT_4H.csv",
+      "sha256": "7cde9aa6414f15e3d28843340213fc319bfad9a61bb2676245cbba877ca6eeaa",
+      "timeframe": "4H",
+      "rows": 5000,
+      "first_open": "2024-06-20 00:00:00",
+      "last_open": "2026-10-01 04:00:00"
+    },
+    {
+      "path": "BINANCE_BTCUSDT_1D.csv",
+      "sha256": "93cc18b57c4dc7bc24dd8a140d0c4a444a772abfd447b3a201d946a0c5538cb9",
+      "timeframe": "1D",
+      "rows": 3333,
+      "first_open": "2017-08-17 00:00:00",
+      "last_open": "2026-10-01 00:00:00"
+    },
+    {
+      "path": "BINANCE_BTCUSDT_1W.csv",
+      "sha256": "6098b79284ff568c0d52306cdd60bc9faa9f937d2a00a77ebb488f65b84e3123",
+      "timeframe": "1W",
+      "rows": 477,
+      "first_open": "2017-08-14 00:00:00",
+      "last_open": "2026-09-28 00:00:00"
+    },
+    {
+      "path": "BINANCE_BTCUSDT_1MO.csv",
+      "sha256": "2fa0aa3a84f7ba58f9bf96c137b485d65bf7d41a0f496d2028298d3a6ad33f33",
+      "timeframe": "1M",
+      "rows": 111,
+      "first_open": "2017-08-01 00:00:00",
+      "last_open": "2026-10-01 00:00:00"
+    }
+  ],
+  "guard_rejection_counts": {
+    "max 1 open trade(s) per account": 4
+  },
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "6ccffb38e979fc4f6ada5df673183eaa14fe094f5f0c96c00256779587961026",
+  "profile": "audited"
+}

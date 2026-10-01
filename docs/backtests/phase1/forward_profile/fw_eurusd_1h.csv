@@ -1,0 +1,3 @@
+id,symbol,direction,opened_at,closed_at,entry,exit,stop,final_stop,take_profit,lots,pnl,r,reason,poi_tf,confirmation,confirmation_tf,planned_rr,kronos
+P1,EURUSD,SHORT,2026-07-06 09:00:00,2026-07-06 17:00:00,1.14201,1.14343,1.14343,1.14343,1.13618,6.8,-965.5999999999841,-0.9659863945578919,stop,1D,BOS,1H,4.0,
+P2,EURUSD,SHORT,2026-09-22 11:00:00,2026-09-23 17:00:00,1.14658,1.13746,1.14878,1.14878,1.13746,4.4,4012.8000000000075,4.053333333333568,take_profit,4H,BS,1H,4.08,

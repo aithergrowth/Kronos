@@ -1,0 +1,84 @@
+{
+  "symbol": "XAUUSD",
+  "feed": "OANDA:XAUUSD",
+  "step": "15m",
+  "kronos": "off",
+  "news_blackout": true,
+  "initial_equity": 100000.0,
+  "period": [
+    "2026-07-16 18:15:00",
+    "2026-10-01 05:30:00"
+  ],
+  "steps": 5000,
+  "signals": 9,
+  "trades_including_end_marks": 6,
+  "decided_trades": 6,
+  "wins": 0,
+  "losses": 4,
+  "breakeven": 2,
+  "realized_r": -3.9605818254822256,
+  "end_of_data_mark_r": 0,
+  "end_of_data_mark_count": 0,
+  "runtime_seconds": 64.97306704521179,
+  "input_files": [
+    {
+      "path": "OANDA_XAUUSD_15min.csv",
+      "sha256": "bcbd40d5d7bddef813e15adb296624de5acc7aeecbb950b425d5cf267c6e2f44",
+      "timeframe": "15m",
+      "rows": 5000,
+      "first_open": "2026-07-16 18:15:00",
+      "last_open": "2026-10-01 05:30:00"
+    },
+    {
+      "path": "OANDA_XAUUSD_1H.csv",
+      "sha256": "ea6d321db5a9939d28445a93bbbcecd46b315fb552db99c1c796334bba9ebc26",
+      "timeframe": "1H",
+      "rows": 5000,
+      "first_open": "2025-11-26 00:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_XAUUSD_4H.csv",
+      "sha256": "53d4da6bde18f4dde50103a39c2150f95f124d4306e19568d9450db1999289ba",
+      "timeframe": "4H",
+      "rows": 5000,
+      "first_open": "2023-07-10 13:00:00",
+      "last_open": "2026-10-01 05:00:00"
+    },
+    {
+      "path": "OANDA_XAUUSD_1D.csv",
+      "sha256": "6cfca076aadd8270289ea321085d56d73c9c4419ffb18309b8eae7389e01726f",
+      "timeframe": "1D",
+      "rows": 5000,
+      "first_open": "2007-06-11 21:00:00",
+      "last_open": "2026-09-30 21:00:00"
+    },
+    {
+      "path": "OANDA_XAUUSD_1W.csv",
+      "sha256": "9f5922d9e30898fd2f2fc053b0bcd706474ea52a008d07b41d8989f2b3367130",
+      "timeframe": "1W",
+      "rows": 1008,
+      "first_open": "2007-06-11 00:00:00",
+      "last_open": "2026-09-28 00:00:00"
+    },
+    {
+      "path": "OANDA_XAUUSD_1MO.csv",
+      "sha256": "72069b97c6808b3cf2f13fca80e92867f259577a6bb17744bd38f1472be478d7",
+      "timeframe": "1M",
+      "rows": 232,
+      "first_open": "2007-06-01 00:00:00",
+      "last_open": "2026-09-01 00:00:00"
+    }
+  ],
+  "guard_rejection_counts": {
+    "max 1 open trade(s) per account": 3
+  },
+  "execution_rejection_counts": {},
+  "trade_csv_sha256": "49be7d80730e7ea30bb13ad93535e23c46e4b71bece302862e0a269864541bf6",
+  "calendar_sha256": "195c053423e63a475f29712342c1b8d6331aaf4aa0eb76a9e4ab67a606fe978f",
+  "news_window_minutes": [
+    30,
+    30
+  ],
+  "profile": "audited"
+}

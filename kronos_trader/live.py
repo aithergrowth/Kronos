@@ -183,6 +183,9 @@ class LiveRunner:
         self.stale: Dict[Timeframe, pd.Timedelta] = {}   # timeframe -> age of its last closed candle
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
         self._feed_line: Optional[str] = None
+        self._news_refreshed: Optional[pd.Timestamp] = None
+        self._briefed_on: Optional[object] = None          # local date of the last morning briefing
+        self._touched: set = set()                          # POI keys already announced as entered
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
@@ -192,6 +195,7 @@ class LiveRunner:
             self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
+        self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=True)
         self.last_analysis = analysis
@@ -199,11 +203,43 @@ class LiveRunner:
             self.manage_positions(views)
             self.process_decisions(now)
             self.report_closes()
+        self.morning_briefing(analysis, now)
+        self.announce_poi_touch(analysis)
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
             self.notifier.send_analysis(analysis, self.spec)
         return analysis
+
+    # ------------------------------------------------------------ configured notifications
+    def morning_briefing(self, analysis: Analysis, now: pd.Timestamp) -> None:
+        """Once per weekday at ``live.briefing_time`` local time: the bias, the decision and the POI map for the day."""
+        at = self.settings.live.briefing_time
+        if not at:
+            return
+        stamp = pd.Timestamp(now)
+        local = (stamp.tz_localize("UTC") if stamp.tzinfo is None else stamp).tz_convert(self.settings.session.timezone)
+        hour, minute = (int(x) for x in at.split(":"))
+        if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._briefed_on == local.date():
+            return
+        self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
+        self.notifier.send_analysis(analysis, self.spec)
+        self._briefed_on = local.date()  # failed delivery must remain retryable
+
+    def announce_poi_touch(self, analysis: Analysis) -> None:
+        """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form."""
+        if not self.settings.live.notify_poi_touch or not analysis.decision.tradable:
+            return
+        d = self.spec.price_decimals
+        for poi in analysis.pois:
+            if poi.direction is not analysis.decision.direction or not poi.contains(analysis.price):
+                continue
+            if poi.key in self._touched:
+                continue
+            arrow = "▲" if poi.direction.value == "bullish" else "▼"
+            self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
+                               f"({analysis.decision.reason}); waiting for a confirmation")
+            self._touched.add(poi.key)  # failed delivery must remain retryable
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds
@@ -222,6 +258,22 @@ class LiveRunner:
                 time.sleep(poll)
 
     # ------------------------------------------------------------ data
+    def refresh_news(self, now: pd.Timestamp) -> None:
+        """Pull this and next week's high-impact events from ForexFactory into the engine's calendar, hourly."""
+        n = self.settings.news
+        calendar = getattr(self.engine, "calendar", None)
+        if calendar is None or not n.enabled or not n.forexfactory:
+            return
+        if self._news_refreshed is not None and now - self._news_refreshed < pd.Timedelta(int(n.refresh_minutes), unit="min"):
+            return
+        self._news_refreshed = now
+        try:
+            from .data.calendar import fetch_forexfactory
+            for week in ("thisweek", "nextweek"):
+                calendar.add(fetch_forexfactory(week))
+        except Exception as exc:
+            print(f"[live] {self.symbol}: news calendar refresh failed ({exc}); using the events already loaded")
+
     def stale_timeframes(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> Dict[Timeframe, pd.Timedelta]:
         """Timeframes whose newest candle closed more than ``live.max_data_age_bars`` candles before ``now``."""
         out: Dict[Timeframe, pd.Timedelta] = {}
@@ -276,6 +328,13 @@ class LiveRunner:
             self.seen.add(key)
             self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
             return
+        calendar = getattr(self.engine, "calendar", None)
+        if calendar is not None:
+            soon = calendar.upcoming(self.symbol, now, within_minutes=240)
+            if soon:
+                e = soon[0]
+                minutes = int((e.time - now).total_seconds() // 60)
+                self.notifier.send(f"📰 {self.symbol}: next high-impact news {e.title} ({e.currency}) in {minutes} min")
         if self.broker is None or self.dry_run:
             self.notifier.send_setup(setup, forecast, self.spec)
             self.seen.add(key)  # failed Telegram delivery must remain retryable
@@ -303,6 +362,13 @@ class LiveRunner:
         if self.stale and self.settings.live.require_fresh_data:
             self.notifier.send(f"⛔ {self.symbol}: not executed - the data is stale ({self.stale_text()}); refresh the feed")
             return None
+        calendar = getattr(self.engine, "calendar", None)
+        if calendar is not None and self.settings.news.enabled:
+            event = calendar.blackout(self.symbol, now)
+            if event is not None:
+                self.notifier.send(f"⛔ {self.symbol}: not executed - news blackout: {event.title} ({event.currency}) "
+                                   f"at {event.time:%H:%M} UTC")
+                return None
         ok, reason = self.guard.can_open(self.broker, now, self.symbol)
         if not ok:
             self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
@@ -362,7 +428,7 @@ class LiveRunner:
                 self.notifier.send(f"⌛ {self.symbol}: setup {pending.short_id} approved too late "
                                    f"(expired {pending.expires_at:%H:%M} UTC), not executed")
                 continue
-            self.notifier.send(f"✅ {self.symbol}: setup {pending.short_id} approved, sending order")
+            self.notifier.send(f"✅ {self.symbol}: setup {pending.short_id} approved, checking execution conditions")
             self.execute(pending.setup, pending.forecast, now)
         for short_id, pending in list(self.pending.items()):
             if now >= pending.expires_at:

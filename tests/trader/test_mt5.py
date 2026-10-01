@@ -42,6 +42,10 @@ class FakeMT5:
         self.init_kwargs = kwargs
         return True
 
+    def login(self, login, password=None, server=None, timeout=None):
+        self.login_args = (login, password, server)
+        return True
+
     def shutdown(self):
         self.init_kwargs = None
 
@@ -131,9 +135,58 @@ def broker(monkeypatch):
 
 
 def test_initialize_uses_the_environment(broker):
-    assert broker.mt5.init_kwargs == {"login": 62724281, "password": "pw", "server": "MetaQuotes-Demo"}
+    assert broker.mt5.init_kwargs == {} and broker.mt5.login_args == (62724281, "pw", "MetaQuotes-Demo")
     d = broker.diagnostics()
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
+
+
+def test_connection_falls_back_to_first_available_terminal(broker, monkeypatch):
+    paths = [r"C:\First\terminal64.exe", r"C:\Second\terminal64.exe", r"C:\Third\terminal64.exe"]
+    monkeypatch.setattr("kronos_trader.execution.mt5.terminal_candidates", lambda: paths)
+    calls = []
+
+    def initialize(**kwargs):
+        calls.append(kwargs)
+        return kwargs.get("path") == paths[1]
+
+    monkeypatch.setattr(broker.mt5, "initialize", initialize)
+    broker.connect()
+
+    assert calls == [{}, {"path": paths[0]}, {"path": paths[1]}]
+    assert broker.terminal_path == paths[1]
+    assert broker.mt5.login_args == (62724281, "pw", "MetaQuotes-Demo")
+    assert broker.mt5.requests == []
+
+
+def test_explicit_terminal_failure_does_not_switch_terminals(broker, monkeypatch):
+    path = r"C:\Chosen\terminal64.exe"
+    monkeypatch.setenv("MT5_PATH", path)
+    calls = []
+
+    def initialize(**kwargs):
+        calls.append(kwargs)
+        return False
+
+    def unexpected_call(*args, **kwargs):
+        raise AssertionError("an explicit terminal failure must not discover or log into another terminal")
+
+    monkeypatch.setattr(broker.mt5, "initialize", initialize)
+    monkeypatch.setattr(broker.mt5, "login", unexpected_call)
+    monkeypatch.setattr("kronos_trader.execution.mt5.terminal_candidates", unexpected_call)
+    with pytest.raises(RuntimeError, match="MT5 initialize failed"):
+        broker.connect()
+
+    assert calls == [{"path": path}]
+    assert broker.mt5.requests == []
+
+
+def test_explicit_login_failure_is_not_silently_accepted(broker, monkeypatch):
+    monkeypatch.setattr(broker.mt5, "login", lambda *args, **kwargs: False)
+
+    with pytest.raises(RuntimeError, match="MT5 login failed"):
+        broker.connect()
+
+    assert broker.mt5.requests == []
 
 
 def test_mt5_utc_timestamps_are_preserved_by_default(broker):

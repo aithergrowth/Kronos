@@ -1,0 +1,2 @@
+id,symbol,direction,opened_at,closed_at,entry,exit,stop,final_stop,take_profit,lots,pnl,r,reason,poi_tf,confirmation,confirmation_tf,planned_rr,signal_entry,signal_rr,kronos
+P1,BTCUSD,SHORT,2026-08-11 13:30:00,2026-08-18 14:15:00,64192.07,64712.4,64712.4,64712.4,62275.0,1.91,-993.8303000000033,-0.9980818291677057,stop,1D,BMS,15m,3.68,64199.6,3.75,

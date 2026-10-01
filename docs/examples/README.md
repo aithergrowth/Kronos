@@ -46,3 +46,4 @@ Claude will pull the candles from TradingView.
 Also record every rule he states that is **not** in our rule set (session
 filters, news rules, maximum trades per day, anything about partials or
 trailing). Those go under "New rules" in `docs/ASTRA_TASKS.md`.
+

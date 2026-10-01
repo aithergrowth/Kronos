@@ -1,0 +1,35 @@
+{
+  "baseline": {
+    "decided_trades": 11,
+    "wins": 1,
+    "losses": 8,
+    "breakeven": 2,
+    "sum_independent_trade_r": -3.843997503117633,
+    "end_marks": 1
+  },
+  "corrected": {
+    "decided_trades": 13,
+    "wins": 1,
+    "losses": 10,
+    "breakeven": 2,
+    "sum_independent_trade_r": -5.760003690563245,
+    "end_marks": 0
+  },
+  "corrected_news": {
+    "decided_trades": 14,
+    "wins": 1,
+    "losses": 11,
+    "breakeven": 2,
+    "sum_independent_trade_r": -6.803046173096045,
+    "end_marks": 0
+  },
+  "forward": {
+    "decided_trades": 11,
+    "wins": 1,
+    "losses": 9,
+    "breakeven": 1,
+    "sum_independent_trade_r": -4.882464685944483,
+    "end_marks": 1,
+    "end_mark_r": 8.701942397856712
+  }
+}
