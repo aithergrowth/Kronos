@@ -36,9 +36,10 @@ def setup(scenario):
     return TradeSetup("EURUSD", Direction.LONG, poi, conf, 1.1000, 1.0949, 1.1200, 0.0052, 0.02, 3.85, 1.92, 1000.0, 4.0, "1H liquidity")
 
 
-def _runner(setup, broker, **kw):
+def _runner(setup, broker, last_close=1.1, **kw):
     notifier = TelegramNotifier(dry_run=True)
-    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, max(1.101, last_close), min(1.099, last_close), last_close)]
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
     runner = LiveRunner(Settings(), "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
                         dry_run=False, clock=lambda: NOW, **kw)
     return runner, notifier
@@ -96,8 +97,7 @@ def test_skip_and_expiry(setup):
 
 def test_execution_rechecks_rr_and_guard(setup):
     broker = PaperBroker(Settings())
-    broker.set_price("EURUSD", 1.1150)                     # price ran away: R:R now far below 1:3
-    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner, notifier = _runner(setup, broker, last_close=1.1150, require_approval=False)   # price ran away: R:R now far below 1:3
     runner.step(NOW)
     assert broker.open_positions() == [] and any("R:R now" in m for m in notifier.sent)
 
@@ -145,3 +145,84 @@ def test_build_fetch_falls_back_to_cache_when_broker_fails(tmp_path):
     assert len(views[T.D_1]) == 5 and len(views[T.H_1]) == 3      # cached daily candles, live hourly ones
     with pytest.raises(RuntimeError):                               # nothing cached to fall back on
         build_fetch(settings, "EURUSD", cache_dir=None, broker=FlakyBroker(settings), broker_timeframes=[T.D_1])()
+
+
+class RaisingPriceBroker(PaperBroker):
+    def current_price(self, symbol):
+        raise RuntimeError("no quote")
+
+
+def test_late_approval_is_not_executed(setup):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker)
+    runner.step(NOW)
+    sid = next(iter(runner.pending))
+    notifier.queue_decision(sid, approved=True)
+    runner.step(NOW + pd.Timedelta(16, unit="min"))         # the 15-minute approval window has passed
+    assert broker.open_positions() == [] and runner.pending == {}
+    assert any("approved too late" in m for m in notifier.sent)
+
+
+def test_no_current_price_means_no_order(setup):
+    runner, notifier = _runner(setup, RaisingPriceBroker(Settings()), require_approval=False)
+    runner.step(NOW)
+    assert runner.broker.open_positions() == [] and any("no current price" in m for m in notifier.sent)
+
+
+def test_order_failure_is_reported_not_raised(setup):
+    class RejectingBroker(PaperBroker):
+        def place_market_order(self, *args, **kwargs):
+            raise RuntimeError("not accepted by TWS")
+
+    broker = RejectingBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    assert broker.open_positions() == [] and any("order failed" in m and "not accepted" in m for m in notifier.sent)
+
+
+def test_paper_broker_is_advanced_by_the_loop(setup):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    candles = [(1.1, 1.101, 1.099, 1.1)] * 3
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(candles, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(Settings(), "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
+                        dry_run=False, require_approval=False, clock=lambda: NOW)
+    runner.step(NOW)
+    assert len(broker.open_positions()) == 1
+    candles.append((1.1, 1.125, 1.099, 1.124))                # the 09:00 candle trades through the 1.12 target
+    runner.step(NOW + pd.Timedelta(15, unit="min"))           # it is closed at 09:15 and fed to the paper broker
+    assert broker.open_positions() == [] and sum("take_profit" in m for m in notifier.sent) == 1
+    runner.step(NOW + pd.Timedelta(30, unit="min"))           # the same candles again: fed once, reported once
+    assert sum("take_profit" in m for m in notifier.sent) == 1
+
+
+def test_stale_data_blocks_new_setups(setup):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW + pd.Timedelta(3, unit="h"))              # the 15m candles ended at 09:00, it is noon
+    assert T.MIN_15 in runner.stale and broker.open_positions() == [] and runner.pending == {}
+    assert any("stale" in m for m in notifier.sent)
+
+
+def test_build_fetch_skips_missing_timeframes_and_backs_off(tmp_path):
+    settings = Settings()
+    daily = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 5, T.D_1, start="2026-09-20", symbol="OANDA:EURUSD")
+    save_series(daily, tmp_path)
+    calls = []
+
+    class DownBroker(PaperBroker):
+        def get_candles(self, symbol, timeframe, count=500):
+            calls.append(timeframe)
+            raise RuntimeError("No market data permissions")
+
+    fetch = build_fetch(settings, "EURUSD", cache_dir=tmp_path, broker=DownBroker(settings),
+                        broker_timeframes=[T.MIN_5, T.D_1], retry_after_seconds=600)
+    views = fetch()
+    assert set(views) == {T.D_1} and fetch.report.skipped == [T.MIN_5] and fetch.report.sources[T.D_1] == "cache"
+    assert len(calls) == 2
+    fetch()                                                   # the broker is left alone while it is down
+    assert len(calls) == 2 and "cache" in fetch.report.describe()

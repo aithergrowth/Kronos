@@ -22,6 +22,7 @@ through ``closed_as_of``.
 from __future__ import annotations
 
 import math
+import time
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -31,6 +32,9 @@ from ..core.candles import CandleSeries
 from ..core.timeframe import Timeframe
 from ..core.types import Direction
 from .base import Broker, ClosedTrade, Position
+
+PENDING_STATUSES = {"PendingSubmit", "ApiPending", "PreSubmitted", "Submitted"}
+DEAD_STATUSES = {"Cancelled", "ApiCancelled", "Inactive"}
 
 IB_BAR_SIZES = {
     Timeframe.MIN_1: "1 min", Timeframe.MIN_5: "5 mins", Timeframe.MIN_15: "15 mins", Timeframe.MIN_30: "30 mins",
@@ -82,9 +86,10 @@ def symbol_of(contract) -> str:
 
 class IBKRBroker(Broker):
     def __init__(self, settings: Optional[Settings] = None, params: Optional[IBKRParams] = None,
-                 ib=None, api=None, connect: bool = True):
+                 ib=None, api=None, connect: bool = True, clock=None):
         self.settings = settings or Settings()
         self.params = params or self.settings.ibkr
+        self.clock = clock or (lambda: pd.Timestamp.now(tz="UTC"))
         if api is None:
             try:
                 import ib_async as api  # type: ignore
@@ -231,15 +236,58 @@ class IBKRBroker(Broker):
             return None
         if not bars:
             return None
-        close = float(bars[-1].close)
+        bar = bars[-1]
+        when = getattr(bar, "date", None)
+        if when is not None:
+            ts = pd.Timestamp(when)
+            ts = ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+            age = (self.clock() - ts).total_seconds() - 60.0      # the bar closes a minute after it opens
+            if age > self.params.max_quote_age_seconds:
+                return None
+        close = float(bar.close)
         return close if close > 0 else None
 
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         self._reconcile()
         return [p for p in self._positions.values() if symbol is None or p.symbol == symbol.upper()]
 
+    def _order_state(self, trade, qty: float) -> str:
+        """'filled', 'rejected' (cancelled / inactive) or 'pending' for an ib_async Trade."""
+        status = getattr(getattr(trade, "orderStatus", None), "status", "") or ""
+        filled = float(getattr(getattr(trade, "orderStatus", None), "filled", 0.0) or 0.0)
+        if status == "Filled" or (qty > 0 and filled >= qty):
+            return "filled"
+        if status in DEAD_STATUSES:
+            return "rejected"
+        return "pending"
+
+    def _await_fill(self, trade, qty: float) -> str:
+        """Run the event loop for up to ``fill_wait_seconds`` until the order is filled or dead."""
+        deadline = time.monotonic() + self.params.fill_wait_seconds
+        while True:
+            state = self._order_state(trade, qty)
+            if state != "pending" or time.monotonic() >= deadline:
+                return state
+            self._wait(min(0.25, max(self.params.fill_wait_seconds, 0.01)))
+
+    def _cancel_children(self, orders: Dict[str, Any]) -> None:
+        for key in ("stop", "tp"):
+            trade = orders.get(key)
+            if trade is not None:
+                try:
+                    self.ib.cancelOrder(trade.order)
+                except Exception:
+                    pass
+
     def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
                            meta=None, price=None, ts=None) -> Position:
+        """Bracket order (market parent, limit target, stop child).
+
+        Returns a ``Position`` with ``status="filled"`` only when TWS confirmed the fill
+        within ``fill_wait_seconds``; otherwise ``status="pending"`` with the quote as a
+        provisional entry (``meta["entry_unconfirmed"]``), corrected by ``_reconcile``
+        once the fill arrives.  A cancelled / rejected parent raises ``RuntimeError``.
+        """
         symbol = symbol.upper()
         contract = self.contract(symbol)
         qty = self.quantity(symbol, lots)
@@ -253,19 +301,26 @@ class IBKRBroker(Broker):
         tp_trade = self.ib.placeOrder(contract, tp_order)
         stop_order = self.api.StopOrder(reverse, qty, float(stop), parentId=parent_id, transmit=True, tif="GTC")
         stop_trade = self.ib.placeOrder(contract, stop_order)
-        self._wait(self.params.fill_wait_seconds)
+        orders = {"parent": parent_trade, "stop": stop_trade, "tp": tp_trade, "contract": contract}
 
-        fill = float(getattr(parent_trade.orderStatus, "avgFillPrice", 0.0) or 0.0)
-        if fill <= 0:
-            fill = float(price) if price is not None else self.current_price(symbol)
+        state = self._await_fill(parent_trade, qty)
+        if state == "rejected":
+            self._cancel_children(orders)
+            status = getattr(parent_trade.orderStatus, "status", "?")
+            raise RuntimeError(f"{symbol} {action} order {parent_id} not accepted by TWS (status {status})")
+        fill = float(getattr(parent_trade.orderStatus, "avgFillPrice", 0.0) or 0.0) if state == "filled" else 0.0
+        confirmed = fill > 0
+        entry = fill if confirmed else (float(price) if price is not None else self.current_price(symbol))
         pos = Position(
-            id=str(parent_id), symbol=symbol, direction=direction, lots=float(lots), entry=fill, stop=float(stop),
+            id=str(parent_id), symbol=symbol, direction=direction, lots=float(lots), entry=entry, stop=float(stop),
             take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now(tz="UTC").tz_localize(None),
             risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
-            initial_stop=float(stop), meta=dict(meta or {}),
+            initial_stop=float(stop), meta=dict(meta or {}), status="filled" if confirmed else "pending",
         )
+        if not confirmed:
+            pos.meta["entry_unconfirmed"] = True
         self._positions[pos.id] = pos
-        self._orders[pos.id] = {"parent": parent_trade, "stop": stop_trade, "tp": tp_trade, "contract": contract}
+        self._orders[pos.id] = orders
         return pos
 
     def modify_stop(self, position_id: str, stop: float) -> None:
@@ -293,8 +348,12 @@ class IBKRBroker(Broker):
                     pass
         contract = orders.get("contract") or self.contract(pos.symbol)
         reverse = "SELL" if pos.direction is Direction.LONG else "BUY"
-        trade = self.ib.placeOrder(contract, self.api.MarketOrder(reverse, self.quantity(pos.symbol, pos.lots), tif="GTC"))
-        self._wait(self.params.fill_wait_seconds)
+        qty = self.quantity(pos.symbol, pos.lots)
+        trade = self.ib.placeOrder(contract, self.api.MarketOrder(reverse, qty, tif="GTC"))
+        state = self._await_fill(trade, qty)
+        if state != "filled":
+            status = getattr(trade.orderStatus, "status", "?")
+            raise RuntimeError(f"close order for {pid} not confirmed (status {status}); the position stays tracked")
         exit_price = float(getattr(trade.orderStatus, "avgFillPrice", 0.0) or 0.0)
         if exit_price <= 0:
             exit_price = float(price) if price is not None else self.current_price(pos.symbol)
@@ -313,9 +372,22 @@ class IBKRBroker(Broker):
             sym = symbol_of(p.contract)
             held[sym] = held.get(sym, 0.0) + float(p.position)
         for pid, pos in list(self._positions.items()):
+            orders = self._orders.get(pid, {})
+            if pos.status == "pending":
+                parent = orders.get("parent")
+                state = self._order_state(parent, self.quantity(pos.symbol, pos.lots)) if parent is not None else "pending"
+                if state == "filled":
+                    fill = float(getattr(parent.orderStatus, "avgFillPrice", 0.0) or 0.0)
+                    if fill > 0:
+                        pos.entry, pos.status = fill, "filled"
+                        pos.meta.pop("entry_unconfirmed", None)
+                elif state == "rejected":
+                    self._cancel_children(orders)
+                    self._positions.pop(pid, None)
+                    self._orders.pop(pid, None)
+                continue
             if abs(held.get(pos.symbol, 0.0)) > 1e-9:
                 continue
-            orders = self._orders.get(pid, {})
             exit_price, reason = None, "closed"
             for key, label in (("stop", "stop"), ("tp", "take_profit")):
                 trade = orders.get(key)

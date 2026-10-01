@@ -1,21 +1,26 @@
 """Live loop: fetch candles -> analyse -> Telegram -> (approve) -> execute -> report.
 
-Data comes from two places: higher timeframes from the TradingView CSV cache
-(refreshed by Claude through the MCP, or by ``import-tv``) and the low
-timeframes straight from the broker, which is the only real-time feed.
+Candles come from a live source (the broker, or a dedicated feed such as OANDA)
+with the TradingView CSV cache as fallback; the cache alone is enough for a
+dry run but is only as fresh as its last import.  Analysis runs on closed
+candles only.  When the freshest candle of a timeframe closed more than
+``live.max_data_age_bars`` candles ago the loop still analyses and manages
+positions but opens no new setups (``live.require_fresh_data``).
 
 Execution is human-in-the-loop by default: a valid setup is sent to Telegram
 with Approve / Skip buttons and the order is only placed after a tap, as long
-as the request has not expired and the risk guard still allows it.  Fills,
-break-even moves and closes (stop / target / break-even) are reported with
-P&L.  ``dry_run=True`` never sends an order.
+as the request has not expired and the risk guard still allows it.  An order
+is reported as filled only when the broker confirmed the fill; a submitted but
+unconfirmed order is reported as such and confirmed (or dropped) on a later
+poll.  Fills, break-even moves and closes (stop / target / break-even) are
+reported with P&L.  ``dry_run=True`` never sends an order.
 """
 from __future__ import annotations
 
 import hashlib
 import time
-from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
@@ -39,6 +44,15 @@ def short_id_for(key) -> str:
     return hashlib.sha1(str(key).encode("utf-8")).hexdigest()[:8]
 
 
+def _age_text(age: pd.Timedelta) -> str:
+    minutes = int(age.total_seconds() // 60)
+    if minutes < 90:
+        return f"{minutes}m"
+    if minutes < 48 * 60:
+        return f"{minutes // 60}h"
+    return f"{minutes // (24 * 60)}d"
+
+
 @dataclass
 class PendingSetup:
     short_id: str
@@ -49,6 +63,23 @@ class PendingSetup:
     expires_at: pd.Timestamp
 
 
+@dataclass
+class FeedReport:
+    """Where each timeframe of the last fetch came from, and what failed."""
+    sources: Dict[Timeframe, str] = field(default_factory=dict)       # "feed" | "broker" | "cache"
+    failures: Dict[Timeframe, str] = field(default_factory=dict)
+    skipped: List[Timeframe] = field(default_factory=list)            # failed and nothing cached
+
+    def describe(self) -> str:
+        by_source: Dict[str, List[str]] = {}
+        for tf in sorted(self.sources):
+            by_source.setdefault(self.sources[tf], []).append(tf.label)
+        parts = [f"{', '.join(tfs)} {src}" for src, tfs in by_source.items()]
+        if self.skipped:
+            parts.append("missing " + ", ".join(tf.label for tf in sorted(self.skipped)))
+        return "; ".join(parts) or "no data"
+
+
 def build_fetch(
     settings: Settings,
     symbol: str,
@@ -56,31 +87,60 @@ def build_fetch(
     broker: Optional[Broker] = None,
     broker_timeframes: Optional[Iterable[Timeframe]] = None,
     bar_counts: Optional[Dict[Timeframe, int]] = None,
+    feed=None,
+    retry_after_seconds: Optional[int] = None,
 ) -> Callable[[], Dict[Timeframe, CandleSeries]]:
-    """Compose a ``fetch`` for ``LiveRunner``: cached TradingView bars + live broker bars."""
+    """Compose a ``fetch`` for ``LiveRunner``: live bars (``feed`` or ``broker``) over the cached TradingView bars.
+
+    When the live source fails for a timeframe the cached candles are kept (or
+    the timeframe is skipped when nothing is cached); when it fails for every
+    timeframe it is left alone for ``retry_after_seconds`` so a broker without
+    market data permissions is not hammered every poll.  The outcome of the
+    last call is on ``fetch.report`` (a ``FeedReport``).
+    """
     symbol = symbol.upper()
     spec = settings.symbols.get(symbol)
     tv_symbol = spec.tradingview_symbol if spec and spec.tradingview_symbol else symbol
     tfs = [Timeframe.parse(tf) for tf in (broker_timeframes if broker_timeframes is not None else settings.live.broker_timeframes)]
     counts = dict(settings.live.broker_bar_counts)
     counts.update(bar_counts or {})
+    source = feed if feed is not None else broker
+    source_name = "feed" if feed is not None else "broker"
+    retry_after = settings.live.feed_retry_seconds if retry_after_seconds is None else retry_after_seconds
+    state = {"down_until": None}
 
     def fetch() -> Dict[Timeframe, CandleSeries]:
+        report = FeedReport()
         views: Dict[Timeframe, CandleSeries] = {}
         if cache_dir:
-            views.update(load_all(cache_dir, tv_symbol) or load_all(cache_dir, symbol))
-        if broker is not None:
+            cached = load_all(cache_dir, tv_symbol) or load_all(cache_dir, symbol)
+            views.update(cached)
+            report.sources.update({tf: "cache" for tf in cached})
+        live_allowed = state["down_until"] is None or time.monotonic() >= state["down_until"]
+        if source is not None and tfs and live_allowed:
             for tf in tfs:
                 try:
-                    views[tf] = broker.get_candles(symbol, tf, counts.get(tf, 500))
+                    views[tf] = source.get_candles(symbol, tf, counts.get(tf, 500))
+                    report.sources[tf] = source_name
                 except Exception as exc:
+                    report.failures[tf] = str(exc)
                     if tf not in views:
-                        raise
-                    print(f"[live] {symbol} {tf.label}: broker bars failed ({exc}); using the cached candles")
+                        report.skipped.append(tf)
+            if len(report.failures) == len(tfs):
+                state["down_until"] = time.monotonic() + retry_after
+                first = next(iter(report.failures.values()))
+                print(f"[live] {symbol}: no live bars for any timeframe ({first}); using the cache, next try in {retry_after // 60} min")
+            else:
+                state["down_until"] = None
+                for tf, err in report.failures.items():
+                    what = "using the cached candles" if tf in views else "timeframe skipped"
+                    print(f"[live] {symbol} {tf.label}: live bars failed ({err}); {what}")
         if not views:
-            raise RuntimeError(f"no candles for {symbol}: cache {cache_dir!r} empty and no broker feed")
+            raise RuntimeError(f"no candles for {symbol}: cache {cache_dir!r} empty and no live feed")
+        fetch.report = report
         return views
 
+    fetch.report = FeedReport()
     return fetch
 
 
@@ -116,12 +176,19 @@ class LiveRunner:
         self.seen: set = set()
         self.pending: Dict[str, PendingSetup] = {}
         self.known_positions: Dict[str, Position] = {}
+        self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
         self.last_analysis: Optional[Analysis] = None
+        self.stale: Dict[Timeframe, pd.Timedelta] = {}   # timeframe -> age of its last closed candle
+        self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
+        self._feed_line: Optional[str] = None
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
         now = pd.Timestamp(now) if now is not None else self.clock()
         views = self.fetch()
+        self.advance_paper(views, now)
+        self.stale = self.stale_timeframes(views, now)
+        self.report_feed(views)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=True)
         self.last_analysis = analysis
@@ -146,6 +213,50 @@ class LiveRunner:
             else:
                 time.sleep(poll)
 
+    # ------------------------------------------------------------ data
+    def stale_timeframes(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> Dict[Timeframe, pd.Timedelta]:
+        """Timeframes whose newest candle closed more than ``live.max_data_age_bars`` candles before ``now``."""
+        out: Dict[Timeframe, pd.Timedelta] = {}
+        for tf, series in views.items():
+            if len(series) == 0:
+                continue
+            last_close = tf.close_time(series.timestamps.iloc[-1])
+            deadline = last_close
+            for _ in range(max(1, int(self.settings.live.max_data_age_bars))):
+                deadline = deadline + tf.delta()
+            if now > deadline:
+                out[tf] = now - last_close
+        return out
+
+    def stale_text(self) -> str:
+        return ", ".join(f"{tf.label} {_age_text(age)} old" for tf, age in sorted(self.stale.items()))
+
+    def report_feed(self, views: Dict[Timeframe, CandleSeries]) -> None:
+        report = getattr(self.fetch, "report", None)
+        line = report.describe() if isinstance(report, FeedReport) and report.sources else ", ".join(tf.label for tf in sorted(views))
+        if self.stale:
+            line += " | stale: " + self.stale_text()
+        if line != self._feed_line:
+            self._feed_line = line
+            print(f"[live] {self.symbol} data: {line}")
+
+    def advance_paper(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> None:
+        """Hand every newly closed candle of the lowest timeframe to a simulated broker, exactly once."""
+        on_candle = getattr(self.broker, "on_candle", None)
+        if on_candle is None or not views:
+            return
+        lowest = views[min(views)].closed_as_of(now)
+        if len(lowest) == 0:
+            return
+        start = 0
+        if self._fed_until is not None:
+            start = lowest.index_at_or_after(self._fed_until)
+            if start < len(lowest) and lowest.timestamps.iloc[start] == self._fed_until:
+                start += 1
+        for k in range(start, len(lowest)):
+            on_candle(self.symbol, lowest[k])
+        self._fed_until = lowest.timestamps.iloc[-1]      # on_candle also records the last close as the price
+
     # ------------------------------------------------------------ signals
     def handle_signal(self, analysis: Analysis, now: pd.Timestamp) -> None:
         setup = analysis.signal.setup
@@ -154,6 +265,9 @@ class LiveRunner:
         if key in self.seen:
             return
         self.seen.add(key)
+        if self.stale and self.settings.live.require_fresh_data:
+            self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
+            return
         if self.broker is None or self.dry_run:
             self.notifier.send_setup(setup, forecast, self.spec)
             if self.broker is not None:
@@ -179,8 +293,9 @@ class LiveRunner:
             return None
         try:
             price = self.broker.current_price(self.symbol)
-        except Exception:
-            price = setup.entry
+        except Exception as exc:
+            self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
+            return None
         risk_now = abs(price - setup.stop) + self.settings.risk.spread_buffer_pips * self.spec.pip_size
         reward_now = abs(setup.take_profit - price)
         rr_now = reward_now / risk_now if risk_now > 0 else 0.0
@@ -189,19 +304,28 @@ class LiveRunner:
             self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                                f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
             return None
-        pos = self.broker.place_market_order(
-            self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
-            setup.risk_distance, setup.breakeven_r,
-            meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
-                  "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
-            price=price, ts=now,
-        )
+        try:
+            pos = self.broker.place_market_order(
+                self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
+                setup.risk_distance, setup.breakeven_r,
+                meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
+                      "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
+                price=price, ts=now,
+            )
+        except Exception as exc:
+            self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
+            return None
         self.guard.record_trade(now)
         self.known_positions[pos.id] = pos
         side = "BUY" if pos.direction.sign > 0 else "SELL"
-        self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{self.spec.price_decimals}f}  "
-                           f"SL {pos.stop:.{self.spec.price_decimals}f}  TP {pos.take_profit:.{self.spec.price_decimals}f}  "
-                           f"risk {pos.risk_amount:,.0f}  (id {pos.id})")
+        d = self.spec.price_decimals
+        if getattr(pos, "status", "filled") == "filled":
+            self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
+                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")
+        else:
+            self.unconfirmed[pos.id] = pos
+            self.notifier.send(f"📨 {self.symbol} {side} {pos.lots:.2f} lots submitted, fill not confirmed yet  "
+                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  (id {pos.id})")
         return pos
 
     # ------------------------------------------------------------ approvals
@@ -211,11 +335,15 @@ class LiveRunner:
             if pending is None:
                 self.notifier.send(f"{self.symbol}: no pending setup with id {decision.short_id} (expired or already handled)")
                 continue
-            if decision.approved:
-                self.notifier.send(f"✅ {self.symbol}: setup {pending.short_id} approved, sending order")
-                self.execute(pending.setup, pending.forecast, now)
-            else:
+            if not decision.approved:
                 self.notifier.send(f"❌ {self.symbol}: setup {pending.short_id} skipped")
+                continue
+            if now >= pending.expires_at:
+                self.notifier.send(f"⌛ {self.symbol}: setup {pending.short_id} approved too late "
+                                   f"(expired {pending.expires_at:%H:%M} UTC), not executed")
+                continue
+            self.notifier.send(f"✅ {self.symbol}: setup {pending.short_id} approved, sending order")
+            self.execute(pending.setup, pending.forecast, now)
         for short_id, pending in list(self.pending.items()):
             if now >= pending.expires_at:
                 self.pending.pop(short_id)
@@ -223,16 +351,27 @@ class LiveRunner:
 
     # ------------------------------------------------------------ positions
     def manage_positions(self, views: Dict[Timeframe, CandleSeries]) -> None:
-        """Move stops to break-even per the exit rules (no partials, let SL/TP run)."""
+        """Confirm pending fills and move stops to break-even per the exit rules (no partials)."""
         if self.broker is None or not views:
             return
+        open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
+        d = self.spec.price_decimals
+        for pid in list(self.unconfirmed):
+            current = open_by_id.get(pid)
+            if current is None:
+                self.unconfirmed.pop(pid)
+                self.known_positions.pop(pid, None)
+                self.notifier.send(f"❌ {self.symbol}: order {pid} did not fill (cancelled or rejected)")
+            elif getattr(current, "status", "filled") == "filled":
+                self.unconfirmed.pop(pid)
+                self.notifier.send(f"💸 {self.symbol}: fill confirmed @ {current.entry:.{d}f}  (id {pid})")
         lowest = views[min(views)]
         if len(lowest) == 0:
             return
         last = lowest.last
-        for pos in self.broker.open_positions(self.symbol):
+        for pos in open_by_id.values():
             self.known_positions.setdefault(pos.id, pos)
-            if pos.breakeven_done:
+            if pos.breakeven_done or getattr(pos, "status", "filled") != "filled":
                 continue
             extreme = last.high if pos.direction.sign > 0 else last.low
             if breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):

@@ -200,22 +200,36 @@ def _broker(args, settings: Settings):
     raise SystemExit(f"unknown broker {kind}")
 
 
+def _feed(args, settings: Settings, broker):
+    """Live candle source: 'broker' (IBKR / MT5 bars), 'oanda' (practice API) or 'cache' (TradingView CSVs only)."""
+    kind = getattr(args, "feed", None)
+    if kind is None:
+        kind = "broker" if getattr(args, "broker", "none") in ("ibkr", "mt5") else "cache"
+    if kind == "broker" and broker is None:
+        raise SystemExit("--feed broker needs --broker ibkr or mt5")
+    feed = None
+    if kind == "oanda":
+        from .data.oanda import OandaFeed
+        feed = OandaFeed(settings=settings)
+    return kind, feed
+
+
 def cmd_live(args) -> int:
     from .live import LiveRunner, build_fetch
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     broker = _broker(args, settings)
     data_dir = args.data_dir or settings.tradingview.cache_dir
-    # only IBKR / MT5 provide a live feed; with no broker or the paper broker everything comes from the cache
-    broker_tfs = [] if args.broker in ("none", "paper") else None
-    fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker, broker_timeframes=broker_tfs)
+    kind, feed = _feed(args, settings, broker)
+    fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
+                        broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
     runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
                         engine=StrategyEngine(settings, _forecaster(settings)),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan)
     mode = "EXECUTE" if args.execute else "dry-run"
-    print(f"live {symbol}: broker={args.broker} mode={mode} approval={'off' if args.no_approval else 'on'} "
+    print(f"live {symbol}: broker={args.broker} feed={kind} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
     if args.once:
         print("scanning... (the first scan loads Kronos and can take a minute or two)")
@@ -253,6 +267,18 @@ def cmd_ibkr_test(args) -> int:
     return 0
 
 
+def cmd_feed_test(args) -> int:
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    from .data.oanda import OandaFeed
+    feed = OandaFeed(settings=settings)
+    series = feed.get_candles(symbol, Timeframe.parse(args.tf), 5)
+    print(f"{symbol} {args.tf} from OANDA {feed.environment}:")
+    print(series.df.to_string())
+    print("price:", feed.current_price(symbol))
+    return 0
+
+
 def cmd_tv_tools(args) -> int:
     settings = _load_settings(args)
     from .data.tradingview_mcp import TradingViewMCPClient
@@ -278,7 +304,7 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--kronos", choices=["off", "advisory", "filter"], help="Kronos indicator mode")
         sp.add_argument("--first-candle", action="store_true", help="allow first bullish/bearish candle confirmations")
         sp.add_argument("--no-first-candle", action="store_true")
-        sp.add_argument("--risk", type=float, help="risk per trade in %")
+        sp.add_argument("--risk", type=float, help="risk per trade in %%")
         sp.add_argument("--account", type=float, help="account size")
 
     sp = sub.add_parser("scan", help="analyse the latest candles and print / send the decision")
@@ -339,12 +365,18 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--poll", type=int, default=60, help="seconds between scans")
     sp.add_argument("--once", action="store_true", help="run a single scan and exit")
     sp.add_argument("--notify-every-scan", action="store_true")
+    sp.add_argument("--feed", choices=["broker", "oanda", "cache"],
+                    help="live candle source (default: broker bars with --broker ibkr/mt5, otherwise the cache)")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")
     sp.add_argument("--symbol", default="EURUSD")
     sp.add_argument("--tf", default="15m")
     sp.set_defaults(func=cmd_ibkr_test)
+    sp = sub.add_parser("feed-test", help="pull the last bars from the OANDA feed (needs OANDA_TOKEN)")
+    sp.add_argument("--symbol", default="EURUSD")
+    sp.add_argument("--tf", default="15m")
+    sp.set_defaults(func=cmd_feed_test)
     return p
 
 

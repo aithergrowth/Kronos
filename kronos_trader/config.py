@@ -36,6 +36,7 @@ class SymbolSpec:
     mt5_symbol: Optional[str] = None           # broker-specific name, e.g. EURUSD.r
     contract_size: float = 100_000.0           # units per 1.0 lot (forex standard lot)
     ibkr_contract: Optional[str] = None        # "forex" | "cfd:IBUST100" | "stock:AAPL:SMART:USD" | "crypto:BTC:PAXOS:USD"
+    oanda_instrument: Optional[str] = None     # OANDA v20 name, e.g. EUR_USD (derived from the symbol when unset)
 
     def pips(self, distance: float) -> float:
         return distance / self.pip_size
@@ -214,7 +215,8 @@ class IBKRParams:
     default_port: int = 7497
     default_client_id: int = 17
     what_to_show: str = "MIDPOINT"      # bar type for forex structure (MIDPOINT | BID | ASK | TRADES)
-    fill_wait_seconds: float = 2.0
+    fill_wait_seconds: float = 2.0      # how long place_market_order waits for the fill confirmation
+    max_quote_age_seconds: float = 300.0  # a 1-minute bar older than this is not a usable price
 
     @property
     def host(self) -> str:
@@ -245,6 +247,9 @@ class LiveParams:
         Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
+    max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
+    require_fresh_data: bool = True     # stale data: analyse and manage positions, but open no new setups
+    feed_retry_seconds: int = 600       # after the live feed fails for every timeframe, leave it alone this long
 
 
 @dataclass

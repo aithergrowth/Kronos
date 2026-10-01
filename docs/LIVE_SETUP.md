@@ -40,12 +40,14 @@ for the forecast indicator.)
    output back when anything looks wrong: the adapter was written against the
    `ib_async` API and still has to be exercised against a real TWS session.
 
-Market data: API quotes need an entitlement the paper account may not have
-(`Error 10089 ... requires additional subscription for API` in the output).
-The loop then prices from the last 1-minute midpoint bar, which works without
-a subscription. For live quotes, in Client Portal under Settings choose the
-paper trading account and share the market data subscriptions of the live
-account with it.
+Market data: IBKR serves quotes and historical bars to the API only when the
+account has market data permissions. A paper account has them when the live
+account has them and sharing is on: Client Portal, Settings, User Settings,
+Paper Trading Account, share real-time market data subscriptions. Without
+them `ibkr-test` shows `Error 10089` (quotes) and `Error 162 ... No market
+data permissions for IDEALPRO CASH` (bars); orders still work. In that case
+run the loop with candles from OANDA (`--feed oanda`, section 3) and keep the
+orders on IBKR.
 
 Forex trades on IDEALPRO in units (1.0 lot = 100,000). Keep the paper account
 the size of the real one: orders under roughly 25,000 units are odd lots with
@@ -79,19 +81,43 @@ Only taps and `/approve` / `/skip` texts coming from that chat are accepted.
 
 ## 3. Data
 
-- With `--broker ibkr` (or `mt5`) every timeframe comes from the broker on
-  each poll (`live.broker_timeframes`, default 5m 15m 1H 4H 1D 1W 1M). The
-  `data/tv_cache/` CSVs are the fallback for a timeframe the broker fails to
-  deliver, and the data for backtests.
-- With `--broker none` or `paper` everything comes from the cache, filled
-  through the TradingView MCP (`docs/TRADINGVIEW_BRIDGE.md`); refresh it at
-  least once a day.
+The loop needs live candles for every timeframe the rules use (1M down to
+5m, `live.broker_timeframes`) and takes them from one source, chosen with
+`--feed`:
+
+- `broker` (default with `--broker ibkr` or `mt5`): the broker's own bars.
+  IBKR needs market data permissions for that (section 1).
+- `oanda`: a free OANDA practice account. Open one at oanda.com, create a
+  token under *Manage API Access*, then
+
+  ```powershell
+  setx OANDA_TOKEN "your-token"
+  ```
+
+  open a new terminal and test with
+  `python -m kronos_trader feed-test --symbol EURUSD --tf 15m`. Forex, gold
+  and index CFDs are available; BTC is not in the EU.
+- `cache`: the TradingView CSVs in `data/tv_cache/` only (default without a
+  live broker). Filled through the TradingView MCP
+  (`docs/TRADINGVIEW_BRIDGE.md`); only as fresh as the last import, fine for
+  a dry run.
+
+The cache is also the fallback for a timeframe the live source fails to
+deliver, a source that fails for every timeframe is left alone for ten
+minutes (`live.feed_retry_seconds`), and the loop prints where each timeframe
+came from. When the newest candle of a timeframe closed more than two
+candles ago the data is stale: the loop keeps analysing and managing
+positions but opens no new setups and says why
+(`live.max_data_age_bars`, `live.require_fresh_data`).
 
 ## 4. Run
 
 ```shell
 # 1) dry-run: setups to Telegram (or the terminal) only, no orders
 python -m kronos_trader live --symbol EURUSD --broker ibkr
+
+# same, with candles from OANDA because IBKR has no market data permissions
+python -m kronos_trader live --symbol EURUSD --broker ibkr --feed oanda
 
 # 2) execute with the Approve step (the mode for the challenge)
 python -m kronos_trader live --symbol EURUSD --broker ibkr --execute
@@ -104,8 +130,12 @@ python -m kronos_trader live --symbol EURUSD --broker ibkr --once
 ```
 
 Approval requests expire after one confirmation-timeframe candle (minimum 5
-minutes); an approved order is re-checked against the risk guard and the
-current price (R:R still ≥ 1:3) before it is sent.
+minutes); an approval that arrives after that is refused. An approved order
+is re-checked against the risk guard and a fresh current price (R:R still
+≥ 1:3) before it is sent, and not sent at all when no current price can be
+had. An order counts as filled only once the broker confirms the fill;
+otherwise the loop reports it as submitted and confirms it, or reports that
+it did not fill, on a later poll.
 
 ## 5. Working from your phone
 

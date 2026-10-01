@@ -62,6 +62,19 @@ class FakeIB:
         self.hist_calls = []
         self.bars = []
         self.quotes = True
+        self.fill_mode = "immediate"     # "immediate" | "pending" | "rejected"
+
+    def _hold(self, contract, order):
+        sym = symbol_of(contract)
+        sign = 1 if order.action == "BUY" else -1
+        self.held[sym] = self.held.get(sym, 0.0) + sign * order.totalQuantity
+
+    def fill_pending(self):
+        """Fill every submitted market order at the current price (what TWS does a moment later)."""
+        for t in self.trades:
+            if t.order.orderType == "MKT" and t.orderStatus.status == "Submitted":
+                t.orderStatus.status, t.orderStatus.avgFillPrice = "Filled", self.price
+                self._hold(t.contract, t.order)
 
     def isConnected(self):
         return self.connected
@@ -89,11 +102,11 @@ class FakeIB:
             self._next_id += 1
         status = "Submitted"
         fill = 0.0
-        if order.orderType == "MKT":
+        if order.orderType == "MKT" and self.fill_mode == "immediate":
             status, fill = "Filled", self.price
-            sym = symbol_of(contract)
-            sign = 1 if order.action == "BUY" else -1
-            self.held[sym] = self.held.get(sym, 0.0) + sign * order.totalQuantity
+            self._hold(contract, order)
+        elif order.orderType == "MKT" and self.fill_mode == "rejected":
+            status = "Cancelled"
         trade = SimpleNamespace(order=order, contract=contract, orderStatus=SimpleNamespace(status=status, avgFillPrice=fill), modified=False)
         self.trades.append(trade)
         return trade
@@ -222,9 +235,33 @@ def test_account_values_are_read_in_the_base_currency(broker):
 
 def test_price_falls_back_to_the_last_minute_bar_without_quotes(broker):
     broker.ib.quotes = False
+    broker.clock = lambda: pd.Timestamp("2026-10-01 09:02", tz="UTC")
     broker.ib.bars = [SimpleNamespace(date=datetime(2026, 10, 1, 9, 0, tzinfo=timezone.utc),
                                       open=1.1, high=1.11, low=1.09, close=1.1234, volume=-1)]
     assert broker.current_price("EURUSD") == pytest.approx(1.1234)
     assert broker.ib.hist_calls[-1][:2] == ("600 S", "1 min")
     broker.ib.quotes = True
     assert broker.current_price("EURUSD") == pytest.approx(1.1234)    # quotes stay off for the session after one failure
+    broker.clock = lambda: pd.Timestamp("2026-10-01 09:30", tz="UTC")  # that bar is half an hour old: not a price
+    with pytest.raises(RuntimeError, match="no price"):
+        broker.current_price("EURUSD")
+
+
+def test_pending_fill_is_confirmed_later_not_closed(broker):
+    broker.ib.fill_mode = "pending"
+    broker.params.fill_wait_seconds = 0.01
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0, price=1.1001)
+    assert pos.status == "pending" and pos.meta["entry_unconfirmed"] and pos.entry == 1.1001
+    assert broker.open_positions("EURUSD") == [pos] and broker.recent_closes() == []
+    broker.ib.price = 1.1003
+    broker.ib.fill_pending()
+    assert broker.open_positions("EURUSD")[0].status == "filled"
+    assert pos.entry == 1.1003 and "entry_unconfirmed" not in pos.meta
+
+
+def test_rejected_parent_cancels_children_and_raises(broker):
+    broker.ib.fill_mode = "rejected"
+    with pytest.raises(RuntimeError, match="not accepted"):
+        broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0, price=1.1)
+    assert broker.open_positions() == []
+    assert all(t.orderStatus.status == "Cancelled" for t in broker.ib.trades)
