@@ -12,9 +12,11 @@ Mapped on 1M, 1W, 1D, 4H, 1H, both sides.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 
 from ..config import StructureParams
 from ..core.candles import CandleSeries
@@ -133,39 +135,94 @@ def update_poi_status(poi: POI, series: CandleSeries, current_price: Optional[fl
     return poi
 
 
+@dataclass
+class VisitState:
+    """Where price stands with one zone on the lowest timeframe, carried from candle to candle."""
+    last_ts: Optional[pd.Timestamp] = None      # last candle folded in
+    inside: bool = False
+    visits: int = 0
+    visit_start_ts: Optional[pd.Timestamp] = None
+    invalid: bool = False
+
+    def step(self, poi: POI, hi: float, lo: float, close: float, ts, ext: float, check_invalid: bool) -> None:
+        if poi.direction is Bias.BULLISH:
+            touches, left, invalid = lo <= poi.high, close > poi.high + ext, close < poi.low
+        else:
+            touches, left, invalid = hi >= poi.low, close < poi.low - ext, close > poi.high
+        self.last_ts = ts
+        if invalid and check_invalid:
+            self.invalid = True
+            self.inside, self.visit_start_ts = False, None
+            return
+        if not self.inside and touches:
+            self.inside, self.visits, self.visit_start_ts = True, self.visits + 1, ts
+        elif self.inside and left:
+            self.inside, self.visit_start_ts = False, None
+
+
+def _visit_scan_start(poi: POI, ltf: CandleSeries) -> int:
+    start = ltf.index_at_or_after(poi.created_at)
+    return max(start, ltf.index_at_or_after(poi.timeframe.close_time(poi.created_at)))
+
+
 def current_visit(poi: POI, ltf: CandleSeries, max_extension_zones: float) -> Tuple[Optional[int], int, bool]:
-    """Track visits of price into the POI on a lower timeframe.
+    """Track visits of price into the POI on a lower timeframe, over the candles given.
 
     Returns ``(start_index_of_current_visit, visit_number, invalidated)``.
     A visit starts when a candle trades into the zone and ends when a candle
     closes more than ``max_extension_zones`` zone-heights beyond it.  The
     current visit is the last one that has not ended.  ``start_index`` is
-    ``None`` when price is not visiting the zone right now.
+    ``None`` when price is not visiting the zone right now.  Stateless: it only
+    sees the candles passed in; :class:`VisitTracker` remembers earlier ones.
     """
     n = len(ltf)
-    start = ltf.index_at_or_after(poi.created_at)
-    start = max(start, ltf.index_at_or_after(poi.timeframe.close_time(poi.created_at)))
     ext = poi.height * max_extension_zones
-    inside = False
-    visit_start: Optional[int] = None
-    visits = 0
-    for k in range(start, n):
-        hi, lo, close = ltf.high[k], ltf.low[k], ltf.close[k]
-        if poi.direction is Bias.BULLISH:
-            touches = lo <= poi.high
-            left = close > poi.high + ext
-            invalid = close < poi.low
+    check_invalid = poi.timeframe <= ltf.timeframe
+    state = VisitState()
+    start_index: Optional[int] = None
+    for k in range(_visit_scan_start(poi, ltf), n):
+        state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.timestamps.iloc[k], ext, check_invalid)
+        if state.invalid:
+            return None, state.visits, True
+        start_index = k if state.visit_start_ts is not None and state.visit_start_ts == ltf.timestamps.iloc[k] else start_index
+        if state.visit_start_ts is None:
+            start_index = None
+    return start_index, state.visits, False
+
+
+class VisitTracker:
+    """Visit history per zone that survives the analysis window.
+
+    The engine only analyses the last few hundred lowest-timeframe candles, so a
+    stateless scan forgets a first visit that happened before that window and
+    would trade a later return as "the first".  This keeps a :class:`VisitState`
+    per zone and folds in only the candles it has not seen yet.
+    """
+
+    def __init__(self, max_zones: int = 5000):
+        self.states: Dict[Tuple[str, int, str], VisitState] = {}
+        self.max_zones = max_zones
+
+    def observe(self, poi: POI, ltf: CandleSeries, max_extension_zones: float) -> Tuple[Optional[pd.Timestamp], int, bool]:
+        """Fold the new candles of ``ltf`` into the zone's state; returns ``(touch_ts, visit_number, invalidated)``."""
+        state = self.states.get(poi.key)
+        if state is None:
+            state = VisitState()
+            self.states[poi.key] = state
+            if len(self.states) > self.max_zones:
+                for key in sorted(self.states, key=lambda k: (self.states[k].last_ts or pd.Timestamp.min))[: self.max_zones // 5]:
+                    del self.states[key]
+        n = len(ltf)
+        if n == 0:
+            return state.visit_start_ts, state.visits, state.invalid
+        ext = poi.height * max_extension_zones
+        check_invalid = poi.timeframe <= ltf.timeframe
+        if state.last_ts is None:
+            start = _visit_scan_start(poi, ltf)
         else:
-            touches = hi >= poi.low
-            left = close < poi.low - ext
-            invalid = close > poi.high
-        if invalid and poi.timeframe <= ltf.timeframe:
-            return None, visits, True
-        if not inside and touches:
-            inside = True
-            visits += 1
-            visit_start = k
-        elif inside and left:
-            inside = False
-            visit_start = None
-    return visit_start, visits, False
+            start = int(ltf.timestamps.searchsorted(state.last_ts, side="right"))
+        for k in range(start, n):
+            state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.timestamps.iloc[k], ext, check_invalid)
+            if state.invalid:
+                break
+        return state.visit_start_ts, state.visits, state.invalid

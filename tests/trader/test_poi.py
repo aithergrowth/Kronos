@@ -65,3 +65,33 @@ def test_current_visit_counts_returns(scenario):
     gone = CandleSeries.from_records([(110, 111, 109, 110), (110, 110.5, 101.5, 102.5), (102.5, 104, 102, 103.8),
                                       (103.8, 107, 103.5, 106.8)], Timeframe.MIN_15, start="2024-01-01 14:00")
     assert current_visit(poi, gone, 1.5)[0] is None
+
+
+def test_visit_tracker_remembers_a_first_visit_outside_the_window():
+    """A zone touched before the analysis window: the stateless scan calls the return 'visit 1', the tracker 'visit 2'."""
+    import pandas as pd
+    from kronos_trader.core import Bias, CandleSeries, POI, Timeframe
+    from kronos_trader.strategy import VisitTracker, current_visit
+    rows = []
+    for i in range(403):
+        if i in (1, 2):
+            rows.append((112.0, 113.0, 105.0, 108.0))      # first visit: trades into the zone 100-110
+        elif i == 3:
+            rows.append((112.0, 130.0, 111.0, 128.0))      # leaves: close beyond 1.5 zone heights (125), no touch
+        elif i == 402:
+            rows.append((126.0, 126.0, 109.5, 109.5))      # the return
+        else:
+            rows.append((126.0, 127.0, 125.5, 126.0))
+    series = CandleSeries.from_records(rows, Timeframe.MIN_5, start="2024-01-01 00:00", symbol="EURUSD")
+    poi = POI(Timeframe.H_4, Bias.BULLISH, 100.0, 110.0, None, None, 0, pd.Timestamp("2023-12-31 20:00"))
+    full = current_visit(poi, series, 1.5)
+    assert full[1] == 2 and full[0] == 402
+    window = series.tail(400)
+    assert current_visit(poi, window, 1.5)[1] == 1                      # the stateless scan forgets visit 1
+    tracker = VisitTracker()
+    for end in range(5, 404):
+        touch, visits, invalid = tracker.observe(poi, series.tail(400) if end == 403 else CandleSeries(series.df.iloc[max(0, end - 400):end].reset_index(drop=True), Timeframe.MIN_5, "EURUSD", validate=False), 1.5)
+    assert visits == 2 and touch == series.timestamps.iloc[402] and not invalid
+    # stateless and stateful agree when the whole history is visible
+    fresh = VisitTracker()
+    assert fresh.observe(poi, series, 1.5)[1:] == (2, False)

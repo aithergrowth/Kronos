@@ -38,7 +38,7 @@ from ..config import SessionParams
 from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
-from .poi import current_visit, map_pois
+from .poi import current_visit, map_pois, VisitTracker
 from .risk import build_setup
 from .structure import StructureAnalysis, analyze_structure
 
@@ -65,6 +65,7 @@ class StrategyEngine:
         self.forecaster = forecaster
         self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
+        self.visits: Dict[str, VisitTracker] = {}      # per symbol: visit history per zone beyond the analysis window
 
     # ------------------------------------------------------------------ helpers
     def structure_for(self, symbol: str, view: CandleSeries) -> StructureAnalysis:
@@ -187,19 +188,19 @@ class StrategyEngine:
             analysis.rejections.append(f"price is not inside a {decision.direction} POI ({n_dir} valid zones mapped)")
             return analysis
 
+        tracker = self.visits.setdefault(symbol, VisitTracker())
         for poi in candidates:
-            visit_start, visits, invalid = current_visit(poi, lowest, s.confirmation.max_extension_zones)
+            touch_ts, visits, invalid = tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
             label = poi.describe()
             if invalid:
                 analysis.rejections.append(f"{label}: invalidated on {lowest_tf.label}")
                 continue
-            if visit_start is None:
+            if touch_ts is None:
                 analysis.rejections.append(f"{label}: no active visit on {lowest_tf.label}")
                 continue
             if visits > 1 and not s.confirmation.allow_retest:
                 analysis.rejections.append(f"{label}: visit #{visits} - only the first return is traded")
                 continue
-            touch_ts = lowest.timestamps.iloc[visit_start]
 
             conf_tfs = [tf for tf in allowed_confirmation_timeframes(poi.timeframe, s.confirmation) if tf in views]
             if not conf_tfs:
