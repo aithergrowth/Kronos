@@ -2,8 +2,8 @@ as_of: '2026-10-01'
 complete_youtube_inventory: false
 complete_youtube_review: false
 complete_academy_review: false
-method: Complete available A/B/C/D/E/F automatic Dutch-caption text review; rendered academy pages, selected
-  plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
+method: Complete available A/B/C/D/E/F/G automatic Dutch-caption text review; rendered academy pages,
+  selected plan slides and charts; K2/K3/K4/K5 continuous public playback caption review. Audio not independently
   verified.
 retrieved_caption_sources:
 - HRPgdK8VhMc
@@ -12,6 +12,7 @@ retrieved_caption_sources:
 - 81LThMAtj5o
 - F5ciF74Uzr8
 - O6IgD2llrq0
+- 6NLVf8P-xP8
 caption_audio_audited: false
 youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports
   reviewed. D requested video frame still black/buffering after one ordinary player recovery.
@@ -63,13 +64,16 @@ deliverables:
   student_chart_reviews: 2
   caption_only_leads: 3
   complete_regression_fixtures: 0
-  ohlc_csvs: 0
+  ohlc_csvs: 7
   intermediate_drawing_state_records: 1
   records_with_expect_fields: 0
   exact_retrieval_requests: 7
   cases_with_retrieval_metadata: 6
   dorus_cases_with_retrieval_metadata: 4
   student_cases_with_retrieval_metadata: 2
+  ohlc_rows_independently_checked: 13599
+  exact_timeframe_datasets: 6
+  substitute_timeframe_datasets: 1
 required_example_coverage_unmet:
 - complete monthly/weekly POI trade
 - complete daily POI trade
@@ -334,8 +338,13 @@ native_candle_export_attempt:
     source_url: https://www.tradingview.com/pricing/?source=header_goass%3D
     feature: Download chart data
     minimum_listed_plan: Plus
-    included_plans: [Plus, Premium, Ultimate]
-    excluded_plans: [Basic, Essential]
+    included_plans:
+    - Plus
+    - Premium
+    - Ultimate
+    excluded_plans:
+    - Basic
+    - Essential
   account_or_payment_changes: false
   alternate_extraction_attempted: false
 readable_candle_anchor:
@@ -350,3 +359,32 @@ readable_candle_anchor:
   independent_second_visual_check: true
   data_export_match_verified: false
   is_trade_event: false
+source_G:
+  id: 6NLVf8P-xP8
+  title: De Kracht van HTF Context in LTF Trades
+  published: '2025-08-20'
+  url: https://www.youtube.com/watch?v=6NLVf8P-xP8
+  duration: '12:38'
+  dutch_auto_caption_segments: 375
+  caption_lines: 380
+  first_caption: 00:00
+  last_caption_start: '12:31'
+  full_available_caption_text_reviewed: true
+  audio_verified: false
+  chart_frames_verified: false
+  caption_sha256: c9a52ecf82ea6a941a066fac8a8079729e1edc159ceee0e629513aaea7737bb3
+  report: ../../DORUS_HTF_CONTEXT.md
+  q5_finding: '10:49–10:55: first bullish candle after a shift in this example; does not establish a candle-only
+    alternative or exact order timing.'
+candle_delivery_followup:
+  source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+  validated_csv_files: 7
+  rows: 13599
+  exact_timeframes: 6
+  gold_entry_requested: 1m
+  gold_entry_delivered_substitute: 15m
+  source_anchor_match: K5 selected INDEX:BTCUSD daily 2026-01-30 OHLC exactly matches all four displayed
+    values
+  full_event_coverage_verified: false
+  completed_fixtures: 0
+  report: candle_validation_2026-10-01.json

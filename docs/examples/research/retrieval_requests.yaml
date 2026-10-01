@@ -1,10 +1,10 @@
 as_of: '2026-10-01'
-status: exact_retrieval_requests_not_candle_exports
+status: six_exact_timeframe_datasets_and_one_15m_substitute_delivered_not_complete_fixtures
 request_count: 7
 case_count: 6
 dorus_authored_cases: 4
 student_critique_cases: 2
-ohlc_exports: 0
+ohlc_exports: 7
 regression_ready_cases: 0
 all_requested_candle_coverage_verified: false
 completion_scope: Instrument/feed, observed timeframe and exact chosen request windows only. This is not
@@ -32,7 +32,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: btcusd_2026-09-27_weekly_condition
   source_id: K2
@@ -44,6 +44,21 @@ requests:
   - value: '2026-09-27'
     kind: dated lesson, not trade execution
   scope: Conditional weekly analysis; no executed trade or completed return asserted.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/INDEX_BTCUSD_1W.csv
+    git_blob_sha: 9e737a171eb4a2b87eb9f4838edfe4a819d8adf6
+    delivered_timeframe: 1W
+    exact_timeframe_match: true
+    row_count: 879
+    first_open: '2009-10-05 00:00:00'
+    last_open: '2026-09-28 00:00:00'
+    rows_before_requested_start: 735
+    rows_inside_requested_dates: 143
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 - request_id: k3_gold_context_4h
   provider_symbol: FOREXCOM:XAUUSD
   timeframe: 4H
@@ -54,7 +69,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: xauusd_2026-08-26_public_recap
   source_id: K3
@@ -69,6 +84,21 @@ requests:
     kind: displayed 1m crosshair; not entry time
   scope: Illustrated scalp with 4H context and 1m entry detail. Formal POI timeframe is unresolved; mobile
     .pro/.raw charts are separate feeds.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/FOREXCOM_XAUUSD_4H.csv
+    git_blob_sha: 52b0aa6ba4935c9aa65d364f9d9c67771e7f423b
+    delivered_timeframe: 4H
+    exact_timeframe_match: true
+    row_count: 2000
+    first_open: '2025-06-17 06:00:00'
+    last_open: '2026-10-01 02:00:00'
+    rows_before_requested_start: 1604
+    rows_inside_requested_dates: 263
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 - request_id: k3_gold_detail_1m
   provider_symbol: FOREXCOM:XAUUSD
   timeframe: 1m
@@ -90,6 +120,22 @@ requests:
   source_observed_dates: *id001
   scope: Illustrated scalp with 4H context and 1m entry detail. Formal POI timeframe is unresolved; mobile
     .pro/.raw charts are separate feeds.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/FOREXCOM_XAUUSD_15min.csv
+    git_blob_sha: cde7ea5cd75ea310bea44ec980ddfa481069bc1f
+    delivered_timeframe: 15m
+    exact_timeframe_match: false
+    row_count: 4000
+    first_open: '2026-07-31 14:00:00'
+    last_open: '2026-10-01 04:15:00'
+    rows_before_requested_start: 1508
+    rows_inside_requested_dates: 360
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: 15m context is supplied; the requested August 1m entry history is still missing and cannot
+      be reconstructed from 15m OHLC.
 - request_id: k4_btc_context_4h
   provider_symbol: INDEX:BTCUSD
   timeframe: 4H
@@ -100,7 +146,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: btcusd_2026-09_4h_recap
   source_id: K4
@@ -113,6 +159,21 @@ requests:
     kind: displayed crosshair; not entry time, chart timezone unverified
   scope: Trade recap on an observed 4H context chart; the formal POI timeframe and exact event candles
     remain unverified.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/INDEX_BTCUSD_4H.csv
+    git_blob_sha: a0cca65c01862fb1e872ac78e20647a094ec9742
+    delivered_timeframe: 4H
+    exact_timeframe_match: true
+    row_count: 2000
+    first_open: '2025-11-02 00:00:00'
+    last_open: '2026-10-01 04:00:00'
+    rows_before_requested_start: 1446
+    rows_inside_requested_dates: 552
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 - request_id: k5_btc_daily
   provider_symbol: INDEX:BTCUSD
   timeframe: 1D
@@ -123,7 +184,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: btcusd_2026-09-07_daily_scenarios
   source_id: K5
@@ -138,6 +199,21 @@ requests:
     kind: dated lesson and 00:06 caption; not a chart event timestamp
   scope: Daily conditional analysis with X, B and P annotations; no complete executed trade or selected
     numerical POI asserted.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/INDEX_BTCUSD_1D.csv
+    git_blob_sha: 6443882e9081291d2fe17c7690a9d75c1887be70
+    delivered_timeframe: 1D
+    exact_timeframe_match: true
+    row_count: 720
+    first_open: '2024-10-12 00:00:00'
+    last_open: '2026-10-01 00:00:00'
+    rows_before_requested_start: 81
+    rows_inside_requested_dates: 615
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 - request_id: s1_eurusd_student_4h
   provider_symbol: OANDA:EURUSD
   timeframe: 4H
@@ -148,7 +224,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: eurusd_2026-08-19_4h_review
   source_id: S1
@@ -161,6 +237,21 @@ requests:
     kind: chart-creation header; not entry time
   scope: Student-authored proposed trade, critically reviewed by Dorus. Student levels are not Dorus-approved
     expectations; an executed or expressly rejected trade is not asserted.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/OANDA_EURUSD_4H.csv
+    git_blob_sha: bc409ea236061ed093dac91f0fef65622449fdb6
+    delivered_timeframe: 4H
+    exact_timeframe_match: true
+    row_count: 2000
+    first_open: '2025-06-18 21:00:00'
+    last_open: '2026-10-01 01:00:00'
+    rows_before_requested_start: 1471
+    rows_inside_requested_dates: 348
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 - request_id: s2_usdjpy_student_daily
   provider_symbol: FOREXCOM:USDJPY
   timeframe: 1D
@@ -171,7 +262,7 @@ requests:
   window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
     or trade event
   poi_timeframe_verified: false
-  ohlc_obtained: false
+  ohlc_obtained: true
   coverage_verified: false
   case: usdjpy_2026-08-19_bias_review
   source_id: S2
@@ -186,6 +277,21 @@ requests:
     kind: separate date/drawing label Mon 24 Aug 26; not execution
   scope: Student chart with Dorus warning that its bias has errors. Exact corrected votes and approved
     POI remain unverified.
+  ohlc_obtained_semantics: requested feed/timeframe, not a substitute
+  delivery:
+    path: data/tv_cache/FOREXCOM_USDJPY_1D.csv
+    git_blob_sha: 5b0c4a96997b3b266a34358871c4ab85cacd785a
+    delivered_timeframe: 1D
+    exact_timeframe_match: true
+    row_count: 2000
+    first_open: '2019-01-20 22:00:00'
+    last_open: '2026-09-30 21:00:00'
+    rows_before_requested_start: 1869
+    rows_inside_requested_dates: 109
+    request_window_within_observed_date_envelope: true
+    source_commit: 375c16bda89ce74cef824062308dcf7f61a4cdd4
+    basic_integrity_passed: true
+    remaining: Exact source event/POI annotations and 60 actual pre-sweep bars remain unverified.
 native_export_attempt:
   request_id: k5_btc_daily
   date: '2026-10-01'
@@ -193,12 +299,22 @@ native_export_attempt:
   timeframe: 1D
   chart_clock: UTC
   result: Native Download action opened an upgrade prompt recommending Premium; no file was produced.
-    No account upgrade or alternative extraction attempted. Premium was the session recommendation,
-    not the minimum plan listed for the feature.
+    No account upgrade or alternative extraction attempted. Premium was the session recommendation, not
+    the minimum plan listed for the feature.
   official_plan_check:
     checked_on: '2026-10-01'
     source_url: https://www.tradingview.com/pricing/?source=header_goass%3D
     feature: Download chart data
     minimum_listed_plan: Plus
-    included_plans: [Plus, Premium, Ultimate]
-    excluded_plans: [Basic, Essential]
+    included_plans:
+    - Plus
+    - Premium
+    - Ultimate
+    excluded_plans:
+    - Basic
+    - Essential
+ohlc_delivery_method: TradingView MCP payloads committed as CSV by Claude; no successful native website
+  CSV export claimed
+exact_timeframe_requests_delivered: 6
+substitute_timeframe_datasets: 1
+data_validation_report: candle_validation_2026-10-01.json
