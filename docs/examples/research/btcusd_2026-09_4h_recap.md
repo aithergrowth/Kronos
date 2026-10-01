@@ -11,3 +11,19 @@ This remains a research record. Missing fields are omitted from the YAML; no
 synthetic candles, tolerance or detector expectations are supplied.
 
 Public playback captions reviewed from beginning to the 02:27 end; audio not independently verified. At 00:10–01:08 he explains the purchase through successive liquidity takes and remaining liquidity above. At 01:15–01:46 he permits several possible future paths. At 02:01–02:19 he wants clear confirmation for future entries; these passages do not supply missing order prices or a deterministic entry predicate. Profit remains a self-report.
+
+## Exact retrieval handoff — 2026-10-01
+
+Trade recap on an observed 4H context chart; the formal POI timeframe and exact event candles remain unverified.
+
+These exact windows are **researcher-selected retrieval padding**, not dates Dorus is claimed to have marked as trade events. Request metadata is complete; no OHLC or completed regression fixture is supplied.
+
+| Request | Feed / symbol | Timeframe | Requested dates, inclusive | Role |
+|---|---|---|---|---|
+| k4_btc_context_4h | `INDEX:BTCUSD` | 4H | 2026-07-01 through 2026-09-30 | context only; not a verified 4H POI |
+
+Source date evidence: 2026-09-16 22:00 (displayed crosshair; not entry time, chart timezone unverified).
+
+For daily/weekly requests use the provider's native bar dates and preserve its candle alignment. Intraday request dates are explicit UTC retrieval boundaries, not an inferred screenshot timezone. Export actual provider candle-open timestamps in UTC. After retrieval, identify the relevant source scenario and verify 60 actual pre-sweep bars and any demonstrated post-break return; extend the interval if needed. These checks have **not** passed yet.
+
+Unshown annotation fields may remain omitted. A missing entry, stop or target is not by itself a reason to withhold this handoff. The displayed chart timeframe must not silently become a verified formal POI timeframe. See [all retrieval requests](RETRIEVAL_REQUESTS.md) and [the request manifest](retrieval_requests.yaml).

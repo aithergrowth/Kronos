@@ -1,5 +1,8 @@
 status: incomplete_chart_record
 regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression completion is implied.
+unshown_annotation_fields_may_be_omitted: true
 symbol: BTCUSD
 source: K4 — Zo verdiende ik 21.000 euro met liquiditeit, 01:02
 source_url: https://www.skool.com/dorusview/classroom/304766fd?md=9e375caa007041fdb4cfd1c4d89726bf
@@ -30,7 +33,7 @@ missing:
 - exact sweep/break candles and levels
 - entry/SL/TP order labels
 - verified UTC conversion
-- complete historical data interval
+- verified candle coverage, including 60 pre-sweep bars and any demonstrated post-break return
 confidence:
   explicit_caption_reasoning: high
   chart_observations: medium
@@ -39,6 +42,35 @@ data_request:
   symbol: BTCUSD
   feed: INDEX
   displayed_timeframe: 4H
-  exact_utc_range_established: false
+  provider_symbol: INDEX:BTCUSD
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: 2026-09-16 22:00
+    kind: displayed crosshair; not entry time, chart timezone unverified
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: k4_btc_context_4h
+    provider_symbol: INDEX:BTCUSD
+    timeframe: 4H
+    date_from_inclusive: '2026-07-01'
+    date_to_inclusive: '2026-09-30'
+    date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+    purpose: context only; not a verified 4H POI
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.
 evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot
   excluded from PR.

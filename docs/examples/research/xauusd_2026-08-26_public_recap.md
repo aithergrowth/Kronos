@@ -67,3 +67,20 @@ the public S5 recording's UTC-4 clock. No uncertain axis tick is recorded.
 The sourced observations are in the YAML under `lesson_attachment_observations`.
 Raw academy attachments remain excluded from the repository. No `expect` fields
 or CSV were added; `regression_ready` remains false.
+
+## Exact retrieval handoff — 2026-10-01
+
+Illustrated scalp with 4H context and 1m entry detail. Formal POI timeframe is unresolved; mobile .pro/.raw charts are separate feeds.
+
+These exact windows are **researcher-selected retrieval padding**, not dates Dorus is claimed to have marked as trade events. Request metadata is complete; no OHLC or completed regression fixture is supplied.
+
+| Request | Feed / symbol | Timeframe | Requested dates, inclusive | Role |
+|---|---|---|---|---|
+| k3_gold_context_4h | `FOREXCOM:XAUUSD` | 4H | 2026-07-01 through 2026-08-31 | context only; not a verified 4H POI |
+| k3_gold_detail_1m | `FOREXCOM:XAUUSD` | 1m | 2026-08-25 through 2026-08-28 | supplemental entry-detail candles; not the main POI timeframe |
+
+Source date evidence: 2026-08-26 12:00 (displayed 4H crosshair; chart timezone unverified); 2026-08-26 14:45 (displayed 1m crosshair; not entry time).
+
+For daily/weekly requests use the provider's native bar dates and preserve its candle alignment. Intraday request dates are explicit UTC retrieval boundaries, not an inferred screenshot timezone. Export actual provider candle-open timestamps in UTC. After retrieval, identify the relevant source scenario and verify 60 actual pre-sweep bars and any demonstrated post-break return; extend the interval if needed. These checks have **not** passed yet.
+
+Unshown annotation fields may remain omitted. A missing entry, stop or target is not by itself a reason to withhold this handoff. The displayed chart timeframe must not silently become a verified formal POI timeframe. See [all retrieval requests](RETRIEVAL_REQUESTS.md) and [the request manifest](retrieval_requests.yaml).

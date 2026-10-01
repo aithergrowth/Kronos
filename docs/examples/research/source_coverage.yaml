@@ -15,8 +15,8 @@ retrieved_caption_sources:
 caption_audio_audited: false
 youtube_access_block: Resolved after user manual handoff on 2026-09-30; exact D/E/F Dutch caption exports
   reviewed. D requested video frame still black/buffering after one ordinary player recovery.
-youtube_playback_followup: On 2026-10-01 A was opened at 02:24:30 and playback attempted; the watch
-  page loaded but the chart remained black/buffering. No new chart values read; no new bot block claimed.
+youtube_playback_followup: On 2026-10-01 A was opened at 02:24:30 and playback attempted; the watch page
+  loaded but the chart remained black/buffering. No new chart values read; no new bot block claimed.
 skool_classroom:
   1. Beginnen met traden: all three lesson pages inventoried; spoken content not reviewed
   2. De strategie leren: accessible; six lessons inventoried; Tradingplan selected written slides verified;
@@ -45,10 +45,19 @@ priority_videos_discovered_not_reviewed:
   reason: channel title and Skool announcement only
 - id: ZGwP57Xd2TU
   displayed_title: I Made a Student Profitable in 79 Minutes (Live Coaching)
-  reason: channel title only
+  reason: Dutch automatic-caption option selected, but exports returned no transcript and visible panel
+    stayed empty after one ordinary reload. Playback black at 00:00. No content reviewed; no new bot-block
+    claim.
+  published: '2026-05-16'
+  duration: '1:19:33'
+  last_attempt: '2026-10-01'
 - id: XJ0iAKv0amQ
   displayed_title: Deze Goud Trade Leverde Mij €3.313,46 Op (Trade Recap)
-  reason: channel title only
+  reason: Watch page and description inspected; transcript export returned no transcript and the transcript
+    panel exposed no readable text. No chart or strategy content reviewed.
+  published: '2026-04-25'
+  duration: 09:00
+  last_attempt: '2026-10-01'
 deliverables:
   dorus_authored_chart_records: 5
   student_chart_reviews: 2
@@ -57,6 +66,10 @@ deliverables:
   ohlc_csvs: 0
   intermediate_drawing_state_records: 1
   records_with_expect_fields: 0
+  exact_retrieval_requests: 7
+  cases_with_retrieval_metadata: 6
+  dorus_cases_with_retrieval_metadata: 4
+  student_cases_with_retrieval_metadata: 2
 required_example_coverage_unmet:
 - complete monthly/weekly POI trade
 - complete daily POI trade
@@ -79,8 +92,8 @@ strategy_lesson_inventory:
   review: located, 13:34; content not reviewed
 - lesson: Balance levels
   url: https://www.skool.com/dorusview/classroom/1924b124?md=074a2908adac42c7b6c6a2d68aff4da8
-  review: 'K7: earlier selected frames plus 03:00, 03:19–03:20, 03:24–03:25, 03:34–03:35. Lower line at first
-    drawn candle lower wick independently checked; no readable P label and no complete spoken review.
+  review: 'K7: earlier selected frames plus 03:00, 03:19–03:20, 03:24–03:25, 03:34–03:35. Lower line at
+    first drawn candle lower wick independently checked; no readable P label and no complete spoken review.
     Additional 2026-10-01 frames at 03:46, 07:50 and 08:50 do not establish an exact P boundary.'
 - lesson: Bias analyse
   url: https://www.skool.com/dorusview/classroom/1924b124?md=e661788b9bd849b6b4f5a3ec10c0b6d8
@@ -97,8 +110,8 @@ analysis_lesson_inventory:
   url: https://www.skool.com/dorusview/classroom/304766fd?md=1dc24e5ce9664d918a1d6212b68d4411
   review: K3 continuous public playback captions through 4:05 end; selected chart frames now include corrected
     02:40 entry/SL/distance/RR labels independently checked. Final target price/timezone and complete
-    fixture remain unresolved. IMG_3573.PNG and IMG_3574.PNG attachments independently read on
-    2026-10-01; distinct .pro/M1 and .raw/M15 charts show quote labels, not explicit SL/TP or UTC anchors.
+    fixture remain unresolved. IMG_3573.PNG and IMG_3574.PNG attachments independently read on 2026-10-01;
+    distinct .pro/M1 and .raw/M15 charts show quote labels, not explicit SL/TP or UTC anchors.
 - lesson: Bitcoin analyse | 19-08-2026
   url: https://www.skool.com/dorusview/classroom/304766fd?md=e1abcf9d1f194561adc2ef8758b64d6b
   review: native player, 3:45; English CC appears unreliable for Dutch speech; no rule attributed
@@ -227,7 +240,8 @@ focused_followup: ../../DORUS_FOCUSED_AUDIT.md
 focused_followup_date: '2026-10-01'
 focused_followup_results:
   gold_corrected_drawing: 02:40 entry/SL and distances/RR read and independently checked; target price/timezone
-    still obscured. Two mobile attachments independently checked; no labeled TP or UTC anchor. No complete fixture.
+    still obscured. Two mobile attachments independently checked; no labeled TP or UTC anchor. No complete
+    fixture.
   entry_poi: K6 confirms local gap wick boundaries. D/F explicitly describe liquidity-to-protection; exact
     P endpoints still unresolved. K7 03:19–03:20 lower line meets first candle lower wick but has no readable
     P label.
@@ -303,3 +317,28 @@ additional_caption_only_locators:
     to expectation
   F_btc_daily_context: 06:48–08:23; Daily named 07:58
   F_gold_daily: 08:58–09:23
+retrieval_handoff: RETRIEVAL_REQUESTS.md; retrieval_requests.yaml. Researcher-selected exact request windows,
+  not event annotations or completed POI fixtures.
+native_candle_export_attempt:
+  date: '2026-10-01'
+  provider: TradingView
+  symbol: INDEX:BTCUSD
+  timeframe: 1D
+  chart_timezone: UTC
+  requested_from: '2025-01-01'
+  requested_to: '2026-09-07'
+  result: Download chart data -> Download opened a Premium upgrade gate; no CSV produced.
+  account_or_payment_changes: false
+  alternate_extraction_attempted: false
+readable_candle_anchor:
+  source: K5 00:09
+  symbol: INDEX:BTCUSD
+  timeframe: 1D
+  displayed_date: '2026-01-30'
+  open: 84550.82
+  high: 84638.35
+  low: 81047.8
+  close: 84149.17
+  independent_second_visual_check: true
+  data_export_match_verified: false
+  is_trade_event: false
