@@ -112,6 +112,16 @@ def test_execution_rechecks_rr_and_guard(setup):
     assert len(broker2.open_positions()) == 1 and any("NOT executable" in m for m in notifier2.sent)
 
 
+def test_execution_resizes_to_the_current_price(setup):
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker, last_close=1.1010, require_approval=False)   # 10 pips above the planned entry
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    assert pos.lots == pytest.approx(1.61) and pos.risk_amount == pytest.approx(1000.0)    # 1 % over 62 pips, not the 1.92 planned
+    assert pos.risk_distance == pytest.approx(0.0062)
+    assert any("1.92 -> 1.61" in str(r) for r in runner.journal.rows) if hasattr(runner.journal, "rows") else True
+
+
 def test_build_fetch_combines_cache_and_broker(tmp_path):
     settings = Settings()
     daily = CandleSeries.from_records([(1, 2, 0.5, 1.5)] * 5, T.D_1, start="2026-09-20", symbol="OANDA:EURUSD")

@@ -54,3 +54,12 @@ def test_monthly_close_time_keeps_the_feed_stamp_offset():
     closes = Timeframe.MN_1.close_times(pd.Series(pd.to_datetime(["2023-02-28 21:00", "2023-03-31 21:00"])))
     assert list(closes) == [pd.Timestamp("2023-03-31 21:00"), pd.Timestamp("2023-04-30 21:00")]
     assert Timeframe.H_4.close_time(pd.Timestamp("2024-01-10 22:00")) == pd.Timestamp("2024-01-11 02:00")
+
+
+def test_monthly_close_follows_new_york_daylight_saving():
+    # November 2023 opens 31 October 21:00 UTC (summer) and closes 30 November 17:00 New York = 22:00 UTC (winter)
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2023-10-31 21:00")) == pd.Timestamp("2023-11-30 22:00")
+    # March 2024 opens 29 February 22:00 UTC (winter) and closes 31 March 21:00 UTC (summer)
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2024-02-29 22:00")) == pd.Timestamp("2024-03-31 21:00")
+    # without a session calendar the stamp offset is kept
+    assert Timeframe.MN_1.close_time(pd.Timestamp("2023-10-31 21:00"), session_tz=None) == pd.Timestamp("2023-11-30 21:00")

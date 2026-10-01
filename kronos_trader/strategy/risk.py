@@ -82,6 +82,25 @@ def find_take_profit(
     return nearest(liquidity + balance)
 
 
+def resize_at(
+    price: float,
+    stop: float,
+    take_profit: float,
+    equity: float,
+    spec: SymbolSpec,
+    params: RiskParams,
+) -> Tuple[float, float, float, float, float]:
+    """Size and R:R of a setup executed at ``price`` instead of at its confirmation close.
+
+    Returns ``(lots, risk_amount, risk_distance, rr, stop_pips)``; ``lots`` is 0 when
+    the stop is too wide for the minimum lot at ``params.risk_pct`` of ``equity``.
+    """
+    lots, risk_amount, risk_distance, stop_pips = size_position(equity, price, stop, spec, params)
+    rr_distance = risk_distance if params.rr_includes_buffer else abs(price - stop)
+    rr = abs(take_profit - price) / rr_distance if rr_distance > 0 else 0.0
+    return lots, risk_amount, risk_distance, rr, stop_pips
+
+
 def size_position(
     equity: float,
     entry: float,

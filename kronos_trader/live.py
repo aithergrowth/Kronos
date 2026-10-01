@@ -410,19 +410,24 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
             return None
-        risk_now = abs(price - setup.stop) + self.settings.risk.spread_buffer_pips * self.spec.pip_size
-        reward_now = abs(setup.take_profit - price)
-        rr_now = reward_now / risk_now if risk_now > 0 else 0.0
+        from .strategy.risk import resize_at
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
+        lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
+                                                                self.spec, self.settings.risk)
         if wrong_side or rr_now < self.settings.risk.min_rr:
             self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                                f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
             return None
+        if lots <= 0:
+            self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
+            self.notifier.send(f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}")
+            return None
+        resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
         try:
             pos = self.broker.place_market_order(
-                self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
-                setup.risk_distance, setup.breakeven_r,
+                self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
+                risk_distance, setup.breakeven_r,
                 meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
                       "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
                 price=price, ts=now,
@@ -438,7 +443,7 @@ class LiveRunner:
         filled = getattr(pos, "status", "filled") == "filled"
         self.note("filled" if filled else "submitted", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
                   stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
-                  note=f"setup {sid}")
+                  note=f"setup {sid}{resized}")
         if filled:
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
                                f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")

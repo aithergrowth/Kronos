@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from ..core.candles import CandleSeries
-from ..core.timeframe import Timeframe
+from ..core.timeframe import SESSION_CLOSE_HOUR, Timeframe
 from .resample import resample
 from .tv_cache import save_series
 
@@ -124,9 +124,6 @@ def load_minutes(instrument: str, raw_dir, symbol: Optional[str] = None) -> Cand
         raise RuntimeError(f"no decoded candles for {instrument} under {folder}")
     df = pd.concat(frames, ignore_index=True).drop_duplicates("timestamp").sort_values("timestamp").reset_index(drop=True)
     return CandleSeries(df, Timeframe.MIN_1, (symbol or instrument).upper())
-
-
-SESSION_CLOSE_HOUR = 17   # the trading day ends at 17:00 New York; 4H, daily, weekly and monthly bins start there
 
 
 def anchored_resample(minutes: CandleSeries, target: Timeframe, session_offset_hours: float = 0.0,

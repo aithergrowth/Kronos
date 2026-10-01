@@ -58,6 +58,11 @@ class PaperBroker(Broker):
             return 0.0, 2.0 * half
         return -half, half
 
+    def _market_exit(self, symbol: str, direction: Direction, base: float) -> float:
+        """The price a position closes at from candle price ``base``: the bid for a long, the ask for a short."""
+        bid_off, ask_off = self._offsets(symbol)
+        return float(base) + (bid_off if direction is Direction.LONG else ask_off)
+
     def pnl_for(self, symbol: str, direction: Direction, entry: float, exit_price: float, lots: float) -> float:
         spec = self._spec(symbol)
         pips = direction.sign * (exit_price - entry) / spec.pip_size
@@ -72,7 +77,7 @@ class PaperBroker(Broker):
         for pos in self.positions.values():
             price = self._last_price.get(pos.symbol)
             if price is not None:
-                unrealized += self.pnl_for(pos.symbol, pos.direction, pos.entry, price, pos.lots)
+                unrealized += self.pnl_for(pos.symbol, pos.direction, pos.entry, self._market_exit(pos.symbol, pos.direction, price), pos.lots)
         return self._balance + unrealized
 
     def balance(self) -> float:
@@ -105,9 +110,16 @@ class PaperBroker(Broker):
     def modify_stop(self, position_id: str, stop: float) -> None:
         self.positions[position_id].stop = float(stop)
 
-    def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
+    def close_position(self, position_id, reason="manual", price=None, ts=None, market=False) -> ClosedTrade:
+        """Close at ``price`` (a stop or target level, already a bid/ask level) or, with ``market=True`` or no
+        price, at the bid/ask built from that candle price for the position's side."""
         pos = self.positions.pop(position_id)
-        exit_price = float(price if price is not None else self.current_price(pos.symbol))
+        if price is None:
+            exit_price = self._market_exit(pos.symbol, pos.direction, self.current_price(pos.symbol))
+        elif market:
+            exit_price = self._market_exit(pos.symbol, pos.direction, price)
+        else:
+            exit_price = float(price)
         pnl = self.pnl_for(pos.symbol, pos.direction, pos.entry, exit_price, pos.lots)
         self._balance += pnl
         r = pos.r_at(exit_price)

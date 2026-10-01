@@ -101,3 +101,18 @@ def test_stop_fills_at_the_open_when_a_candle_gaps_through_it():
     closed = broker.on_candle("EURUSD", _candle(1.0900, 1.0920, 1.0880, 1.0910, ts="2024-01-07 22:00"))
     assert len(closed) == 1 and closed[0].reason == "stop" and closed[0].exit == pytest.approx(1.0900)
     assert closed[0].r < -1.0
+
+
+def test_shorts_are_valued_and_market_closed_on_the_ask():
+    broker = PaperBroker(Settings(), quote_basis="bid")
+    broker.place_market_order("EURUSD", Direction.SHORT, 1.0, 1.1050, 1.0900, 1000.0, 0.0051, 4.0,
+                              price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
+    broker.on_candle("EURUSD", _candle(1.1000, 1.1005, 1.0940, 1.0950))
+    assert broker.equity() == pytest.approx(100_000 + (1.1000 - 1.0951) / 0.0001 * 10)      # closed on the ask: 49 pips, not 50
+    closed = broker.close_position(broker.open_positions()[0].id, "end_of_data", 1.0950, market=True)
+    assert closed.exit == pytest.approx(1.0951)
+    long_broker = PaperBroker(Settings(), quote_basis="bid")
+    long_broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 1000.0, 0.0051, 4.0,
+                                   price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
+    long_broker.on_candle("EURUSD", _candle(1.1000, 1.1060, 1.0990, 1.1050))
+    assert long_broker.equity() == pytest.approx(100_000 + (1.1050 - 1.1001) / 0.0001 * 10)   # long closes on the bid itself

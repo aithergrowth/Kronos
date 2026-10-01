@@ -47,6 +47,10 @@ def test_fill_is_at_the_current_price_not_the_stale_confirmation_close(scenario)
     assert trade.entry == pytest.approx(1.1100 + 0.00005)       # the candle that just closed, plus half the spread
     assert trade.meta["entry_planned"] == pytest.approx(1.1000)
     assert trade.meta["rr_at_fill"] == pytest.approx(round(0.06 / 0.0152, 2))
+    # sized on the executable entry: 1 % of 100,000 over 152 pips -> 0.65 lots, not the 1.92 planned at 1.1000
+    assert trade.lots == pytest.approx(0.65) and trade.meta["lots_planned"] == pytest.approx(1.92)
+    assert trade.risk_amount == pytest.approx(1000.0)
+    assert abs(trade.pnl) == pytest.approx(abs(trade.r) * 1000.0, rel=0.05)      # R is measured on the real risk
 
 
 def test_signal_is_skipped_when_the_move_leaves_too_little_reward(scenario):
@@ -63,4 +67,12 @@ def test_bounded_run_flattens_at_its_own_last_candle(scenario):
                     engine=StaleEngine(_setup(scenario, 1.1700)), end="2024-01-02 09:30")
     result = bt.run()
     assert len(result.trades) == 1 and result.trades[0].reason == "end_of_data"
-    assert result.trades[0].exit == pytest.approx(1.1120)        # not the 1.2000 of the candle after --end
+    assert result.trades[0].exit == pytest.approx(1.1120 - 0.00005)   # its own last close on the bid, not the 1.2000 after --end
+
+
+def test_stop_too_wide_at_the_moved_price_is_skipped(scenario):
+    s = Settings()
+    s.account_size = 2_000.0                          # 1 % = 20: at 152 pips that is under the 0.01-lot minimum
+    bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)))
+    result = bt.run()
+    assert result.trades == [] and "price moved: stop too wide for the minimum lot" in result.guard_reasons

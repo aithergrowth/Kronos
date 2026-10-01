@@ -20,6 +20,7 @@ from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
 from ..execution.risk_guard import RiskGuard
 from ..strategy.engine import StrategyEngine
+from ..strategy.risk import resize_at
 
 
 @dataclass
@@ -49,7 +50,7 @@ class BacktestResult:
                 "poi_tf": t.meta.get("poi_tf"), "confirmation": t.meta.get("confirmation"),
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
                 "tp_source": t.meta.get("tp_source"), "touched_at": t.meta.get("touched_at"), "confirmed_at": t.meta.get("confirmed_at"),
-                "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"),
+                "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"), "lots_planned": t.meta.get("lots_planned"),
                 "poi_low": (t.meta.get("poi") or (None, None))[0],
                 "poi_high": (t.meta.get("poi") or (None, None))[1], "kronos": t.meta.get("kronos"),
             })
@@ -144,23 +145,26 @@ class Backtester:
                 # same re-check the live runner makes: the confirmation close may be older than ``now`` when a
                 # session or news gate held the signal back
                 price_now = float(candle.close)
-                risk_now = abs(price_now - setup.stop) + s.risk.spread_buffer_pips * spec.pip_size
-                rr_now = abs(setup.take_profit - price_now) / risk_now if risk_now > 0 else 0.0
                 wrong_side = (setup.direction.sign > 0 and price_now <= setup.stop) or (setup.direction.sign < 0 and price_now >= setup.stop)
-                if wrong_side or rr_now < s.risk.min_rr:
+                lots_now, risk_amount_now, risk_distance_now, rr_now, _ = resize_at(
+                    price_now, setup.stop, setup.take_profit, broker.equity(), spec, s.risk)
+                if wrong_side or rr_now < s.risk.min_rr or lots_now <= 0:
                     rejected += 1
-                    reason = "price moved: wrong side of the stop" if wrong_side else "price moved: R:R below minimum"
+                    reason = ("price moved: wrong side of the stop" if wrong_side else
+                              "price moved: R:R below minimum" if rr_now < s.risk.min_rr else
+                              "price moved: stop too wide for the minimum lot")
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     continue
                 fc = analysis.signal.forecast
                 broker.place_market_order(
-                    self.symbol, setup.direction, setup.lots, setup.stop, setup.take_profit, setup.risk_amount,
-                    setup.risk_distance, setup.breakeven_r,
+                    self.symbol, setup.direction, lots_now, setup.stop, setup.take_profit, risk_amount_now,
+                    risk_distance_now, setup.breakeven_r,
                     meta={
                         "poi_tf": setup.poi.timeframe.label, "poi": (setup.poi.low, setup.poi.high),
                         "confirmation": setup.confirmation.type.value, "confirmation_tf": setup.confirmation.timeframe.label,
                         "confirmed_at": setup.confirmation.timestamp, "touched_at": setup.touched_at, "entry_planned": setup.entry,
-                        "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "tp_source": setup.tp_source,
+                        "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "lots_planned": setup.lots,
+                        "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
                     },
                     price=price_now, ts=now,
@@ -172,7 +176,7 @@ class Backtester:
         # flatten at the end so every trade has an outcome (at the last candle this run processed)
         if broker.open_positions() and last_candle is not None:
             for pos in list(broker.open_positions()):
-                broker.close_position(pos.id, "end_of_data", float(last_candle.close), self.step_tf.close_time(last_candle.timestamp))
+                broker.close_position(pos.id, "end_of_data", float(last_candle.close), self.step_tf.close_time(last_candle.timestamp), market=True)
 
         return BacktestResult(
             symbol=self.symbol, step_tf=self.step_tf, start=first_ts, end=last_ts,

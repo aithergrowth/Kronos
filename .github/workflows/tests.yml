@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install the trader (no torch: the slow Kronos test is deselected by default)
+      - name: "Install the trader (no torch: the slow Kronos test is deselected by default)"
         run: pip install -r requirements-trader.txt pytest
-      - name: Run the trader test suite
+      - name: "Run the trader test suite"
         run: python -m pytest -q tests/trader -rs

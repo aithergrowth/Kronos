@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import total_ordering
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
+
+SESSION_CLOSE_HOUR = 17   # the forex trading day ends at 17:00 New York; sessions, 4H, daily, weekly and monthly candles start there
 
 
 @total_ordering
@@ -77,7 +79,7 @@ class Timeframe(Enum):
             return ts.normalize()
         return ts.floor(f"{self.minutes}min")
 
-    def close_time(self, open_time: pd.Timestamp) -> pd.Timestamp:
+    def close_time(self, open_time: pd.Timestamp, session_tz: Optional[str] = "America/New_York") -> pd.Timestamp:
         """Timestamp at which the candle opened at ``open_time`` is fully closed.
 
         Monthly candles may be stamped on the previous evening (a New York close
@@ -89,14 +91,21 @@ class Timeframe(Enum):
         open_time = pd.Timestamp(open_time)
         if self is Timeframe.MN_1:
             logical = (open_time + pd.Timedelta(hours=12)).normalize().replace(day=1)
-            return logical + pd.DateOffset(months=1) - (logical - open_time)
+            nxt = logical + pd.DateOffset(months=1)
+            offset = logical - open_time
+            if offset == pd.Timedelta(0) or not session_tz:
+                return nxt - offset
+            # an evening stamp is a session-close feed: the month ends at the session close (17:00 New York)
+            # on its last day, which follows that zone's daylight saving, not the stamp's own offset
+            close_local = nxt - pd.Timedelta(hours=24 - SESSION_CLOSE_HOUR)
+            return close_local.tz_localize(session_tz).tz_convert("UTC").tz_localize(None)
         return open_time + self.delta()
 
-    def close_times(self, open_times) -> pd.Series:
+    def close_times(self, open_times, session_tz: Optional[str] = "America/New_York") -> pd.Series:
         """Vectorised :meth:`close_time` for a series of candle open times."""
         opens = pd.Series(pd.to_datetime(open_times)).reset_index(drop=True)
         if self is Timeframe.MN_1:
-            return pd.Series([self.close_time(t) for t in opens], dtype="datetime64[ns]")
+            return pd.Series([self.close_time(t, session_tz) for t in opens], dtype="datetime64[ns]")
         return opens + self.delta()
 
     def future_timestamps(self, last_open: pd.Timestamp, n: int, skip_weekends: bool = True) -> pd.Series:
