@@ -145,7 +145,7 @@ run did not finish in the time allowed.
 
 | Symbol | Rules only | With news blackout | With Kronos filter |
 |---|---|---|---|
-| EURUSD | 1 trades, +4.1R realized (1W 0L) | 1 trades, +4.1R realized (1W 0L) | n/a |
+| EURUSD | 1 trades, +4.1R realized (1W 0L) | 1 trades, +4.1R realized (1W 0L) | 0 trades (the winner filtered out) |
 | GBPUSD | 1 trades, -1.0R realized (0W 1L) | 1 trades, -1.0R realized (0W 1L) | 1 trades, -1.0R realized (0W 1L) |
 | USDJPY | 4 trades, -3.9R realized (0W 4L) | 3 trades, -2.9R realized (0W 3L) | 3 trades, -2.9R realized (0W 3L) |
 | XAUUSD | 5 trades, -2.0R realized (0W 2L), +8.8R open | 5 trades, -2.0R realized (0W 2L), +8.8R open | n/a |
