@@ -158,3 +158,26 @@ run did not finish in the time allowed.
   high impact deserves a second look (TradingView marks housing data high, ForexFactory does not).
 - **Kronos** removed the only winner (EURUSD, 22 September) and, by removing the same BTC short, let the three
   BTC losers through. It stays advisory, not a filter, until a larger sample says otherwise.
+
+## Forward-test profile (2026-10-01): Kronos off, 09:00-17:00, no first-candle entries, news blackout on
+
+The settings the laptop will run with. Compared with the rules-only runs above: the session is Max's 9 to 5
+instead of A's split windows, the first candle no longer counts as a confirmation on its own (G 10:49 shows
+it as the entry after a shift), the 30-minute news blackout is on, Kronos is off.
+
+| Symbol | Period | Trades | Realized | Wins | Losses | Break-even | Open at end |
+|---|---|---|---|---|---|---|---|
+| EURUSD | 10 weeks, 15m | 1 | +4.1R | 1 | 0 | 0 | none |
+| GBPUSD | 10 weeks, 15m | 1 | -1.0R | 0 | 1 | 0 | none |
+| USDJPY | 10 weeks, 15m | 2 | -2.0R | 0 | 2 | 0 | none |
+| XAUUSD | 11 weeks, 15m | 5 | -3.0R | 0 | 3 | 1 | +8.8R |
+| BTCUSD | 7 weeks, 15m | 3 | -3.1R | 0 | 3 | 0 | none |
+| EURUSD | 10 months, 1H | 2 | +3.1R | 1 | 1 | 0 | none |
+| XAUUSD | 10 months, 1H | 5 | -3.0R | 0 | 3 | 1 | +8.8R |
+
+Across the five 15m runs: 12 trades, -5.0R realized, plus the gold short still open at +8.8R.
+The two USDJPY first-candle losses of 30 July are gone; in their place gold took one more losing attempt at
+its monthly zone. The picture does not change: the rules as coded trade about once per instrument per five
+weeks and lose slightly on the decided trades. At that frequency a hundred trades across five instruments
+takes close to two years, so the forward test needs either the calibration to raise the frequency
+legitimately, or a first checkpoint at 30 to 50 trades.

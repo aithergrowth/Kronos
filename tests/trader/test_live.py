@@ -18,15 +18,18 @@ NOW = pd.Timestamp("2026-10-01 09:00")
 class FakeEngine:
     """Returns a fixed valid signal on the first call, then no signal."""
 
-    def __init__(self, setup):
+    def __init__(self, setup, pois=(), price=1.1000, signal_on_first_call=True):
         self.setup = setup
+        self.pois = list(pois)
+        self.price = price
+        self.signal_on_first_call = signal_on_first_call
         self.calls = 0
 
     def analyze(self, symbol, views, equity=None, now=None, max_confirmation_age=0, compute_forecasts=False):
         self.calls += 1
         decision = BiasDecision(Bias.BULLISH, TradeMode.FULL, (T.MN_1, T.W_1, T.D_1), (), (T.H_4, T.H_1), (T.MN_1, T.W_1, T.D_1), "test")
-        signal = Signal(now, SignalStatus.VALID, self.setup, None, []) if self.calls == 1 else None
-        return Analysis(symbol, now, 1.1000, {}, decision, [], signal)
+        signal = Signal(now, SignalStatus.VALID, self.setup, None, []) if self.calls == 1 and self.signal_on_first_call else None
+        return Analysis(symbol, now, self.price, {}, decision, self.pois, signal)
 
 
 @pytest.fixture
@@ -226,3 +229,29 @@ def test_build_fetch_skips_missing_timeframes_and_backs_off(tmp_path):
     assert len(calls) == 2
     fetch()                                                   # the broker is left alone while it is down
     assert len(calls) == 2 and "cache" in fetch.report.describe()
+
+
+def test_morning_briefing_once_per_weekday(setup):
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 06:00", symbol="EURUSD")}
+    runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=FakeEngine(setup, signal_on_first_call=False),
+                        clock=lambda: NOW)
+    runner.step(pd.Timestamp("2026-10-01 06:30"))            # 08:30 Amsterdam: too early
+    assert not any("morning analysis" in m for m in notifier.sent)
+    runner.step(pd.Timestamp("2026-10-01 06:45"))            # 08:45: the briefing
+    runner.step(pd.Timestamp("2026-10-01 07:00"))            # not again today
+    assert sum("morning analysis" in m for m in notifier.sent) == 1
+    runner.step(pd.Timestamp("2026-10-03 07:00"))            # Saturday: nothing
+    runner.step(pd.Timestamp("2026-10-05 06:50"))            # Monday: again
+    assert sum("morning analysis" in m for m in notifier.sent) == 2
+
+
+def test_poi_touch_is_announced_once(setup):
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)   # price inside the bullish POI
+    runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+    runner.step(NOW)
+    runner.step(NOW + pd.Timedelta(15, unit="min"))
+    touches = [m for m in notifier.sent if "inside the" in m and "POI" in m]
+    assert len(touches) == 1 and "waiting for a confirmation" in touches[0]

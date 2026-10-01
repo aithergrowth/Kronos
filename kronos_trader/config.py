@@ -106,14 +106,14 @@ class SessionParams:
     """Entries only inside Dorus's stated windows (A 02:24:03 / 02:30:48, Amsterdam clock); open trades run on."""
     enabled: bool = True
     timezone: str = "Europe/Amsterdam"
-    windows: Tuple[Tuple[str, str], ...] = (("09:00", "11:00"), ("13:00", "17:00"))   # C 10:28 gives 08:00-17:00 instead
+    windows: Tuple[Tuple[str, str], ...] = (("09:00", "17:00"),)   # Max: Dorus works 9 to 5. A's split 09-11 / 13-17 and C's 08-17 are the variants
     weekdays: Tuple[int, ...] = (0, 1, 2, 3, 4)
 
 
 @dataclass
 class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
-    allow_first_candle: bool = True     # K1 06:30 option "Eerste bullish of bearish candle"
+    allow_first_candle: bool = False    # K1 06:30 lists it; G 10:49 shows it as the entry after a shift, not instead of one. Off for the defensive forward test
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
@@ -151,7 +151,7 @@ class ExitParams:
 
 @dataclass
 class KronosParams:
-    mode: str = "advisory"              # off | advisory | filter
+    mode: str = "off"                   # off | advisory | filter. Off for the forward test: the filter removed the only winner (phase 1)
     model: str = "NeoQuasar/Kronos-small"
     tokenizer: str = "NeoQuasar/Kronos-Tokenizer-base"
     device: Optional[str] = None        # None = auto (cuda / mps / cpu)
@@ -169,6 +169,7 @@ class KronosParams:
 
 @dataclass
 class PropFirmParams:
+    """FTMO-style limits with margin: FTMO stops you at 5 % daily loss and 10 % total loss; this guard stops at 4 % and 8 %."""
     max_open_trades: int = 1            # rule: max 1 trade per funded account
     daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
     max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
@@ -276,6 +277,8 @@ class LiveParams:
         Timeframe.MIN_5: 500, Timeframe.MIN_15: 500, Timeframe.H_1: 500, Timeframe.H_4: 400,
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
+    briefing_time: Optional[str] = "08:45"   # Dorus analyses before the open: a bias and POI briefing at this local time (session timezone)
+    notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
     max_data_age_bars: int = 2          # a timeframe is stale when its last candle closed more than N candles ago
     require_fresh_data: bool = True     # stale data: analyse and manage positions, but open no new setups
     feed_retry_seconds: int = 600       # after the live feed fails for every timeframe, leave it alone this long

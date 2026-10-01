@@ -182,6 +182,8 @@ class LiveRunner:
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
+        self._briefed_on: Optional[object] = None          # local date of the last morning briefing
+        self._touched: set = set()                          # POI keys already announced as entered
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
@@ -197,11 +199,42 @@ class LiveRunner:
         self.manage_positions(views)
         self.process_decisions(now)
         self.report_closes()
+        self.morning_briefing(analysis, now)
+        self.announce_poi_touch(analysis)
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
             self.notifier.send_analysis(analysis, self.spec)
         return analysis
+
+    # ------------------------------------------------------------ Dorus's routine
+    def morning_briefing(self, analysis: Analysis, now: pd.Timestamp) -> None:
+        """Once per weekday at ``live.briefing_time`` local time: the bias, the decision and the POI map for the day."""
+        at = self.settings.live.briefing_time
+        if not at:
+            return
+        local = now.tz_localize("UTC").tz_convert(self.settings.session.timezone)
+        hour, minute = (int(x) for x in at.split(":"))
+        if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._briefed_on == local.date():
+            return
+        self._briefed_on = local.date()
+        self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
+        self.notifier.send_analysis(analysis, self.spec)
+
+    def announce_poi_touch(self, analysis: Analysis) -> None:
+        """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form."""
+        if not self.settings.live.notify_poi_touch or not analysis.decision.tradable:
+            return
+        d = self.spec.price_decimals
+        for poi in analysis.pois:
+            if poi.direction is not analysis.decision.direction or not poi.contains(analysis.price):
+                continue
+            if poi.key in self._touched:
+                continue
+            self._touched.add(poi.key)
+            arrow = "▲" if poi.direction.value == "bullish" else "▼"
+            self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
+                               f"({analysis.decision.reason}); waiting for a confirmation")
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds

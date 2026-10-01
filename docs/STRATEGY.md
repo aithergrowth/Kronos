@@ -88,7 +88,7 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | Local analysis | `StructureParams.lookback_by_timeframe` | 60 monthly, 104 weekly, 250 daily, 300 4H/1H candles |
 | Break-even 4R/2R, no partials | `strategy/exits.py`, brokers, `live.py` | scheduled by POI timeframe; nothing else touches the stop |
 | One trade, prop-firm limits | `execution/risk_guard.py` | 1 open trade, daily loss, drawdown, news blackout, spacing |
-| Kronos | `indicators/`, `engine.py` | advisory by default; `filter` exists for A/B tests only (Q14: no Dorus veto exists) |
+| Kronos | `indicators/`, `engine.py` | off by default (A18); `advisory` and `filter` exist for A/B tests only (Q14: no Dorus veto exists) |
 
 ## 4. Interpretations still made by the code (knobs)
 
@@ -107,7 +107,10 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | A11 | Entry = market at the close of the confirmation candle (Q9: demonstrated, not stated as the only way) | - |
 | A12 | The stop sits 1 pip beyond P | `risk.sl_offset_pips` |
 | A13 | Break-even = exactly entry | `exits.breakeven_offset_pips` |
-| A14 | Session windows follow A (09-11, 13-17 Amsterdam); C's 08-17 is the alternative | `session.windows` |
+| A14 | Session window 09:00-17:00 Amsterdam (Max, 2026-10-01: Dorus analyses at 08:45 and works 9 to 5); A's split 09-11 / 13-17 and C's 08-17 are the variants | `session.windows` |
+| A17 | First candle is not a confirmation on its own for the forward test: G 10:49 shows it as the entry after a shift; BS / BMS / BOS only | `confirmation.allow_first_candle` |
+| A18 | Kronos is off for the forward test; phase 1 showed the filter removing the only winner. Advisory mode stays available | `kronos.mode` |
+| A19 | No new entry 30 minutes either side of high-impact news of the pair's currencies (G 11:08); FTMO's funded rule is 2 minutes, so this is stricter | `news` |
 | A15 | A continuation break (BOS) on the LTF is accepted although the plan lists BS/BMS/first candle | `confirmation.accept_bos` |
 | A16 | BS threshold = the far edge of the opposing gap; the alternative "above the candle that caused the gap" is selectable | `confirmation.bs_threshold` |
 

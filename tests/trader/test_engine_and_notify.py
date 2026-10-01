@@ -30,9 +30,12 @@ def _settings():
 def test_session_windows():
     from kronos_trader.config import SessionParams
     from kronos_trader.strategy.engine import in_session
-    params = SessionParams()
+    params = SessionParams()                                                              # Max's 09:00-17:00
     assert in_session(pd.Timestamp("2026-10-01 07:30"), params) == (True, "Thu 09:30")     # CEST = UTC+2
-    assert in_session(pd.Timestamp("2026-10-01 09:30"), params)[0] is False                # 11:30 Amsterdam: between windows
+    assert in_session(pd.Timestamp("2026-10-01 09:30"), params)[0] is True                 # 11:30 Amsterdam
+    assert in_session(pd.Timestamp("2026-10-01 06:59"), params)[0] is False                # 08:59: before the open
+    split = SessionParams(windows=(("09:00", "11:00"), ("13:00", "17:00")))               # A's split windows
+    assert in_session(pd.Timestamp("2026-10-01 09:30"), split)[0] is False                 # 11:30: between A's windows
     assert in_session(pd.Timestamp("2026-10-01 14:59"), params)[0] is True                 # 16:59
     assert in_session(pd.Timestamp("2026-10-01 15:00"), params)[0] is False                # 17:00 is rejected (A 02:30:56)
     assert in_session(pd.Timestamp("2026-10-03 08:00"), params)[0] is False                # Saturday

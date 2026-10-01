@@ -202,6 +202,16 @@ on mains power, awake and logged in to TWS:
 4. While testing, add `--notify-every-scan` to get one message per poll on
    the phone; drop it once you trust the loop.
 
+What arrives on the phone in a normal day: the morning analysis at 08:45
+Amsterdam (bias per timeframe, decision, the POI map), a heads-up when price
+enters a POI the bias allows, the setup with Approve / Skip once a
+confirmation closes, then fills, break-even moves and closes. Entries only
+between 09:00 and 17:00 Amsterdam and never inside a high-impact news window.
+
+Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
+at 5 % daily and 10 % total loss, the guard stops at 4 % and 8 %, one open
+trade, 1 % risk.
+
 Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if
 the laptop cannot stay on.
