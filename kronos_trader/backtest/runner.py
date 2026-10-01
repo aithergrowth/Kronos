@@ -48,7 +48,8 @@ class BacktestResult:
                 "pnl": t.pnl, "r": t.r, "reason": t.reason,
                 "poi_tf": t.meta.get("poi_tf"), "confirmation": t.meta.get("confirmation"),
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
-                "kronos": t.meta.get("kronos"),
+                "tp_source": t.meta.get("tp_source"), "poi_low": (t.meta.get("poi") or (None, None))[0],
+                "poi_high": (t.meta.get("poi") or (None, None))[1], "kronos": t.meta.get("kronos"),
             })
         return pd.DataFrame(rows)
 

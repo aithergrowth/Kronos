@@ -234,6 +234,16 @@ candle, the risk box to the stop and the reward box to the target, with the R:R.
 
 ![EURUSD 1H setup chart with entry, stop, target and the Kronos fan](images/sample_setup_EURUSD_1H.png)
 
+Backtest trades can be drawn the same way, one image per trade with the zone, the X/B/P marks, entry, stop and
+target, so a trade list can be checked by eye instead of replaying each setup:
+
+```
+python -m kronos_trader --config config/dorus_pure.yaml trade-charts --symbol EURUSD --data-dir data/histdata \
+    --trades docs/backtests/phase2/EURUSD_5m_pure.csv --out charts/backtest --max 20
+```
+
+`--max 0` draws every trade; the default spreads 20 images over the list.
+
 Every briefing, POI touch and setup comes with a chart image on Telegram:
 the last 120 candles, the zones the bias allows, entry, stop and target when
 there is a setup, and Kronos's sampled paths as a fan to the right of the

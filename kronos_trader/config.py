@@ -136,7 +136,8 @@ class RiskParams:
     min_rr: float = 3.0                 # Max's rule. Dorus's accepted examples run 0.7R-1.7R (A/B/C) - decide, see STRATEGY.md
     spread_buffer_pips: float = 1.0     # Max's rule (not found in Dorus's material, Q7)
     sl_offset_pips: float = 1.0         # ASSUMPTION: 1 pip beyond the protection level
-    tp_policy: str = "liquidity"        # "Dus ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40); legacy: nearest | liquidity_first | balance_first
+    tp_policy: str = "liquidity"        # "Dus ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40): nearest liquidity on the POI timeframe or higher;
+                                        # liquidity_nearest: nearest liquidity on any timeframe above the confirmation timeframe (dorus_pure.yaml); legacy: nearest | liquidity_first | balance_first
     stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
 

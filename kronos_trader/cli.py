@@ -146,6 +146,22 @@ def cmd_backtest(args) -> int:
     return 0
 
 
+def cmd_trade_charts(args) -> int:
+    from .backtest.charts import render_trade_charts
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    data = _load_data(args, settings, symbol)
+    trades = pd.read_csv(args.trades)
+    if "symbol" in trades.columns:
+        trades = trades[trades["symbol"].str.upper() == symbol.upper()]
+    paths = render_trade_charts(settings, data, symbol, trades, args.out, engine=_engine(settings),
+                                max_charts=args.max, lookback=args.lookback)
+    for path in paths:
+        print(path)
+    print(f"{len(paths)} charts in {args.out}")
+    return 0
+
+
 def cmd_forecast(args) -> int:
     settings = _load_settings(args)
     from .indicators.kronos_forecast import KronosForecaster
@@ -396,6 +412,14 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--progress", action="store_true")
     sp.add_argument("--out", help="write the trade list to this CSV")
     sp.set_defaults(func=cmd_backtest)
+
+    sp = sub.add_parser("trade-charts", help="draw backtest trades (zone, X/B/P, entry, stop, target) as PNG images")
+    data_args(sp)
+    sp.add_argument("--trades", required=True, help="trade list CSV written by `backtest --out`")
+    sp.add_argument("--out", default="charts/backtest", help="directory for the images")
+    sp.add_argument("--max", type=int, default=20, help="at most this many charts, spread over the list (0 = all)")
+    sp.add_argument("--lookback", type=int, default=120, help="candles on each image")
+    sp.set_defaults(func=cmd_trade_charts)
 
     sp = sub.add_parser("forecast", help="run the Kronos indicator on a CSV")
     sp.add_argument("--csv", required=True)

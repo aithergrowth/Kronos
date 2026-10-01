@@ -30,18 +30,26 @@ def find_take_profit(
     structures: Dict[Timeframe, StructureAnalysis],
     poi_tf: Timeframe,
     params: RiskParams,
+    confirmation_tf: Optional[Timeframe] = None,
 ) -> Optional[Tuple[float, str]]:
     """Target beyond ``entry``.
 
     Default policy ``liquidity``: "ik zet ten alle tijden mijn take profit op
     liquiditeit" (A 01:50:40) - the nearest resting opposite liquidity on the POI
-    timeframe, then on higher timeframes.  Legacy policies also consider
-    unmitigated order blocks.
+    timeframe, then on higher timeframes.  Policy ``liquidity_nearest``: the
+    nearest resting opposite liquidity on any timeframe above the confirmation
+    timeframe (the next substantial high/low rather than the zone's own far
+    extreme; his accepted trades run 0.7R-2R, A 01:43:58-01:47:06).  Legacy
+    policies also consider unmitigated order blocks.
     """
     liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
+    nearest_policy = params.tp_policy == "liquidity_nearest" and confirmation_tf is not None
     for tf, st in structures.items():
-        if tf < poi_tf:
+        if nearest_policy:
+            if tf <= confirmation_tf:
+                continue
+        elif tf < poi_tf:
             continue
         if direction is Direction.LONG:
             for lvl in st.resting_liquidity_above(entry):
@@ -65,6 +73,8 @@ def find_take_profit(
     if params.tp_policy == "liquidity":
         own_tf = [c for c in liquidity if c[2] is poi_tf]
         return nearest(own_tf) or nearest(liquidity)
+    if params.tp_policy == "liquidity_nearest":
+        return nearest(liquidity)
     if params.tp_policy == "liquidity_first":
         return nearest(liquidity) or nearest(balance)
     if params.tp_policy == "balance_first":
@@ -130,7 +140,7 @@ def build_setup(
         reasons.append(f"stop {stop} ({stop_note}) is not behind entry {entry}")
         return None, reasons
 
-    target = find_take_profit(direction, entry, structures, poi.timeframe, params)
+    target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe)
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons

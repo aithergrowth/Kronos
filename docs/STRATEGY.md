@@ -80,7 +80,7 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | Confirmation options | `strategy/confirmation.py` | **BS**: body close through the opposing balance level that drove price into the zone (`bs_threshold`: the gap edge, or the far edge of the candle that caused it); **BMS/BOS**: body close through the LTF swing; **first candle** in the POI direction; earliest wins, ties BS > BMS > BOS > first candle |
 | Confirmation table | `confirmation.py`, `min_confirmation_tf` | Monthly ≥ 4H … 1H ≥ 1m, below the POI timeframe |
 | SL at minimum 1H P | `strategy/risk.py`, `engine._protection_level` | stop behind the most recent 1H balance level (P) formed since the touch, else the POI's own P, minus `sl_offset_pips`; `stop_basis="confirmation"` restores Max's LTF-swing rule |
-| TP on liquidity | `risk.py: find_take_profit` | nearest resting opposite liquidity on the POI timeframe, then higher timeframes (`tp_policy="liquidity"`); legacy policies keep order blocks |
+| TP on liquidity | `risk.py: find_take_profit` | `tp_policy="liquidity"` (forward-test profile): nearest resting opposite liquidity on the POI timeframe, then higher timeframes; `tp_policy="liquidity_nearest"` (`config/dorus_pure.yaml`): nearest resting opposite liquidity on any timeframe above the confirmation timeframe, the next substantial high/low rather than the zone's far extreme (his accepted trades run 0.7R-2R; a monthly zone aimed at monthly liquidity gave 8R-12R targets and 10 % win rates in the phase 2 runs); legacy policies keep order blocks |
 | R:R ≥ min | `risk.py: build_setup` | `min_rr` (3.0 = Max's rule; see §5) |
 | 1 % risk, buffer | `risk.py: size_position` | risk distance = stop distance + `spread_buffer_pips`; lots floored to `lot_step` |
 | Sessions | `engine.in_session`, `SessionParams` | no new entries outside 09:00-11:00 / 13:00-17:00 Amsterdam on weekdays; open trades run on |
@@ -144,7 +144,7 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | POI = area between liquidity and balance level / protected zone, on 1M to 1H | `poi_mode: liquidity_to_protection` | yes | list; edges verified from D and F |
 | Attractive R:R | `risk.min_rr` | 3.0 | **Max's number**; the list has none; his examples run 0.7R-2R; `config/dorus_pure.yaml` uses 1.5 |
 | One trade, 1 % risk | `PropFirmParams`, `RiskParams` | yes | list |
-| SL / TP to be decided | stop behind P, target on liquidity | yes | videos (K1 06:30, A 01:50:40) |
+| SL / TP to be decided | stop behind P, target on liquidity | yes | videos (K1 06:30, A 01:50:40); **which** liquidity is the open decision: the forward-test profile aims at the POI timeframe's liquidity, `config/dorus_pure.yaml` at the nearest level above the confirmation timeframe (`risk.tp_policy`) |
 | External factors | news blackout 30 min | yes | **video G 11:08**, not the list; one switch |
 | Confirmation BOS, BMS, first candle, on the timeframe table | `find_confirmation` | BOS, BMS, BS on; **first candle off** | list; first candle off is a forward-test choice (G 10:49); BS added from course K1 06:30 |
 | Break-even 4R intraday, 2R swing; no partials; let SL and TP run | `ExitParams` | yes | list |

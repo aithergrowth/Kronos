@@ -10,6 +10,7 @@ confirmation:
 risk:
   min_rr: 1.5                     # the list says "attractive" without a number; 1.5 stands in until Max sets it (his examples run 0.7R-2R)
   sl_offset_pips: 0.0             # the 1-pip buffer beyond P is Max's, not in the list
+  tp_policy: liquidity_nearest    # "TP always on liquidity": the nearest substantial high/low above the confirmation timeframe (his trades run 0.7R-2R), not the zone's far extreme
   spread_buffer_pips: 1.0         # cost model only: sizing on the real risk distance including the spread
 session:
   enabled: true                   # not in the list; Max: Dorus analyses at 08:45 and works 9 to 5 (videos A, C give windows too)
