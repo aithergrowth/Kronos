@@ -93,3 +93,21 @@ def test_confirmation_too_far_from_zone_is_rejected(scenario):
     assert find_confirmation(ltf, poi, touch, strict) is None          # the BOS closes at 106 > 102 + 1.0 * 3
     loose = ConfirmationParams(allow_first_candle=False, max_extension_zones=1.0)
     assert find_confirmation(ltf, poi, touch, loose, max_age=9).type is ConfirmationType.BS   # the BS closes at 102.8
+
+
+def test_entry_after_shift_waits_for_the_first_candle_in_the_direction():
+    """A bullish shift whose candle closes bearish: the entry is the next bullish candle, at its close."""
+    import pandas as pd
+    from kronos_trader.config import ConfirmationParams
+    from kronos_trader.core import Bias, CandleSeries, Confirmation, ConfirmationType, Timeframe
+    from kronos_trader.strategy.confirmation import _entry_candle
+    rows = [(1.0, 1.05, 0.99, 1.04), (1.04, 1.06, 1.02, 1.03), (1.03, 1.07, 1.03, 1.065), (1.065, 1.08, 1.06, 1.07)]
+    ltf = CandleSeries.from_records(rows, Timeframe.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    shift = Confirmation(ConfirmationType.BS, Timeframe.MIN_15, 1, ltf.timestamps.iloc[1], Bias.BULLISH, 1.02, 0.99, 1.03)   # closes bearish
+    entry = _entry_candle(shift, ltf, True, 3)
+    assert entry is not None and entry.index == 2 and entry.close == 1.065 and entry.type is ConfirmationType.BS
+    same = Confirmation(ConfirmationType.BS, Timeframe.MIN_15, 0, ltf.timestamps.iloc[0], Bias.BULLISH, 1.02, 0.99, 1.04)   # closes bullish itself
+    assert _entry_candle(same, ltf, True, 3) is same
+    pending = _entry_candle(shift, CandleSeries(ltf.df.iloc[:2].reset_index(drop=True), Timeframe.MIN_15, "EURUSD", validate=False), True, 3)
+    assert pending is None                                   # no bullish candle has closed yet
+    assert ConfirmationParams().entry_after_shift is False

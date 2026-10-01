@@ -110,7 +110,25 @@ def find_confirmation(
                                                poi.low, float(ltf.high[touch_index:k + 1].max()), c.close))
                 break
 
+    if params.entry_after_shift:
+        candidates = [_entry_candle(c, ltf, bullish, params.entry_after_shift_max_candles) for c in candidates]
+        candidates = [c for c in candidates if c is not None]
     fresh = [c for c in candidates if n - 1 - c.index <= max_age]
     if not fresh:
         return None
     return min(fresh, key=lambda c: (c.index, c.type.priority))
+
+
+def _entry_candle(conf: Confirmation, ltf: CandleSeries, bullish: bool, max_candles: int) -> Optional[Confirmation]:
+    """The first candle closing in the trade direction at or after the shift; ``None`` while none has closed yet
+    (the shift candle itself counts when it closes in the direction: "in dit geval zijn we hier er al", B 09:10)."""
+    if conf.type is ConfirmationType.FIRST_CANDLE:
+        return conf
+    n = len(ltf)
+    for j in range(conf.index, min(n, conf.index + 1 + max_candles)):
+        c = ltf[j]
+        if (bullish and c.is_bullish) or (not bullish and c.is_bearish):
+            if j == conf.index:
+                return conf
+            return Confirmation(conf.type, conf.timeframe, j, c.timestamp, conf.direction, conf.break_level, conf.invalidation_price, c.close)
+    return None

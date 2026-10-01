@@ -116,6 +116,9 @@ class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
     allow_first_candle: bool = False    # K1 06:30 lists it; G 10:49 shows it as the entry after a shift, not instead of one. Off for the defensive forward test
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
+    entry_after_shift: bool = False     # "na de shift ga ik altijd bij de eerste beste bullish candle erin" (A 01:21:00): the entry is the
+                                        # first candle closing in the trade direction at or after the shift candle, not the shift close itself
+    entry_after_shift_max_candles: int = 3   # give up when no such candle closes within this many candles after the shift
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
