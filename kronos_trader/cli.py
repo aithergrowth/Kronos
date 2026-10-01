@@ -181,6 +181,16 @@ def cmd_trade_charts(args) -> int:
     return 0
 
 
+def cmd_decision_dossier(args) -> int:
+    from .backtest.dossier import write_decision_dossier
+    settings = _load_settings(args)
+    symbol = _ensure_symbol(settings, args.symbol)
+    data = _load_data(args, settings, symbol)
+    out = write_decision_dossier(settings, data, symbol, args.at, args.out, engine=_engine(settings), lookback=args.lookback)
+    print(f"dossier written to {out}")
+    return 0
+
+
 def cmd_forecast(args) -> int:
     settings = _load_settings(args)
     from .indicators.kronos_forecast import KronosForecaster
@@ -443,6 +453,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--lookback", type=int, default=120, help="candles on each image")
     sp.add_argument("--zones", type=int, default=3, help="other zones drawn besides the trade's own")
     sp.set_defaults(func=cmd_trade_charts)
+
+    sp = sub.add_parser("decision-dossier", help="everything the engine saw at one moment: a chart per timeframe, bias notes, gaps kept and dropped, zones, rejections, setup")
+    data_args(sp)
+    sp.add_argument("--at", required=True, help="UTC timestamp, e.g. '2024-03-13 10:35'")
+    sp.add_argument("--out", required=True, help="folder for README.md, dossier.json and the charts")
+    sp.add_argument("--lookback", type=int, default=120, help="candles on each chart")
+    sp.set_defaults(func=cmd_decision_dossier)
 
     sp = sub.add_parser("forecast", help="run the Kronos indicator on a CSV")
     sp.add_argument("--csv", required=True)
