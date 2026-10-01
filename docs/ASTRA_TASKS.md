@@ -49,7 +49,11 @@ critiques). Requested padding windows are not source event timestamps. K5 00:09
 also supplies an independently checked daily OHLC anchor for 2026-01-30:
 84550.82 / 84638.35 / 81047.80 / 84149.17. This is not a trade entry. Native
 TradingView export was attempted for INDEX:BTCUSD daily; clicking Download
-required Premium and produced no CSV. Metadata delivery and regression readiness
+opened an upgrade prompt recommending Premium and produced no CSV. The
+[official plan comparison](https://www.tradingview.com/pricing/?source=header_goass%3D),
+checked 2026-10-01, lists chart-data download from **Plus** upward; Basic and
+Essential exclude it. Premium was the session's recommendation, not the minimum
+listed plan. Metadata delivery and regression readiness
 are tracked separately; no unshown target or broker fill is required merely to
 deliver the allowed retrieval fallback.
 
@@ -326,7 +330,9 @@ source cases are now supplied in [the retrieval index](examples/research/RETRIEV
 and [machine-readable manifest](examples/research/retrieval_requests.yaml).
 They distinguish researcher-selected padding from source-observed dates and
 leave all unshown trade fields omitted. No OHLC export was obtained: TradingView's
-native Download action required Premium. Gold has preserved intermediate states and the corrected 02:40 drawing’s entry,
+native Download action recommended Premium in an upgrade prompt. The official
+comparison checked 2026-10-01 lists Plus as the minimum plan for chart-data download;
+Basic and Essential exclude it. Gold has preserved intermediate states and the corrected 02:40 drawing’s entry,
 stop, distances and RR. Its corrected target-price label, verified execution prices
 and UTC execution time remain unresolved. A daily,
 weekly or 4H chart on screen does not by itself establish the POI timeframe.
@@ -432,4 +438,4 @@ The priority D/E videos and additional F video now have complete available Dutch
 | 2026-09-30 | Focused follow-up: independently checked K3 corrected entry/stop/distance/RR and K6 wick-to-wick bearish gap; rechecked A’s explicit close-based BS examples. Full POI boundary, universal BS threshold, gold target/clock and priority-video access remain unresolved. No runtime change or completed fixture claimed. | Codex/Astra |
 | 2026-09-30 | User handoff cleared YouTube verification. Reviewed all available Dutch captions for D/E/F (419/391/288 segments). D/F clarify POI starts at liquidity and can reach protection; D explicitly includes M+D+4H. Exact P endpoint/BS algorithm and complete fixtures remain unresolved; no runtime change. | Codex/Astra |
 | 2026-10-01 | Independently checked K3 mobile chart attachments; preserved `.pro/M1` and `.raw/M15` separately and excluded quote-as-target/timezone inference. Checked later K7 frames and attempted A's completed replay; no new exact P or fixture values established. Added precise remaining-evidence locations. Illustration fixtures do not require verified broker fills, but do require readable chart values and adequate candle/retrieval metadata. | Codex/Astra |
-| 2026-10-01 | Added seven exact retrieval requests across six source cases, distinct from runnable fixtures; independently checked K5's Jan 30 daily OHLC anchor. Native INDEX:BTCUSD daily export reached a Premium gate and produced no CSV. Gold-recap/coaching transcript attempts supplied metadata only, not new strategy claims. No runtime changes. | Codex/Astra |
+| 2026-10-01 | Added seven exact retrieval requests across six source cases, distinct from runnable fixtures; independently checked K5's Jan 30 daily OHLC anchor. Native INDEX:BTCUSD daily export opened an upgrade prompt recommending Premium and produced no CSV. The official plan comparison subsequently confirmed Plus as the minimum listed export plan; Basic and Essential exclude it. Gold-recap/coaching transcript attempts supplied metadata only, not new strategy claims. No runtime changes. | Codex/Astra |
