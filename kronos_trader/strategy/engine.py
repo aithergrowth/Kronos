@@ -38,7 +38,7 @@ from ..config import SessionParams
 from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
-from .poi import current_visit, map_pois, VisitTracker
+from .poi import current_visit, map_pois, update_poi_status, VisitTracker
 from .risk import build_setup
 from .structure import StructureAnalysis, analyze_structure
 
@@ -59,6 +59,46 @@ def in_session(now: pd.Timestamp, params: SessionParams) -> Tuple[bool, str]:
     return False, label
 
 
+class LazyStructures(dict):
+    """Structure analysis per timeframe, computed on first use.
+
+    The bias and the zones need the monthly to hourly structures every step; the 15m and 5m structures
+    are only needed when a zone is actually looking for a confirmation, which is a small share of steps.
+    ``items()``/``keys()``/``values()`` compute every timeframe (the target search wants them all).
+    """
+
+    def __init__(self, engine: "StrategyEngine", symbol: str, views: Dict[Timeframe, CandleSeries]):
+        super().__init__()
+        self._engine, self._symbol, self._views = engine, symbol, views
+
+    def __missing__(self, tf: Timeframe) -> StructureAnalysis:
+        st = self._engine.structure_for(self._symbol, self._views[tf])
+        self[tf] = st
+        return st
+
+    def __contains__(self, tf) -> bool:
+        return tf in self._views
+
+    def get(self, tf, default=None):
+        return self[tf] if tf in self._views else default
+
+    def _all(self) -> None:
+        for tf in self._views:
+            self[tf]
+
+    def items(self):
+        self._all()
+        return super().items()
+
+    def keys(self):
+        self._all()
+        return super().keys()
+
+    def values(self):
+        self._all()
+        return super().values()
+
+
 class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
@@ -66,6 +106,7 @@ class StrategyEngine:
         self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
         self.visits: Dict[str, VisitTracker] = {}      # per symbol: visit history per zone beyond the analysis window
+        self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI]]] = {}
 
     # ------------------------------------------------------------------ helpers
     def structure_for(self, symbol: str, view: CandleSeries) -> StructureAnalysis:
@@ -79,6 +120,20 @@ class StrategyEngine:
         st = analyze_structure(view, self.settings.structure)
         self._structure_cache[key] = (stamp[0], stamp[1], st)
         return st
+
+    def pois_for(self, symbol: str, tf: Timeframe, st: StructureAnalysis, view: CandleSeries, price: float) -> List[POI]:
+        """The zones of one timeframe: mapped once per closed candle of that timeframe, status refreshed every call."""
+        key = (symbol, tf)
+        stamp = (view.last_timestamp, len(view))
+        cached = self._poi_cache.get(key)
+        if cached is not None and cached[0] == stamp[0] and cached[1] == stamp[1]:
+            pois = cached[2]
+            for poi in pois:
+                update_poi_status(poi, st.series, price)
+            return pois
+        pois = map_pois(st, self.settings.structure, price)
+        self._poi_cache[key] = (stamp[0], stamp[1], pois)
+        return pois
 
     def _protection_level(self, poi: POI, direction: Direction, touch_ts, structures: Dict[Timeframe, StructureAnalysis]) -> float:
         """The P the stop sits behind: the most recent 1H balance level in the trade direction formed
@@ -131,7 +186,7 @@ class StrategyEngine:
         if now is None:
             now = lowest.last_close_time
 
-        structures = {tf: self.structure_for(symbol, view) for tf, view in views.items()}
+        structures = LazyStructures(self, symbol, views)
 
         # 1 + 2: bias ----------------------------------------------------------------
         biases = {tf: timeframe_bias(structures[tf], s.bias) for tf in BIAS_TIMEFRAMES if tf in views}
@@ -141,7 +196,7 @@ class StrategyEngine:
         pois: List[POI] = []
         for tf in POI_TIMEFRAMES:
             if tf in views:
-                pois.extend(map_pois(structures[tf], s.structure, price))
+                pois.extend(self.pois_for(symbol, tf, structures[tf], views[tf], price))
 
         # visits are history, not eligibility: fold this step's candles into every zone's record before any
         # bias / session / news gate can return, so a touch during a closed session still counts as a visit
