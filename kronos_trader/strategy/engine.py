@@ -86,17 +86,23 @@ class LazyStructures(dict):
         for tf in self._views:
             self[tf]
 
+    # iteration follows the order of the views (the order the data was loaded in), exactly as the eager dict did,
+    # so a tie between two levels at the same price resolves to the same timeframe as before
     def items(self):
         self._all()
-        return super().items()
+        return [(tf, self[tf]) for tf in self._views]
 
     def keys(self):
         self._all()
-        return super().keys()
+        return list(self._views)
 
     def values(self):
         self._all()
-        return super().values()
+        return [self[tf] for tf in self._views]
+
+    def __iter__(self):
+        self._all()
+        return iter(list(self._views))
 
 
 class StrategyEngine:
