@@ -1,14 +1,18 @@
 """POI mapping - "X to b/P" (K1 03:54).
 
-A POI forms when liquidity is swept (X, the wick that took the level) and a
-balance level (b, the gap) is created in the implied direction shortly after by
-a protector candle (P).  The zone runs from the sweep wick to the balance level;
-which edge of the gap ends the zone is a setting (``poi_far_edge``).  Mapped on
-1M, 1W, 1D, 4H, 1H, both sides.
+Default mode ``liquidity_to_protection`` (trading-plan video D 12:21-12:54 and
+FVG video F 03:00-03:36): the buying / selling area runs from the liquidity the
+displacement took (X, "begint ten alle tijden bij het punt van liquiditeit")
+through the balance level (b, the gap) to the protector candle (P) that created
+it; price may react just inside the area, midway, after filling the gap or
+deeper at P, and interest ends below P ("wanneer die onder de P komt").
+
+Legacy mode ``sweep_to_gap`` keeps the earlier reading: sweep wick to the gap.
+Mapped on 1M, 1W, 1D, 4H, 1H, both sides.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -26,12 +30,39 @@ def _far_edge(gap: Gap, direction: Bias, mode: str) -> float:
     return gap.low if direction is Bias.BULLISH else gap.high     # gap_bottom: where the balance level begins
 
 
-def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, current_price: Optional[float] = None) -> List[POI]:
-    params = params or st.params
+def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams) -> List[POI]:
+    ts = st.series.timestamps
+    by_break: Dict[int, POI] = {}
+    for gap in st.gaps:
+        d = gap.direction
+        brk = next((b for b in st.breaks if b.direction is d
+                    and gap.protector_index <= b.index <= gap.index + params.poi_break_window), None)
+        if brk is None:
+            continue                                   # no liquidity taken by this displacement: no X, no POI
+        x = brk.broken_level
+        if d is Bias.BULLISH:
+            low, high = gap.protector_low, max(x, gap.high)
+        else:
+            low, high = min(x, gap.low), gap.protector_high
+        if high <= low:
+            continue
+        if brk.index in by_break:                      # several gaps in one impulse: keep the first (deepest P)
+            continue
+        sweep = next((s for s in reversed(st.sweeps) if s.implied_bias is d and s.index < gap.protector_index
+                      and gap.protector_index - s.index <= params.max_bars_sweep_to_balance), None)
+        created = max(gap.index, brk.index)
+        by_break[brk.index] = POI(
+            timeframe=st.series.timeframe, direction=d, low=float(low), high=float(high), sweep=sweep,
+            balance=st.block_for_break(brk), created_index=created, created_at=ts.iloc[created], gap=gap,
+            liquidity_level=float(x), liquidity_break=brk,
+        )
+    return sorted(by_break.values(), key=lambda p: p.created_index)
+
+
+def _map_sweep_to_gap(st: StructureAnalysis, params: StructureParams) -> List[POI]:
     pois: List[POI] = []
     for sweep in st.sweeps:
         want = sweep.implied_bias
-        # an opposite structure break before the balance forms means the sweep did not lead anywhere
         opposite_break = next((b.index for b in st.breaks if b.index > sweep.index and b.direction is not want), None)
         gap = next((g for g in st.gaps_in(want)
                     if g.index > sweep.index and g.index - sweep.index <= params.max_bars_sweep_to_balance
@@ -43,24 +74,20 @@ def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, cu
         if params.poi_requires_break and brk is None:
             continue
         far = _far_edge(gap, want, params.poi_far_edge)
-        if want is Bias.BULLISH:
-            low, high = sweep.extreme, far
-        else:
-            low, high = far, sweep.extreme
+        low, high = (sweep.extreme, far) if want is Bias.BULLISH else (far, sweep.extreme)
         if high <= low:
             continue
         pois.append(POI(
-            timeframe=st.series.timeframe,
-            direction=want,
-            low=float(low),
-            high=float(high),
-            sweep=sweep,
-            balance=st.block_for_break(brk) if brk is not None else None,
-            created_index=gap.index,
-            created_at=gap.timestamp,
-            gap=gap,
+            timeframe=st.series.timeframe, direction=want, low=float(low), high=float(high), sweep=sweep,
+            balance=st.block_for_break(brk) if brk is not None else None, created_index=gap.index,
+            created_at=gap.timestamp, gap=gap, liquidity_level=float(sweep.extreme), liquidity_break=brk,
         ))
-    # twin sweeps (equal lows swept one after the other) can produce identical zones: keep the first
+    return pois
+
+
+def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, current_price: Optional[float] = None) -> List[POI]:
+    params = params or st.params
+    pois = _map_sweep_to_gap(st, params) if params.poi_mode == "sweep_to_gap" else _map_liquidity_to_protection(st, params)
     unique: List[POI] = []
     seen = set()
     for poi in pois:
@@ -75,7 +102,9 @@ def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, cu
 
 
 def update_poi_status(poi: POI, series: CandleSeries, current_price: Optional[float] = None) -> POI:
-    """Status as of the end of ``series`` (closed candles) and ``current_price``."""
+    """Status as of the end of ``series`` (closed candles) and ``current_price``.
+
+    Invalidation = a close beyond the protection line (below P for a bullish zone)."""
     n = len(series)
     start = poi.created_index + 1
     price = float(current_price) if current_price is not None else float(series.close[-1])
@@ -93,7 +122,6 @@ def update_poi_status(poi: POI, series: CandleSeries, current_price: Optional[fl
             poi.status = POIStatus.INVALIDATED
             return poi
     if poi.direction is Bias.BULLISH and price < poi.low or poi.direction is Bias.BEARISH and price > poi.high:
-        # price is beyond the protection line intrabar; a close there would invalidate
         poi.status = POIStatus.TESTED if poi.first_touch_index is not None else POIStatus.FRESH
         return poi
     if poi.contains(price):
@@ -116,7 +144,6 @@ def current_visit(poi: POI, ltf: CandleSeries, max_extension_zones: float) -> Tu
     """
     n = len(ltf)
     start = ltf.index_at_or_after(poi.created_at)
-    # the POI-timeframe candle that created the zone closes after created_at; skip it
     start = max(start, ltf.index_at_or_after(poi.timeframe.close_time(poi.created_at)))
     ext = poi.height * max_extension_zones
     inside = False

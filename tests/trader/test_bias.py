@@ -36,10 +36,10 @@ def test_p_break_flips_the_balance_view(scenario_rows):
     assert timeframe_bias(st, BiasParams(balance_violation="neutral")).balance_view is Bias.NEUTRAL
 
 
-def test_extra_combo_is_off_by_default():
+def test_m_d_4h_combination_is_on_by_default():
     votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.NEUTRAL, T.D_1: Bias.BULLISH, T.H_4: Bias.BULLISH, T.H_1: Bias.NEUTRAL}
-    assert combine_biases(votes).mode is TradeMode.NONE
-    assert combine_biases(votes, BiasParams(extra_combos_enabled=True)).mode is TradeMode.FULL
+    assert combine_biases(votes).mode is TradeMode.FULL                                        # D 01:05-01:43
+    assert combine_biases(votes, BiasParams(extra_combos_enabled=False)).mode is TradeMode.NONE  # K1 slide only
 
 
 def test_stale_liquidity_event_is_neutral(scenario):

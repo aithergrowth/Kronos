@@ -21,7 +21,7 @@ def test_template_is_ignored_and_loader_handles_synthetic(tmp_path, scenario):
         "  sweep: {candle: '2024-01-01 10:00', level: 100.0}\n"
         "  break: {candle: '2024-01-01 13:00', level: 110.0, kind: BOS}\n"
         "  balance_block: {low: 100.5, high: 102.0}\n"
-        "  poi: {low: 99.0, high: 102.0}\n"
+        "  poi: {low: 100.6, high: 110.0, liquidity: 110.0, protection: 100.6}\n"
         "  tolerance_pips: 1\n", encoding="utf-8")
     (tmp_path / "example_template.yaml").write_text("symbol: X\n", encoding="utf-8")
     examples = load_examples(tmp_path)

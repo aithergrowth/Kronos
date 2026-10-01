@@ -202,17 +202,21 @@ class POIStatus(Enum):
 
 @dataclass
 class POI:
-    """Point of interest: "X to b/P" - the zone between the liquidity line (X, the sweep wick)
-    and the balance level (b, the gap) created by the protector candle (P)."""
+    """Point of interest: "X to b/P" - from the liquidity the displacement took (X) through the
+    balance level (b, the gap) down to the protector candle (P) that created it.  Price can react
+    just inside the area, midway, after filling the gap, or deeper at protection (F 03:00-03:36);
+    interest ends below P (D 12:42)."""
     timeframe: Timeframe
     direction: Bias
     low: float
     high: float
-    sweep: Sweep
+    sweep: Optional[Sweep]
     balance: Optional[BalanceBlock]
     created_index: int
     created_at: pd.Timestamp
     gap: Optional[Gap] = None
+    liquidity_level: Optional[float] = None      # X: the level the displacement closed through
+    liquidity_break: Optional[StructureBreak] = None
     status: POIStatus = POIStatus.FRESH
     first_touch_index: Optional[int] = None
 

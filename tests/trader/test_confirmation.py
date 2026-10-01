@@ -30,7 +30,9 @@ def test_minimum_confirmation_timeframes_follow_the_table():
 
 
 def _poi(scenario):
-    return map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    # the lower-timeframe rows below are drawn around the legacy 99-102 zone
+    from kronos_trader.config import StructureParams
+    return map_pois(analyze_structure(scenario), StructureParams(poi_mode="sweep_to_gap"), current_price=101.0)[0]
 
 
 def _ltf(rows=LTF_ROWS):
@@ -44,6 +46,15 @@ def test_balance_shift_is_the_first_confirmation(scenario):
     conf = find_confirmation(ltf, poi, touch, ConfirmationParams(allow_first_candle=False), max_age=9)
     assert conf is not None and conf.type is ConfirmationType.BS
     assert conf.index == 7 and conf.break_level == 102.5 and conf.invalidation_price == 100.0 and conf.close == 102.8
+
+
+def test_balance_shift_protector_threshold(scenario):
+    poi = _poi(scenario)
+    ltf = _ltf()
+    touch = ltf.timestamps.iloc[5]
+    conf = find_confirmation(ltf, poi, touch, ConfirmationParams(allow_first_candle=False, bs_threshold="protector"), max_age=9)
+    assert conf.type is ConfirmationType.BS and conf.index == 8          # first close above candle 5's high (103.5)
+    assert conf.break_level == 103.5 and conf.close == 104.2
 
 
 def test_structure_break_confirmation_with_body_close(scenario):

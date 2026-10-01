@@ -74,9 +74,11 @@ class StructureParams:
     full_body_break: bool = False       # a close beyond the level is the break ("closure", A 02:26:06); True = whole body beyond
     block_body_only: bool = False       # order block (candle 1) = full candle range (True = body only)
     min_gap_fraction: float = 0.2       # ASSUMPTION: a balance level (gap) must be >= this fraction of the median candle range
-    max_bars_sweep_to_balance: int = 40 # the balance level must form within this many candles after the sweep to make a POI
-    poi_requires_break: bool = False    # ASSUMPTION: "X to b/P" needs liquidity + balance, not a structure break
-    poi_far_edge: str = "gap_bottom"    # gap_bottom | gap_top | protector: where the zone ends away from the liquidity line
+    poi_mode: str = "liquidity_to_protection"   # D 12:21 / F 03:00: zone = liquidity taken by the displacement (X) -> gap -> P; legacy: sweep_to_gap
+    poi_break_window: int = 3           # the displacement must close through X between P and this many candles after candle 3
+    max_bars_sweep_to_balance: int = 40 # legacy mode: the balance level must form within this many candles after the sweep
+    poi_requires_break: bool = False    # legacy mode: also require a structure break
+    poi_far_edge: str = "gap_bottom"    # legacy mode: gap_bottom | gap_top | protector
 
 
 @dataclass
@@ -89,8 +91,8 @@ class BiasParams:
         (Timeframe.W_1, Timeframe.D_1, Timeframe.H_4),
         (Timeframe.MN_1, Timeframe.D_1, Timeframe.H_1),
     )
-    extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # demonstrated in A, absent from K1
-    extra_combos_enabled: bool = False
+    extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # stated in A and D (two dated videos), absent from the K1 slide
+    extra_combos_enabled: bool = True
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
 
     @property
@@ -112,6 +114,7 @@ class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
     allow_first_candle: bool = True     # K1 06:30 option "Eerste bullish of bearish candle"
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
+    bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)

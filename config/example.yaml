@@ -19,13 +19,13 @@ structure:
   lookback_by_timeframe: {1M: 60, 1W: 104, 1D: 250, 4H: 300, 1H: 300}   # "hou het lokaal"
   full_body_break: false          # a close through the level is the break ("closure")
   min_gap_fraction: 0.2           # balance level (gap) must be >= 20 % of the median candle range
-  max_bars_sweep_to_balance: 40
-  poi_far_edge: gap_bottom        # gap_bottom | gap_top | protector
+  poi_mode: liquidity_to_protection   # X (liquidity the displacement took) -> gap -> P; legacy: sweep_to_gap
+  poi_break_window: 3
 
 bias:
   liquidity_lookback: 80
   balance_violation: flip         # flip (continuation when P breaks) | neutral
-  extra_combos_enabled: false     # M+D+4H (demonstrated in the course, absent from the written plan)
+  extra_combos_enabled: true      # M+D+4H: stated in the course and the trading-plan video; absent from the plan slide
 
 session:
   enabled: true

@@ -20,8 +20,10 @@ expect:
     low: 1.08290
     high: 1.08460
   poi:
-    low: 1.08150                   # protected zone as Dorus drew it
-    high: 1.08460
+    low: 1.08150                   # the area as Dorus drew it: from the liquidity the displacement took (X) down to P
+    high: 1.08890
+    liquidity: 1.08890             # X (optional)
+    protection: 1.08150            # far extreme of P (optional)
   entry:                           # optional
     time: "2026-03-05 09:15"
     price: 1.08510

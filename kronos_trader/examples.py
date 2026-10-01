@@ -144,6 +144,12 @@ def check_example(example: Example, params: Optional[StructureParams] = None) ->
         if not match:
             got = ", ".join(f"{p.low:.5f}-{p.high:.5f}" for p in pois) or "none"
             result.mismatches.append(f"POI {want['low']}-{want['high']} not mapped (mapped: {got})")
+        else:
+            poi = match[0]
+            if want.get("liquidity") is not None and (poi.liquidity_level is None or not _near(poi.liquidity_level, want["liquidity"], tol)):
+                result.mismatches.append(f"POI liquidity line {poi.liquidity_level} != {want['liquidity']}")
+            if want.get("protection") is not None and not _near(poi.protector_extreme, want["protection"], tol):
+                result.mismatches.append(f"POI protection {poi.protector_extreme:.5f} != {want['protection']}")
 
     # stop / target implied by the rules ------------------------------------------
     if exp.get("stop") is not None and st.breaks:

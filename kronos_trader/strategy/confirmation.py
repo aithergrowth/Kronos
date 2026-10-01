@@ -72,7 +72,10 @@ def find_confirmation(
                     if touch_index - params.opposing_gap_lookback <= g.index <= touch_index + 1]
         if opposing:
             gap = opposing[-1]
-            level = gap.high if bullish else gap.low     # the far edge of the opposing balance level
+            if params.bs_threshold == "protector":       # "above the candle that caused the gap" (A 01:07:49)
+                level = gap.protector_high if bullish else gap.protector_low
+            else:                                        # beyond the opposing balance level itself (A 02:25:40)
+                level = gap.high if bullish else gap.low
             for k in range(max(touch_index, gap.index + 1), n):
                 close = float(ltf.close[k])
                 if (bullish and close > level) or (not bullish and close < level):
