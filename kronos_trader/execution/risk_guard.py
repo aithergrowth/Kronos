@@ -59,6 +59,11 @@ class RiskGuard:
             elif self.drawdown_pct(equity) >= p.max_drawdown_pct:
                 self.first_breach = (ts, f"drawdown {self.drawdown_pct(equity):.2f}% >= {p.max_drawdown_pct}%")
 
+    @property
+    def day_start_equity(self) -> float:
+        """Backwards-compatible name: the day's baseline is the balance when the day started."""
+        return self.day_start_balance
+
     def daily_loss_pct(self, equity: float) -> float:
         return (self.day_start_balance - equity) / self.account_size * 100.0
 
