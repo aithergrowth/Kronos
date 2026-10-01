@@ -97,6 +97,7 @@ class IBKRBroker(Broker):
         self._contracts: Dict[str, Any] = {}
         self._closed: List[ClosedTrade] = []
         self._close_cursor = 0
+        self._quotes_blocked = False
         if connect and not self.ib.isConnected():
             self.connect()
 
@@ -136,15 +137,44 @@ class IBKRBroker(Broker):
         pips = direction.sign * (exit_price - entry) / spec.pip_size
         return pips * spec.pip_value_per_lot * lots
 
+    def _rows(self, tag: str) -> List[Any]:
+        account = self.params.account
+        return [v for v in self.ib.accountValues()
+                if v.tag == tag and (not account or getattr(v, "account", account) == account)]
+
+    def base_currency(self) -> str:
+        """The account's base currency: IBKR reports NetLiquidation once, in that currency."""
+        for v in self._rows("NetLiquidation"):
+            currency = getattr(v, "currency", "")
+            if currency and currency != "BASE":
+                return currency
+        return self.settings.account_currency
+
     def _account_value(self, tag: str, default: float = 0.0) -> float:
-        wanted = {self.settings.account_currency, "BASE", ""}
-        for v in self.ib.accountValues():
-            if v.tag == tag and getattr(v, "currency", "") in wanted:
-                try:
-                    return float(v.value)
-                except (TypeError, ValueError):
-                    continue
+        """Base-currency value of an account tag (IBKR also reports per-currency rows)."""
+        rows = self._rows(tag)
+        for wanted in ("BASE", self.base_currency(), self.settings.account_currency, ""):
+            for v in rows:
+                if getattr(v, "currency", "") == wanted:
+                    try:
+                        return float(v.value)
+                    except (TypeError, ValueError):
+                        continue
+        if len(rows) == 1:
+            try:
+                return float(rows[0].value)
+            except (TypeError, ValueError):
+                pass
         return default
+
+    def diagnostics(self) -> Dict[str, Any]:
+        """What the account looks like from the API, for ``ibkr-test``."""
+        values = list(self.ib.accountValues())
+        out: Dict[str, Any] = {"accounts": sorted({getattr(v, "account", "") for v in values} - {""}),
+                               "base_currency": self.base_currency()}
+        for tag in ("NetLiquidation", "TotalCashValue", "AvailableFunds", "BuyingPower", "UnrealizedPnL", "RealizedPnL"):
+            out[tag] = {getattr(v, "currency", ""): v.value for v in values if v.tag == tag}
+        return out
 
     def _wait(self, seconds: float) -> None:
         sleep = getattr(self.ib, "sleep", None)
@@ -159,16 +189,50 @@ class IBKRBroker(Broker):
         return self.equity() - self._account_value("UnrealizedPnL")
 
     def current_price(self, symbol: str) -> float:
-        ticker = self.ib.reqTickers(self.contract(symbol))[0]
+        """Mid price from an API quote, else the close of the last 1-minute midpoint bar.
+
+        Paper accounts without a market data entitlement get error 10089 on quotes
+        (``Requested market data requires additional subscription for API``) while
+        historical midpoint bars still work; after the first failure the loop prices
+        from history only.
+        """
+        price = None if self._quotes_blocked else self._quote(symbol)
+        if price is None:
+            if not self._quotes_blocked:
+                self._quotes_blocked = True
+                print(f"[ibkr] no API quote for {symbol} (market data entitlement); pricing from 1-minute midpoint bars")
+            price = self._last_close(symbol)
+        if price is None:
+            raise RuntimeError(f"no price for {symbol}: no API quote and no historical bars")
+        return price
+
+    def _quote(self, symbol: str) -> Optional[float]:
+        try:
+            ticker = self.ib.reqTickers(self.contract(symbol))[0]
+        except Exception:
+            return None
         bid, ask = getattr(ticker, "bid", None), getattr(ticker, "ask", None)
-        if bid and ask and bid > 0 and ask > 0:
+        if bid and ask and bid == bid and ask == ask and bid > 0 and ask > 0:
             return float((bid + ask) / 2.0)
         for attr in ("last", "close", "midpoint"):
             value = getattr(ticker, attr, None)
             value = value() if callable(value) else value
             if value and value == value and value > 0:
                 return float(value)
-        raise RuntimeError(f"no price for {symbol}")
+        return None
+
+    def _last_close(self, symbol: str) -> Optional[float]:
+        try:
+            bars = self.ib.reqHistoricalData(
+                self.contract(symbol), endDateTime="", durationStr="600 S", barSizeSetting="1 min",
+                whatToShow=self.params.what_to_show, useRTH=False, formatDate=2,
+            )
+        except Exception:
+            return None
+        if not bars:
+            return None
+        close = float(bars[-1].close)
+        return close if close > 0 else None
 
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         self._reconcile()

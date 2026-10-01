@@ -218,6 +218,7 @@ def cmd_live(args) -> int:
     print(f"live {symbol}: broker={args.broker} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
     if args.once:
+        print("scanning... (the first scan loads Kronos and can take a minute or two)")
         analysis = runner.step()
         print(_plain(format_analysis(analysis, settings.symbol(symbol))))
         return 0
@@ -230,11 +231,24 @@ def cmd_ibkr_test(args) -> int:
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     broker = IBKRBroker(settings)
-    print(f"connected to {settings.ibkr.host}:{settings.ibkr.port}  equity {broker.equity():,.2f}  balance {broker.balance():,.2f}")
+    diag = broker.diagnostics()
+    print(f"connected to {settings.ibkr.host}:{settings.ibkr.port}  accounts {diag['accounts']}  "
+          f"base currency {diag['base_currency']}")
+    for tag in ("NetLiquidation", "TotalCashValue", "AvailableFunds", "BuyingPower", "UnrealizedPnL", "RealizedPnL"):
+        print(f"  {tag:16s} {diag.get(tag) or '-'}")
+    equity = broker.equity()
+    print(f"equity {equity:,.2f} {diag['base_currency']}  balance {broker.balance():,.2f}")
+    if equity <= 0:
+        print("  !! equity is 0: the paper account has no funds. Client Portal -> Settings -> Paper Trading Account -> reset the balance.")
+    if diag["base_currency"] != settings.account_currency:
+        print(f"  note: account base currency is {diag['base_currency']}, settings.account_currency is {settings.account_currency}")
     print("contract:", broker.contract(symbol))
-    print("price:", broker.current_price(symbol))
     bars = broker.get_candles(symbol, Timeframe.parse(args.tf), 5)
     print(bars.df.to_string())
+    try:
+        print("price:", broker.current_price(symbol))
+    except Exception as exc:
+        print("price: FAILED -", exc)
     broker.disconnect()
     return 0
 

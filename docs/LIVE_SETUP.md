@@ -40,6 +40,13 @@ for the forecast indicator.)
    output back when anything looks wrong: the adapter was written against the
    `ib_async` API and still has to be exercised against a real TWS session.
 
+Market data: API quotes need an entitlement the paper account may not have
+(`Error 10089 ... requires additional subscription for API` in the output).
+The loop then prices from the last 1-minute midpoint bar, which works without
+a subscription. For live quotes, in Client Portal under Settings choose the
+paper trading account and share the market data subscriptions of the live
+account with it.
+
 Forex trades on IDEALPRO in units (1.0 lot = 100,000). Keep the paper account
 the size of the real one: orders under roughly 25,000 units are odd lots with
 worse fills. Gold and indices go through IBKR CFDs (`ibkr_contract` in the

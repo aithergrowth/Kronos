@@ -61,6 +61,7 @@ class FakeIB:
         self.held = {}          # symbol -> signed units
         self.hist_calls = []
         self.bars = []
+        self.quotes = True
 
     def isConnected(self):
         return self.connected
@@ -107,10 +108,16 @@ class FakeIB:
                 for s, q in self.held.items() if abs(q) > 0]
 
     def accountValues(self):
-        return [SimpleNamespace(tag="NetLiquidation", value="100000", currency="USD"),
-                SimpleNamespace(tag="UnrealizedPnL", value="250", currency="USD")]
+        # an EUR-based paper account: NetLiquidation once in the base currency, P&L per currency plus BASE
+        return [SimpleNamespace(account="DU1", tag="NetLiquidation", value="100000", currency="EUR"),
+                SimpleNamespace(account="DU1", tag="UnrealizedPnL", value="250", currency="BASE"),
+                SimpleNamespace(account="DU1", tag="UnrealizedPnL", value="15.26", currency="USD"),
+                SimpleNamespace(account="DU1", tag="UnrealizedPnL", value="0", currency="EUR")]
 
     def reqTickers(self, contract):
+        if not self.quotes:         # no market data entitlement: the ticker comes back empty (error 10089)
+            nan = float("nan")
+            return [SimpleNamespace(bid=nan, ask=nan, last=nan, close=nan)]
         return [SimpleNamespace(bid=self.price - 0.00005, ask=self.price + 0.00005, last=None, close=None)]
 
     def reqHistoricalData(self, contract, endDateTime, durationStr, barSizeSetting, whatToShow, useRTH, formatDate=1):
@@ -203,3 +210,21 @@ def test_get_candles_parses_bars(broker):
 def test_idle_runs_the_ib_event_loop(broker):
     broker.idle(2)
     assert broker.ib.slept == 2
+
+
+
+def test_account_values_are_read_in_the_base_currency(broker):
+    assert broker.base_currency() == "EUR"
+    assert broker.equity() == 100000.0 and broker.balance() == 99750.0
+    diag = broker.diagnostics()
+    assert diag["accounts"] == ["DU1"] and diag["NetLiquidation"] == {"EUR": "100000"}
+
+
+def test_price_falls_back_to_the_last_minute_bar_without_quotes(broker):
+    broker.ib.quotes = False
+    broker.ib.bars = [SimpleNamespace(date=datetime(2026, 10, 1, 9, 0, tzinfo=timezone.utc),
+                                      open=1.1, high=1.11, low=1.09, close=1.1234, volume=-1)]
+    assert broker.current_price("EURUSD") == pytest.approx(1.1234)
+    assert broker.ib.hist_calls[-1][:2] == ("600 S", "1 min")
+    broker.ib.quotes = True
+    assert broker.current_price("EURUSD") == pytest.approx(1.1234)    # quotes stay off for the session after one failure

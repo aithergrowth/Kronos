@@ -44,3 +44,7 @@ candle **2026-01-30**, **O 84550.82 / H 84638.35 / L 81047.80 / C 84149.17**.
 Two readers verified the chart digits. The case YAML records this as a chart
 candle, not a trade event. Compare it with the native exported bar before
 assuming the feed and date alignment match; that comparison is still pending.
+
+## Delivered
+
+Candles for all seven requests are in `data/tv_cache/`; coverage, the K5 anchor check and fixture notes are in [CANDLES_DELIVERED.md](CANDLES_DELIVERED.md).
