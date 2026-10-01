@@ -192,5 +192,13 @@ native_export_attempt:
   symbol: INDEX:BTCUSD
   timeframe: 1D
   chart_clock: UTC
-  result: Native Download action required Premium; no file was produced. No account upgrade or alternative
-    extraction attempted.
+  result: Native Download action opened an upgrade prompt recommending Premium; no file was produced.
+    No account upgrade or alternative extraction attempted. Premium was the session recommendation,
+    not the minimum plan listed for the feature.
+  official_plan_check:
+    checked_on: '2026-10-01'
+    source_url: https://www.tradingview.com/pricing/?source=header_goass%3D
+    feature: Download chart data
+    minimum_listed_plan: Plus
+    included_plans: [Plus, Premium, Ultimate]
+    excluded_plans: [Basic, Essential]
