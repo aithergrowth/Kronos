@@ -236,6 +236,22 @@ class IBKRParams:
 
 
 @dataclass
+class NewsParams:
+    """No new entries around high-impact news of the symbol's currencies (Dorus, source G 11:08: no entry right before news).
+
+    Open trades run on.  Events come from ``calendar_csv`` (filled from the TradingView economic calendar) and,
+    in the live loop, from the free ForexFactory weekly feed when ``forexfactory`` is on.
+    """
+    enabled: bool = True
+    before_minutes: int = 30
+    after_minutes: int = 30
+    min_importance: int = 1                      # 1 = high-impact only, 0 = medium and high
+    calendar_csv: str = "data/calendar/high_impact.csv"
+    forexfactory: bool = True                    # live loop refreshes this week's events from ForexFactory
+    refresh_minutes: int = 60
+
+
+@dataclass
 class MT5Params:
     """MetaTrader 5 terminal (Windows). Credentials and the terminal path come from environment variables."""
     login_env: str = "MT5_LOGIN"
@@ -282,6 +298,7 @@ class Settings:
     tradingview: TradingViewParams = field(default_factory=TradingViewParams)
     ibkr: IBKRParams = field(default_factory=IBKRParams)
     mt5: MT5Params = field(default_factory=MT5Params)
+    news: NewsParams = field(default_factory=NewsParams)
     live: LiveParams = field(default_factory=LiveParams)
 
     # ------------------------------------------------------------------ access

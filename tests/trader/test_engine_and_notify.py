@@ -83,3 +83,26 @@ def test_format_setup_and_dry_run_notifier(scenario):
     assert "BUY" in text and "1.10000" in text and "1.09490" in text and f"1:{3.85:.1f}" in text
     notifier = TelegramNotifier(dry_run=True)
     assert notifier.send_setup(setup) is False and notifier.sent and "BUY" in notifier.sent[0]
+
+
+def test_news_blackout_blocks_new_entries(hk_data):
+    """A high-impact event of the symbol's currency inside the window stops new entries (open trades run on)."""
+    from kronos_trader.data.calendar import NewsCalendar, NewsEvent
+    gated = _settings()
+    gated.session.enabled = True
+    # find a moment where the bias allows a trade, so the entry gates are reached (session says no at 20:00 Amsterdam)
+    reached = None
+    for day in pd.date_range("2024-06-03", "2024-06-28", freq="B"):
+        now = day + pd.Timedelta(18, unit="h")
+        a = StrategyEngine(gated).analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+        if any("outside the entry windows" in r for r in a.rejections):
+            reached = now
+            break
+    assert reached is not None
+    calendar = NewsCalendar([NewsEvent(reached + pd.Timedelta(10, unit="min"), "USD", "Non Farm Payrolls", 1)])
+    engine = StrategyEngine(_settings(), calendar=calendar)        # sessions off, calendar on
+    a = engine.analyze("09988", hk_data.as_of(reached, lookback=400), now=reached)
+    assert any("news blackout: Non Farm Payrolls (USD)" in r for r in a.rejections) and not a.has_valid_signal
+    quiet = StrategyEngine(_settings(), calendar=NewsCalendar([]))
+    a2 = quiet.analyze("09988", hk_data.as_of(reached, lookback=400), now=reached)
+    assert not any("news blackout" in r for r in a2.rejections)

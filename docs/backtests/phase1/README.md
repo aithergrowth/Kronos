@@ -135,3 +135,26 @@ four signals because its one open trade was still running; NAS100 never found th
 | opened_at | closed_at | direction | poi_tf | confirmation | entry | stop | take_profit | exit | reason | r |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-08-11 13:30:00 | 2026-08-18 14:15:00 | SHORT | 1D | BMS | 64192.1 | 64712.4 | 62275 | 64712.4 | stop | -1.01 |
+
+## Filters on the same eleven weeks: news blackout and Kronos
+
+Same runs with two filters, each on its own. *News*: no new entry from 30 minutes before to 30 minutes after a
+high-impact event of the symbol's currencies (TradingView economic calendar, `data/calendar/high_impact.csv`;
+Dorus, source G 11:08). *Kronos*: the forecast must agree with the setup direction (`--kronos filter`); the gold
+run did not finish in the time allowed.
+
+| Symbol | Rules only | With news blackout | With Kronos filter |
+|---|---|---|---|
+| EURUSD | 1 trades, +4.1R realized (1W 0L) | 1 trades, +4.1R realized (1W 0L) | n/a |
+| GBPUSD | 1 trades, -1.0R realized (0W 1L) | 1 trades, -1.0R realized (0W 1L) | 1 trades, -1.0R realized (0W 1L) |
+| USDJPY | 4 trades, -3.9R realized (0W 4L) | 3 trades, -2.9R realized (0W 3L) | 3 trades, -2.9R realized (0W 3L) |
+| XAUUSD | 5 trades, -2.0R realized (0W 2L), +8.8R open | 5 trades, -2.0R realized (0W 2L), +8.8R open | n/a |
+| BTCUSD | 1 trades, -1.0R realized (0W 1L) | 3 trades, -3.1R realized (0W 3L) | 3 trades, -3.1R realized (0W 3L) |
+
+- **News** removed one USDJPY loss (the 30 July entry half an hour before US GDP and PCE) and the 11 August
+  BTC short that sat half an hour before a US housing release. That BTC short had blocked four later signals
+  for a week; without it those fired and all three lost. Net across the five: USDJPY +1.0R better, BTC -2.1R
+  worse. The rule stays on because it is Dorus's own rule, not because of this sample; which events count as
+  high impact deserves a second look (TradingView marks housing data high, ForexFactory does not).
+- **Kronos** removed the only winner (EURUSD, 22 September) and, by removing the same BTC short, let the three
+  BTC losers through. It stays advisory, not a filter, until a larger sample says otherwise.

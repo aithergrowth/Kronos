@@ -60,9 +60,10 @@ def in_session(now: pd.Timestamp, params: SessionParams) -> Tuple[bool, str]:
 
 
 class StrategyEngine:
-    def __init__(self, settings: Optional[Settings] = None, forecaster=None):
+    def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
         self.forecaster = forecaster
+        self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
 
     # ------------------------------------------------------------------ helpers
@@ -166,6 +167,13 @@ class StrategyEngine:
             inside, local_label = in_session(now, s.session)
             if not inside:
                 analysis.rejections.append(f"outside the entry windows ({local_label} {s.session.timezone}); open trades run on")
+                return analysis
+
+        # news blackout: no new entries around high-impact news of the symbol's currencies (G 11:08) ---
+        if self.calendar is not None and s.news.enabled:
+            event = self.calendar.blackout(symbol, now)
+            if event is not None:
+                analysis.rejections.append(f"news blackout: {event.title} ({event.currency}) at {event.time:%H:%M} UTC; open trades run on")
                 return analysis
 
         # 4: POIs being visited now, highest timeframe first ------------------------------

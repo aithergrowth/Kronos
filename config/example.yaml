@@ -79,6 +79,14 @@ live:
   require_fresh_data: true        # stale data: analyse and manage, open no new setups
   feed_retry_seconds: 600         # leave a live feed alone this long after it failed on every timeframe
 
+news:
+  enabled: true                   # no new entries around high-impact news of the symbol's currencies (source G 11:08)
+  before_minutes: 30
+  after_minutes: 30
+  min_importance: 1               # 1 = high-impact only
+  calendar_csv: data/calendar/high_impact.csv   # from the TradingView economic calendar (backtests)
+  forexfactory: true              # the live loop refreshes this and next week from ForexFactory hourly
+
 ibkr:
   default_port: 7497              # paper TWS; 4002 for paper IB Gateway
   what_to_show: MIDPOINT

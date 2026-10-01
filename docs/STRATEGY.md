@@ -84,6 +84,7 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 | R:R ≥ min | `risk.py: build_setup` | `min_rr` (3.0 = Max's rule; see §5) |
 | 1 % risk, buffer | `risk.py: size_position` | risk distance = stop distance + `spread_buffer_pips`; lots floored to `lot_step` |
 | Sessions | `engine.in_session`, `SessionParams` | no new entries outside 09:00-11:00 / 13:00-17:00 Amsterdam on weekdays; open trades run on |
+| News | `engine` with `NewsCalendar`, `NewsParams` | no new entries from 30 min before to 30 min after high-impact news of the symbol's currencies (G 11:08-11:24: holds a plan-compliant trade through news, does not enter right before it); open trades run on |
 | Local analysis | `StructureParams.lookback_by_timeframe` | 60 monthly, 104 weekly, 250 daily, 300 4H/1H candles |
 | Break-even 4R/2R, no partials | `strategy/exits.py`, brokers, `live.py` | scheduled by POI timeframe; nothing else touches the stop |
 | One trade, prop-firm limits | `execution/risk_guard.py` | 1 open trade, daily loss, drawdown, news blackout, spacing |

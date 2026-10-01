@@ -181,6 +181,7 @@ class LiveRunner:
         self.stale: Dict[Timeframe, pd.Timedelta] = {}   # timeframe -> age of its last closed candle
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
         self._feed_line: Optional[str] = None
+        self._news_refreshed: Optional[pd.Timestamp] = None
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
@@ -189,6 +190,7 @@ class LiveRunner:
         self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
+        self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=True)
         self.last_analysis = analysis
@@ -214,6 +216,22 @@ class LiveRunner:
                 time.sleep(poll)
 
     # ------------------------------------------------------------ data
+    def refresh_news(self, now: pd.Timestamp) -> None:
+        """Pull this and next week's high-impact events from ForexFactory into the engine's calendar, hourly."""
+        n = self.settings.news
+        calendar = getattr(self.engine, "calendar", None)
+        if calendar is None or not n.enabled or not n.forexfactory:
+            return
+        if self._news_refreshed is not None and now - self._news_refreshed < pd.Timedelta(int(n.refresh_minutes), unit="min"):
+            return
+        self._news_refreshed = now
+        try:
+            from .data.calendar import fetch_forexfactory
+            for week in ("thisweek", "nextweek"):
+                calendar.add(fetch_forexfactory(week))
+        except Exception as exc:
+            print(f"[live] {self.symbol}: news calendar refresh failed ({exc}); using the events already loaded")
+
     def stale_timeframes(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> Dict[Timeframe, pd.Timedelta]:
         """Timeframes whose newest candle closed more than ``live.max_data_age_bars`` candles before ``now``."""
         out: Dict[Timeframe, pd.Timedelta] = {}
@@ -268,6 +286,13 @@ class LiveRunner:
         if self.stale and self.settings.live.require_fresh_data:
             self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
             return
+        calendar = getattr(self.engine, "calendar", None)
+        if calendar is not None:
+            soon = calendar.upcoming(self.symbol, now, within_minutes=240)
+            if soon:
+                e = soon[0]
+                minutes = int((e.time - now).total_seconds() // 60)
+                self.notifier.send(f"📰 {self.symbol}: next high-impact news {e.title} ({e.currency}) in {minutes} min")
         if self.broker is None or self.dry_run:
             self.notifier.send_setup(setup, forecast, self.spec)
             if self.broker is not None:

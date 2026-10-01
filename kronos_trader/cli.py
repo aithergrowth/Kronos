@@ -78,6 +78,19 @@ def _plain(html_text: str) -> str:
     return html.unescape(re.sub(r"</?(b|i|code)>", "", html_text))
 
 
+def _calendar(settings: Settings):
+    """High-impact news calendar from settings.news (None when the blackout is disabled)."""
+    if not settings.news.enabled:
+        return None
+    from .data.calendar import NewsCalendar, load_events
+    n = settings.news
+    return NewsCalendar(load_events(n.calendar_csv), n.before_minutes, n.after_minutes, n.min_importance)
+
+
+def _engine(settings: Settings) -> StrategyEngine:
+    return StrategyEngine(settings, _forecaster(settings), calendar=_calendar(settings))
+
+
 def _forecaster(settings: Settings):
     if settings.kronos.mode == "off":
         return None
@@ -92,7 +105,7 @@ def cmd_scan(args) -> int:
     symbol = _ensure_symbol(settings, args.symbol)
     data = _load_data(args, settings, symbol)
     print(data.describe())
-    engine = StrategyEngine(settings, _forecaster(settings))
+    engine = _engine(settings)
     views = data.as_of(pd.Timestamp(args.at)) if args.at else data.series
     analysis = engine.analyze(symbol, views, max_confirmation_age=args.max_age, compute_forecasts=args.forecasts)
     spec = settings.symbol(symbol)
@@ -123,7 +136,7 @@ def cmd_backtest(args) -> int:
     symbol = _ensure_symbol(settings, args.symbol)
     data = _load_data(args, settings, symbol)
     print(data.describe())
-    bt = Backtester(settings, data, symbol, step_tf=args.step_tf, forecaster=_forecaster(settings),
+    bt = Backtester(settings, data, symbol, step_tf=args.step_tf, engine=_engine(settings),
                     start=args.start, end=args.end, use_spread=not args.no_spread, progress=args.progress)
     result = bt.run()
     print(format_report(result))
@@ -225,7 +238,7 @@ def cmd_live(args) -> int:
                         broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
     runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
-                        engine=StrategyEngine(settings, _forecaster(settings)),
+                        engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan)
     mode = "EXECUTE" if args.execute else "dry-run"

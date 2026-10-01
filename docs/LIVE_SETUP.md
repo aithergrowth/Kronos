@@ -206,6 +206,12 @@ Secrets stay in environment variables on that machine only; never in the repo
 and never in a third-party agent sandbox. A small VPS is the alternative if
 the laptop cannot stay on.
 
+News: the loop opens no new trade from 30 minutes before to 30 minutes after
+a high-impact event of the symbol's currencies (`news:` in the config). It
+loads `data/calendar/high_impact.csv` and refreshes this and next week from
+the free ForexFactory feed every hour; each setup message names the next
+high-impact event.
+
 ## 6. Prop-firm phase
 
 The challenge runs on the firm's platform, not on IBKR. MetaTrader 5 is
