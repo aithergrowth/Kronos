@@ -1,0 +1,20 @@
+# Dorus's listed rules and nothing else.
+# Max's additions and the video-derived extras are switched off wherever his written list is silent;
+# what stays on beyond the list is named here so it can be switched too.
+bias:
+  extra_combos_enabled: false     # the list names 1M+1W+1D, 1W+1D+4H, 1M+1D+1H and the scalp 1D+4H+1H; M+D+4H (videos A, D) off
+confirmation:
+  allow_first_candle: true        # the list names the first bullish/bearish candle as a confirmation option
+  allow_balance_shift: true       # course K1 06:30 lists the balance shift next to BMS and the first candle
+  accept_bos: true                # "BOS" in the list
+risk:
+  min_rr: 1.5                     # the list says "attractive" without a number; 1.5 stands in until Max sets it (his examples run 0.7R-2R)
+  sl_offset_pips: 0.0             # the 1-pip buffer beyond P is Max's, not in the list
+  spread_buffer_pips: 1.0         # cost model only: sizing on the real risk distance including the spread
+session:
+  enabled: true                   # not in the list; Max: Dorus analyses at 08:45 and works 9 to 5 (videos A, C give windows too)
+  windows: [["09:00", "17:00"]]
+news:
+  enabled: true                   # not in the list; source G 11:08: he does not open a trade right before news
+kronos:
+  mode: off

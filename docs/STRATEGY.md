@@ -132,3 +132,25 @@ Source IDs (A, B, C, K1-K5, S1-S5) refer to the register in `docs/ASTRA_TASKS.md
 - Whether a lower-timeframe sweep is required before the BS; which liquidity candidate wins as the target when several exist.
 - Numerical news blackout, first-visit rule, approval timer: not stated.
 - Zero complete chart fixtures so far (`docs/examples/research/` holds the partial records). The XAUUSD 2026-08-26 scalp, BTC 2026-09 charts and the EURUSD/USDJPY student reviews are the candidates once candles and readable prices exist.
+
+## 7. Max's list, rule by rule: in the code, switched on, and where it comes from
+
+| Rule in Max's list | In the code | On in the forward-test profile | Origin |
+|---|---|---|---|
+| 3 of 5 timeframes (1M, 1W, 1D, 4H, 1H) | `combine_biases` | yes | list |
+| Combinations 1M+1W+1D, 1W+1D+4H, 1M+1D+1H; 1D+4H+1H scalp only; all others no trade | `BiasParams.full_combos`, `scalp_combo` | yes | list |
+| Per timeframe: liquidity + balance agree gives the direction, conflict gives 50/50 | `timeframe_bias` | yes | list; *how* each view is read is the code's interpretation (§6) |
+| Look at both sides | `map_pois` maps both directions | yes | list |
+| POI = area between liquidity and balance level / protected zone, on 1M to 1H | `poi_mode: liquidity_to_protection` | yes | list; edges verified from D and F |
+| Attractive R:R | `risk.min_rr` | 3.0 | **Max's number**; the list has none; his examples run 0.7R-2R; `config/dorus_pure.yaml` uses 1.5 |
+| One trade, 1 % risk | `PropFirmParams`, `RiskParams` | yes | list |
+| SL / TP to be decided | stop behind P, target on liquidity | yes | videos (K1 06:30, A 01:50:40) |
+| External factors | news blackout 30 min | yes | **video G 11:08**, not the list; one switch |
+| Confirmation BOS, BMS, first candle, on the timeframe table | `find_confirmation` | BOS, BMS, BS on; **first candle off** | list; first candle off is a forward-test choice (G 10:49); BS added from course K1 06:30 |
+| Break-even 4R intraday, 2R swing; no partials; let SL and TP run | `ExitParams` | yes | list |
+| Start small | `risk_pct` | 1 % | list |
+
+Not in the list but in the code, each one a switch: the M+D+4H combination (videos A and D, `extra_combos_enabled`), the 1-pip
+stop buffer (`sl_offset_pips`, Max), the session window 09:00-17:00 (`session`, Max's routine statement and videos A, C), the
+spread buffer in the sizing (`spread_buffer_pips`, cost model). Not in the code: a first-visit-only rule (a zone can be traded
+again after a test), any Kronos veto. `config/dorus_pure.yaml` runs the list with every addition off.
