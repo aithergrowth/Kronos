@@ -38,3 +38,22 @@ That the quotes and the numbers point the same way is the reason to expect the s
 X and P selection among nearby candidates, the 20 % gap threshold, first-return-only, the inside-zone
 requirement for a confirmation, the 1.5-zone-height visit allowance, and the news "after" window. Each is
 named in `config/dorus_pure.yaml` or `kronos_trader/config.py` as an assumption.
+
+## Additions from the full read of the course (video A, 2 October 2026)
+
+Rule by rule against the code in `docs/DORUS_COURSE_vs_CODE.md`. The quotes that settle something:
+
+| Rule | Quote | Where | Effect |
+|---|---|---|---|
+| Bias combinations | "de monthly is bullish, de daily is bullish en de 4 uur is bullish. Betekent dus een match"; "monthly daily 4 hour ... is een match ... Alle andere varianten is geen match" | A 01:43:00, 02:03:11-02:03:35, 02:14:01-02:14:20 | M+D+4H on in the third edition |
+| The shift level | "voor mij zit de eerste beste balance shift hier ... Nee, doet het niet. Gaan we wachten tot de volgende shift. Die zit hier" | A 01:20:33-01:20:46 | the most recent opposing gap at that moment (code) |
+| The shift needs a close | "Ik vind het wel belangrijk dat we een closure hebben. Dat hebben we nog niet ... Ja, nu wel" | A 02:26:10 | unchanged (body close) |
+| Shift threshold | "sterk genoeg om boven dit balance level uit te komen" / "sterk genoeg om hierboven te komen. Dus de candle die dit gat heeft veroorzaakt" | A 01:31:52, 02:25:46 / A 01:08:22 | gap_edge default, protector option |
+| Structure break alone | "de standaard break of structure ... daar maak ik ook niet zo heel veel gebruik van"; "De meeste mensen zien dit als een break of structure. Maar wat is het nou eigenlijk? Het is een liquiditeitssweep" | A 01:29:29, 01:33:47 | BMS off in the third edition |
+| P | "De P is de candle die uiteindelijk de fair value gap heeft veroorzaakt" | A 01:41:51, 01:46:20 | candle 2, as coded |
+| Stop | "Stop los op de P ... dit is uiteindelijk de candle die dit gat hier heeft veroorzaakt [on the daily]"; "ik heb altijd mijn regel minimaal op een 1 uur P ... Ik ga hem hierop plaatsen op de P [the daily one]. Het mag ook. Het is een 0,73 risk reward" | A 01:08:49-01:09:03, 01:46:17-01:47:02 | stop on the zone's own P in the third edition |
+| R:R | "een aantrekkelijke risk reward ... boven de 0,5"; "Mijn keuze gaat eerder naar één of twee risk reward" | A 01:45:00-01:45:07, 01:28:01 | 0.5 in the third edition |
+| Entry timeframe | "entries doen we vanaf de 1 minuut. Dus dan is het de 1 uur tot en met uiteindelijk de 1 minuut" | A 01:13:00-01:13:08 | 1-minute cache for the runs |
+| Where to trade | "Ik trade nooit naar een POI toe. Ik trade altijd van een POI af" | A 01:18:40 | as coded |
+| Fair value gap | "vanaf de eerste candle, dus de bovenste ... naar de derde candle. En het gat hiertussen, dit is voor ons het balance level" | A 00:52:08-00:52:30 | as coded |
+

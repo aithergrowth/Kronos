@@ -154,3 +154,11 @@ Not in the list but in the code, each one a switch: the M+D+4H combination (vide
 stop buffer (`sl_offset_pips`, Max), the session window 09:00-17:00 (`session`, Max's routine statement and videos A, C), the
 spread buffer in the sizing (`spread_buffer_pips`, cost model). Not in the code: a first-visit-only rule (a zone can be traded
 again after a test), any Kronos veto. `config/dorus_pure.yaml` runs the list with every addition off.
+
+## Third edition: the course read (2 October 2026)
+
+`config/dorus_course.yaml` is the written list read with his own 4.5-hour course wherever the list is silent: M+D+4H counts
+as a match, the plain structure break is not a confirmation, the stop sits on the zone's own P, the minimum R:R is 0.5.
+The reasoning and every timestamp are in `docs/DORUS_COURSE_vs_CODE.md`; `config/dorus_pure.yaml` stays the frozen second
+edition for comparison.
+
