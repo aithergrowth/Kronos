@@ -76,7 +76,7 @@ reminder of how much one quarter moves these sums. The V6 reading (V5 + 8-pip mi
 
 ## Reading F over the whole period
 
-First attempt (08:50-09:30 UTC, `wr_full_v6_minstop8_*`, not packaged): on EURUSD the run took 68 trades, 34 %, +2.7R
+First attempt (08:50-09:30 UTC, packaged as `full_v6_minstop8_*` and kept as the evidence of the blocking trade): on EURUSD the run took 68 trades, 34 %, +2.7R
 through June 2025 (2023 +0.9R, 2024 -1.4R, 2025 +3.2R; first 10 % breach from the initial balance on 22 August 2024) and
 then nothing: trade P68, a long from a weekly zone (entry 1.15849, stop 1.12103, target 1.23496, 4H confirmation),
 opened 16 June 2025 and sat open to the end of the data, blocking every other entry for fifteen months. With the
