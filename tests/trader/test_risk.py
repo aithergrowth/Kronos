@@ -185,9 +185,9 @@ def test_impulse_origin_target_is_the_extreme_before_the_zone_formed(scenario):
     st = analyze_structure(scenario)
     poi = map_pois(st, current_price=101.0)[0]
     series = st.series
-    idx = series.index_at_or_after(poi.created_at)
+    end = (poi.gap.protector_index + 1) if poi.gap is not None else series.index_at_or_after(poi.created_at)
     params = RiskParams(tp_policy="impulse_origin", tp_origin_candles=3, tp_buffer_pips=1.0)
-    expected = float(series.high[max(0, idx - 3):idx].max()) - 0.01
+    expected = float(series.high[max(0, end - 4):end].max()) - 0.01
     level = impulse_origin_target(Direction.LONG, expected - 1.0, {T.H_1: st}, poi, params, pip_size=0.01)
     assert level is not None and level[0] == pytest.approx(expected) and "origin high" in level[1]
     assert impulse_origin_target(Direction.LONG, expected + 1.0, {T.H_1: st}, poi, params, pip_size=0.01) is None

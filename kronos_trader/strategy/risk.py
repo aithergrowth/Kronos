@@ -156,20 +156,23 @@ def impulse_origin_target(
     if st is None or params.tp_origin_candles <= 0:
         return None
     series = st.series
-    idx = series.index_at_or_after(poi.created_at)
-    lo = max(0, idx - int(params.tp_origin_candles))
-    if idx - lo < 1:
+    # the window ends with the P candle (the impulse itself starts there), not before the zone's first candle
+    p_index = getattr(poi.gap, "protector_index", None) if getattr(poi, "gap", None) is not None else None
+    end = int(p_index) + 1 if p_index is not None else series.index_at_or_after(poi.created_at)
+    end = min(end, len(series))
+    lo = max(0, end - int(params.tp_origin_candles) - 1)
+    if end - lo < 1:
         return None
     buffer = params.tp_buffer_pips * pip_size
     if direction is Direction.LONG:
-        level = float(series.high[lo:idx].max()) - buffer
+        level = float(series.high[lo:end].max()) - buffer
         if level <= entry:
             return None
-        return level, f"{poi.timeframe.label} origin high {level:.5f} ({idx - lo} candles before the zone formed)"
-    level = float(series.low[lo:idx].min()) + buffer
+        return level, f"{poi.timeframe.label} origin high {level:.5f} ({end - lo} candles up to the zone's P)"
+    level = float(series.low[lo:end].min()) + buffer
     if level >= entry:
         return None
-    return level, f"{poi.timeframe.label} origin low {level:.5f} ({idx - lo} candles before the zone formed)"
+    return level, f"{poi.timeframe.label} origin low {level:.5f} ({end - lo} candles up to the zone's P)"
 
 
 def nearer_liquidity_target(
