@@ -13,6 +13,10 @@ Each chart shows the candles of the entry timeframe up to the entry, the zone wi
 
 Config `/tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/eval_2026_v5_prev_extreme.yaml`; one look every 5 minutes inside the session windows (09:00-11:00, 13:00-17:00 Europe/Amsterdam); warm-up 5.0 days. Bias at the first look of the day. Zones: the 4H and 1H zones within 1.0 % of price at that moment, with X / B / P as the code maps them.
 
+## Profile version 2 (`config/dorus_live.yaml`, origin target, 1D/4H/1H zones; `ledger_v2.csv`)
+
+1 trade, -1.0R (unchanged).
+
 ## The month at a glance
 
 | Day | 1M | 1W | 1D | 4H | 1H | 3 of 5 | Price 09:00 | Zones near price (4H/1H) | Visited, no confirmation | Signals |

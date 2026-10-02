@@ -32,6 +32,10 @@ extreme as the stop. With `min_stop_pips 8` (his stops are never under 9) the sa
 unchanged. August is unchanged (one trade, -1.0R). This is the month the rule was found on, so it is a check that the rule
 does what it says, not evidence of an edge; the 2026 run with reading F is the test.
 
+## Profile version 2 (`config/dorus_live.yaml`, origin target, 1D/4H/1H zones; `ledger_v2.csv`)
+
+3 trades, 3 won, +3.5R: the 4H zones now take the entries of 11, 14 and 22 September with wider stops than the 1H zones of version 1 (7 trades, +8.1R with the minimum stop); the zone priority when a 4H and a 1H zone overlap is open.
+
 ## The month at a glance
 
 | Day | 1M | 1W | 1D | 4H | 1H | 3 of 5 | Price 09:00 | Zones near price (4H/1H) | Visited, no confirmation | Signals |
