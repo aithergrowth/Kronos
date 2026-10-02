@@ -176,3 +176,18 @@ def test_min_stop_pips_moves_a_tight_stop_out(scenario):
     assert wide.rr == pytest.approx((112.0 - 108.0) / (0.10 + 0.01))
     same, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, RiskParams(stop_basis="confirmation", min_rr=0.5, min_stop_pips=3), 100_000)
     assert same is not None and same.stop == pytest.approx(107.94)
+
+
+def test_impulse_origin_target_is_the_extreme_before_the_zone_formed(scenario):
+    """``tp_policy impulse_origin``: the target is the extreme of the candles before the zone's first candle (the low or
+    high the creating move started from); nothing beyond entry falls back to the nearest liquidity."""
+    from kronos_trader.strategy.risk import impulse_origin_target
+    st = analyze_structure(scenario)
+    poi = map_pois(st, current_price=101.0)[0]
+    series = st.series
+    idx = series.index_at_or_after(poi.created_at)
+    params = RiskParams(tp_policy="impulse_origin", tp_origin_candles=3, tp_buffer_pips=1.0)
+    expected = float(series.high[max(0, idx - 3):idx].max()) - 0.01
+    level = impulse_origin_target(Direction.LONG, expected - 1.0, {T.H_1: st}, poi, params, pip_size=0.01)
+    assert level is not None and level[0] == pytest.approx(expected) and "origin high" in level[1]
+    assert impulse_origin_target(Direction.LONG, expected + 1.0, {T.H_1: st}, poi, params, pip_size=0.01) is None

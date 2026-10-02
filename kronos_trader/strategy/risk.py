@@ -33,6 +33,7 @@ def find_take_profit(
     confirmation_tf: Optional[Timeframe] = None,
     touch_ts=None,
     pip_size: float = 0.0,
+    poi: Optional[POI] = None,
 ) -> Optional[Tuple[float, str]]:
     """Target beyond ``entry``.
 
@@ -48,6 +49,10 @@ def find_take_profit(
         prev = previous_extreme_target(direction, entry, structures, poi_tf, params, touch_ts, pip_size)
         if prev is not None:
             return prev
+    if params.tp_policy == "impulse_origin" and poi is not None:
+        origin = impulse_origin_target(direction, entry, structures, poi, params, pip_size)
+        if origin is not None:
+            return origin
     liquidity, balance = target_candidates(direction, entry, structures, poi_tf, params, confirmation_tf, params.tp_floor_tf)
 
     def nearest(cands) -> Optional[Tuple[float, str]]:
@@ -59,7 +64,7 @@ def find_take_profit(
     if params.tp_policy == "liquidity":
         own_tf = [c for c in liquidity if c[2] is poi_tf]
         return nearest(own_tf) or nearest(liquidity)
-    if params.tp_policy in ("liquidity_nearest", "previous_extreme"):
+    if params.tp_policy in ("liquidity_nearest", "previous_extreme", "impulse_origin"):
         return nearest(liquidity)
     if params.tp_policy == "liquidity_first":
         return nearest(liquidity) or nearest(balance)
@@ -84,7 +89,7 @@ def target_candidates(
     """
     liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
-    nearest_policy = params.tp_policy in ("liquidity_nearest", "previous_extreme") and confirmation_tf is not None
+    nearest_policy = params.tp_policy in ("liquidity_nearest", "previous_extreme", "impulse_origin") and confirmation_tf is not None
     for tf, st in structures.items():
         if nearest_policy:
             if tf <= confirmation_tf or (floor_tf is not None and tf < floor_tf):
@@ -135,6 +140,36 @@ def previous_extreme_target(
     if level >= entry:
         return None
     return level, f"{poi_tf.label} previous low {level:.5f} ({idx - lo} candles before the touch)"
+
+
+def impulse_origin_target(
+    direction: Direction,
+    entry: float,
+    structures: Dict[Timeframe, StructureAnalysis],
+    poi: POI,
+    params: RiskParams,
+    pip_size: float = 0.0,
+) -> Optional[Tuple[float, str]]:
+    """The low (short) or high (long) the move that created the zone started from: the extreme of the last
+    ``tp_origin_candles`` candles on the zone's timeframe before the zone's first candle, ``tp_buffer_pips`` before it."""
+    st = structures.get(poi.timeframe)
+    if st is None or params.tp_origin_candles <= 0:
+        return None
+    series = st.series
+    idx = series.index_at_or_after(poi.created_at)
+    lo = max(0, idx - int(params.tp_origin_candles))
+    if idx - lo < 1:
+        return None
+    buffer = params.tp_buffer_pips * pip_size
+    if direction is Direction.LONG:
+        level = float(series.high[lo:idx].max()) - buffer
+        if level <= entry:
+            return None
+        return level, f"{poi.timeframe.label} origin high {level:.5f} ({idx - lo} candles before the zone formed)"
+    level = float(series.low[lo:idx].min()) + buffer
+    if level >= entry:
+        return None
+    return level, f"{poi.timeframe.label} origin low {level:.5f} ({idx - lo} candles before the zone formed)"
 
 
 def nearer_liquidity_target(
@@ -260,7 +295,7 @@ def build_setup(
         stop = widened
 
     target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
-                              touch_ts=touch_ts, pip_size=spec.pip_size)
+                              touch_ts=touch_ts, pip_size=spec.pip_size, poi=poi)
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons
