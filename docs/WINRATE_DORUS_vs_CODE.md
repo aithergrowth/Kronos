@@ -145,8 +145,10 @@ Over 2026 it turns gold from +0.9R (28 %) into +11.3R (45 %) and gives EURUSD 16
 months of eight (`docs/backtests/winrate/README.md`, "Profile version 2"). Version 2 is the demo profile.
 Over the whole period with the FTMO margins in the guard, version 2 was halted in May 2024 on EURUSD (-8.8 % from the
 peak after 24 trades) and in August 2023 on gold, as version 1 breached 10 % in July 2024: both versions earn in 2025-2026
-and lose in 2023-2024, and a year like 2024 costs a challenge. The run with the halt lifted, comparable with reading F's
-124 trades +13.0R, is the last check before the demo.
+and lose in 2023-2024, and a year like 2024 costs a challenge. With the halt lifted, version 2 over 2023-2026 gives EURUSD 110 trades, 44 %, +2.3R (-1.7R, -8.9R, +7.8R, +5.2R per
+year) and gold 158 trades, 39 %, +7.8R (-8.7R, -7.7R, +12.9R, +11.3R), against version 1's +13.0R and -28.5R: version 2
+is the demo profile for both markets. The 4H zones lose in every run and the 1H zones carry every positive result, but
+restricted to 1H zones 2024 still loses, so the bias gate stays the lever (section 5).
 
 ## 5. What this does not do
 

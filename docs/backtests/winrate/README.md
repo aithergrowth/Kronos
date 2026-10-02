@@ -127,5 +127,22 @@ or 4 % in a day): EURUSD 24 trades, 25 %, -9.4R, halted in May 2024 at -8.8 % fr
 demo, version 2 would have lost a challenge in 2024 (EURUSD) and 2023 (gold), as version 1 did in July 2024. The run with
 the halt lifted (`full_v2ng_*`), the one comparable with V7, follows.
 
+Whole period with the halt lifted (`full_v2ng_*`, 11:02-11:43 UTC), against version 1 (reading F, `full_v7_intraday_*`):
+
+| Profile | Market | Trades | Win rate | Total | End equity | Deepest drawdown | First 10 % breach | 2023 | 2024 | 2025 | 2026 | 1H zones | 4H zones |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Version 1 | EURUSD | 124 | 37 % | +13.0R | 110,869 | -17.7 % (Sep 2024) | 4 Jul 2024 | -3.4R | -1.4R | +6.6R | +11.2R | 90 / 41 % / +15.1R | 30 / 23 % / -1.7R |
+| Version 2 | EURUSD | 110 | 44 % | +2.3R | 101,505 | -14.0 % (Oct 2024) | 5 Jul 2024 | -1.7R | -8.9R | +7.8R | +5.2R | 69 / 48 % / +11.4R | 36 / 39 % / -5.8R |
+| Version 1 | XAUUSD | 172 | 27 % | -28.5R | 74,254 | -34.5 % (Oct 2025) | 17 Aug 2023 | -19.9R | -17.7R | +8.2R | +0.9R | 118 / 24 % / -21.5R | 50 / 36 % / -5.1R |
+| Version 2 | XAUUSD | 158 | 39 % | +7.8R | 106,060 | -25.8 % (Oct 2024) | 3 Jan 2024 | -8.7R | -7.7R | +12.9R | +11.3R | 111 / 40 % / +11.2R | 43 / 37 % / -3.3R |
+
+Reading. (1) Both versions, both markets: 2023 and 2024 lose, 2025 and 2026 earn. The entry mechanics are now his; what
+decides the year is the bias gate, which has never been checked against his own readings. (2) Version 2 is the better
+profile over both markets together (+10.1R against -15.5R), with higher win rates (44 %, 39 %) and smaller drawdowns;
+on EURUSD alone version 1 earns more (+13.0R against +2.3R) through 2026's far targets. (3) The 4H zones lose in all
+four runs (-1.7R to -5.8R); the 1H zones carry every positive result. Restricted to 1H zones, 2024 still loses in every
+run (-4.5R to -8.7R), so the zone choice does not replace the bias work. (4) An FTMO account breaches 10 % in July 2024
+on EURUSD under both versions, and in 2023-2024 on gold.
+
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.
