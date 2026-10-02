@@ -208,3 +208,23 @@ def test_confirmation_search_starts_at_the_latest_re_entry_into_the_zone():
     off = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False, search_from_reentry=False)
     old = find_confirmation(series, poi, series.timestamps.iloc[0], off, max_age=100, structure=st)
     assert old is not None and old.index == 2                  # the old search took the crossing of the first approach
+
+
+def test_a_later_shift_over_a_newer_gap_counts_when_the_first_one_was_not_actionable():
+    """Two opposing gaps during one visit, the first crossed long ago (say outside the session): the crossing of the newer gap is
+    the fresh confirmation now (his 18 Mar 2024 and 9 Dec 2025 trades: price sat in the zone for hours before the shift he took)."""
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, Gap, POI
+    from kronos_trader.strategy.structure import StructureAnalysis
+    closes = [1.0130, 1.0125, 1.0118, 1.0108, 1.0112, 1.0120, 1.0126, 1.0130, 1.0128, 1.0124, 1.0127, 1.0122, 1.0109]
+    series = CandleSeries.from_records([(c, c + 0.0003, c - 0.0003, c) for c in closes], T.MIN_5, start="2024-01-02 09:00", symbol="EURUSD")
+    poi = POI(T.H_4, Bias.BEARISH, 1.0100, 1.0140, None, None, 0, pd.Timestamp("2024-01-01 09:00"))
+    st = StructureAnalysis(series, StructureParams())
+    first = Gap(Bias.BULLISH, 1.0112, 1.0116, 2, series.timestamps.iloc[2], 1, 1.0105, 1.0124, 0)     # crossed at index 3 (close 1.0108)
+    second = Gap(Bias.BULLISH, 1.0117, 1.0121, 9, series.timestamps.iloc[9], 8, 1.0110, 1.0131, 7)    # crossed at index 12 (close 1.0109)
+    st.gaps = [first, second]
+    params = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False)
+    now_fresh = find_confirmation(series, poi, series.timestamps.iloc[0], params, max_age=0, structure=st)
+    assert now_fresh is not None and now_fresh.index == 12 and now_fresh.break_level == 1.0117
+    earliest = find_confirmation(series, poi, series.timestamps.iloc[0], params, max_age=100, structure=st)
+    assert earliest is not None and earliest.index == 3                                       # with no age limit the first one still comes first

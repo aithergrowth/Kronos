@@ -375,6 +375,11 @@ class StrategyEngine:
                 continue
             setup.touched_at = pd.Timestamp(touch_ts)
             setup.visit_number = visits
+            if s.risk.stop_basis == "confirmation":      # the stop sits beyond the extreme since the (re-)entry, not behind a P
+                stop_detail = {"stop_tf": confirmation.timeframe.label, "stop_p_open": None, "stop_p_close": None,
+                               "stop_basis": f"the {'low' if direction is Direction.LONG else 'high'} since price last entered the zone, "
+                                             f"on the {confirmation.timeframe.label} (stop_basis=confirmation)"}
+                protection = confirmation.invalidation_price
             setup.stop_detail = {"stop_p": protection, **stop_detail}
             if diagnostic:
                 analysis.diagnostic_setup = setup

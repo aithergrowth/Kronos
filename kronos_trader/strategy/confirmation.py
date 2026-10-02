@@ -101,11 +101,10 @@ def find_confirmation(
                 close = float(ltf.close[k])
                 if (bullish and close > level) or (not bullish and close < level):
                     crossed.add(latest.index)
-                    if within_zone_reach(close):
+                    if within_zone_reach(close):      # every opposing gap can give a shift: a shift that fell outside the entry window,
                         invalidation = float(ltf.low[touch_index:k + 1].min()) if bullish else float(ltf.high[touch_index:k + 1].max())
-                        candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.timestamps.iloc[k],
-                                                       poi.direction, level, invalidation, close))
-                        break
+                        candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.timestamps.iloc[k],   # or was not taken,
+                                                       poi.direction, level, invalidation, close))                     # does not block the next
 
     # structure breaks --------------------------------------------------------------------
     for brk in st.breaks:

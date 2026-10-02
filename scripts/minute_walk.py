@@ -22,8 +22,9 @@ for now in pd.date_range(start, end, freq="1min"):
     views = data.as_of(now, lookback=s.structure.lookback)
     a = engine.analyze(symbol, views, equity=s.account_size, now=now, assume_direction=direction, step_minutes=1)
     diag = getattr(a, "diagnostic_setup", None)
-    key = [r for r in a.rejections if "would give" in r] or [r for r in a.rejections if ("1.15853" in r or "1.15967" in r)]
-    line = f"{now:%H:%M} px {a.price:.5f} bias={a.decision.direction if a.decision.tradable else 'refused'} | " + " || ".join(k[:150] for k in key)
+    key = [r for r in a.rejections if "would give" in r] or [r for r in a.rejections if "POI" in r and ("waiting" in r or "R:R" in r or "below minimum" in r)][:3]
+    gate = a.decision.direction if a.decision.tradable else ("refused: " + a.decision.reason[:110])
+    line = f"{now:%H:%M} px {a.price:.5f} bias={gate} | " + " || ".join(k[:150] for k in key)
     if a.has_valid_signal:
         st = a.signal.setup; line += f" || SIGNAL {st.direction.name} entry {st.entry} stop {st.stop} tp {st.take_profit} rr {st.rr:.2f}"
     if diag is not None:
