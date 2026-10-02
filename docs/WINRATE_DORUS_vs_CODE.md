@@ -143,6 +143,10 @@ Max's steer ("hij pakt een bepaald punt van higher low") and the course's "stop 
 vorige high" gave `tp_policy impulse_origin` (suite reading H: K3a 1.0 point, 18 Mar 2024 3.2 pips from his targets).
 Over 2026 it turns gold from +0.9R (28 %) into +11.3R (45 %) and gives EURUSD 16 trades, 62 %, +5.2R with five positive
 months of eight (`docs/backtests/winrate/README.md`, "Profile version 2"). Version 2 is the demo profile.
+Over the whole period with the FTMO margins in the guard, version 2 was halted in May 2024 on EURUSD (-8.8 % from the
+peak after 24 trades) and in August 2023 on gold, as version 1 breached 10 % in July 2024: both versions earn in 2025-2026
+and lose in 2023-2024, and a year like 2024 costs a challenge. The run with the halt lifted, comparable with reading F's
+124 trades +13.0R, is the last check before the demo.
 
 ## 5. What this does not do
 
