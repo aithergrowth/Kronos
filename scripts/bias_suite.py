@@ -39,7 +39,7 @@ def main():
         for tf, b in a.biases.items():
             his = NORM.get(str(r.get("his", {}).get(tf.label, "")).lower(), str(r.get("his", {}).get(tf.label, "-")))
             code = str(b.bias)
-            why = "; ".join(getattr(b, "reasons", []) or [])[:140] if hasattr(b, "reasons") else ""
+            why = (f"liquidity {b.liquidity_view}, balance {b.balance_view}" + ("; " + "; ".join(b.notes) if b.notes else ""))[:160]
             mark = "=" if his == code else "x"
             if his != "-": n += 1; agree += his == code
             lines.append(f"| {r['date']} | {sym} | {tf.label} | {his} | {code} {mark} | {why} |")

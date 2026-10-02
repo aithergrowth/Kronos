@@ -7,3 +7,21 @@
   match: "bearish"
   traded: "short 15:05 UTC (source trade EU-2025-11-11)"
   source: "his recap screenshot; M/W/D from the DXY mirror (not confirmed as a rule)"
+- date: "2024-03-18"
+  symbol: EURUSD
+  his: {}
+  match: "bearish"
+  traded: "short 12:40 UTC (source trade EU-2024-03-18); his per-timeframe readings not supplied, the trade implies a bearish match"
+  source: "his recap screenshot"
+- date: "2025-12-09"
+  symbol: EURUSD
+  his: {1W: bullish}
+  match: "bullish"
+  traded: "long 15:36 UTC from the weekly P (source trade EU-2025-12-09)"
+  source: "his weekly-chart recap"
+- date: "2026-08-26"
+  symbol: XAUUSD
+  his: {}
+  match: "bearish"
+  traded: "two shorts 13:45 and 15:05 UTC (K3a, K3b); per-timeframe readings in the K3 video not transcribed"
+  source: "K3 Loom"
