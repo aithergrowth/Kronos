@@ -87,6 +87,9 @@ class StructureParams:
 class BiasParams:
     liquidity_lookback: int = 80        # ASSUMPTION: a sweep older than this no longer drives the liquidity view
     balance_violation: str = "flip"     # when P breaks: "flip" = continuation in the break direction (A 01:41:49), "neutral" = 50/50
+    balance_view: str = "last_gap"      # last_gap: the most recent balance level formed gives the view; last_tested: the most recent balance
+                                        # level price has traded into ("een balance level wat we hier hebben getest", A 00:57:51) gives it, held
+                                        # = its direction, broken = the continuation; a reading tested on his dated days (bias suite)
     min_matching_timeframes: int = 3    # rule: minimum 3/5 timeframes must match
     full_combos: Tuple[Tuple[Timeframe, ...], ...] = (                            # K1 02:17 (written plan)
         (Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1),

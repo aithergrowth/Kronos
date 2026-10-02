@@ -56,6 +56,11 @@ def timeframe_bias(
     # balance view: the last balance level (gap) and its protector ------------------
     balance = Bias.NEUTRAL
     gap = st.last_gap
+    if params.balance_view == "last_tested":
+        tested = [g for g in st.gaps if g.is_mitigated]
+        gap = tested[-1] if tested else None
+        if gap is None:
+            notes.append("balance: no balance level tested yet")
     if gap is not None:
         if gap.is_violated:
             if params.balance_violation == "flip":
