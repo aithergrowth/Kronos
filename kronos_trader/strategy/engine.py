@@ -378,7 +378,7 @@ class StrategyEngine:
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
                                          s.risk, equity, breakeven_trigger_r(poi.timeframe, s.exits),
-                                         protection_level=protection)
+                                         protection_level=protection, touch_ts=touch_ts)
             if setup is None:
                 note = f" [stop would be {spec.round_price(protection)} = {stop_detail.get('stop_basis')}]" if diagnostic else ""
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}{note}")

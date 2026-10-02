@@ -159,6 +159,11 @@ class RiskParams:
     tp_policy: str = "liquidity"        # "Dus ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40): nearest liquidity on the POI timeframe or higher;
                                         # liquidity_nearest: nearest liquidity on any timeframe above the confirmation timeframe (dorus_pure.yaml); legacy: nearest | liquidity_first | balance_first
     tp_floor_tf: Optional[Timeframe] = None   # with liquidity_nearest: only liquidity on this timeframe or higher counts ("we willen echt de highs en de lows", not local liquidity, A 01:54:49)
+    tp_lookback_candles: int = 72       # tp_policy previous_extreme: the target is the lowest low (short) / highest high (long) of this many candles on
+                                        # the zone's timeframe before the touch, i.e. the previous significant low/high of the move ("take profit bij het
+                                        # vorige liquiditeitsgebied", A 01:54:47; his targets: the 12:45 low on 11 Nov 2025, the 15 Mar low on 18 Mar 2024,
+                                        # the 24 Aug low on K3, all within 72 candles of a 1H zone); falls back to liquidity_nearest when nothing lies beyond entry
+    tp_buffer_pips: float = 0.0         # previous_extreme: the target sits this many pips before the extreme (his: 0.3 pip and 1.0 point before the low)
     stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
     stop_protection: str = "recent_1h"  # which P the stop sits behind for zones above the 1H: recent_1h = the most recent unviolated 1H balance level
                                         # since the touch (the minimum the plan allows); poi = the zone's own P, his choice in the course

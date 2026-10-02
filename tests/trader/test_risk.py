@@ -137,3 +137,28 @@ def test_tp_max_rr_takes_a_nearer_liquidity_when_the_floor_target_is_too_far(sce
     nothing_fits = {T.H_1: StubStructure(bsl=[115.0]), T.MIN_15: StubStructure(bsl=[108.3])}
     kept, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, nothing_fits, capped, 100_000)
     assert kept is not None and kept.take_profit == 115.0   # no nearer level with R:R >= min: the far target stays
+
+
+def test_previous_extreme_target_is_the_lowest_low_before_the_touch(scenario):
+    """``tp_policy previous_extreme``: the target is the extreme of the last ``tp_lookback_candles`` candles on the zone's
+    timeframe before the touch, a buffer before it; when nothing lies beyond entry it falls back to the nearest liquidity."""
+    from kronos_trader.strategy.risk import previous_extreme_target
+    st = analyze_structure(scenario)
+    poi = map_pois(st, current_price=101.0)[0]                      # bullish 100.6-110.0 on the 1H
+    series = st.series
+    touch = series.ts_list[-1]
+    idx = series.index_at_or_after(touch)
+    params = RiskParams(tp_policy="previous_extreme", tp_lookback_candles=5, tp_buffer_pips=2.0)
+    expected_high = float(series.high[idx - 5:idx].max()) - 0.02   # 2 pips of 0.01 before the high
+    level = previous_extreme_target(Direction.LONG, expected_high - 1.0, {T.H_1: st}, T.H_1, params, touch, pip_size=0.01)
+    assert level is not None and level[0] == pytest.approx(expected_high) and "previous high" in level[1] and "5 candles" in level[1]
+    assert previous_extreme_target(Direction.LONG, expected_high + 1.0, {T.H_1: st}, T.H_1, params, touch, pip_size=0.01) is None
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 104.0, 100.0, 102.0)
+    structures = {T.H_1: st, T.H_4: StubStructure(bsl=[expected_high + 50.0])}
+    setup, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, expected_high - 1.0, structures,
+                                 RiskParams(tp_policy="previous_extreme", tp_lookback_candles=5, tp_buffer_pips=2.0, stop_basis="confirmation", min_rr=0.05),
+                                 100_000, touch_ts=touch)
+    assert setup is not None and setup.take_profit == pytest.approx(expected_high, abs=0.01) and "previous high" in setup.tp_source
+    fallback, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, expected_high + 1.0, structures,
+                              RiskParams(tp_policy="previous_extreme", tp_lookback_candles=5, stop_basis="confirmation", min_rr=0.05), 100_000, touch_ts=touch)
+    assert fallback is not None and fallback.take_profit == pytest.approx(expected_high + 50.0)   # nothing beyond entry: the nearest liquidity

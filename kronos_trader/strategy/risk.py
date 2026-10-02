@@ -31,6 +31,8 @@ def find_take_profit(
     poi_tf: Timeframe,
     params: RiskParams,
     confirmation_tf: Optional[Timeframe] = None,
+    touch_ts=None,
+    pip_size: float = 0.0,
 ) -> Optional[Tuple[float, str]]:
     """Target beyond ``entry``.
 
@@ -42,6 +44,10 @@ def find_take_profit(
     extreme; his accepted trades run 0.7R-2R, A 01:43:58-01:47:06).  Legacy
     policies also consider unmitigated order blocks.
     """
+    if params.tp_policy == "previous_extreme":
+        prev = previous_extreme_target(direction, entry, structures, poi_tf, params, touch_ts, pip_size)
+        if prev is not None:
+            return prev
     liquidity, balance = target_candidates(direction, entry, structures, poi_tf, params, confirmation_tf, params.tp_floor_tf)
 
     def nearest(cands) -> Optional[Tuple[float, str]]:
@@ -53,7 +59,7 @@ def find_take_profit(
     if params.tp_policy == "liquidity":
         own_tf = [c for c in liquidity if c[2] is poi_tf]
         return nearest(own_tf) or nearest(liquidity)
-    if params.tp_policy == "liquidity_nearest":
+    if params.tp_policy in ("liquidity_nearest", "previous_extreme"):
         return nearest(liquidity)
     if params.tp_policy == "liquidity_first":
         return nearest(liquidity) or nearest(balance)
@@ -78,7 +84,7 @@ def target_candidates(
     """
     liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
-    nearest_policy = params.tp_policy == "liquidity_nearest" and confirmation_tf is not None
+    nearest_policy = params.tp_policy in ("liquidity_nearest", "previous_extreme") and confirmation_tf is not None
     for tf, st in structures.items():
         if nearest_policy:
             if tf <= confirmation_tf or (floor_tf is not None and tf < floor_tf):
@@ -98,6 +104,37 @@ def target_candidates(
                 if blk.high < entry:
                     balance.append((blk.high, f"{tf.label} bullish order block {blk.low:.5f}-{blk.high:.5f}"))
     return liquidity, balance
+
+
+def previous_extreme_target(
+    direction: Direction,
+    entry: float,
+    structures: Dict[Timeframe, StructureAnalysis],
+    poi_tf: Timeframe,
+    params: RiskParams,
+    touch_ts,
+    pip_size: float = 0.0,
+) -> Optional[Tuple[float, str]]:
+    """The previous significant low (short) or high (long) of the move: the extreme of the last ``tp_lookback_candles``
+    candles on the zone's timeframe before the touch, ``tp_buffer_pips`` before it; None when it does not lie beyond entry."""
+    st = structures.get(poi_tf)
+    if st is None or touch_ts is None or params.tp_lookback_candles <= 0:
+        return None
+    series = st.series
+    idx = series.index_at_or_after(touch_ts)
+    lo = max(0, idx - int(params.tp_lookback_candles))
+    if idx - lo < 1:
+        return None
+    buffer = params.tp_buffer_pips * pip_size
+    if direction is Direction.LONG:
+        level = float(series.high[lo:idx].max()) - buffer
+        if level <= entry:
+            return None
+        return level, f"{poi_tf.label} previous high {level:.5f} ({idx - lo} candles before the touch)"
+    level = float(series.low[lo:idx].min()) + buffer
+    if level >= entry:
+        return None
+    return level, f"{poi_tf.label} previous low {level:.5f} ({idx - lo} candles before the touch)"
 
 
 def nearer_liquidity_target(
@@ -190,6 +227,7 @@ def build_setup(
     equity: float,
     breakeven_r: Optional[float] = None,
     protection_level: Optional[float] = None,
+    touch_ts=None,
 ) -> Tuple[Optional[TradeSetup], List[str]]:
     """Apply the SL / TP / R:R / sizing rules; returns ``(setup, rejection_reasons)``.
 
@@ -216,7 +254,8 @@ def build_setup(
         reasons.append(f"stop {stop} ({stop_note}) is not behind entry {entry}")
         return None, reasons
 
-    target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe)
+    target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
+                              touch_ts=touch_ts, pip_size=spec.pip_size)
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons
