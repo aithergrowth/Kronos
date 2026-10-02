@@ -24,6 +24,14 @@ the outcome. The ledger (`ledger_v5.csv`) carries every field, including the Aug
 
 Config `/tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/eval_2026_v5_prev_extreme.yaml`; one look every 5 minutes inside the session windows (09:00-11:00, 13:00-17:00 Europe/Amsterdam); warm-up 5.0 days. Bias at the first look of the day. Zones: the 4H and 1H zones within 1.0 % of price at that moment, with X / B / P as the code maps them.
 
+## The same month with the 8-pip minimum stop (reading F, `ledger_v6.csv`)
+
+The two trades flagged above, P1 (stop 4.4 pips) and P7 (3.8 pips), were stopped within five minutes with the sweep
+extreme as the stop. With `min_stop_pips 8` (his stops are never under 9) the same seven entries give 6 wins of 7 and
++8.09R: P1 reaches its target for +0.58R, P7 (now entered 14:10, 1.13702, stop 1.13782) for +1.08R; the other five are
+unchanged. August is unchanged (one trade, -1.0R). This is the month the rule was found on, so it is a check that the rule
+does what it says, not evidence of an edge; the 2026 run with reading F is the test.
+
 ## The month at a glance
 
 | Day | 1M | 1W | 1D | 4H | 1H | 3 of 5 | Price 09:00 | Zones near price (4H/1H) | Visited, no confirmation | Signals |
