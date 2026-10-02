@@ -19,6 +19,8 @@ confirmation:
     1H: 5m
   entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
   one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+  poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
+                                  # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
 risk:
   risk_pct: 1.0
   min_rr: 0.5                     # "boven de 0,5" from his 70 % win rate (A 01:44:08-01:45:07)

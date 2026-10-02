@@ -299,7 +299,7 @@ class StrategyEngine:
             analysis.rejections.append(f"diagnostic: walking on as {direction.name} past the bias gate; nothing below is a signal")
         else:
             direction = Direction.from_bias(decision.direction)
-            allowed_poi_tfs = tuple(POI_TIMEFRAMES) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
+            allowed_poi_tfs = tuple(s.confirmation.poi_timeframes) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
             if assume_direction is not None and assume_direction is not direction:
                 diagnostic = True
                 direction = assume_direction

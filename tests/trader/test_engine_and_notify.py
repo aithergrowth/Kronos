@@ -187,3 +187,18 @@ def test_one_trade_per_visit_blocks_a_second_entry_on_the_same_zone_and_visit(hk
     assert len(once.trades) <= len(base.trades)
     assert len({key(t) for t in once.trades}) == len(once.trades), "no zone is traded twice in one visit"
     assert any(r.startswith("one trade per visit") or "one trade per visit" in r for r in once.rejection_reasons) or len(once.trades) == len(base.trades)
+
+
+def test_poi_timeframes_limits_the_zones_traded_in_full_mode(hk_data):
+    """``confirmation.poi_timeframes`` names the zone timeframes a full-mode bias may trade; the default keeps all five."""
+    from kronos_trader.core.timeframe import Timeframe as T
+    s = _settings(); s.confirmation.allow_first_candle = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    s2 = _settings(); s2.confirmation.allow_first_candle = True
+    s2.prop_firm.max_drawdown_pct = 1000.0; s2.prop_firm.daily_loss_limit_pct = 1000.0
+    s2.confirmation.poi_timeframes = (T.H_1,)
+    s2.confirmation.scalp_poi_timeframes = (T.H_1,)
+    only_1h = Backtester(s2, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert only_1h.trades and all(t.meta["poi_tf"] == "1H" for t in only_1h.trades)
+    assert any(t.meta["poi_tf"] != "1H" for t in base.trades)      # the default traded a higher-timeframe zone here

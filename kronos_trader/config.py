@@ -148,6 +148,11 @@ class ConfirmationParams:
         Timeframe.H_1: Timeframe.MIN_1,
     })
     scalp_poi_timeframes: Tuple[Timeframe, ...] = (Timeframe.H_4, Timeframe.H_1)  # ASSUMPTION: "scalp only" = intraday POIs
+    poi_timeframes: Tuple[Timeframe, ...] = (Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+                                        # the zone timeframes traded in full mode (scalp mode keeps scalp_poi_timeframes); the demo profile
+                                        # leaves the weekly and monthly out: with the sweep-extreme stop and the previous-extreme target a
+                                        # weekly zone gave a 375-pip stop, a 765-pip target and a trade that sat open from June 2025 to the
+                                        # end of the data, blocking every other entry (reading F over 2023-2026, 2 October)
 
 
 @dataclass
