@@ -121,5 +121,11 @@ reached lows from days before) and smooths EURUSD (five positive months of eight
 nearer targets, and the 4H zones now take the September entries with wider stops than the 1H zones of version 1. Over
 both markets version 2 gives +16.5R in 2026 against +12.1R for version 1, on 38 trades. Its whole-period run follows.
 
+Whole period with the profile as it is (`full_v2_*`, 10:19-11:01 UTC, FTMO margins in the guard: halt at 8 % from the peak
+or 4 % in a day): EURUSD 24 trades, 25 %, -9.4R, halted in May 2024 at -8.8 % from the peak and never traded again (200 of
+224 signals refused by the guard); gold 21 trades, 43 %, -2.9R, halted in August 2023. So with the account rules of the
+demo, version 2 would have lost a challenge in 2024 (EURUSD) and 2023 (gold), as version 1 did in July 2024. The run with
+the halt lifted (`full_v2ng_*`), the one comparable with V7, follows.
+
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.
