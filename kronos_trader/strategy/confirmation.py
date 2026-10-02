@@ -5,8 +5,11 @@ the **first bullish/bearish candle**; the minimum confirmation timeframe per POI
 is Monthly -> 4H, Weekly -> 1H, Daily -> 15m, 4H -> 5m, 1H -> 1m.
 
 * **Balance shift**: after the touch, a candle body closes through the
-  opposing balance level - the gap that drove price into the zone (A 01:29:29
-  distinguishes it from a plain structural break by the opposing balance level).
+  opposing balance level - the most recent gap in the opposing direction at
+  that moment, whether it drove price into the zone or formed inside it during
+  the visit ("de eerste beste balance shift ... de volgende shift, die zit hier",
+  A 01:20:33-01:20:46; A 01:29:29 distinguishes it from a plain structural break
+  by the opposing balance level).
 * **BMS / BOS**: a body close through the lower-timeframe swing ("closure").
 * **First candle**: the first candle in the POI direction that traded in the zone.
 
@@ -68,15 +71,19 @@ def find_confirmation(
 
     # balance shift ----------------------------------------------------------------------
     if params.allow_balance_shift:
-        opposing = [g for g in st.gaps_in(poi.direction.opposite)
-                    if touch_index - params.opposing_gap_lookback <= g.index <= touch_index + 1]
+        opposing = [g for g in st.gaps_in(poi.direction.opposite) if g.index >= touch_index - params.opposing_gap_lookback]
         if opposing:
-            gap = opposing[-1]
-            if params.bs_threshold == "protector":       # "above the candle that caused the gap" (A 01:07:49)
-                level = gap.protector_high if bullish else gap.protector_low
-            else:                                        # beyond the opposing balance level itself (A 02:25:40)
-                level = gap.high if bullish else gap.low
-            for k in range(max(touch_index, gap.index + 1), n):
+            def shift_level(gap):
+                if params.bs_threshold == "protector":   # "above the candle that caused the gap" (A 01:07:49, 01:08:22)
+                    return gap.protector_high if bullish else gap.protector_low
+                return gap.high if bullish else gap.low   # beyond the opposing balance level itself (A 01:31:52, 02:25:46)
+            latest = None
+            pointer = 0
+            for k in range(max(touch_index, opposing[0].index + 1), n):
+                while pointer < len(opposing) and opposing[pointer].index < k:   # the opposing gap that is current at candle k
+                    latest = opposing[pointer]
+                    pointer += 1
+                level = shift_level(latest)
                 close = float(ltf.close[k])
                 if (bullish and close > level) or (not bullish and close < level):
                     if within_zone_reach(close):
@@ -92,6 +99,8 @@ def find_confirmation(
         if not within_zone_reach(brk.close):
             continue
         if brk.kind is BreakKind.BOS and not params.accept_bos:
+            continue
+        if brk.kind is not BreakKind.BOS and not params.allow_bms:
             continue
         ctype = ConfirmationType.BOS if brk.kind is BreakKind.BOS else ConfirmationType.BMS
         candidates.append(Confirmation(ctype, ltf.timeframe, brk.index, brk.timestamp, brk.direction,

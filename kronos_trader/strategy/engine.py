@@ -51,6 +51,14 @@ def _candle_open(series: CandleSeries, index: int) -> Optional[pd.Timestamp]:
         return None
 
 
+def confirmation_age(max_age: int, step_minutes: Optional[int], tf: Timeframe) -> int:
+    """How many closed candles back a confirmation on ``tf`` may lie: ``max_age``, or for a timeframe finer than the
+    caller's step the candles that closed inside the last step (a 1m shift two minutes before a 5m step is still new)."""
+    if step_minutes is None or tf.minutes >= step_minutes:
+        return max_age
+    return max(max_age, step_minutes // tf.minutes - 1)
+
+
 def _diagnostic_zone_notes(pois: List[POI], side: Bias, allowed: Tuple[Timeframe, ...], price: float) -> List[str]:
     """The same-side zones that were not candidates (tested, fresh, invalidated) and where price sits relative to them."""
     others = [p for p in pois if p.direction is side and p.timeframe in allowed and p.status is not POIStatus.ACTIVE]
@@ -169,7 +177,7 @@ class StrategyEngine:
         ("SL ALTIJD op minimale 1H P").  The detail names the timeframe, the P candle's open and close
         and the selection ground, so a ledger can show which P a stop belongs to."""
         h1 = structures.get(Timeframe.H_1)
-        if h1 is not None and poi.timeframe > Timeframe.H_1:
+        if h1 is not None and poi.timeframe > Timeframe.H_1 and self.settings.risk.stop_protection != "poi":
             start = h1.series.index_at_or_after(touch_ts)
             recent = [g for g in h1.gaps_in(direction.bias) if g.index >= start and not g.is_violated]
             if recent:
@@ -182,7 +190,8 @@ class StrategyEngine:
                 }
         own = structures.get(poi.timeframe)
         opened = _candle_open(own.series, poi.gap.protector_index) if (own is not None and poi.gap is not None) else None
-        why = ("no 1H balance level in the trade direction formed since the touch" if poi.timeframe > Timeframe.H_1
+        why = ("stop_protection=poi: the zone's own P, as in his course examples" if self.settings.risk.stop_protection == "poi"
+               else "no 1H balance level in the trade direction formed since the touch" if poi.timeframe > Timeframe.H_1
                else f"the zone is on the {poi.timeframe.label}")
         return poi.protector_extreme, {
             "stop_tf": poi.timeframe.label, "stop_p_open": opened,
@@ -209,11 +218,16 @@ class StrategyEngine:
         max_confirmation_age: int = 0,
         compute_forecasts: bool = False,
         assume_direction: Optional[Direction] = None,
+        step_minutes: Optional[int] = None,
     ) -> Analysis:
         """``assume_direction`` is diagnostic only: when the bias, session or news gate refuses, the analysis
         records that refusal and walks on in the given direction through the remaining gates, so a dossier can
         show every later refusal too (is the bias really the only obstacle?).  Nothing found that way is a
-        signal; a setup reached is kept as ``analysis.diagnostic_setup`` and listed under the rejections."""
+        signal; a setup reached is kept as ``analysis.diagnostic_setup`` and listed under the rejections.
+
+        ``step_minutes`` is the caller's step (a backtest walking 5-minute candles): a confirmation on a
+        timeframe finer than the step may have closed up to ``step // tf - 1`` candles ago and is still
+        the newest thing the caller could have acted on; coarser timeframes keep ``max_confirmation_age``."""
         s = self.settings
         spec = s.symbol(symbol)
         equity = s.account_size if equity is None else equity
@@ -338,7 +352,7 @@ class StrategyEngine:
             confirmation = None
             for ctf in conf_tfs:
                 confirmation = find_confirmation(views[ctf], poi, touch_ts, s.confirmation, s.structure,
-                                                 max_confirmation_age, structure=structures.get(ctf))
+                                                 confirmation_age(max_confirmation_age, step_minutes, ctf), structure=structures.get(ctf))
                 if confirmation is not None:
                     break
             if confirmation is None:

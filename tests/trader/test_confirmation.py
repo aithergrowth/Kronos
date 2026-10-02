@@ -111,3 +111,52 @@ def test_entry_after_shift_waits_for_the_first_candle_in_the_direction():
     pending = _entry_candle(shift, CandleSeries(ltf.df.iloc[:2].reset_index(drop=True), Timeframe.MIN_15, "EURUSD", validate=False), True, 3)
     assert pending is None                                   # no bullish candle has closed yet
     assert ConfirmationParams().entry_after_shift is False
+
+
+def test_balance_shift_clears_the_most_recent_opposing_gap_at_that_moment():
+    """A bearish gap left inside the zone during the visit is the level to clear, not the older gap higher up
+    ("de eerste beste balance shift ... de volgende shift, die zit hier", A 01:20:33)."""
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, Gap, POI
+    from kronos_trader.strategy.structure import StructureAnalysis
+    closes = [1.0300, 1.0290, 1.0250, 1.0200, 1.0150, 1.0090, 1.0070, 1.0050, 1.0040, 1.0030, 1.0060, 1.0075, 1.0085, 1.0090, 1.0095]
+    series = CandleSeries.from_records([(c, c + 0.0005, c - 0.0005, c) for c in closes], T.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    poi = POI(T.H_1, Bias.BULLISH, 1.0000, 1.0100, None, None, 0, pd.Timestamp("2024-01-02 08:00"))
+    st = StructureAnalysis(series, StructureParams())
+    older = Gap(Bias.BEARISH, 1.0160, 1.0240, 3, series.timestamps.iloc[3], 2, 1.0200, 1.0300, 1)      # drove price into the zone
+    newer = Gap(Bias.BEARISH, 1.0045, 1.0065, 8, series.timestamps.iloc[8], 7, 1.0045, 1.0075, 6)      # left inside the zone, later
+    st.gaps = [older, newer]
+    params = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False)
+    conf = find_confirmation(series, poi, series.timestamps.iloc[5], params, max_age=100, structure=st)
+    assert conf is not None and conf.type is ConfirmationType.BS
+    assert conf.index == 11 and conf.break_level == 1.0065 and conf.close == 1.0075   # first close above the newer gap, far below the older one
+    st.gaps = [older]                                                                  # without the newer gap the older one is still the level
+    assert find_confirmation(series, poi, series.timestamps.iloc[5], params, max_age=100, structure=st) is None
+
+
+def test_confirmation_age_allows_finer_candles_inside_the_step():
+    from kronos_trader.strategy.engine import confirmation_age
+    assert confirmation_age(0, None, T.MIN_1) == 0
+    assert confirmation_age(0, 5, T.MIN_1) == 4          # a 1m shift up to four minutes before the 5m step is still new
+    assert confirmation_age(0, 5, T.MIN_5) == 0
+    assert confirmation_age(0, 5, T.MIN_15) == 0
+    assert confirmation_age(2, 5, T.MIN_15) == 2
+    assert confirmation_age(0, 15, T.MIN_5) == 2
+
+
+def test_bms_can_be_switched_off_while_the_balance_shift_stays():
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, BreakKind, POI, StructureBreak, SwingPoint
+    from kronos_trader.strategy.structure import StructureAnalysis
+    closes = [1.0300, 1.0250, 1.0200, 1.0150, 1.0090, 1.0070, 1.0050, 1.0080, 1.0120, 1.0140]
+    series = CandleSeries.from_records([(c, c + 0.0005, c - 0.0005, c) for c in closes], T.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    poi = POI(T.H_1, Bias.BULLISH, 1.0000, 1.0100, None, None, 0, pd.Timestamp("2024-01-02 08:00"))
+    st = StructureAnalysis(series, StructureParams())
+    swing = SwingPoint(index=3, price=1.0155, kind="high", timestamp=series.timestamps.iloc[3]) if "kind" in SwingPoint.__dataclass_fields__ else None
+    brk = StructureBreak(8, series.timestamps.iloc[8], Bias.BULLISH, BreakKind.BMS, 1.0105, swing, 6, 1.0045, 1.0120)
+    st.breaks = [brk]
+    touch = series.timestamps.iloc[4]
+    on = find_confirmation(series, poi, touch, ConfirmationParams(allow_first_candle=False, allow_balance_shift=False), max_age=100, structure=st)
+    assert on is not None and on.type is ConfirmationType.BMS and on.index == 8
+    off = find_confirmation(series, poi, touch, ConfirmationParams(allow_first_candle=False, allow_balance_shift=False, allow_bms=False), max_age=100, structure=st)
+    assert off is None

@@ -142,3 +142,15 @@ def test_assume_direction_walks_past_a_refusing_gate_without_making_a_signal(hk_
     assert later, "the walk-through must report the gates after the refusing one"
     assert all("not a signal" in r or "diagnostic" in r or "POI" in r or "visit" in r or "confirmation" in r or "fewer" in r or "zones" in r
                for r in later)
+
+
+def test_stop_protection_poi_keeps_the_stop_on_the_zones_own_p(hk_data):
+    s = _settings()
+    s.confirmation.allow_first_candle = True
+    s.risk.stop_protection = "poi"
+    result = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert result.trades, "the fixture produces trades"
+    for t in result.trades:
+        assert t.meta["stop_basis"].startswith("P of the POI itself")
+        assert t.meta["stop_tf"] == t.meta["poi_tf"]
+        assert abs(t.meta["stop_p"] - t.meta["poi_p"]) < 1e-9

@@ -121,6 +121,8 @@ class Backtester:
         self.data = data
         self.symbol = symbol.upper()
         self.step_tf = Timeframe.parse(step_tf) if step_tf else min(data.series)
+        # a finer timeframe than the step (1m candles under a 5m walk) may confirm inside the step: tell the engine the step
+        self._engine_kwargs = {"step_minutes": self.step_tf.minutes} if any(tf < self.step_tf for tf in data.series) else {}
         self.engine = engine or StrategyEngine(settings, forecaster)
         self.start = pd.Timestamp(start) if start is not None else None
         self.end = pd.Timestamp(end) if end is not None else None
@@ -177,7 +179,7 @@ class Backtester:
             now = self.step_tf.close_time(ts)
             guard.update(now, broker.equity(), broker.balance())
             views = self.data.as_of(now, lookback=s.structure.lookback)
-            analysis = self.engine.analyze(self.symbol, views, equity=broker.equity(), now=now)
+            analysis = self.engine.analyze(self.symbol, views, equity=broker.equity(), now=now, **self._engine_kwargs)
             for r in analysis.rejections:
                 key = _bucket(r)
                 rejection_reasons[key] = rejection_reasons.get(key, 0) + 1

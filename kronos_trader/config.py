@@ -116,6 +116,8 @@ class ConfirmationParams:
     allow_balance_shift: bool = True    # K1 06:30 option "BS" (balance shift) - the plan's primary confirmation
     allow_first_candle: bool = False    # K1 06:30 lists it; G 10:49 shows it as the entry after a shift, not instead of one. Off for the defensive forward test
     accept_bos: bool = True             # a continuation break is accepted as well (not in the written option list)
+    allow_bms: bool = True              # the written list names BMS (K1 06:30); his course treats the plain structure break as a liquidity sweep
+                                        # and enters on the balance shift instead (A 01:29:29, 01:30:56, 01:33:47): off in config/dorus_course.yaml
     entry_after_shift: bool = False     # "na de shift ga ik altijd bij de eerste beste bullish candle erin" (A 01:21:00): the entry is the
                                         # first candle closing in the trade direction at or after the shift candle, not the shift close itself
     entry_after_shift_max_candles: int = 3   # give up when no such candle closes within this many candles after the shift
@@ -144,6 +146,9 @@ class RiskParams:
                                         # liquidity_nearest: nearest liquidity on any timeframe above the confirmation timeframe (dorus_pure.yaml); legacy: nearest | liquidity_first | balance_first
     tp_floor_tf: Optional[Timeframe] = None   # with liquidity_nearest: only liquidity on this timeframe or higher counts ("we willen echt de highs en de lows", not local liquidity, A 01:54:49)
     stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
+    stop_protection: str = "recent_1h"  # which P the stop sits behind for zones above the 1H: recent_1h = the most recent unviolated 1H balance level
+                                        # since the touch (the minimum the plan allows); poi = the zone's own P, his choice in the course
+                                        # (daily P for a daily zone: A 01:08:49-01:09:03, 01:46:40-01:47:02; "op de protected", A 02:27:15)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
 
 
