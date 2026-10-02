@@ -74,5 +74,21 @@ V2 loses. (5) The warm-up quarter (Oct-Dec 2025) is negative on EURUSD in every 
 reminder of how much one quarter moves these sums. The V6 reading (V5 + 8-pip minimum stop) runs next.
 
 
+## Reading F over the whole period
+
+First attempt (08:50-09:30 UTC, `wr_full_v6_minstop8_*`, not packaged): on EURUSD the run took 68 trades, 34 %, +2.7R
+through June 2025 (2023 +0.9R, 2024 -1.4R, 2025 +3.2R; first 10 % breach from the initial balance on 22 August 2024) and
+then nothing: trade P68, a long from a weekly zone (entry 1.15849, stop 1.12103, target 1.23496, 4H confirmation),
+opened 16 June 2025 and sat open to the end of the data, blocking every other entry for fifteen months. With the
+sweep-extreme stop and the previous-extreme target a weekly zone gives a 375-pip stop and a 765-pip target; neither
+fits his weekly trade of 9 Dec 2025 (stop on the weekly P, target the weekly high). On gold the same reading gave 170
+trades, 28 %, -28.5R (2023 -19.9R, 2024 -17.7R, 2025 +8.2R, 2026 +0.9R).
+
+So `confirmation.poi_timeframes` now names the zone timeframes traded in full mode, and the demo profile
+(`config/dorus_live.yaml`) trades 1D, 4H and 1H zones only. The run of that reading over the whole period (V7,
+`wr_full_v7_intraday_*`) follows below.
+
+RESULTS_V7
+
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.
