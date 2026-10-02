@@ -20,9 +20,9 @@ for the forecast indicator.)
 
 The profile `config/dorus_live.yaml` holds the reading that reproduces Dorus's entries and stops and gave 2026 on EURUSD
 23 trades, 57 %, +11.2R (`docs/backtests/winrate/README.md`): 5m shifts for 1H zones (15m for 4H, 1H for daily), the
-sweep-extreme stop with an 8-pip minimum, the target on the previous low/high, one trade per zone per visit, entries at
-most half the zone deep, sessions 09-11 and 13-17 Amsterdam, the news blackout, FTMO margins. EURUSD only; the same
-reading loses on gold. It needs no 1-minute candles: MT5's own bars (5m and up) are enough.
+sweep-extreme stop with an 8-pip minimum, the target on the low/high the zone's move started from (version 2, the
+"vorige high/low" of the course), one trade per zone per visit, entries at most half the zone deep, 1D/4H/1H zones only,
+sessions 09-11 and 13-17 Amsterdam, the news blackout, FTMO margins. EURUSD only; the same reading loses on gold. It needs no 1-minute candles: MT5's own bars (5m and up) are enough.
 
 On the laptop, after sections 1b (MT5 demo) and 2 (Telegram) below:
 

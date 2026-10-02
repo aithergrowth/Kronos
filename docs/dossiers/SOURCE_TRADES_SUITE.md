@@ -74,6 +74,27 @@ the differences in minutes and pips (positive = the code's number is higher); th
   His entry there reads as the first bearish candle after the sweep of B, which the engine's first-candle option did not
   fire either (not traced further).
 
+## Reading H: the live profile with `tp_policy impulse_origin` (30 zone candles up to the P), 1D/4H/1H zones only
+
+| id | his_time | direction | his | bias | gate | code | delta | first_difference |
+|---|---|---|---|---|---|---|---|---|
+| K3a | 2026-08-26 13:45 | SHORT | 4624.53 / 4639.55 / 4594.98 (1.97R, won) | 1M bearish, 1W 50/50, 1D bullish, 4H bullish, 1H bearish | bias refuses | diagnostic 13:35: 4623.1 / 4632.66 / 4594.01 (3.01R; BS on 5m; zone 1H 4629.55-4686.65) | -10 min; entry -14.3 pips; stop -68.9 pips; target -9.7 pips; R:R 3.01 vs 1.97 | bias refuses; 10 min earlier; stop 69 pips tighter; target 10 pips farther |
+| K3b | 2026-08-26 15:05 | SHORT | 4623.59 / 4633.72 / 4595.62 (2.76R, won) | 1M bearish, 1W 50/50, 1D bullish, 4H bullish, 1H 50/50 | bias refuses; session closed | none in the window | - | bias refuses; session closed / 1M bearish POI 4099.12500-4541.63000 (fresh, formed 2026-07-01 00:00:00): touched at 2026-08-21 15:21:00, waiting for confirmation on 4H |
+| EU-2025-11-11 | 2025-11-11 15:05 | SHORT | 1.15963 / 1.1606 / 1.15687 (2.85R, won) | 1M 50/50, 1W 50/50, 1D 50/50, 4H bullish, 1H bullish | bias refuses | diagnostic 15:10: 1.15948 / 1.16057 / 1.15773 (1.47R; BS on 5m; zone 1H 1.15967-1.16111) | +5 min; entry -1.5 pips; stop -0.3 pips; target +8.6 pips; R:R 1.47 vs 2.85 | bias refuses; target 9 pips nearer |
+| EU-2024-03-18 | 2024-03-18 12:40 | SHORT | 1.0895 / 1.0905 / 1.0866 (2.90R, won) | 1M 50/50, 1W bullish, 1D 50/50, 4H bearish, 1H bullish | bias refuses | diagnostic 12:45: 1.08945 / 1.09061 / 1.08692 (2.01R; BS on 15m; zone 4H 1.08918-1.09312) | +5 min; entry -0.5 pips; stop +1.1 pips; target +3.2 pips; R:R 2.01 vs 2.90 | bias refuses; target 3 pips nearer |
+| EU-2025-12-09 | 2025-12-09 15:36 | LONG | 1.16335 / 1.15908 / 1.16823 (1.14R, won) | 1M 50/50, 1W 50/50, 1D bullish, 4H bullish, 1H bullish | open | none in the window | - |  / 4H bullish POI 1.15903-1.16188 (tested, formed 2025-12-01 10:00:00): touched at 2025-12-08 15:41:00, waiting for confirmation on 15m |
+
+Max's steer ("hij pakt een bepaald punt van higher low") and the course: "stop loss op de low en take profit bij de vorige
+high" at every worked trade (A 00:43:39, 01:09:01, 01:20:52, 02:45:57), and the previous higher low as the level whose
+break is the break of market structure (A 00:14:48). Implemented as the extreme of the candles up to the zone's P candle:
+the low the move that created the zone started from. K3a lands 1.0 point from his target (4594.01 against 4594.98) and
+18 Mar 2024 3.2 pips (1.08692 against 1.0866, now from the 4H zone, entry 0.5 pip and stop 1.1 pip from his). On 11 Nov
+2025 the target sits 8.6 pips nearer than his (1.15773 against 1.15687): the code's zone 1.15967-1.16111 formed on 30 Oct,
+so its creating move lies twelve days back; his low is the 12:45 dip of 11 Nov, the move back into the zone that day.
+Two origins, then: the move that created the zone (K3a, 18 Mar) and the move that re-entered it (11 Nov); the first is
+implemented, the second is open, and where they differ the implemented one gives the nearer target. Windows of 24 and
+48 candles miss K3a (4607.6, 4508.6); 30 is the one that fits.
+
 ## What the tables say
 
 1. **The bias gate refuses four of the five** on the pair's own levels (K3a, K3b, 11 Nov 2025, 18 Mar 2024); the weekly long
