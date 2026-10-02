@@ -253,6 +253,11 @@ def build_setup(
     if direction is Direction.LONG and stop >= entry or direction is Direction.SHORT and stop <= entry:
         reasons.append(f"stop {stop} ({stop_note}) is not behind entry {entry}")
         return None, reasons
+    if params.min_stop_pips > 0 and abs(entry - stop) < params.min_stop_pips * spec.pip_size:
+        widened = spec.round_price(entry - params.min_stop_pips * spec.pip_size if direction is Direction.LONG
+                                   else entry + params.min_stop_pips * spec.pip_size)
+        stop_note += f"; moved out from {stop} to the {params.min_stop_pips:g}-pip minimum"
+        stop = widened
 
     target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
                               touch_ts=touch_ts, pip_size=spec.pip_size)

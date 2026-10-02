@@ -162,3 +162,17 @@ def test_previous_extreme_target_is_the_lowest_low_before_the_touch(scenario):
     fallback, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, expected_high + 1.0, structures,
                               RiskParams(tp_policy="previous_extreme", tp_lookback_candles=5, stop_basis="confirmation", min_rr=0.05), 100_000, touch_ts=touch)
     assert fallback is not None and fallback.take_profit == pytest.approx(expected_high + 50.0)   # nothing beyond entry: the nearest liquidity
+
+
+def test_min_stop_pips_moves_a_tight_stop_out(scenario):
+    """A stop nearer than ``min_stop_pips`` is moved out to that distance; a wider one is left alone."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_5, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 108.5, 107.95, 108.0)
+    st = {T.H_1: StubStructure(bsl=[112.0])}
+    tight, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, RiskParams(stop_basis="confirmation", min_rr=0.5), 100_000)
+    assert tight is not None and tight.stop == pytest.approx(107.94)                 # 6 pips of 0.01: the swing minus the 1-pip offset
+    wide, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, RiskParams(stop_basis="confirmation", min_rr=0.5, min_stop_pips=10), 100_000)
+    assert wide is not None and wide.stop == pytest.approx(107.90) and "moved out" in wide.notes[0]
+    assert wide.rr == pytest.approx((112.0 - 108.0) / (0.10 + 0.01))
+    same, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, RiskParams(stop_basis="confirmation", min_rr=0.5, min_stop_pips=3), 100_000)
+    assert same is not None and same.stop == pytest.approx(107.94)

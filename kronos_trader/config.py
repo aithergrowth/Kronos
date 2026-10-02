@@ -164,6 +164,9 @@ class RiskParams:
                                         # vorige liquiditeitsgebied", A 01:54:47; his targets: the 12:45 low on 11 Nov 2025, the 15 Mar low on 18 Mar 2024,
                                         # the 24 Aug low on K3, all within 72 candles of a 1H zone); falls back to liquidity_nearest when nothing lies beyond entry
     tp_buffer_pips: float = 0.0         # previous_extreme: the target sits this many pips before the extreme (his: 0.3 pip and 1.0 point before the low)
+    min_stop_pips: float = 0.0          # 0 = off; else a stop nearer than this is moved out to this distance ("kan je je stoploss nog wat ruimte geven",
+                                        # A 00:31:22). His stops: 9.7 and 10 pips on EURUSD, 10.1 and 15.0 points on gold, never under 9; stops under
+                                        # 5 pips won 3 % in R6 and were hit in the same candle twice in September 2026 with the sweep-extreme stop
     stop_basis: str = "protector"       # "SL ALTIJD op minimale 1H P" (K1 06:30); legacy: confirmation (LTF invalidation swing)
     stop_protection: str = "recent_1h"  # which P the stop sits behind for zones above the 1H: recent_1h = the most recent unviolated 1H balance level
                                         # since the touch (the minimum the plan allows); poi = the zone's own P, his choice in the course
