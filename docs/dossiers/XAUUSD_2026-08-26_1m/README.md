@@ -53,3 +53,30 @@ data/histdata_1m --at "2026-08-26 HH:MM" --warmup-days 6 --assume short --kronos
 
 Files: one folder per moment with `README.md`, `dossier.json` (bias, zones, dropped gaps, rejections, the diagnostic
 walk-through, and the setup with its stop P when one is reached) and a chart per timeframe from the 1m to the monthly.
+
+
+## His two entry minutes (2 October, after Astra's control of the K3 drawings)
+
+The clock is settled by price, not by the drawing tool's labels: his second entry price 4623.59 traded in the 15:05 UTC
+candle and in no candidate minute for a UTC or Amsterdam reading of the 16:05 anchor (16:05 UTC: 4589-4598; 14:05 UTC:
+4609-4613), so his chart runs on UTC+1; the first entry 4624.53 traded 13:44-13:45 and 13:50-13:51 UTC around the 14:46
+anchor. Dossiers at 13:45 and 15:05 UTC (`2026-08-26_13_45`, `2026-08-26_15_05`, strict reading with the sweep-extreme
+stop, `--assume short`) and minute walks over 13:20-13:55 and 14:55-15:15 UTC (`minute_walk_*.txt`).
+
+| | His first short | Code at 13:47 UTC (diagnostic) | His second short | Code 14:55-15:15 |
+|---|---|---|---|---|
+| Entry | 4624.53 at about 13:45 | 4619.3 (1m balance shift closed 13:46) | 4623.59 at 15:05 | none |
+| Stop | 4639.55: 0.4 above the morning high 4639.14 (08:00-08:15) | 4632.66: the 13:30 sweep high | 4633.72: 0.46 above the 15:00 sweep high 4633.27, his B label 4633.25 | - |
+| Target | 4594.98: 1.0 above the 24 Aug low 4594.00 | 4604.81: the 25 Aug low (nearest 1H liquidity) | 4595.62: 1.6 above the 24 Aug low | - |
+| R:R | 1.97 | 1.08 | 2.76 | - |
+| Outcome | won, 16:02 UTC | - | won, 16:02 UTC | - |
+
+Readings. (1) The bias gate refuses both minutes as before (1M bearish, 1W 50/50, 1D bullish, 4H bullish; 1H bearish at
+13:45, 50/50 at 15:05). (2) Past the gate, the first short is reproduced to within two minutes and five points, with the
+sweep-extreme stop 7 points tighter than his and the target one pool nearer than his. (3) The second short has no
+counterpart: the climb from 14:45 to 15:00 left no bullish 1m or 5m gap, so the 15:01 drop closes through nothing the
+model calls a balance level, and the first-candle option gives nothing either. His entry there reads as the first bearish
+candle after the sweep of B; the model's first candle did not fire (not traced further). (4) His second entry is at 17:05
+Amsterdam, 16:05 on his chart's clock: either his window follows his local clock when he travels, or the 17:00 cut-off is
+softer than the course says. (5) His targets go to the previous day's low past a nearer pool, which favours the
+"farthest within the cap" reading of `tp_cap_choice` over "nearest".
