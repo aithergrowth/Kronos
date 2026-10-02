@@ -44,6 +44,16 @@ the differences in minutes and pips (positive = the code's number is higher); th
 | EU-2024-03-18 | 2024-03-18 12:40 | SHORT | 1.0895 / 1.0905 / 1.0866 (2.90R, won) | 1M 50/50, 1W bullish, 1D 50/50, 4H bearish, 1H bullish | bias refuses | diagnostic 12:40: 1.08966 / 1.0914 / 1.08805 (0.88R; BS on 5m; zone 1H 1.08994-1.09140) | +0 min; entry +1.6 pips; stop +9.0 pips; target +14.5 pips; R:R 0.88 vs 2.90 | bias refuses; stop 9 pips wider; target 14 pips nearer |
 | EU-2025-12-09 | 2025-12-09 15:36 | LONG | 1.16335 / 1.15908 / 1.16823 (1.14R, won) | 1M 50/50, 1W 50/50, 1D bullish, 4H bullish, 1H bullish | open | none in the window | - |  / 4H bullish POI 1.15903-1.16188 (tested, formed 2025-12-01 10:00:00): touched at 2025-12-08 15:41:00, waiting for confirmation on 15m |
 
+## Reading D: reading C with the sweep-extreme stop (`stop_basis confirmation`, `stop_protection recent_1h`)
+
+| id | his_time | direction | his | bias | gate | code | delta | first_difference |
+|---|---|---|---|---|---|---|---|---|
+| K3a | 2026-08-26 13:45 | SHORT | 4624.53 / 4639.55 / 4594.98 (1.97R, won) | 1M bearish, 1W 50/50, 1D bullish, 4H bullish, 1H bearish | bias refuses | diagnostic 13:35: 4623.1 / 4632.66 / 4604.81 (1.89R; BS on 5m; zone 1H 4629.55-4686.65) | -10 min; entry -14.3 pips; stop -68.9 pips; target +98.3 pips; R:R 1.89 vs 1.97 | bias refuses; 10 min earlier; stop 69 pips tighter; target 98 pips nearer |
+| K3b | 2026-08-26 15:05 | SHORT | 4623.59 / 4633.72 / 4595.62 (2.76R, won) | 1M bearish, 1W 50/50, 1D bullish, 4H bullish, 1H 50/50 | bias refuses; session closed | none in the window | - | bias refuses; session closed / 1M bearish POI 4099.12500-4541.63000 (fresh, formed 2026-07-01 00:00:00): touched at 2026-08-21 15:21:00, waiting for confirmation on 4H |
+| EU-2025-11-11 | 2025-11-11 15:05 | SHORT | 1.15963 / 1.1606 / 1.15687 (2.85R, won) | 1M 50/50, 1W 50/50, 1D 50/50, 4H bullish, 1H bullish | bias refuses | diagnostic 15:10: 1.15948 / 1.16057 / 1.15468 (4.03R; BS on 5m; zone 1H 1.15967-1.16111) | +5 min; entry -1.5 pips; stop -0.3 pips; target -21.9 pips; R:R 4.03 vs 2.85 | bias refuses; target 22 pips farther |
+| EU-2024-03-18 | 2024-03-18 12:40 | SHORT | 1.0895 / 1.0905 / 1.0866 (2.90R, won) | 1M 50/50, 1W bullish, 1D 50/50, 4H bearish, 1H bullish | bias refuses | diagnostic 12:40: 1.08966 / 1.09061 / 1.08805 (1.53R; BS on 5m; zone 1H 1.08994-1.09140) | +0 min; entry +1.6 pips; stop +1.1 pips; target +14.5 pips; R:R 1.53 vs 2.90 | bias refuses; target 14 pips nearer |
+| EU-2025-12-09 | 2025-12-09 15:36 | LONG | 1.16335 / 1.15908 / 1.16823 (1.14R, won) | 1M 50/50, 1W 50/50, 1D bullish, 4H bullish, 1H bullish | open | none in the window | - |  / 4H bullish POI 1.15903-1.16188 (tested, formed 2025-12-01 10:00:00): touched at 2025-12-08 15:41:00, waiting for confirmation on 15m |
+
 ## What the tables say
 
 1. **The bias gate refuses four of the five** on the pair's own levels (K3a, K3b, 11 Nov 2025, 18 Mar 2024); the weekly long
@@ -57,9 +67,11 @@ the differences in minutes and pips (positive = the code's number is higher); th
    for a 1H zone the code lands on 18 Mar 2024 at 12:40, 1.6 pips from his entry, on 11 Nov 2025 at 15:10, 1.5 pips from
    his, and on K3a at 13:35, 14 pips (1.4 points) from his and ten minutes early. His entries on 1H zones are 5m shifts,
    not the first 1m shift; the written table's "1H -> 1m" reads as a floor he does not use there.
-3. **Stops.** On EURUSD his stops are the sweep extreme (reading B: 1.2 pips tighter, 1.1 pip wider). On gold he protects
-   more: K3a the morning high 4639.14 (reading B's 4629.82 is 97 pips tighter), K3b the sweep high at B. The zone's P
-   (reading A) is 5-190 pips wider than his on every trade.
+3. **Stops.** On EURUSD his stops are the sweep extreme: reading D puts the code's stop 0.3 pip from his on 11 Nov 2025 and
+   1.1 pip from his on 18 Mar 2024, with the entries matched as well (reading D is the closest reading of the four on both
+   trades: entry, stop and minute). On gold he protects more: K3a the morning high 4639.14 (reading D's 4632.66, the 13:30
+   sweep high, is 69 pips tighter), K3b the sweep high at B. The zone's P (readings A and C) is 5-190 pips wider than his
+   on every trade.
 4. **Targets.** His are the previous significant low: 1.15687, 1.0866, 4594.0. The code's liquidity map gives a nearer level
    on K3a (4604.81), 18 Mar (1.08805) and 11 Nov (1.15934, then 1.15468 far below); his level is in none of the three maps.
    The target rule, not the cap, is the open point here.
