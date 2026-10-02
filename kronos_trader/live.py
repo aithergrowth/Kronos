@@ -442,7 +442,9 @@ class LiveRunner:
             self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
             return None
         self.guard.record_trade(now)
-        self.engine.mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
+        mark_traded = getattr(self.engine, "mark_traded", None)   # test doubles may lack it
+        if mark_traded is not None:
+            mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
         if getattr(pos, "status", "filled") == "filled" and hasattr(self.broker, "pnl_for"):
             reconcile_risk(pos, self.broker, risk_amount)
         self.known_positions[pos.id] = pos
