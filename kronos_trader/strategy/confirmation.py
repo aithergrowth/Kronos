@@ -32,6 +32,8 @@ def allowed_confirmation_timeframes(poi_tf: Timeframe, params: Optional[Confirma
     """Timeframes on which a confirmation for a ``poi_tf`` POI may be taken (smallest first)."""
     params = params or ConfirmationParams()
     min_tf = params.min_confirmation_tf[poi_tf]
+    if getattr(params, "confirmation_tf_mode", "at_least") == "exact":
+        return [min_tf]
     return sorted(tf for tf in Timeframe if min_tf <= tf < poi_tf)
 
 

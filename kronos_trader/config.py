@@ -126,6 +126,9 @@ class ConfirmationParams:
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
     # Rule: Monthly POI -> min. 4H, Weekly -> 1H, Daily -> 15m, 4H -> 5m, 1H -> 1m
+    confirmation_tf_mode: str = "at_least"   # at_least: the table's timeframe and anything between it and the zone's timeframe, smallest first
+                                             # (the course shows a 1H shift for a daily zone, A 01:04:24); exact: the table's timeframe only
+                                             # (Max, 2 October: "voor 4H is het 5 min"); a missing timeframe is then a visible rejection
     min_confirmation_tf: Dict[Timeframe, Timeframe] = field(default_factory=lambda: {
         Timeframe.MN_1: Timeframe.H_4,
         Timeframe.W_1: Timeframe.H_1,

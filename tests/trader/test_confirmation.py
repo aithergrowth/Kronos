@@ -27,6 +27,8 @@ def test_minimum_confirmation_timeframes_follow_the_table():
     assert allowed_confirmation_timeframes(T.D_1) == [T.MIN_15, T.MIN_30, T.H_1, T.H_4]
     assert allowed_confirmation_timeframes(T.H_4) == [T.MIN_5, T.MIN_15, T.MIN_30, T.H_1]
     assert allowed_confirmation_timeframes(T.H_1) == [T.MIN_1, T.MIN_5, T.MIN_15, T.MIN_30]
+    exact = ConfirmationParams(confirmation_tf_mode="exact")
+    assert allowed_confirmation_timeframes(T.H_4, exact) == [T.MIN_5] and allowed_confirmation_timeframes(T.H_1, exact) == [T.MIN_1]
 
 
 def _poi(scenario):
