@@ -55,6 +55,8 @@ class BacktestResult:
                 "confirmation_tf": t.meta.get("confirmation_tf"), "planned_rr": t.meta.get("planned_rr"),
                 "tp_source": t.meta.get("tp_source"), "touched_at": t.meta.get("touched_at"), "confirmed_at": t.meta.get("confirmed_at"),
                 "confirmed_close_at": t.meta.get("confirmed_close_at"),
+                "bias_mode": t.meta.get("bias_mode"), "bias_combo": t.meta.get("bias_combo"), "bias_aligned": t.meta.get("bias_aligned"),
+                "bias_by_tf": t.meta.get("bias_by_tf"),
                 "entry_planned": t.meta.get("entry_planned"), "rr_at_fill": t.meta.get("rr_at_fill"), "lots_planned": t.meta.get("lots_planned"),
                 "poi_x": t.meta.get("poi_x"), "poi_b_low": (t.meta.get("poi_b") or (None, None))[0],
                 "poi_b_high": (t.meta.get("poi_b") or (None, None))[1], "poi_p": t.meta.get("poi_p"),
@@ -231,6 +233,11 @@ class Backtester:
                         "planned_rr": round(setup.rr, 2), "rr_at_fill": round(rr_now, 2), "lots_planned": setup.lots,
                         "tp_source": setup.tp_source,
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
+                        # the bias the trade was taken under: mode (full / scalp), the combo that matched, the reading per timeframe
+                        "bias_mode": getattr(analysis.decision.mode, "value", str(analysis.decision.mode)),
+                        "bias_combo": "+".join(tf.label for tf in (analysis.decision.matched_combo or ())),
+                        "bias_aligned": "+".join(tf.label for tf in analysis.decision.aligned),
+                        "bias_by_tf": " ".join(f"{tf.label}={b.bias}" for tf, b in analysis.biases.items()),
                     },
                     price=price_now, ts=now, price_is_fill=True,
                 )
