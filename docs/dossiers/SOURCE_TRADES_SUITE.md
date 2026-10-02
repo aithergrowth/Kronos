@@ -64,6 +64,16 @@ the differences in minutes and pips (positive = the code's number is higher); th
 | EU-2024-03-18 | 2024-03-18 12:40 | SHORT | 1.0895 / 1.0905 / 1.0866 (2.90R, won) | 1M 50/50, 1W bullish, 1D 50/50, 4H bearish, 1H bullish | bias refuses | diagnostic 12:40: 1.08966 / 1.09061 / 1.0873 (2.25R; BS on 5m; zone 1H 1.08994-1.09140) | +0 min; entry +1.6 pips; stop +1.1 pips; target +7.0 pips; R:R 2.25 vs 2.90 | bias refuses; target 7 pips nearer |
 | EU-2025-12-09 | 2025-12-09 15:36 | LONG | 1.16335 / 1.15908 / 1.16823 (1.14R, won) | 1M 50/50, 1W 50/50, 1D bullish, 4H bullish, 1H bullish | open | none in the window | - |  / 4H bullish POI 1.15903-1.16188 (tested, formed 2025-12-01 10:00:00): touched at 2025-12-08 15:41:00, waiting for confirmation on 15m |
 
+## Readings F and G: the minimum stop and the gap threshold (2 October, later)
+
+- **F: reading E + `min_stop_pips 8`** gives the same five rows as E: his five trades all carry stops of 9.5 pips or more, so
+  the minimum touches none of them. It exists for the stops of 3-4 pips the sweep-extreme basis produced in September 2026
+  (P1, P7 in `docs/practice/2026-09/EURUSD/`), both hit within five minutes.
+- **G: reading E with `min_gap_fraction 0.1`** (half the gap-size threshold) changes nothing on K3a and K3b: the missing
+  balance level on K3b is not a dropped small gap; the 14:45-15:00 climb simply left no three-candle gap on the 1m or 5m.
+  His entry there reads as the first bearish candle after the sweep of B, which the engine's first-candle option did not
+  fire either (not traced further).
+
 ## What the tables say
 
 1. **The bias gate refuses four of the five** on the pair's own levels (K3a, K3b, 11 Nov 2025, 18 Mar 2024); the weekly long
