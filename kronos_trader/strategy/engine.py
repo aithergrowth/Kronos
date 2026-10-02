@@ -138,6 +138,7 @@ class StrategyEngine:
         self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
         self.visits: Dict[str, VisitTracker] = {}      # per symbol: visit history per zone beyond the analysis window
+        self.traded: Dict[str, Dict[Tuple[str, int, str], int]] = {}   # per symbol: zone key -> visit number a trade was opened on
         self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI]]] = {}
 
     # ------------------------------------------------------------------ helpers
@@ -166,6 +167,12 @@ class StrategyEngine:
         pois = map_pois(st, self.settings.structure, price)
         self._poi_cache[key] = (stamp[0], stamp[1], pois)
         return pois
+
+    def mark_traded(self, symbol: str, poi_key: Tuple[str, int, str], visit: Optional[int]) -> None:
+        """Record that a trade was opened on this zone during this visit; with ``one_trade_per_visit`` the zone
+        gives no second signal in the same visit (the runner and the live loop call this after the order)."""
+        if visit is not None:
+            self.traded.setdefault(symbol, {})[poi_key] = int(visit)
 
     def _protection_level(self, poi: POI, direction: Direction, touch_ts, structures: Dict[Timeframe, StructureAnalysis]) -> float:
         """The P the stop sits behind (see :meth:`_protection`)."""
@@ -345,6 +352,9 @@ class StrategyEngine:
                 continue
             if visits > 1 and not s.confirmation.allow_retest:
                 analysis.rejections.append(f"{label}: visit #{visits} - only the first return is traded")
+                continue
+            if s.confirmation.one_trade_per_visit and self.traded.get(symbol, {}).get(poi.key) == visits:
+                analysis.rejections.append(f"{label}: already traded on visit #{visits} - one trade per visit")
                 continue
 
             conf_tfs = [tf for tf in allowed_confirmation_timeframes(poi.timeframe, s.confirmation) if tf in views]

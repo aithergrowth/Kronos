@@ -171,3 +171,19 @@ def test_entry_outside_zone_keeps_a_just_left_zone_while_its_visit_is_open(hk_da
     assert mentioned(base) <= mentioned(wide)                      # the wider filter never drops a zone the narrow one examined
     if tested_same_side and wide.decision.tradable:
         assert len(mentioned(wide)) >= len(mentioned(base))
+
+
+def test_one_trade_per_visit_blocks_a_second_entry_on_the_same_zone_and_visit(hk_data):
+    """With ``one_trade_per_visit`` a zone that was traded during a visit gives no second signal in that visit (R6: re-entries
+    after a stop-out on the same zone won 9 %).  The runner tells the engine which zone it traded; the default keeps re-entries."""
+    s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    s2 = _settings(); s2.confirmation.allow_first_candle = True; s2.confirmation.entry_outside_zone = True
+    s2.prop_firm.max_drawdown_pct = 1000.0; s2.prop_firm.daily_loss_limit_pct = 1000.0
+    s2.confirmation.one_trade_per_visit = True
+    once = Backtester(s2, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    key = lambda t: (t.meta["poi_tf"], t.meta["poi"], str(t.meta["poi_formed"]), t.meta["visit"])
+    assert len(once.trades) <= len(base.trades)
+    assert len({key(t) for t in once.trades}) == len(once.trades), "no zone is traded twice in one visit"
+    assert any(r.startswith("one trade per visit") or "one trade per visit" in r for r in once.rejection_reasons) or len(once.trades) == len(base.trades)

@@ -92,3 +92,48 @@ def test_stop_behind_the_protected_zone(scenario):
     assert "protected zone" in setup.notes[0]
     explicit, _ = build_setup("TEST", spec, Direction.LONG, poi, conf, 102.8, targets, RiskParams(), 100_000, protection_level=101.0)
     assert explicit.stop == pytest.approx(100.99)                                # a 1H P handed in by the engine wins
+
+
+TEST = SymbolSpec("TEST", 0.01, 1.0, price_decimals=2, typical_spread_pips=2.0)   # the scenario trades around 100
+
+
+def test_max_entry_depth_rejects_an_entry_deep_in_the_zone(scenario):
+    """An entry deeper than ``max_entry_depth`` of the zone's height (from the edge price enters by) is refused: the P is a
+    few pips away and the stop has no room.  Off by default; an entry outside the zone counts as depth 0."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]          # bullish 100.6-110.0
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 104.0, 100.0, 102.0)
+    good = {T.H_1: StubStructure(bsl=[115.0])}
+    deep = round(poi.low + 0.2 * poi.height, 2)       # 80 % of the way in (a bullish zone is entered from its high)
+    shallow = round(poi.high - 0.2 * poi.height, 2)   # 20 % in
+    default, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, deep, good, RiskParams(stop_basis="confirmation", min_rr=0.5), 100_000)
+    assert default is not None
+    params = RiskParams(stop_basis="confirmation", min_rr=0.5, max_entry_depth=0.5)
+    refused, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, deep, good, params, 100_000)
+    assert refused is None and "80%" in reasons[0] and "no room for the stop" in reasons[0]
+    ok, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, shallow, good, params, 100_000)
+    assert ok is not None and reasons == []
+    outside, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, poi.high + 0.5, {T.H_1: StubStructure(bsl=[125.0])}, params, 100_000)
+    assert outside is not None and reasons == []
+
+
+def test_tp_max_rr_takes_a_nearer_liquidity_when_the_floor_target_is_too_far(scenario):
+    """With ``tp_max_rr`` a liquidity level above the confirmation timeframe whose R:R lies between ``min_rr`` and the cap
+    replaces a floor target beyond the cap: the nearest such level by default, the farthest with ``tp_cap_choice``;
+    when nothing fits, the far target stays."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_1, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 108.5, 107.0, 108.0)
+    st = {T.H_1: StubStructure(bsl=[115.0]), T.MIN_15: StubStructure(bsl=[108.3, 109.5]), T.MIN_5: StubStructure(bsl=[109.0])}
+    base = RiskParams(stop_basis="confirmation", tp_policy="liquidity_nearest", tp_floor_tf=T.H_1, min_rr=0.5)
+    far, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, base, 100_000)
+    assert far is not None and far.take_profit == 115.0 and far.rr > 2            # the 1H floor target, 7.0 on a 1.03 risk
+    capped = RiskParams(stop_basis="confirmation", tp_policy="liquidity_nearest", tp_floor_tf=T.H_1, min_rr=0.5, tp_max_rr=2.0)
+    near, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, capped, 100_000)
+    assert near is not None and reasons == []
+    assert near.take_profit == 109.0                       # the 5m level: nearest with R:R >= 0.5 (the 15m 108.3 gives 0.29)
+    assert 0.5 <= near.rr <= 2.0 and "R:R cap 2.0" in near.tp_source and "nearer than 1H buy-side liquidity 115.00000" in near.tp_source
+    farthest = RiskParams(stop_basis="confirmation", tp_policy="liquidity_nearest", tp_floor_tf=T.H_1, min_rr=0.5, tp_max_rr=2.0, tp_cap_choice="farthest")
+    full, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, farthest, 100_000)
+    assert full is not None and full.take_profit == 109.5    # the 15m level: farthest within the cap (1.46R)
+    nothing_fits = {T.H_1: StubStructure(bsl=[115.0]), T.MIN_15: StubStructure(bsl=[108.3])}
+    kept, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, nothing_fits, capped, 100_000)
+    assert kept is not None and kept.take_profit == 115.0   # no nearer level with R:R >= min: the far target stays

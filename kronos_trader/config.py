@@ -129,6 +129,9 @@ class ConfirmationParams:
                                         # re-entered by the spike of 11 Nov 13:22; the stop above that spike's high)
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
+    one_trade_per_visit: bool = False   # a zone traded during a visit is not traded again in that visit: the stop sat on its P, so a stop-out means
+                                        # the P was traded through (R6: 46 re-entries after a stop-out on the same zone, 9 % won, -23.7R; first
+                                        # attempts 43 %). Off here so the frozen profiles reproduce; on in config/dorus_course.yaml
     entry_outside_zone: bool = False    # the shift is the move away from the zone, so at its close price is often just outside it: with True a zone
                                         # whose visit is still open (no close 1.5 zone heights beyond it) stays a candidate after price left it
                                         # ("als we in een POI zitten, we hebben de juiste shift, dan ga ik", A 01:18:44; his EURUSD short of
@@ -161,6 +164,16 @@ class RiskParams:
                                         # since the touch (the minimum the plan allows); poi = the zone's own P, his choice in the course
                                         # (daily P for a daily zone: A 01:08:49-01:09:03, 01:46:40-01:47:02; "op de protected", A 02:27:15)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
+    max_entry_depth: float = 0.0        # 0 = off; else the entry may lie at most this fraction of the zone's height inside it, measured from the
+                                        # edge price enters by (an entry outside the zone counts as 0): deeper, the P is a few pips away and the stop
+                                        # has no room ("kan je stoploss nog wat ruimte geven", A 00:31:22; his entries sit at the zone's edge,
+                                        # docs/dossiers/SOURCE_TRADES.md). R6: entries deeper than half the zone 48 trades, 12 % won
+    tp_max_rr: float = 0.0              # 0 = off; else when the nearest liquidity on tp_floor_tf or higher lies beyond this R:R, the nearest liquidity
+                                        # on any timeframe above the confirmation timeframe that still gives min_rr is taken instead ("mijn keuze gaat
+                                        # eerder naar één of twee risk reward ... zolang het risk-reward-wijs aantrekkelijk blijft", A 01:28:01-01:28:23;
+                                        # the previous 1H high as the target, H 09:14). When no nearer liquidity fits, the far target stays
+    tp_cap_choice: str = "nearest"      # with tp_max_rr: nearest = the nearest liquidity that gives min_rr; farthest = the farthest liquidity
+                                        # that stays within tp_max_rr ("het volledige scenario uit te spelen, van het ene stuk naar het andere", A 01:50:31)
 
 
 @dataclass

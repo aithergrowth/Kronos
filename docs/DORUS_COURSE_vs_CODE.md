@@ -31,6 +31,10 @@ Read on 2 October 2026 against the second edition of the pure profile (`config/d
 | 21 | Bad conditions | Against the HTF bias, between POIs, news (1:58:37-2:01:06) | Bias gate, zone gate, news gate | match | - |
 | 22 | Monthly | Monthly balance levels from years back matter (57:31-57:49, 1:14:49-1:15:36) | Monthly in bias and POIs | match | - |
 | 23 | Backtesting | At least 100 trades, a mechanical plan, journal every trade, start at 09:00 (2:12:32, 2:19:21, 2:31:20, 2:34:01) | - | process | the practice material in `docs/practice/` |
+| 24 | Win rate | "Ik heb een gemiddelde winrate van 70 %" (1:44:08); the minimum R:R follows from the win rate, 0.4-0.5 at 70 % (1:44:13-1:44:41; D 11:13: 0.67 at 60 %) | 35 % in R6, 28-33 % in the other runs: break-even R:R 1.84 against a median planned 1.27 | gap in results, not in rules | `docs/WINRATE_DORUS_vs_CODE.md` |
+| 25 | Target distance | "Mijn keuze gaat eerder naar één of twee risk reward ... omdat je een hogere winrate hebt" (1:28:01); the target brought closer "zolang het risk-reward-wijs aantrekkelijk blijft" (1:28:18); "op de vorige 1H high" (H 9:14) | The nearest 1H+ liquidity whatever its distance: planned R:R above 2 won 12 % (81 trades in R6) | his stated preference, not applied | `risk.tp_max_rr`, `tp_cap_choice` |
+| 26 | Stop room | "Kan je je stoploss nog wat ruimte geven ... kijken naar de linkerkant, wat wil ik beschermen?" (31:17-31:29); his entries sit at the zone's edge (`docs/dossiers/SOURCE_TRADES.md`) | Stop on the zone's P with no offset, the entry wherever the 1m shift closed: 29 stops under 5 pips, one won; entries deeper than half the zone 48 trades, 12 % | interpretation, data-supported | `risk.max_entry_depth` |
+| 27 | Re-entry on a stopped zone | Not stated; no recap of his shows a second entry on a zone that stopped him out | A zone stays valid after a stop-out at its P (a violation needs a close on the zone's timeframe) and was re-entered on the next shift: 46 trades, 9 % won, -23.7R | interpretation, data-supported | `confirmation.one_trade_per_visit` |
 
 ## What changed in the code (programming), all tested
 

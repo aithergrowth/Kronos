@@ -42,10 +42,43 @@ def find_take_profit(
     extreme; his accepted trades run 0.7R-2R, A 01:43:58-01:47:06).  Legacy
     policies also consider unmitigated order blocks.
     """
+    liquidity, balance = target_candidates(direction, entry, structures, poi_tf, params, confirmation_tf, params.tp_floor_tf)
+
+    def nearest(cands) -> Optional[Tuple[float, str]]:
+        if not cands:
+            return None
+        best = min(cands, key=lambda c: abs(c[0] - entry))
+        return best[0], best[1]
+
+    if params.tp_policy == "liquidity":
+        own_tf = [c for c in liquidity if c[2] is poi_tf]
+        return nearest(own_tf) or nearest(liquidity)
+    if params.tp_policy == "liquidity_nearest":
+        return nearest(liquidity)
+    if params.tp_policy == "liquidity_first":
+        return nearest(liquidity) or nearest(balance)
+    if params.tp_policy == "balance_first":
+        return nearest(balance) or nearest(liquidity)
+    return nearest(liquidity + balance)
+
+
+def target_candidates(
+    direction: Direction,
+    entry: float,
+    structures: Dict[Timeframe, StructureAnalysis],
+    poi_tf: Timeframe,
+    params: RiskParams,
+    confirmation_tf: Optional[Timeframe],
+    floor_tf: Optional[Timeframe],
+) -> Tuple[List[Tuple[float, str, Timeframe]], List[Tuple[float, str]]]:
+    """Resting opposite liquidity and unmitigated balance blocks beyond ``entry``: ``(liquidity, balance)``.
+
+    With ``liquidity_nearest`` the timeframes considered are those above the confirmation timeframe and at or
+    above ``floor_tf`` (None = every timeframe above the confirmation timeframe); otherwise the POI timeframe and up.
+    """
     liquidity: List[Tuple[float, str, Timeframe]] = []
     balance: List[Tuple[float, str]] = []
     nearest_policy = params.tp_policy == "liquidity_nearest" and confirmation_tf is not None
-    floor_tf = params.tp_floor_tf
     for tf, st in structures.items():
         if nearest_policy:
             if tf <= confirmation_tf or (floor_tf is not None and tf < floor_tf):
@@ -64,23 +97,28 @@ def find_take_profit(
             for blk in st.unmitigated_blocks(Bias.BULLISH):
                 if blk.high < entry:
                     balance.append((blk.high, f"{tf.label} bullish order block {blk.low:.5f}-{blk.high:.5f}"))
+    return liquidity, balance
 
-    def nearest(cands) -> Optional[Tuple[float, str]]:
-        if not cands:
-            return None
-        best = min(cands, key=lambda c: abs(c[0] - entry))
-        return best[0], best[1]
 
-    if params.tp_policy == "liquidity":
-        own_tf = [c for c in liquidity if c[2] is poi_tf]
-        return nearest(own_tf) or nearest(liquidity)
-    if params.tp_policy == "liquidity_nearest":
-        return nearest(liquidity)
-    if params.tp_policy == "liquidity_first":
-        return nearest(liquidity) or nearest(balance)
-    if params.tp_policy == "balance_first":
-        return nearest(balance) or nearest(liquidity)
-    return nearest(liquidity + balance)
+def nearer_liquidity_target(
+    direction: Direction,
+    entry: float,
+    structures: Dict[Timeframe, StructureAnalysis],
+    poi_tf: Timeframe,
+    params: RiskParams,
+    confirmation_tf: Optional[Timeframe],
+    rr_distance: float,
+) -> Optional[Tuple[float, str]]:
+    """The nearest resting liquidity on any timeframe above the confirmation timeframe whose R:R lies between
+    ``min_rr`` and ``tp_max_rr`` (the floor timeframe ignored); None when no level fits."""
+    if rr_distance <= 0:
+        return None
+    liquidity, _ = target_candidates(direction, entry, structures, poi_tf, params, confirmation_tf, None)
+    fitting = [(price, source) for price, source, _tf in sorted(liquidity, key=lambda c: abs(c[0] - entry))
+               if params.min_rr <= abs(price - entry) / rr_distance <= params.tp_max_rr]
+    if not fitting:
+        return None
+    return fitting[-1] if params.tp_cap_choice == "farthest" else fitting[0]
 
 
 def resize_at(
@@ -161,6 +199,12 @@ def build_setup(
     the lower-timeframe invalidation swing is used instead.
     """
     reasons: List[str] = []
+    if params.max_entry_depth > 0 and poi.height > 0:
+        depth = (poi.high - entry) / poi.height if direction is Direction.LONG else (entry - poi.low) / poi.height
+        if depth > params.max_entry_depth:
+            reasons.append(f"entry {entry} lies {depth:.0%} of the zone's height inside it (max {params.max_entry_depth:.0%}): "
+                           f"no room for the stop")
+            return None, reasons
     if params.stop_basis == "protector":
         level = protection_level if protection_level is not None else poi.protector_extreme
         stop_note = "stop behind the protected zone (P)"
@@ -185,6 +229,13 @@ def build_setup(
     if rr < params.min_rr:
         reasons.append(f"R:R {rr:.2f} below minimum {params.min_rr:.1f} (target {tp_source})")
         return None, reasons
+    if params.tp_max_rr > 0 and rr > params.tp_max_rr:
+        nearer = nearer_liquidity_target(direction, entry, structures, poi.timeframe, params, confirmation.timeframe, rr_distance)
+        if nearer is not None:
+            far_source, far_rr = tp_source, rr
+            tp_price, tp_source = spec.round_price(nearer[0]), f"{nearer[1]} [nearer than {far_source} at 1:{far_rr:.1f}; R:R cap {params.tp_max_rr:.1f}]"
+            reward_distance = abs(tp_price - entry)
+            rr = reward_distance / rr_distance
     if lots <= 0:
         reasons.append(f"stop of {stop_pips:.1f} pips too wide for {spec.min_lot} lot minimum at {params.risk_pct}% risk")
         return None, reasons

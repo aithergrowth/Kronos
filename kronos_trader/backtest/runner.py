@@ -236,6 +236,7 @@ class Backtester:
                 )
                 reconcile_risk(pos, broker, risk_amount_now)
                 guard.record_trade(now)
+                self.engine.mark_traded(self.symbol, setup.poi.key, visits_of(setup))
             if self.progress and i % report_every == 0:
                 print(f"  {i}/{n} {ts} equity={broker.equity():,.0f} trades={len(broker.closed)}", flush=True)
 
