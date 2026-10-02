@@ -129,6 +129,14 @@ Every EURUSD variant is positive over the nine months of 2026; the 5m shift for 
 his entries) lifts the win rate from 46-48 % to 53-59 % on 17-19 trades; the previous-low target doubles the sum on
 EURUSD and is the weakest reading on gold. Nine to 28 trades per run: a direction, not a proof.
 
+## 4c. Reading F over the whole period
+
+Version 1 of the demo profile (reading F, 1D/4H/1H zones) over 2023-03 to 2026-09 (`docs/backtests/winrate/README.md`,
+"Reading F over the whole period"): EURUSD 124 trades, 37 %, +13.0R, end equity 110,869, with 2023 -3.4R, 2024 -1.4R,
+2025 +6.6R, 2026 +11.2R, a first 10 % breach on 4 July 2024 and a deepest drawdown of 17.7 % in September 2024. Gold 172
+trades, 27 %, -28.5R. A first attempt with weekly and monthly zones included was blocked from June 2025 by one weekly-zone
+trade (375-pip stop, 765-pip target) that sat open to the end; hence `confirmation.poi_timeframes`.
+
 ## 5. What this does not do
 
 - It does not give his 70 %.  His three winning recaps have no losing counterpart yet; his selection among look-alike
