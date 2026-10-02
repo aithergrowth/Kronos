@@ -202,3 +202,23 @@ def test_poi_timeframes_limits_the_zones_traded_in_full_mode(hk_data):
     only_1h = Backtester(s2, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
     assert only_1h.trades and all(t.meta["poi_tf"] == "1H" for t in only_1h.trades)
     assert any(t.meta["poi_tf"] != "1H" for t in base.trades)      # the default traded a higher-timeframe zone here
+
+
+def test_mirror_bias_inverts_the_mirrored_timeframes(hk_data):
+    """With ``bias.mirror_symbol`` set, the readings of ``mirror_timeframes`` come from the mirror market, inverted. Using
+    the symbol's own candles as the mirror, the mirrored timeframes must read the opposite of the plain run and the
+    others must be unchanged."""
+    from kronos_trader.core import Bias
+    from kronos_trader.core.timeframe import Timeframe as T
+    from kronos_trader.strategy.engine import StrategyEngine
+    now = pd.Timestamp("2024-06-03 10:00")
+    plain = StrategyEngine(_settings()).analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+    s = _settings(); s.bias.mirror_symbol = "09988"; s.bias.mirror_timeframes = (T.D_1,)
+    engine = StrategyEngine(s); engine._mirror = hk_data; engine._mirror_tried = True
+    mirrored = engine.analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+    assert mirrored.biases[T.D_1].bias is plain.biases[T.D_1].bias.opposite
+    assert any("mirrored from 09988 (inverted)" in n for n in mirrored.biases[T.D_1].notes)
+    for tf in plain.biases:
+        if tf is not T.D_1:
+            assert mirrored.biases[tf].bias is plain.biases[tf].bias
+    assert Bias.NEUTRAL.opposite is Bias.NEUTRAL

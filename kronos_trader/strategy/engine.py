@@ -33,6 +33,7 @@ from ..core.types import (
     Signal,
     SignalStatus,
     TradeMode,
+    TimeframeBias,
 )
 from ..config import SessionParams
 from .bias import combine_biases, timeframe_bias
@@ -139,6 +140,8 @@ class StrategyEngine:
         self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
         self.visits: Dict[str, VisitTracker] = {}      # per symbol: visit history per zone beyond the analysis window
         self.traded: Dict[str, Dict[Tuple[str, int, str], int]] = {}   # per symbol: zone key -> visit number a trade was opened on
+        self._mirror = None                 # MultiTimeframeData of bias.mirror_symbol, loaded on first use
+        self._mirror_tried = False
         self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI]]] = {}
 
     # ------------------------------------------------------------------ helpers
@@ -167,6 +170,34 @@ class StrategyEngine:
         pois = map_pois(st, self.settings.structure, price)
         self._poi_cache[key] = (stamp[0], stamp[1], pois)
         return pois
+
+    def mirror_data(self):
+        """The mirror market's candles (``bias.mirror_symbol`` from ``bias.mirror_data_dir``), loaded once; None when unset."""
+        if self._mirror is None and not self._mirror_tried:
+            self._mirror_tried = True
+            b = self.settings.bias
+            if b.mirror_symbol and b.mirror_data_dir:
+                from ..data.tv_cache import load_all
+                from ..data.resample import MultiTimeframeData
+                self._mirror = MultiTimeframeData(load_all(b.mirror_data_dir, b.mirror_symbol))
+        return self._mirror
+
+    def mirrored_biases(self, biases: Dict[Timeframe, TimeframeBias], now) -> Dict[Timeframe, TimeframeBias]:
+        """Replace the readings of ``bias.mirror_timeframes`` by the mirror market's, inverted when ``mirror_invert``."""
+        b = self.settings.bias
+        mirror = self.mirror_data()
+        if mirror is None:
+            return biases
+        mviews = mirror.as_of(now, lookback=self.settings.structure.lookback)
+        out = dict(biases)
+        for tf in b.mirror_timeframes:
+            if tf not in mviews or len(mviews[tf]) < 10:
+                continue
+            mb = timeframe_bias(analyze_structure(mviews[tf], self.settings.structure), b)
+            flip = (lambda x: x.opposite) if b.mirror_invert else (lambda x: x)
+            out[tf] = TimeframeBias(tf, flip(mb.bias), flip(mb.liquidity_view), flip(mb.balance_view),
+                                    [f"mirrored from {b.mirror_symbol}" + (" (inverted)" if b.mirror_invert else "") + ": " + n for n in mb.notes])
+        return out
 
     def mark_traded(self, symbol: str, poi_key: Tuple[str, int, str], visit: Optional[int]) -> None:
         """Record that a trade was opened on this zone during this visit; with ``one_trade_per_visit`` the zone
@@ -260,6 +291,8 @@ class StrategyEngine:
 
         # 1 + 2: bias ----------------------------------------------------------------
         biases = {tf: timeframe_bias(structures[tf], s.bias) for tf in BIAS_TIMEFRAMES if tf in views}
+        if s.bias.mirror_symbol:
+            biases = self.mirrored_biases(biases, now)
         decision = combine_biases({tf: b.bias for tf, b in biases.items()}, s.bias)
 
         # 3: POIs on every mapped timeframe, both sides --------------------------------

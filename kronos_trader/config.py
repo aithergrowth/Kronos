@@ -96,6 +96,12 @@ class BiasParams:
     extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # stated in A and D (two dated videos), absent from the K1 slide
     extra_combos_enabled: bool = True
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+    mirror_symbol: Optional[str] = None     # read the bias of these timeframes from another market and invert it: his EURUSD short of
+                                            # 11 Nov 2025 was read from the dollar index ("waarom zit ik in EURUSD shorts? ... laten we beginnen
+                                            # met de DXY", A 00:56:25-00:57:25); DXY = EURUSD mirrored. None = the pair's own levels
+    mirror_data_dir: Optional[str] = None   # cache directory with <mirror_symbol>_<TF>.csv (data/dxy: TradingView TVC:DXY daily, weekly, monthly)
+    mirror_timeframes: Tuple[Timeframe, ...] = (Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1)   # the course mirrors the monthly down
+    mirror_invert: bool = True              # EURUSD moves against the dollar index
 
     @property
     def active_full_combos(self) -> Tuple[Tuple[Timeframe, ...], ...]:
