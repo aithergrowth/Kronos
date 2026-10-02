@@ -102,5 +102,24 @@ negative, the account would have breached FTMO's 10 % line in July 2024 and sat 
 and the profit is 2025-2026 (+17.8R over 21 months). Gold is not tradable with this reading.
 
 
+## Profile version 2 (the origin target)
+
+`config/dorus_live.yaml` version 2 (commit `6908860`): reading F with `tp_policy impulse_origin` (the low/high the zone's
+creating move started from, 30 zone candles up to the P) instead of the 72-candle previous extreme, 1D/4H/1H zones.
+Runs of 10:03-10:18 UTC (`v2_y26_*`, warm-up from 2025-10-01; `v2_jul/aug/sep_eurusd`, the review months).
+
+| Market | 2026 trades | Win rate | Sum R | Expectancy | By zone timeframe (n / win / sum) | By month (sum R) | Version 1 (reading F) for comparison |
+|---|---|---|---|---|---|---|---|
+| EURUSD | 16 | 62 % | +5.2R | +0.32R | 1H 9 / 67 % / +3.9R; 4H 6 / 67 % / +2.3R; 1D 1 / 0 % / -1.0R | Jan +0.9, Mar -1.0, Apr +3.2, May +0.9, Jun +0.7, Jul -2.0, Aug -1.0, Sep +3.5 | 23 / 57 % / +11.2R |
+| XAUUSD | 22 | 45 % | +11.3R | +0.51R | 1H 15 / 47 % / +7.8R; 4H 7 / 43 % / +3.5R | Jan +1.5, Feb +2.1, Mar +3.4, Apr +0.9, Jun +4.4, Aug +1.4, Sep -2.4 | 25 / 28 % / +0.9R |
+
+The review months with version 2 on EURUSD: July 2 trades -2.0R, August 1 trade -1.0R, September 3 trades 3 won +3.5R
+(version 1: -2.0R, -1.0R, +8.1R).
+
+Reading. The origin target makes gold tradable in 2026 (+11.3R at 45 %, from +0.9R at 28 %: the 72-candle window had
+reached lows from days before) and smooths EURUSD (five positive months of eight, no month under -2R) at a smaller sum:
+nearer targets, and the 4H zones now take the September entries with wider stops than the 1H zones of version 1. Over
+both markets version 2 gives +16.5R in 2026 against +12.1R for version 1, on 38 trades. Its whole-period run follows.
+
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.

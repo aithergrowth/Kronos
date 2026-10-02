@@ -1,0 +1,39 @@
+code: 2c6edb0961e1a05bf96964840766db26a1b8fffe source 69df2285a976
+   1m: CandleSeries(EURUSD 1m, n=3570196, 2017-01-02 07:00:00 -> 2026-09-25 00:58:00)
+   5m: CandleSeries(EURUSD 5m, n=716989, 2017-01-02 07:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(EURUSD 15m, n=239040, 2017-01-02 07:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(EURUSD 1H, n=59764, 2017-01-02 07:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(EURUSD 4H, n=15447, 2017-01-02 06:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(EURUSD 1D, n=5000, 2007-06-28 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(EURUSD 1W, n=1006, 2007-06-28 21:00:00 -> 2026-09-27 21:00:00)
+   1M: CandleSeries(EURUSD 1M, n=100, 2018-05-31 21:00:00 -> 2026-08-31 21:00:00)
+news calendar: 2848 events 2017-01-06 10:00:00 -> 2026-10-02 12:30:00 (data/calendar/high_impact.csv)
+Backtest EURUSD  2026-07-10 00:00:00 -> 2026-08-31 00:00:00  (step 5m, 10368 steps, 235.2s)
+  signals 2  guard-rejected 0  trades 2
+  wins 0  losses 2  break-even 0  win rate 0.0%
+  avg R -1.00  total R -2.0  best -1.0  worst -1.0
+  profit factor 0.00  net P&L -1,824  return -1.82%  max DD 2.37%
+  by_poi_tf:
+    1H: n=2 avgR=-1.00 sumR=-2.0
+  by_confirmation:
+    BS: n=2 avgR=-1.00 sumR=-2.0
+  by_exit:
+    stop: n=2 avgR=-1.00 sumR=-2.0
+  first guard breach: never (bar-close equity, published limits)
+  engine rejections (top):
+      1104  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=50/5
+      1071  POI - no active visit on 1m
+      1031  bearish - 1W+4H+1H aligned but not a valid combination -> no trade
+       971  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bullish, 4H=bull
+       950  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bearis
+       923  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bull
+       864  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bullis
+       852  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bear
+  distinct zones behind the rejections (bars above count every candle):
+        19  POI - no active visit on 1m
+         6  POI - touched
+         2  POI - already traded on visit #1 - one trade per visit
+         2  POI - visit #2 - only the first return is traded
+         1  POI - R:R 0.16 below minimum 0.5 (target 1D buy-side liquidity 1.14824 (x1))
+         1  POI - entry 1.15318 lies 58% of the zone's height inside it (max 50%): no ro
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_v2_aug_eurusd.csv (+ .equity.csv, .provenance.json)

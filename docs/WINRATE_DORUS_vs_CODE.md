@@ -137,6 +137,13 @@ Version 1 of the demo profile (reading F, 1D/4H/1H zones) over 2023-03 to 2026-0
 trades, 27 %, -28.5R. A first attempt with weekly and monthly zones included was blocked from June 2025 by one weekly-zone
 trade (375-pip stop, 765-pip target) that sat open to the end; hence `confirmation.poi_timeframes`.
 
+## 4d. Profile version 2: the target on the origin of the move
+
+Max's steer ("hij pakt een bepaald punt van higher low") and the course's "stop loss op de low en take profit bij de
+vorige high" gave `tp_policy impulse_origin` (suite reading H: K3a 1.0 point, 18 Mar 2024 3.2 pips from his targets).
+Over 2026 it turns gold from +0.9R (28 %) into +11.3R (45 %) and gives EURUSD 16 trades, 62 %, +5.2R with five positive
+months of eight (`docs/backtests/winrate/README.md`, "Profile version 2"). Version 2 is the demo profile.
+
 ## 5. What this does not do
 
 - It does not give his 70 %.  His three winning recaps have no losing counterpart yet; his selection among look-alike
