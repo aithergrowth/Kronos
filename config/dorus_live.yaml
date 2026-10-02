@@ -1,0 +1,50 @@
+# Live profile for the EURUSD demo (2 October 2026): the third edition (config/dorus_course.yaml) with reading F of the
+# source-trade suite (docs/dossiers/SOURCE_TRADES_SUITE.md), the reading that reproduces his entries and stops and that
+# gave 2026 on EURUSD 23 trades, 57 %, +11.2R (docs/backtests/winrate/README.md). EURUSD only: the same reading loses on
+# gold, whose target rule is still open. Every line names its source; the prop-firm guard keeps the FTMO margins.
+bias:
+  extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
+confirmation:
+  allow_first_candle: false
+  allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
+  allow_bms: false                # the plain break is a liquidity sweep in his reading (A 01:29:29, 01:33:47)
+  accept_bos: false
+  bs_threshold: gap_edge          # "sterk genoeg om boven dit balance level uit te komen" (A 01:31:52)
+  confirmation_tf_mode: exact     # one entry timeframe per zone timeframe
+  min_confirmation_tf:            # the written table one step up: his 1H-zone entries are 5m shifts (suite readings C, D:
+    1M: 4H                        # 18 Mar 2024 at 12:40 / 1.6 pips, 11 Nov 2025 at 15:10 / 1.5 pips from his entries)
+    1W: 4H
+    1D: 1H
+    4H: 15m
+    1H: 5m
+  entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
+  one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+risk:
+  risk_pct: 1.0
+  min_rr: 0.5                     # "boven de 0,5" from his 70 % win rate (A 01:44:08-01:45:07)
+  max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
+  stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
+  stop_protection: recent_1h
+  sl_offset_pips: 0.0
+  min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
+  tp_policy: previous_extreme     # the previous significant low/high of the move (A 01:54:47; his three intraday targets)
+  tp_lookback_candles: 72         # on the zone's timeframe before the touch (fits EURUSD; too far on gold, open)
+  tp_buffer_pips: 0.0
+  tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
+  spread_buffer_pips: 1.0
+session:
+  enabled: true
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # "van 9 tot 11 en van 1 uur tot 5 uur" (A 02:24:07)
+  timezone: Europe/Amsterdam
+news:
+  enabled: true                   # no entry right before high-impact news (A 02:00:28, G 11:13)
+exits:
+  breakeven_r_intraday: 4.0       # the written plan: break-even after 4R intraday, 2R swing, no partials
+  breakeven_r_swing: 2.0
+  partials: false
+prop_firm:
+  max_open_trades: 1
+  daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
+  max_drawdown_pct: 8.0           # inside FTMO's 10 % with margin
+kronos:
+  mode: "off"

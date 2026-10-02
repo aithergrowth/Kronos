@@ -16,6 +16,28 @@ pip install -r requirements-trader.txt
 (`requirements.txt` is Kronos itself: torch and the model loader, only needed
 for the forecast indicator.)
 
+## 0. The EURUSD demo with reading F (2 October 2026)
+
+The profile `config/dorus_live.yaml` holds the reading that reproduces Dorus's entries and stops and gave 2026 on EURUSD
+23 trades, 57 %, +11.2R (`docs/backtests/winrate/README.md`): 5m shifts for 1H zones (15m for 4H, 1H for daily), the
+sweep-extreme stop with an 8-pip minimum, the target on the previous low/high, one trade per zone per visit, entries at
+most half the zone deep, sessions 09-11 and 13-17 Amsterdam, the news blackout, FTMO margins. EURUSD only; the same
+reading loses on gold. It needs no 1-minute candles: MT5's own bars (5m and up) are enough.
+
+On the laptop, after sections 1b (MT5 demo) and 2 (Telegram) below:
+
+```shell
+python -m kronos_trader --config config/dorus_live.yaml mt5-test --symbol EURUSD --tf 15m
+python -m kronos_trader --config config/dorus_live.yaml telegram-test
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5             # dry run: every setup to Telegram, no orders
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute   # demo orders, after your Approve tap
+```
+
+Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
+touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
+(`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop
+(`scripts/source_trades.py`) keeps comparing the two.
+
 ## 1. IBKR paper account (TWS)
 
 1. Start **Trader Workstation** and log in with the *paper* credentials
