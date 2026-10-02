@@ -103,6 +103,10 @@ def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] =
         if len(aligned) < params.min_matching_timeframes:
             continue
         aligned_set = set(aligned)
+        if params.required_aligned and not set(params.required_aligned) <= aligned_set:
+            missing = "+".join(tf.label for tf in params.required_aligned if tf not in aligned_set)
+            return BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
+                                f"{direction}: {missing} not aligned (required) -> no trade")
         for combo in params.active_full_combos:
             if set(combo) <= aligned_set:
                 return BiasDecision(direction, TradeMode.FULL, aligned, conflicting, neutral, tuple(combo),

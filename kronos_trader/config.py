@@ -99,6 +99,9 @@ class BiasParams:
     extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # stated in A and D (two dated videos), absent from the K1 slide
     extra_combos_enabled: bool = True
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+    required_aligned: Tuple[Timeframe, ...] = ()   # timeframes that must be among the aligned ones for any match (data, 2 October: with the
+                                                   # 1H aligned the whole-period version-2 trades gave EURUSD +6.8R against -4.5R without it,
+                                                   # gold +14.8R against -7.0R; not a rule of his in words, kept as an option)
     mirror_symbol: Optional[str] = None     # read the bias of these timeframes from another market and invert it: his EURUSD short of
                                             # 11 Nov 2025 was read from the dollar index ("waarom zit ik in EURUSD shorts? ... laten we beginnen
                                             # met de DXY", A 00:56:25-00:57:25); DXY = EURUSD mirrored. None = the pair's own levels

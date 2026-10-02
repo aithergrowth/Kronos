@@ -76,3 +76,17 @@ def test_invalid_combination_and_too_few_votes():
 def test_four_of_five_still_matches_a_combo_and_opposing_votes_allowed():
     d = combine_biases({T.MN_1: Bias.BEARISH, T.W_1: Bias.BEARISH, T.D_1: Bias.BEARISH, T.H_4: Bias.BULLISH, T.H_1: Bias.BULLISH})
     assert d.mode is TradeMode.FULL and d.direction is Bias.BEARISH and d.conflicting == (T.H_4, T.H_1)
+
+
+def test_required_aligned_blocks_a_match_without_that_timeframe():
+    """``bias.required_aligned`` names timeframes that must be among the aligned ones; a 3-of-5 match without them is refused."""
+    from kronos_trader.config import BiasParams
+    from kronos_trader.core import Bias, TradeMode
+    from kronos_trader.core.timeframe import Timeframe as T
+    from kronos_trader.strategy.bias import combine_biases
+    readings = {T.MN_1: Bias.BULLISH, T.W_1: Bias.BULLISH, T.D_1: Bias.BULLISH, T.H_4: Bias.NEUTRAL, T.H_1: Bias.NEUTRAL}
+    assert combine_biases(readings, BiasParams()).mode is TradeMode.FULL
+    blocked = combine_biases(readings, BiasParams(required_aligned=(T.H_1,)))
+    assert blocked.mode is TradeMode.NONE and "1H not aligned (required)" in blocked.reason
+    readings[T.H_1] = Bias.BULLISH
+    assert combine_biases(readings, BiasParams(required_aligned=(T.H_1,))).mode is TradeMode.FULL
