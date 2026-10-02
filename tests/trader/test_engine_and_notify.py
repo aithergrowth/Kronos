@@ -154,3 +154,20 @@ def test_stop_protection_poi_keeps_the_stop_on_the_zones_own_p(hk_data):
         assert t.meta["stop_basis"].startswith("P of the POI itself")
         assert t.meta["stop_tf"] == t.meta["poi_tf"]
         assert abs(t.meta["stop_p"] - t.meta["poi_p"]) < 1e-9
+
+
+def test_entry_outside_zone_keeps_a_just_left_zone_while_its_visit_is_open(hk_data):
+    """With the option on, a zone price has just left (status tested, visit still open) is still examined; the visit gate,
+    not the status, decides.  The default keeps the old behaviour."""
+    from kronos_trader.core import POIStatus
+    from kronos_trader.strategy.engine import StrategyEngine
+    s = _settings(); s.confirmation.allow_first_candle = True
+    now = pd.Timestamp("2024-06-03 10:00")
+    base = StrategyEngine(s).analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+    s2 = _settings(); s2.confirmation.allow_first_candle = True; s2.confirmation.entry_outside_zone = True
+    wide = StrategyEngine(s2).analyze("09988", hk_data.as_of(now, lookback=400), now=now)
+    tested_same_side = [p for p in wide.pois if p.status is POIStatus.TESTED and p.direction is wide.decision.direction]
+    mentioned = lambda a: {r.split(":")[0] for r in a.rejections if "POI" in r and ":" in r}
+    assert mentioned(base) <= mentioned(wide)                      # the wider filter never drops a zone the narrow one examined
+    if tested_same_side and wide.decision.tradable:
+        assert len(mentioned(wide)) >= len(mentioned(base))

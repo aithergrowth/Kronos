@@ -319,9 +319,12 @@ class StrategyEngine:
                 diagnostic = True
 
         # 4: POIs being visited now, highest timeframe first ------------------------------
+        # with entry_outside_zone the visit tracker (lowest timeframe) decides, not the zone's own-timeframe status: a touch inside
+        # the still-open candle of the zone's timeframe leaves the status FRESH although the visit is already running
+        eligible = ((POIStatus.ACTIVE, POIStatus.TESTED, POIStatus.FRESH) if s.confirmation.entry_outside_zone else (POIStatus.ACTIVE,))
         candidates = [p for p in pois
                       if p.direction is bias_side and p.timeframe in allowed_poi_tfs
-                      and p.status is POIStatus.ACTIVE]
+                      and p.status in eligible]           # a zone price is not inside only survives the visit gate below while its visit is open
         candidates.sort(key=lambda p: p.timeframe, reverse=True)
         if not candidates:
             n_dir = sum(1 for p in pois if p.direction is bias_side and p.timeframe in allowed_poi_tfs

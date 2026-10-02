@@ -162,3 +162,49 @@ def test_bms_can_be_switched_off_while_the_balance_shift_stays():
     assert on is not None and on.type is ConfirmationType.BMS and on.index == 8
     off = find_confirmation(series, poi, touch, ConfirmationParams(allow_first_candle=False, allow_balance_shift=False, allow_bms=False), max_age=100, structure=st)
     assert off is None
+
+
+def test_an_old_crossing_far_from_the_zone_does_not_end_the_balance_shift_search():
+    """A close beyond an older opposing gap while price was still far above the zone is not the shift; the search goes on
+    and the first close beyond the gap that is current near the zone is (his EURUSD short of 11 Nov 2025: the 5m shift
+    at 15:05 UTC below the 14:25 gap, after dozens of earlier crossings on the way down)."""
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, Gap, POI
+    from kronos_trader.strategy.structure import StructureAnalysis
+    closes = [1.0400, 1.0390, 1.0380, 1.0350, 1.0340, 1.0330, 1.0200, 1.0150, 1.0120, 1.0110, 1.0115, 1.0105, 1.0090, 1.0070, 1.0060]
+    series = CandleSeries.from_records([(c, c + 0.0005, c - 0.0005, c) for c in closes], T.MIN_5, start="2024-01-02 09:00", symbol="EURUSD")
+    poi = POI(T.H_4, Bias.BEARISH, 1.0100, 1.0140, None, None, 0, pd.Timestamp("2024-01-01 09:00"))     # bearish zone 1.0100-1.0140
+    st = StructureAnalysis(series, StructureParams())
+    old = Gap(Bias.BULLISH, 1.0385, 1.0395, 2, series.timestamps.iloc[2], 1, 1.0380, 1.0392, 0)      # far above the zone, crossed at index 3
+    near = Gap(Bias.BULLISH, 1.0112, 1.0118, 10, series.timestamps.iloc[10], 9, 1.0105, 1.0120, 8)   # formed inside the zone during the visit
+    st.gaps = [old, near]
+    params = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False)
+    conf = find_confirmation(series, poi, series.timestamps.iloc[7], params, max_age=100, structure=st)
+    assert conf is not None and conf.type is ConfirmationType.BS
+    assert conf.index == 11 and conf.break_level == 1.0112 and conf.close == 1.0105
+    assert conf.invalidation_price == 1.0120 + 0.0005        # the high since price re-entered the zone (index 8), the sweep extreme of the last approach
+
+
+def test_confirmation_search_starts_at_the_latest_re_entry_into_the_zone():
+    """Price touched the zone, left it for a while and came back: the shift (and the sweep extreme for the stop) belong to the
+    last approach, so an opposing gap and a crossing from the first approach are ignored."""
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, Gap, POI
+    from kronos_trader.strategy.confirmation import latest_entry_index
+    from kronos_trader.strategy.structure import StructureAnalysis
+    poi = POI(T.H_4, Bias.BEARISH, 1.0100, 1.0140, None, None, 0, pd.Timestamp("2024-01-01 09:00"))
+    closes = [1.0120, 1.0110, 1.0060, 1.0050, 1.0040, 1.0045, 1.0050, 1.0130, 1.0138, 1.0135, 1.0128, 1.0115, 1.0110]
+    #        touch   in     out    out    out    out    out    back   high   .      shift  .      .
+    series = CandleSeries.from_records([(c, c + 0.0004, c - 0.0004, c) for c in closes], T.MIN_5, start="2024-01-02 09:00", symbol="EURUSD")
+    assert latest_entry_index(series, poi, 0) == 7
+    st = StructureAnalysis(series, StructureParams())
+    first_approach = Gap(Bias.BULLISH, 1.0112, 1.0116, 1, series.timestamps.iloc[1], 0, 1.0105, 1.0124, 0)   # crossed at index 2 while leaving
+    last_approach = Gap(Bias.BULLISH, 1.0129, 1.0133, 9, series.timestamps.iloc[9], 8, 1.0120, 1.0154, 7)   # left by the second approach
+    st.gaps = [first_approach, last_approach]
+    params = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False)
+    conf = find_confirmation(series, poi, series.timestamps.iloc[0], params, max_age=100, structure=st)
+    assert conf is not None and conf.type is ConfirmationType.BS and conf.index == 10 and conf.break_level == 1.0129
+    assert conf.invalidation_price == 1.0138 + 0.0004          # the high since the re-entry, not since the first touch
+    off = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False, search_from_reentry=False)
+    old = find_confirmation(series, poi, series.timestamps.iloc[0], off, max_age=100, structure=st)
+    assert old is not None and old.index == 2                  # the old search took the crossing of the first approach

@@ -123,8 +123,16 @@ class ConfirmationParams:
     entry_after_shift_max_candles: int = 3   # give up when no such candle closes within this many candles after the shift
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
+    search_from_reentry: bool = True    # the confirmation search starts at price's latest entry into the zone within the open visit, not at the
+                                        # visit's first touch: a zone can be left and re-entered while the visit stays open, and the shift and the
+                                        # sweep extreme belong to the last approach (his EURUSD short of 11 Nov 2025: the 4H zone touched on 7 Nov,
+                                        # re-entered by the spike of 11 Nov 13:22; the stop above that spike's high)
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
+    entry_outside_zone: bool = False    # the shift is the move away from the zone, so at its close price is often just outside it: with True a zone
+                                        # whose visit is still open (no close 1.5 zone heights beyond it) stays a candidate after price left it
+                                        # ("als we in een POI zitten, we hebben de juiste shift, dan ga ik", A 01:18:44; his EURUSD short of
+                                        # 11 Nov 2025 at the 1H zone's edge, his gold shorts below the 1H zone); False = price must be inside
     # Rule: Monthly POI -> min. 4H, Weekly -> 1H, Daily -> 15m, 4H -> 5m, 1H -> 1m
     confirmation_tf_mode: str = "at_least"   # at_least: the table's timeframe and anything between it and the zone's timeframe, smallest first
                                              # (the course shows a 1H shift for a daily zone, A 01:04:24); exact: the table's timeframe only

@@ -60,6 +60,8 @@ def find_confirmation(
     touch_index = ltf.index_at_or_after(touch_ts)
     if touch_index >= n:
         return None
+    if getattr(params, "search_from_reentry", True):
+        touch_index = latest_entry_index(ltf, poi, touch_index)
     ext = poi.height * params.max_extension_zones
     st = structure if structure is not None else analyze_structure(ltf, structure_params)
     bullish = poi.direction is Bias.BULLISH
@@ -81,18 +83,29 @@ def find_confirmation(
                 return gap.high if bullish else gap.low   # beyond the opposing balance level itself (A 01:31:52, 02:25:46)
             latest = None
             pointer = 0
-            for k in range(max(touch_index, opposing[0].index + 1), n):
+            crossed = set()            # a gap counts once: its first close beyond it; an old crossing far from the zone does not end the search
+            start = max(touch_index, opposing[0].index + 1)
+            for g in opposing:         # a gap already closed through before the search window was crossed back then, not now
+                if g.index + 1 < start:
+                    seg = ltf.close[g.index + 1:start]
+                    lvl = shift_level(g)
+                    if len(seg) and ((bullish and float(seg.max()) > lvl) or (not bullish and float(seg.min()) < lvl)):
+                        crossed.add(g.index)
+            for k in range(start, n):
                 while pointer < len(opposing) and opposing[pointer].index < k:   # the opposing gap that is current at candle k
                     latest = opposing[pointer]
                     pointer += 1
+                if latest.index in crossed:
+                    continue
                 level = shift_level(latest)
                 close = float(ltf.close[k])
                 if (bullish and close > level) or (not bullish and close < level):
+                    crossed.add(latest.index)
                     if within_zone_reach(close):
                         invalidation = float(ltf.low[touch_index:k + 1].min()) if bullish else float(ltf.high[touch_index:k + 1].max())
                         candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.timestamps.iloc[k],
                                                        poi.direction, level, invalidation, close))
-                    break
+                        break
 
     # structure breaks --------------------------------------------------------------------
     for brk in st.breaks:
@@ -128,6 +141,21 @@ def find_confirmation(
     if not fresh:
         return None
     return min(fresh, key=lambda c: (c.index, c.type.priority))
+
+
+def latest_entry_index(ltf: CandleSeries, poi: POI, touch_index: int) -> int:
+    """Index of the candle on which price last came back into the zone after at least one candle wholly outside it,
+    at or after ``touch_index``; ``touch_index`` itself when price never left the zone since the touch."""
+    n = len(ltf)
+    if touch_index >= n - 1:
+        return touch_index
+    lows, highs = ltf.low, ltf.high
+    for k in range(n - 1, touch_index, -1):
+        inside_k = lows[k] <= poi.high and highs[k] >= poi.low
+        outside_prev = highs[k - 1] < poi.low or lows[k - 1] > poi.high
+        if inside_k and outside_prev:
+            return k
+    return touch_index
 
 
 def _entry_candle(conf: Confirmation, ltf: CandleSeries, bullish: bool, max_candles: int) -> Optional[Confirmation]:
