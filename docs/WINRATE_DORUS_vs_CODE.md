@@ -89,7 +89,21 @@ cap 2.0]").
 EURUSD 2023-03-01 to 2026-09-25, HistData bid 1-minute candles, 5-minute steps, 1 % risk, prop-firm halt lifted, the
 strict reading of R6 as the base (`config/dorus_course.yaml` + table exact + entry outside the zone).
 
-Runs R8, R8b, R9, R10 and R11 started 06:50 UTC on this code; their table, ledgers and equity series follow in the next commit (`docs/backtests/winrate/`).
+| Run | Adds | Trades | Win rate | Expectancy | Total | 2026 only (n / win / sum) |
+|---|---|---|---|---|---|---|
+| R6 (base) | - | 227 | 35 % | -0.18R | -40.5R | 36 / 33 % / -6.8R |
+| R10 | one trade per zone per visit | 177 | 42 % | -0.08R | -14.9R | 28 / 39 % / -1.1R |
+| R11 | + entry at most half the zone deep | 165 | 44 % | -0.04R | -6.8R | 26 / 46 % / +5.3R |
+| R8 | + R:R cap 2.0, nearest fitting liquidity | 163 | 47 % | -0.05R | -8.5R | 26 / 46 % / +2.1R |
+| R8b | + R:R cap 2.0, farthest fitting liquidity | 164 | 46 % | -0.06R | -10.4R | 26 / 46 % / +2.1R |
+| R9 | R8b + no entries 14:00-15:59 Amsterdam | 158 | 46 % | -0.05R | -7.1R | 26 / 50 % / +4.3R |
+
+Ledgers, equity series, provenance and the reading: `docs/backtests/winrate/README.md`. In short: the win rate rises from
+35 % to 42-47 % and the loss shrinks from -40.5R to -7R to -15R, but no run is positive over the whole period; 2024 wins,
+2025 loses, 2026 is slightly positive from R11 on. What still loses is stops wider than 20 pips (the zone's P far from a
+1m entry), longs, and daily-or-higher targets. The source-trade suite (`docs/dossiers/SOURCE_TRADES_SUITE.md`), built
+after these runs started, found the larger gap: his 1H-zone entries are 5m shifts with the sweep extreme as the stop;
+these runs still enter on the first 1m shift. The 2026 runs below measure that reading.
 
 ## 5. What this does not do
 
