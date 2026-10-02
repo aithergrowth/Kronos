@@ -1,4 +1,4 @@
-# Live profile for the EURUSD demo (2 October 2026): the third edition (config/dorus_course.yaml) with reading F of the
+# Live profile for the EURUSD demo, version 2 (2 October 2026, origin target): the third edition (config/dorus_course.yaml) with reading F of the
 # source-trade suite (docs/dossiers/SOURCE_TRADES_SUITE.md), the reading that reproduces his entries and stops and that
 # gave 2026 on EURUSD 23 trades, 57 %, +11.2R (docs/backtests/winrate/README.md). EURUSD only: the same reading loses on
 # gold, whose target rule is still open. Every line names its source; the prop-firm guard keeps the FTMO margins.
@@ -29,8 +29,13 @@ risk:
   stop_protection: recent_1h
   sl_offset_pips: 0.0
   min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
-  tp_policy: previous_extreme     # the previous significant low/high of the move (A 01:54:47; his three intraday targets)
-  tp_lookback_candles: 72         # on the zone's timeframe before the touch (fits EURUSD; too far on gold, open)
+  tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
+                                  # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
+                                  # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
+                                  # 18 Mar 2024 3.2 pips from his targets; 11 Nov 2025 8.6 pips nearer than his (the dip after the zone
+                                  # formed, open). Version 1 used previous_extreme over 72 candles before the touch (too far on gold)
+  tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
+  tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
   tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
   spread_buffer_pips: 1.0
