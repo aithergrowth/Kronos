@@ -144,5 +144,30 @@ four runs (-1.7R to -5.8R); the 1H zones carry every positive result. Restricted
 run (-4.5R to -8.7R), so the zone choice does not replace the bias work. (4) An FTMO account breaches 10 % in July 2024
 on EURUSD under both versions, and in 2023-2024 on gold.
 
+## Profile version 3 (the gate: the 1H must be aligned, no W+D+4H combination)
+
+The whole-period version-2 ledgers with the bias each trade was taken under (`full_v2b_*`, 11:48-12:29 UTC) showed two
+cuts that win on both markets: trades where the 1H is among the aligned timeframes (EURUSD 65 trades +6.8R against 45
+trades -4.5R without; gold 77 trades +14.8R against 81 trades -7.0R) and trades not taken on the W+D+4H combination (that
+combination: EURUSD 35 trades -3.0R, gold 21 trades -10.1R; the combinations with the monthly: EURUSD +8.1R, gold
++11.4R). Max's suggestion to drop the monthly reads the other way round in this data. Version 3 (`bias.required_aligned:
+[1H]`, `full_combos` without W+D+4H, scalp combination kept) ran 12:31-13:09 UTC (`v3_y26_*`, `v3_full_*`):
+
+| Profile | Market | Period | Trades | Win rate | Total | End equity | Deepest drawdown | First 10 % breach | Per year |
+|---|---|---|---|---|---|---|---|---|---|
+| Version 3 | EURUSD | 2026 (warm-up from Oct 2025) | 10 | 70 % | +5.9R | - | - | - | Jan +1.2, Mar -1.0, Apr +2.6, May +1.0, Jun +0.7, Jul -1.0, Aug -1.0, Sep +3.5 |
+| Version 3 | XAUUSD | 2026 | 14 | 50 % | +8.9R | - | - | - | Jan +1.0, Feb -2.0, Mar +4.4, Jun +4.4, Aug +1.4, Sep -0.4 |
+| Version 3 | EURUSD | 2023-03 to 2026-09 | 73 | 49 % | +11.8R | 111,032 | -9.8 % (Oct 2024) | never | -0.6R / -6.1R / +12.5R / +5.9R |
+| Version 2 | EURUSD | 2023-03 to 2026-09 | 110 | 44 % | +2.3R | 101,505 | -14.0 % | 5 Jul 2024 | -1.7R / -8.9R / +7.8R / +5.2R |
+| Version 3 | XAUUSD | 2023-03 to 2026-09 | 84 | 38 % | +7.8R | 106,597 | -17.9 % (Sep 2024) | 2 May 2024 | -3.6R / -1.3R / +3.8R / +8.9R |
+| Version 2 | XAUUSD | 2023-03 to 2026-09 | 158 | 39 % | +7.8R | 106,060 | -25.8 % | 3 Jan 2024 | -8.7R / -7.7R / +12.9R / +11.3R |
+
+Reading. On EURUSD version 3 is the first reading that never breaches 10 % over the whole period (deepest drawdown 9.8 %)
+and wins 49 % of 73 trades; 2024 still loses (-6.1R). On gold the sum is unchanged at fewer trades and the drawdown
+shrinks from 25.8 % to 17.9 %; the 10 % line is still crossed in May 2024. Inside version 3 the full-mode trades (the
+monthly aligned) carry EURUSD (24 trades, 62 %, +13.3R) while the scalp combination D+4H+1H loses slightly (49 trades,
+43 %, -1.5R) and is flat on gold (+0.5R); it stays because it is his rule. Both cuts are read from the same ledgers they
+improve, so the demo decides.
+
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.

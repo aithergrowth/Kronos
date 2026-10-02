@@ -150,6 +150,15 @@ year) and gold 158 trades, 39 %, +7.8R (-8.7R, -7.7R, +12.9R, +11.3R), against v
 is the demo profile for both markets. The 4H zones lose in every run and the 1H zones carry every positive result, but
 restricted to 1H zones 2024 still loses, so the bias gate stays the lever (section 5).
 
+## 4e. Profile version 3: the gate from the ledgers
+
+With the bias recorded per trade, two cuts win on both markets over 2023-2026: the 1H among the aligned timeframes, and
+no W+D+4H combination (the combinations with the monthly win; the one without it loses). Version 3 of the demo profile
+applies both: EURUSD 73 trades, 49 %, +11.8R, deepest drawdown 9.8 %, no 10 % breach (version 2: +2.3R, 14.0 %, breach
+July 2024); gold 84 trades, 38 %, +7.8R, drawdown 17.9 % (version 2: 25.8 %). 2024 still loses on both. Four readings of
+the per-timeframe bias against his dated days matched none of them (`docs/dossiers/bias_suite/README.md`); his
+per-timeframe readings on more days remain the input that can change 2023-2024.
+
 ## 5. What this does not do
 
 - It does not give his 70 %.  His three winning recaps have no losing counterpart yet; his selection among look-alike

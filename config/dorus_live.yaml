@@ -1,9 +1,13 @@
-# Live profile for the EURUSD demo, version 2 (2 October 2026, origin target): the third edition (config/dorus_course.yaml) with reading F of the
+# Live profile for the demo, version 3 (2 October 2026: origin target, the 1H in the bias, no W+D+4H): the third edition (config/dorus_course.yaml) with reading F of the
 # source-trade suite (docs/dossiers/SOURCE_TRADES_SUITE.md), the reading that reproduces his entries and stops and that
 # gave 2026 on EURUSD 23 trades, 57 %, +11.2R (docs/backtests/winrate/README.md). EURUSD only: the same reading loses on
 # gold, whose target rule is still open. Every line names its source; the prop-firm guard keeps the FTMO margins.
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
+  full_combos: [[1M, 1W, 1D], [1M, 1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out: it lost in every run on
+                                              # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
+  required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
+                                  # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
 confirmation:
   allow_first_candle: false
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
