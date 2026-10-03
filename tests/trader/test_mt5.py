@@ -134,9 +134,34 @@ def broker(monkeypatch):
 
 
 def test_initialize_uses_the_environment(broker):
-    assert broker.mt5.init_kwargs == {} and broker.mt5.login_args == (62724281, "pw", "MetaQuotes-Demo")
+    assert broker.mt5.init_kwargs == {"login": 62724281, "password": "pw", "server": "MetaQuotes-Demo"}
     d = broker.diagnostics()
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
+
+
+def test_without_credentials_the_terminal_account_is_used(monkeypatch):
+    for key in ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER", "MT5_PATH"):
+        monkeypatch.delenv(key, raising=False)
+    b = MT5Broker(Settings(), api=FakeMT5(), clock=lambda: NOW)
+    assert b.mt5.init_kwargs == {} and b.terminal_path is None
+
+
+def test_initialize_failure_names_the_account(monkeypatch):
+    monkeypatch.setenv("MT5_PATH", r"C:\mt5\terminal64.exe")
+    monkeypatch.setenv("MT5_LOGIN", "62724281")
+    monkeypatch.setenv("MT5_PASSWORD", "pw")
+    monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
+
+    class Refusing(FakeMT5):
+        def initialize(self, **kwargs):
+            self.init_kwargs = kwargs
+            return False
+
+        def last_error(self):
+            return (-6, "Terminal: Authorization failed")
+
+    with pytest.raises(RuntimeError, match="for login 62724281 on MetaQuotes-Demo.*Authorization failed"):
+        MT5Broker(Settings(), api=Refusing(), clock=lambda: NOW)
 
 
 def test_server_time_is_converted_to_utc(broker):

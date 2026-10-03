@@ -108,6 +108,20 @@ Brokers name symbols differently (`EURUSD.r`, `XAUUSD.m`): set
 the latest tick and rounded to half hours; pin it with
 `MT5_SERVER_OFFSET_HOURS` if it looks wrong on a weekend.
 
+When `mt5-test` fails:
+
+- `No module named MetaTrader5` (or `pandas`): the virtualenv is not active in
+  this window. `cd` into the repo and run `.\.venv\Scripts\Activate.ps1` first.
+- `(-10005, 'IPC timeout')`: the terminal runs as administrator (the installer
+  starts it that way; close it with File, Exit and start it from the normal
+  shortcut), or PowerShell does, or two terminals are running. Each attempt
+  waits 60 seconds before giving up.
+- `(-6, 'Terminal: Authorization failed')`: the terminal itself is not logged
+  in (red connection icon bottom right, the Journal tab says why). Wrong or
+  investor password, or the demo account expired: log in again under File,
+  Login to Trade Account, or open a new demo account under File, Open an
+  Account, and update `MT5_LOGIN` / `MT5_PASSWORD` (new window afterwards).
+
 ## 2. Telegram (10 minutes)
 
 Telegram is what makes the phone workflow possible: setups, the

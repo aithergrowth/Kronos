@@ -72,25 +72,33 @@ class MT5Broker(Broker):
 
     # ------------------------------------------------------------ connection
     def connect(self) -> None:
-        """Attach to the terminal (MT5_PATH, else the running one, else the usual install paths), then log in."""
+        """Attach to the terminal (MT5_PATH, else the running one, else the usual install paths) and log in.
+
+        The account comes from MT5_LOGIN / MT5_PASSWORD / MT5_SERVER when all three are set and is passed to
+        ``initialize`` itself, so a terminal that sits at "authorization failed" on its last account (password not
+        saved, demo expired) still connects with ours. Without them the terminal's current account is used.
+        """
         p = self.params
         path = os.environ.get(p.path_env)
+        login, password, server = os.environ.get(p.login_env), os.environ.get(p.password_env), os.environ.get(p.server_env)
+        creds: Dict[str, Any] = {"login": int(login), "password": password, "server": server} if login and password and server else {}
         attempts: List[Optional[str]] = [path] if path else [None] + terminal_candidates()
         errors = []
         for candidate in attempts:
-            kwargs: Dict[str, Any] = {"path": candidate} if candidate else {}
+            kwargs: Dict[str, Any] = dict(creds)
+            if candidate:
+                kwargs["path"] = candidate
             if self.mt5.initialize(**kwargs):
                 self.terminal_path = candidate
                 break
             errors.append(f"{candidate or 'running terminal'}: {self.mt5.last_error()}")
         else:
-            raise RuntimeError("MT5 initialize failed: " + "; ".join(errors) + ". Start the terminal and log in, run "
-                               "PowerShell and the terminal as the same user (not one of them as administrator), "
-                               "and set MT5_PATH to the full path of terminal64.exe")
-        login, password, server = os.environ.get(p.login_env), os.environ.get(p.password_env), os.environ.get(p.server_env)
-        if login and password and server:
-            if not self.mt5.login(int(login), password=password, server=server):
-                raise RuntimeError(f"MT5 login failed for {login} on {server}: {self.mt5.last_error()}")
+            account = f" for login {login} on {server}" if creds else " on the terminal's current account"
+            raise RuntimeError("MT5 initialize failed" + account + ": " + "; ".join(errors) + ". Start the terminal "
+                               "and log in (Journal tab shows why a login fails), run PowerShell and the terminal as "
+                               "the same user (not one of them as administrator), set MT5_PATH to the full path of "
+                               "terminal64.exe, and check MT5_LOGIN / MT5_PASSWORD (the master password, not the "
+                               "investor one) / MT5_SERVER on 'Authorization failed'")
 
     def disconnect(self) -> None:
         self.mt5.shutdown()
