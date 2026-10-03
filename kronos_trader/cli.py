@@ -334,7 +334,10 @@ def cmd_mt5_test(args) -> int:
     symbol = _ensure_symbol(settings, args.symbol)
     broker = MT5Broker(settings)
     d = broker.diagnostics()
-    print(f"connected: {d['connected']}  trade allowed: {d['trade_allowed']}  terminal {d['version']}")
+    algo = "on" if d["algo_trading"] else "OFF (click 'Algo Trading' in the terminal toolbar before --execute)"
+    account = "allowed" if d["account_trade_allowed"] else "NOT allowed (investor login: use the master password)"
+    print(f"connected: {d['connected']}  terminal {d['version']}")
+    print(f"algo trading: {algo}  account trading: {account}")
     print(f"account {d['login']} on {d['server']}  {d['currency']}  balance {d['balance']}  equity {d['equity']}  leverage 1:{d['leverage']}")
     print(f"server time offset to UTC: {d['server_offset']}")
     print(f"symbol: {broker.mt5_symbol(symbol)}")

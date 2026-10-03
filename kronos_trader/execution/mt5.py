@@ -18,6 +18,7 @@ import glob
 import os
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 from ..config import MT5Params, Settings
@@ -35,6 +36,22 @@ MT5_TIMEFRAMES = {
 
 def utc_now() -> pd.Timestamp:
     return pd.Timestamp.now(tz="UTC").tz_localize(None)
+
+
+HOUR = pd.Timedelta(1, unit="h")
+NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
+WEEK_CLOSE_BARS = 3 * 7 * 48  # three weeks of M30 bars: at least two weekend gaps to read the close from
+
+
+def ny_utcoffset(ts_utc: pd.Timestamp) -> pd.Timedelta:
+    """New York's offset to UTC at a UTC instant: -4 h under daylight saving, -5 h otherwise."""
+    return pd.Timedelta(ts_utc.tz_localize("UTC").tz_convert("America/New_York").utcoffset())
+
+
+def forex_week_open(ts_utc: pd.Timestamp) -> bool:
+    """False from Friday 20:00 UTC to Sunday 23:00 UTC: the weekend close with an hour of slack on both sides."""
+    wd, hour = ts_utc.weekday(), ts_utc.hour
+    return not (wd == 5 or (wd == 4 and hour >= 20) or (wd == 6 and hour < 23))
 
 
 def terminal_candidates() -> List[str]:
@@ -67,6 +84,7 @@ class MT5Broker(Broker):
         self._closed: List[ClosedTrade] = []
         self._close_cursor = 0
         self._offset: Optional[pd.Timedelta] = None
+        self._offset_at: Optional[pd.Timestamp] = None
         if connect:
             self.connect()
 
@@ -115,22 +133,85 @@ class MT5Broker(Broker):
         return name.upper()
 
     def server_offset(self, symbol: Optional[str] = None) -> pd.Timedelta:
-        """Broker server time minus UTC: ``MT5_SERVER_OFFSET_HOURS`` or estimated from the latest tick."""
-        if self._offset is not None:
-            return self._offset
+        """Broker server time minus UTC.
+
+        ``MT5_SERVER_OFFSET_HOURS`` pins it. Otherwise it is read from the last bar before the weekend gap (the
+        forex week ends Friday 17:00 New York, see ``offset_from_week_close``) and, while the week is open,
+        checked against the latest tick, which is exact when fresh: the tick wins when the two agree within
+        1.5 hours (a broker that closes a little early), the week-close reading when the tick is stale (a
+        holiday, a weekend) or the bars are missing. Re-read every hour so a daylight-saving switch is followed.
+        """
         pinned = os.environ.get(self.params.offset_env)
         if pinned:
-            self._offset = pd.Timedelta(float(pinned) * 60, unit="min")
+            return pd.Timedelta(float(pinned) * 60, unit="min")
+        now = self.clock()
+        if self._offset is not None and self._offset_at is not None and now - self._offset_at < HOUR:
             return self._offset
-        name = self.mt5_symbol(symbol or next(iter(self.settings.symbols)))
+        name = self.offset_symbol(symbol)
+        week = self.offset_from_week_close(name, now)
+        tick = self.offset_from_tick(name, now) if forex_week_open(now) else None
+        if tick is not None and (week is None or abs(tick - week) <= 1.5 * HOUR):
+            offset = tick
+        elif week is not None:
+            offset = week
+        else:
+            offset = tick if tick is not None else pd.Timedelta(0)
+        self._offset, self._offset_at = offset, now
+        return offset
+
+    def offset_symbol(self, symbol: Optional[str] = None) -> str:
+        """The symbol the offset is read from: EURUSD when it is configured (its week ends on the New York close
+        on every broker), else the symbol asked for, else the first configured one."""
+        if "EURUSD" in self.settings.symbols:
+            return self.mt5_symbol("EURUSD")
+        return self.mt5_symbol(symbol or next(iter(self.settings.symbols)))
+
+    def offset_from_tick(self, name: str, now: pd.Timestamp) -> Optional[pd.Timedelta]:
+        """The latest tick's server stamp against the clock, rounded to half hours; None when that is not a
+        plausible offset (-12 h to +14 h), which means the tick is stale."""
         tick = self.mt5.symbol_info_tick(name)
         seconds = int(getattr(tick, "time", 0) or 0) if tick is not None else 0
-        if seconds:
-            raw = (pd.Timestamp(seconds, unit="s") - self.clock()).total_seconds()
-            if -16 * 3600 <= raw <= 16 * 3600:          # a fresh tick; a stale weekend tick is not trusted
-                self._offset = pd.Timedelta(round(raw / 1800.0) * 30, unit="min")
-                return self._offset
-        return pd.Timedelta(0)
+        if not seconds:
+            return None
+        raw = (pd.Timestamp(seconds, unit="s") - now).total_seconds()
+        if not -12 * 3600 <= raw <= 14 * 3600:
+            return None
+        return pd.Timedelta(round(raw / 1800.0) * 30, unit="min")
+
+    def offset_from_week_close(self, name: str, now: pd.Timestamp) -> Optional[pd.Timedelta]:
+        """The offset read from the last M30 bar before a weekend gap.
+
+        The forex week ends Friday 17:00 New York, so that bar starts 30 minutes before that instant in UTC and
+        its server stamp minus that start is the offset. A server whose week ends at 23:30 keeps its midnight on
+        the New York close and follows US daylight saving with it: its offset now is New York's plus 7 hours.
+        Gaps that match no Friday within 14 hours (a holiday) are skipped; None without a usable gap.
+        """
+        try:
+            self.mt5.symbol_select(name, True)
+            rates = self.mt5.copy_rates_from_pos(name, self.mt5.TIMEFRAME_M30, 0, WEEK_CLOSE_BARS)
+        except Exception:                                   # pragma: no cover - terminal hiccup, tick fallback
+            return None
+        if rates is None or len(rates) < 2:
+            return None
+        t = np.asarray(rates["time"], dtype="int64")
+        for i in reversed(np.where(np.diff(t) >= 24 * 3600)[0]):
+            last = pd.Timestamp(int(t[i]), unit="s")       # server wall time of the week's last bar
+            best = None
+            for days in (-1, 0, 1):
+                day = (last + pd.Timedelta(days, unit="D")).normalize()
+                if day.weekday() != 4:
+                    continue
+                close_utc = ((day + pd.Timedelta(NY_CLOSE_HOUR, unit="h")).tz_localize("America/New_York")
+                             .tz_convert("UTC").tz_localize(None))
+                offset = last - (close_utc - pd.Timedelta(30, unit="min"))
+                if abs(offset) <= 14 * HOUR and (best is None or abs(offset) < abs(best[0])):
+                    best = (offset, close_utc)
+            if best is None:
+                continue
+            offset, close_utc = best
+            aligned = abs(offset - (ny_utcoffset(close_utc) + 7 * HOUR)) < pd.Timedelta(1, unit="min")
+            return ny_utcoffset(now) + 7 * HOUR if aligned else offset
+        return None
 
     def to_utc(self, server_seconds) -> pd.Timestamp:
         return pd.Timestamp(int(server_seconds), unit="s") - self.server_offset()
@@ -181,9 +262,13 @@ class MT5Broker(Broker):
     def diagnostics(self) -> Dict[str, Any]:
         info = self.mt5.account_info()
         term = self.mt5.terminal_info()
+        algo = bool(getattr(term, "trade_allowed", False))              # the terminal's Algo Trading button
+        account_ok = bool(getattr(info, "trade_allowed", True))          # False on an investor (read-only) login
+        offset = self.server_offset()
         out: Dict[str, Any] = {"version": self.mt5.version(), "connected": bool(getattr(term, "connected", False)),
-                               "trade_allowed": bool(getattr(term, "trade_allowed", False)),
-                               "server_offset": str(self.server_offset())}
+                               "algo_trading": algo, "account_trade_allowed": account_ok,
+                               "trade_allowed": algo and account_ok,
+                               "server_offset": f"{offset.total_seconds() / 3600:+.1f} h"}
         for key in ("login", "server", "currency", "balance", "equity", "leverage", "trade_mode"):
             out[key] = getattr(info, key, None)
         return out

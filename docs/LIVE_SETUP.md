@@ -99,14 +99,20 @@ the route when IBKR has no market data.
    Open a new terminal. If the terminal is not found automatically, also set
    `MT5_PATH` to `C:\Program Files\MetaTrader 5\terminal64.exe`.
 4. `python -m kronos_trader mt5-test --symbol EURUSD --tf 15m` prints the
-   account, the server-time offset to UTC and the last five bars.
+   account, the server-time offset to UTC and the last five bars. It also says
+   whether the terminal's **Algo Trading** button is on (toolbar; off after an
+   install) and whether the login may trade (an investor password may not):
+   both are needed before `--execute`, a dry run works without them.
 5. `python -m kronos_trader live --symbol EURUSD --broker mt5` runs the loop
    with MT5 candles and MT5 paper orders.
 
 Brokers name symbols differently (`EURUSD.r`, `XAUUSD.m`): set
-`mt5_symbol` in the symbol spec. The server-time offset is estimated from
-the latest tick and rounded to half hours; pin it with
-`MT5_SERVER_OFFSET_HOURS` if it looks wrong on a weekend.
+`mt5_symbol` in the symbol spec. The server-time offset is read from the
+last bar before the weekend gap (the forex week ends Friday 17:00 New York,
+so a server whose week ends at 23:30 is UTC+2/+3 and follows US daylight
+saving) and checked against the latest tick while the week is open; it is
+re-read every hour. Pin it with `MT5_SERVER_OFFSET_HOURS` only when
+`mt5-test` prints a wrong one.
 
 When `mt5-test` fails:
 

@@ -171,6 +171,104 @@ def test_server_time_is_converted_to_utc(broker):
     assert s.last.close == pytest.approx(1.1005)
 
 
+class WeekFake(FakeMT5):
+    """A terminal whose M30 history has real weekend gaps, stamped in server time (UTC + ``offset_h``)."""
+
+    def __init__(self, offset_h, last_bar_utc, tick_utc=None, close_hour_server=None):
+        super().__init__()
+        self.offset_h, self.last_bar_utc, self.tick_utc = offset_h, last_bar_utc, tick_utc
+        self.close_hour_server = close_hour_server        # bars after this server hour on Friday are dropped
+
+    def symbol_info_tick(self, name):
+        when = int((self.tick_utc + pd.Timedelta(self.offset_h, unit="h")).timestamp()) if self.tick_utc is not None else 0
+        return SimpleNamespace(bid=self.bid, ask=self.ask, time=when)
+
+    def copy_rates_from_pos(self, name, tf, start, count):
+        rows = []
+        slot = self.last_bar_utc
+        while len(rows) < count:
+            server = slot + pd.Timedelta(self.offset_h, unit="h")
+            ny = slot.tz_localize("UTC").tz_convert("America/New_York")      # the week runs Sun 17:00 - Fri 17:00 New York
+            open_week = ny.weekday() < 4 or (ny.weekday() == 4 and ny.hour < 17) or (ny.weekday() == 6 and ny.hour >= 17)
+            if self.close_hour_server is not None and server.weekday() == 4 and server.hour >= self.close_hour_server:
+                open_week = False
+            if open_week:
+                rows.append((int(server.timestamp()), 1.1, 1.101, 1.099, 1.1005, 12, 1, 0))
+            slot -= pd.Timedelta(30, unit="min")
+        rows.reverse()
+        return np.array(rows, dtype=[("time", "<i8"), ("open", "<f8"), ("high", "<f8"), ("low", "<f8"), ("close", "<f8"),
+                                     ("tick_volume", "<u8"), ("spread", "<i4"), ("real_volume", "<u8")])
+
+
+FRIDAY_LAST_BAR = pd.Timestamp("2026-10-02 20:30")   # the week's last M30 bar: 16:30 New York under daylight saving
+
+
+def test_weekend_offset_comes_from_the_friday_close(monkeypatch):
+    """Saturday: the latest tick is Friday's close, 18 hours old, which read as -15 h before (and then shifted
+    every candle of the week by 18 hours). The last bar before the weekend gap gives +3 h."""
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    saturday = pd.Timestamp("2026-10-03 15:00")
+    api = WeekFake(3, FRIDAY_LAST_BAR, tick_utc=pd.Timestamp("2026-10-02 20:59"))
+    b = MT5Broker(Settings(), api=api, clock=lambda: saturday)
+    assert b.offset_from_tick("EURUSD", saturday) is None                      # -15 h is no offset: stale
+    assert b.server_offset() == pd.Timedelta(3, unit="h")
+    assert str(b.get_candles("EURUSD", T.MIN_30, 3).timestamps.iloc[-1]) == "2026-10-02 20:30:00"
+
+
+def test_offset_follows_us_daylight_saving(monkeypatch):
+    """A server whose week ends at 23:30 keeps midnight on the New York close: +3 h in October, +2 h the Monday
+    after the US switch (1 Nov 2026), read from the same Friday bar."""
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    api = WeekFake(3, pd.Timestamp("2026-10-30 20:30"))
+    before = MT5Broker(Settings(), api=api, clock=lambda: pd.Timestamp("2026-10-31 12:00"))
+    assert before.server_offset() == pd.Timedelta(3, unit="h")
+    after = MT5Broker(Settings(), api=api, clock=lambda: pd.Timestamp("2026-11-02 10:00"))
+    assert after.server_offset() == pd.Timedelta(2, unit="h")
+
+
+def test_fixed_offset_server_and_an_early_close(monkeypatch):
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    monday = pd.Timestamp("2026-10-05 10:00")
+    utc_server = WeekFake(0, FRIDAY_LAST_BAR, tick_utc=monday)
+    assert MT5Broker(Settings(), api=utc_server, clock=lambda: monday).server_offset() == pd.Timedelta(0)
+    # a broker that stops quoting at 23:00 server: the bars say +2 h, the fresh tick +3 h, within 1.5 h -> tick
+    early = WeekFake(3, FRIDAY_LAST_BAR, tick_utc=monday, close_hour_server=23)
+    b = MT5Broker(Settings(), api=early, clock=lambda: monday)
+    assert b.offset_from_week_close("EURUSD", monday) == pd.Timedelta(2, unit="h")
+    assert b.server_offset() == pd.Timedelta(3, unit="h")
+
+
+def test_stale_holiday_tick_loses_to_the_week_close(monkeypatch):
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    thursday = pd.Timestamp("2026-10-08 14:00")
+    api = WeekFake(3, FRIDAY_LAST_BAR, tick_utc=thursday - pd.Timedelta(5, unit="h"))   # closed since 09:00
+    b = MT5Broker(Settings(), api=api, clock=lambda: thursday)
+    assert b.offset_from_tick("EURUSD", thursday) == pd.Timedelta(-2, unit="h")
+    assert b.server_offset() == pd.Timedelta(3, unit="h")
+
+
+def test_offset_is_reread_hourly(monkeypatch):
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    now = {"t": pd.Timestamp("2026-10-05 10:00")}
+    api = WeekFake(3, FRIDAY_LAST_BAR, tick_utc=pd.Timestamp("2026-10-05 10:00"))
+    b = MT5Broker(Settings(), api=api, clock=lambda: now["t"])
+    assert b.server_offset() == pd.Timedelta(3, unit="h")
+    api.offset_h, api.tick_utc = 2, pd.Timestamp("2026-10-05 10:30")
+    now["t"] = pd.Timestamp("2026-10-05 10:30")
+    assert b.server_offset() == pd.Timedelta(3, unit="h")          # cached within the hour
+    now["t"] = pd.Timestamp("2026-10-05 11:01")
+    api.tick_utc = now["t"]
+    assert b.server_offset() == pd.Timedelta(2, unit="h")
+
+
+def test_diagnostics_separate_algo_trading_from_the_account(broker):
+    d = broker.diagnostics()
+    assert d["algo_trading"] and d["account_trade_allowed"] and d["trade_allowed"] and d["server_offset"] == "+3.0 h"
+    broker.mt5.terminal_info = lambda: SimpleNamespace(connected=True, trade_allowed=False)
+    d = broker.diagnostics()
+    assert not d["algo_trading"] and d["account_trade_allowed"] and not d["trade_allowed"]
+
+
 def test_pinned_offset(monkeypatch):
     monkeypatch.setenv("MT5_SERVER_OFFSET_HOURS", "2")
     b = MT5Broker(Settings(), api=FakeMT5(), clock=lambda: NOW)
