@@ -235,12 +235,37 @@ def cmd_resample(args) -> int:
 
 
 def cmd_telegram_test(args) -> int:
+    """Check the token with getMe, then the chat with a test message; name what is wrong when something is."""
+    from .notify.telegram import TelegramError, masked
     settings = _load_settings(args)
     notifier = TelegramNotifier(params=settings.telegram)
-    if not notifier.configured:
-        print("set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID first")
+    if not notifier.token:
+        print("set TELEGRAM_BOT_TOKEN first: the API token from @BotFather (/mybots, your bot, API Token)")
         return 1
-    notifier.test()
+    try:
+        bot = notifier.check()
+    except TelegramError as exc:
+        print(f"token rejected ({exc.status} {exc.description}): TELEGRAM_BOT_TOKEN must be the API token from "
+              f"@BotFather, digits, a colon and 35 characters, without a 'bot' prefix; yours is {masked(notifier.token)}")
+        return 1
+    print(f"bot @{bot}: token ok")
+
+    def seen() -> str:
+        chats = notifier.chats_seen()
+        if not chats:
+            return f"no chat has messaged @{bot} yet (or longer than a day ago): open its chat, send it a message, run this again"
+        return "chats that messaged the bot: " + ", ".join(f"{c['id']} ({c['name']})" for c in chats)
+
+    if not notifier.chat_id:
+        print(f"TELEGRAM_CHAT_ID is not set. {seen()}")
+        return 1
+    try:
+        notifier.test()
+    except TelegramError as exc:
+        if exc.status in (400, 403):
+            print(f"chat {notifier.chat_id} rejected ({exc.description}): check TELEGRAM_CHAT_ID. {seen()}")
+            return 1
+        raise
     print("sent")
     return 0
 

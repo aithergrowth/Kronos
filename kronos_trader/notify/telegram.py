@@ -17,6 +17,29 @@ from .formatting import format_analysis, format_setup
 API = "https://api.telegram.org/bot{token}/{method}"
 
 
+def clean_token(token: Optional[str]) -> Optional[str]:
+    """The token as BotFather gives it: surrounding whitespace and quotes dropped, a pasted ``bot`` prefix removed."""
+    if not token:
+        return None
+    token = token.strip().strip("\"'").strip()
+    if token[:3].lower() == "bot" and token[3:4].isdigit():
+        token = token[3:]
+    return token or None
+
+
+def masked(token: Optional[str]) -> str:
+    """The token's shape for a message: first four and last two characters, length; never the token."""
+    if not token:
+        return "(empty)"
+    return f"{token[:4]}...{token[-2:]} ({len(token)} characters)"
+
+
+class TelegramError(RuntimeError):
+    def __init__(self, method: str, status: int, description: str):
+        super().__init__(f"Telegram {method} failed: {status} {description}")
+        self.method, self.status, self.description = method, status, description
+
+
 @dataclass
 class Decision:
     short_id: str
@@ -30,8 +53,8 @@ class TelegramNotifier:
                  dry_run: bool = False, params: Optional[TelegramParams] = None, timeout: float = 15.0,
                  allowed_user_ids: Optional[List[int]] = None):
         params = params or TelegramParams()
-        self.token = token or params.bot_token
-        self.chat_id = chat_id or params.chat_id
+        self.token = clean_token(token or params.bot_token)
+        self.chat_id = (chat_id or params.chat_id or "").strip() or None
         self.parse_mode = parse_mode or params.parse_mode
         self.dry_run = dry_run or not (self.token and self.chat_id)
         self.timeout = timeout
@@ -49,8 +72,30 @@ class TelegramNotifier:
         import requests
         resp = requests.post(API.format(token=self.token, method=method), json=payload, timeout=self.timeout)
         if resp.status_code != 200:
-            raise RuntimeError(f"Telegram {method} failed: {resp.status_code} {resp.text[:200]}")
+            try:
+                description = str(resp.json().get("description", resp.text[:200]))
+            except ValueError:
+                description = resp.text[:200]
+            raise TelegramError(method, resp.status_code, description)
         return resp.json()
+
+    def check(self) -> str:
+        """``getMe``: the bot's username when the token is accepted (TelegramError otherwise)."""
+        me = self._call("getMe", {}).get("result") or {}
+        return str(me.get("username") or me.get("first_name") or "?")
+
+    def chats_seen(self) -> List[Dict[str, Any]]:
+        """The chats that have messaged the bot, from ``getUpdates``: ``[{"id": ..., "name": ...}]``, newest last.
+        A chat shows up only after someone sent the bot a message, and updates older than 24 h are gone."""
+        seen: Dict[int, Dict[str, Any]] = {}
+        for update in self._call("getUpdates", {"timeout": 0}).get("result") or []:
+            msg = update.get("message") or update.get("edited_message") or update.get("channel_post") or {}
+            chat = msg.get("chat") or {}
+            if "id" in chat:
+                name = chat.get("username") or " ".join(x for x in (chat.get("first_name"), chat.get("last_name")) if x) \
+                    or chat.get("title") or chat.get("type") or ""
+                seen[int(chat["id"])] = {"id": int(chat["id"]), "name": name}
+        return list(seen.values())
 
     def send(self, text: str, reply_markup: Optional[Dict[str, Any]] = None) -> bool:
         self.sent.append(text)

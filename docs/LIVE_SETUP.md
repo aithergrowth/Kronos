@@ -137,19 +137,23 @@ Without it the same messages are printed in the terminal
 (`[telegram dry-run]`), fine for a dry run, useless for approving a trade
 from the sofa.
 
-1. In Telegram open **@BotFather**, send `/newbot`, pick a name, copy the token.
+1. In Telegram open **@BotFather**, send `/newbot`, pick a name, copy the
+   token (`/mybots`, the bot, *API Token* shows it again): digits, a colon
+   and 35 characters, no `bot` prefix.
 2. Start a chat with your new bot and send it any message.
-3. Get your chat id: open `https://api.telegram.org/bot<TOKEN>/getUpdates` in a
-   browser and read `"chat":{"id":...}`.
-4. Set the environment variables on the machine that runs the loop. Windows:
+3. Set the token on the machine that runs the loop and open a new terminal.
+   Windows:
 
    ```powershell
    setx TELEGRAM_BOT_TOKEN "123456:ABC..."
-   setx TELEGRAM_CHAT_ID "123456789"
    ```
 
-   then open a new terminal.
-5. `python -m kronos_trader telegram-test` → the bot says "connected".
+4. `python -m kronos_trader telegram-test` checks the token (`getMe`) and,
+   with no chat id set yet, prints the ids of the chats that messaged the bot.
+   Set yours the same way (`setx TELEGRAM_CHAT_ID "123456789"`, new terminal).
+5. `python -m kronos_trader telegram-test` again → the bot says "connected".
+   A `404` from Telegram means the token is wrong, `chat not found` the chat
+   id (or the bot was never messaged); the command says which.
 
 Only taps and `/approve` / `/skip` texts coming from that chat are accepted.
 

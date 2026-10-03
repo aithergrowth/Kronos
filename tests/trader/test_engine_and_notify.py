@@ -222,3 +222,44 @@ def test_mirror_bias_inverts_the_mirrored_timeframes(hk_data):
         if tf is not T.D_1:
             assert mirrored.biases[tf].bias is plain.biases[tf].bias
     assert Bias.NEUTRAL.opposite is Bias.NEUTRAL
+
+
+# ---------------------------------------------------------------- telegram setup checks
+
+def test_telegram_token_is_cleaned_and_checked():
+    from kronos_trader.notify.telegram import TelegramNotifier, clean_token, masked
+
+    assert clean_token(' "bot123456:ABCdef" ') == "123456:ABCdef"          # pasted with quotes and the URL prefix
+    assert clean_token("botfather") == "botfather" and clean_token("") is None and clean_token(None) is None
+    assert masked("123456:ABCdefGHIjkl") == "1234...kl (19 characters)"   # never the token itself
+    n = TelegramNotifier(token=" bot123:abc ", chat_id=" 42 ")
+    assert n.token == "123:abc" and n.chat_id == "42" and n.configured and not n.dry_run
+    assert TelegramNotifier(token="", chat_id="").dry_run
+
+    def fake(method, payload):
+        if method == "getMe":
+            return {"ok": True, "result": {"username": "dorustraderbot"}}
+        if method == "getUpdates":
+            return {"ok": True, "result": [{"message": {"chat": {"id": 777, "first_name": "Max", "last_name": "G"}}},
+                                           {"message": {"chat": {"id": 777, "first_name": "Max"}}},
+                                           {"edited_message": {"chat": {"id": -5, "title": "Kronos group"}}}]}
+        return {"ok": True}
+
+    n._call = fake
+    assert n.check() == "dorustraderbot"
+    assert n.chats_seen() == [{"id": 777, "name": "Max"}, {"id": -5, "name": "Kronos group"}]
+
+
+def test_telegram_errors_carry_the_api_description(monkeypatch):
+    from types import SimpleNamespace
+    import requests
+    from kronos_trader.notify.telegram import TelegramError, TelegramNotifier
+
+    def post(url, json=None, timeout=None):
+        assert "/bot123:abc/" in url
+        return SimpleNamespace(status_code=404, text="nf", json=lambda: {"ok": False, "description": "Not Found"})
+
+    monkeypatch.setattr(requests, "post", post)
+    with pytest.raises(TelegramError) as exc:
+        TelegramNotifier(token="123:abc", chat_id="42").check()
+    assert exc.value.status == 404 and exc.value.description == "Not Found" and exc.value.method == "getMe"
