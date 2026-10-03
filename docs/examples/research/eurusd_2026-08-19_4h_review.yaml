@@ -1,0 +1,69 @@
+status: student_plan_reviewed_critically_by_dorus
+regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression completion is implied.
+unshown_annotation_fields_may_be_omitted: true
+symbol: EURUSD
+source: S1 — EURUSD Short (DXY Long); Dorus reply dated Aug 19 and attached EURUSD_2026-08-19_15-52-31.png
+source_url: https://www.skool.com/dorusview/eurusd-short-dxy-long
+source_author: Dorus Wanders (critique only)
+chart_author: Jelle Engels
+notes: Dorus says the analysis looks too far back and is no longer relevant; he gives
+  no numerical lookback threshold.
+confidence:
+  critique: high
+  student_price_labels: medium
+  dorus_approval_of_trade: not_assessed
+observations:
+  displayed_chart_timeframe: 4H
+  chart_feed: OANDA
+  chart_creation_label: Aug 19, 2026 15:52 UTC+2
+  attachment_filename: EURUSD_2026-08-19_15-52-31.png
+  plan_direction: bearish
+student_plan_not_dorus_expectations:
+  entry_price_label: 1.16702
+  stop_price_label: 1.17213
+  target_price_label: 1.15702
+  orders_are_proposed_not_verified_fills: true
+evidence_image: assets/eurusd_student_4h.jpg
+missing:
+- Dorus-approved POI and bias
+- actual entry confirmation
+- event candle times
+- verified required candle coverage within the requested interval
+- OHLC export
+data_request:
+  symbol: EURUSD
+  feed: OANDA
+  displayed_timeframe: 4H
+  chart_snapshot_date: '2026-08-19'
+  provider_symbol: OANDA:EURUSD
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: 2026-08-19 15:52 UTC+2
+    kind: chart-creation header; not entry time
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: s1_eurusd_student_4h
+    provider_symbol: OANDA:EURUSD
+    timeframe: 4H
+    date_from_inclusive: '2026-06-01'
+    date_to_inclusive: '2026-08-19'
+    date_basis: UTC calendar dates for retrieval only; not a conversion of the displayed chart clock
+    purpose: student chart context; Dorus-approved POI unresolved
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.

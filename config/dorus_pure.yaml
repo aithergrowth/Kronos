@@ -1,0 +1,27 @@
+# Dorus's listed rules and nothing else.
+# Max's additions and the video-derived extras are switched off wherever his written list is silent;
+# what stays on beyond the list is named here so it can be switched too.
+bias:
+  extra_combos_enabled: false     # the list names 1M+1W+1D, 1W+1D+4H, 1M+1D+1H and the scalp 1D+4H+1H; M+D+4H (videos A, D) off
+confirmation:
+  allow_first_candle: false       # the list names it as an option; his practice: "wat ik zelf meestal doe is dus een balance shift" (D 13:48),
+                                  # "na de shift ga ik altijd bij de eerste beste bullish candle erin" (A 01:21:00): the first candle is his
+                                  # entry timing after a shift, not a confirmation on its own
+  allow_balance_shift: true       # the balance shift with a close: "Ik vind het wel belangrijk dat we een closure hebben" (A 02:26:00)
+  accept_bos: false               # a continuation break is not in his option list (BS, BMS, first candle: D 13:48, K1 06:30)
+risk:
+  min_rr: 0.7                     # the list says "attractive" without a number. His lowest accepted example is 0.73R: "Het is een 0,73 risk
+                                  # reward... maar wel een trade die precies volgens het plannetje is" (A 01:46:40); "een hypothetische 60 %
+                                  # winrate geeft een 0,67 minimum" (D 11:01); other accepted examples 1.3R (B 09:23), 1.4R (A 02:26), 1.47R (B 05:40)
+  sl_offset_pips: 0.0             # the 1-pip buffer beyond P is Max's, not in the list
+  tp_policy: liquidity_nearest    # "ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40): the nearest level above the confirmation timeframe ...
+  tp_floor_tf: 1H                 # ... but "we willen uiteindelijk echt de highs en de lows meenemen", not "lokale liquiditeit" (A 01:54:49); his replays put the
+                                  # target on the previous high of the 1H chart (A 02:26:10, H 09:00): liquidity below the 1H does not count
+  spread_buffer_pips: 1.0         # cost model only: sizing on the real risk distance including the spread
+session:
+  enabled: true                   # "ik mag alleen een trade executeren van 9 tot en met 11 en van 1 tot en met 5" (A 02:30:56, his replay plan);
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # "nu mogen we niet meer de trade plaatsen, want het is 5 uur" (A 02:30:30); 11-13 is the quiet zone (A 01:20:20, H 04:23)
+news:
+  enabled: true                   # not in the list; source G 11:08: he does not open a trade right before news
+kronos:
+  mode: "off"
