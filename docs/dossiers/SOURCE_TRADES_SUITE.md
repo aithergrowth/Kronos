@@ -95,6 +95,25 @@ Two origins, then: the move that created the zone (K3a, 18 Mar) and the move tha
 implemented, the second is open, and where they differ the implemented one gives the nearer target. Windows of 24 and
 48 candles miss K3a (4607.6, 4508.6); 30 is the one that fits.
 
+## Reading V3a (4 October, Astra's attribution check): only the 1H row one step up, the rest of the table as written
+
+Astra, 4 October: reading C moves three rows at once (1H -> 5m, 4H -> 15m, 1D -> 1H), so a better run cannot be
+credited to the 1H change alone. V3a is the live profile with the written table restored except the 1H row (1H zones
+-> 5m; 4H zones keep their written 5m entries, 1D zones 15m), run on EURUSD 2026 (`docs/backtests/winrate/v3a_eu_y26.csv`):
+
+| Reading (EURUSD 2026) | Trades | Win | Sum R | 1H-zone trades | 4H-zone trades |
+|---|---|---|---|---|---|
+| Live profile (table one step up, reading F / version 3) | 10 | 70 % | +5.9R | 7, +2.4R (5m entries) | 3, +3.5R (15m entries) |
+| V3a (only the 1H row to 5m) | 10 | 50 % | +1.5R | 5, +4.9R (5m entries) | 5, -3.3R (5m entries) |
+
+So the 1H -> 5m row holds on its own (+4.9R on the 1H zones), and the 4H -> 15m row is where the rest of the gain
+sits: 4H zones entered on 5m shifts lose. The table one step up is two findings, not one.
+
+Also from that review, standing: the source minutes are intervals (11 November 15:0x-15:16, the register says so), K3's
+UTC+1 is derived from the prices and not from the screenshot, and the ledger holds the shift candle's open
+(`confirmed_at`), its close (`confirmed_close_at`) and the execution (`opened_at`) separately; the tables above show
+the execution and will carry all three in the next revision.
+
 ## What the tables say
 
 1. **The bias gate refuses four of the five** on the pair's own levels (K3a, K3b, 11 Nov 2025, 18 Mar 2024); the weekly long
