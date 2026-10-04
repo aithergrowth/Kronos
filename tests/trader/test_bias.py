@@ -22,6 +22,9 @@ def test_conflicting_views_are_fifty_fifty(scenario_rows):
     assert tb.liquidity_view is Bias.BEARISH   # buy-side liquidity taken
     assert tb.balance_view is Bias.BULLISH     # structure still bullish
     assert tb.bias is Bias.NEUTRAL
+    # conflict_rule "recent": the sweep (the last candle) is more recent than the gap that carries the balance view
+    recent = timeframe_bias(st, BiasParams(conflict_rule="recent"))
+    assert recent.bias is Bias.BEARISH and "more recent" in recent.notes[-1]
 
 
 def test_p_break_flips_the_balance_view(scenario_rows):

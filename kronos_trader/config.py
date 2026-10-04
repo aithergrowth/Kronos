@@ -99,6 +99,11 @@ class BiasParams:
     extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # stated in A and D (two dated videos), absent from the K1 slide
     extra_combos_enabled: bool = True
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+    conflict_rule: str = "neutral"      # what a timeframe reads when its liquidity view and balance view disagree: "neutral" = 50/50
+                                        # (A 00:56:54, 02:14:26); "recent" = the more recent of the two events decides (a break after the
+                                        # gap formed beats the gap, a gap formed after the break beats the break). Max, 4 October: "week en
+                                        # maand gaan vaak ook wel goed" where the code read 50/50 because an old unmitigated gap outvoted
+                                        # a fresh break (docs/practice/2026-09/EURUSD/v3, the 1W and 1M notes of every dossier)
     required_aligned: Tuple[Timeframe, ...] = ()   # timeframes that must be among the aligned ones for any match (data, 2 October: with the
                                                    # 1H aligned the whole-period version-2 trades gave EURUSD +6.8R against -4.5R without it,
                                                    # gold +14.8R against -7.0R; not a rule of his in words, kept as an option)

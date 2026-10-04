@@ -84,6 +84,13 @@ def timeframe_bias(
     if liquidity is balance and liquidity is not Bias.NEUTRAL:
         bias = liquidity
         notes.append(f"aligned -> {bias}")
+    elif (params.conflict_rule == "recent" and liquidity is not Bias.NEUTRAL and balance is not Bias.NEUTRAL
+          and events and gap is not None):
+        event_index = events[-1].index
+        gap_index = gap.mitigated_index if (params.balance_view == "last_tested" and gap.mitigated_index is not None) else gap.index
+        bias = liquidity if event_index > gap_index else balance
+        notes.append(f"conflicting: the {'liquidity event' if bias is liquidity else 'balance level'} is the more recent "
+                     f"(candle {max(event_index, gap_index)} vs {min(event_index, gap_index)}) -> {bias}")
     else:
         bias = Bias.NEUTRAL
         notes.append("conflicting / incomplete -> 50/50")
