@@ -35,6 +35,19 @@ python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --b
 python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute   # demo orders, after your Approve tap
 ```
 
+Three markets (4 October: EURUSD and GBPUSD on the live profile, BTCUSD on `config/dorus_live_btc.yaml`, which only
+raises the stop minimum to 60 USD and drops the 1H requirement from the bias; see `docs/backtests/winrate/README.md`,
+"Frequency"). One PowerShell window per market, each with the venv active; the guard in each window reads the same
+account's equity, so the FTMO margins hold account-wide while every market keeps at most one open trade:
+
+```shell
+python -m kronos_trader --config config/dorus_live.yaml mt5-test --symbol GBPUSD --tf 15m      # once: the broker's symbol names
+python -m kronos_trader --config config/dorus_live_btc.yaml mt5-test --symbol BTCUSD --tf 15m  # (set mt5_symbol in the config if they differ)
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5
+python -m kronos_trader --config config/dorus_live.yaml live --symbol GBPUSD --broker mt5
+python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker mt5
+```
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop

@@ -1,0 +1,55 @@
+code: f547250ddbac0714311b46e9fec8046ee30da34a source 06dcd2329b2c
+   5m: CandleSeries(GBPUSD 5m, n=268822, 2023-01-01 23:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(GBPUSD 15m, n=89639, 2023-01-01 23:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(GBPUSD 1H, n=22413, 2023-01-01 23:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(GBPUSD 4H, n=5917, 2023-01-01 22:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(GBPUSD 1D, n=5000, 2007-06-28 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(GBPUSD 1W, n=1006, 2007-06-25 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(GBPUSD 1M, n=232, 2007-06-01 00:00:00 -> 2026-09-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  201615/268822 2025-10-30 10:05:00 equity=99,078 trades=1
+  215056/268822 2026-01-06 20:00:00 equity=100,484 trades=4
+  228497/268822 2026-03-12 11:05:00 equity=102,205 trades=8
+  241938/268822 2026-05-18 12:25:00 equity=101,297 trades=9
+  255379/268822 2026-07-22 08:40:00 equity=103,758 trades=12
+  268820/268822 2026-09-25 00:50:00 equity=103,454 trades=15
+Backtest GBPUSD  2025-10-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 73387 steps, 728.9s)
+  signals 18  guard-rejected 3  trades 15
+  wins 8  losses 7  break-even 0  win rate 53.3%
+  avg R +0.24  total R +3.5  best +2.2  worst -1.0
+  profit factor 1.52  net P&L +3,454  return +3.45%  max DD 4.12%
+  by_poi_tf:
+    1H: n=13 avgR=+0.28 sumR=+3.6
+    4H: n=2 avgR=-0.06 sumR=-0.1
+  by_confirmation:
+    BS: n=15 avgR=+0.24 sumR=+3.5
+  by_exit:
+    stop: n=7 avgR=-1.00 sumR=-7.0
+    take_profit: n=8 avgR=+1.32 sumR=+10.5
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+        2  max 1 open trade(s) per account
+        1  price moved: R:R below minimum
+  engine rejections (top):
+     14319  POI - no active visit on 5m
+      6444  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=bull
+      5568  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=50/50,
+      5364  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bearis
+      4982  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bullis
+      4234  bullish - 1H not aligned (required) -> no trade
+      3683  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=50/5
+      2952  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=bullish, 4H=50
+  distinct zones behind the rejections (bars above count every candle):
+       197  POI - no active visit on 5m
+        68  POI - touched
+        14  POI - already traded on visit #1 - one trade per visit
+         3  POI - visit #2 - only the first return is traded
+         1  POI - R:R 0.22 below minimum 0.5 (target 1H sell-side liquidity 1.33759 (x1)
+         1  POI - R:R 0.14 below minimum 0.5 (target 1H sell-side liquidity 1.32524 (x1)
+         1  POI - R:R 0.46 below minimum 0.5 (target 1H origin high 1.32548 (31 candles 
+         1  POI - R:R 0.08 below minimum 0.5 (target 1D sell-side liquidity 1.33436 (x1)
+         1  POI - R:R 0.03 below minimum 0.5 (target 4H sell-side liquidity 1.33624 (x1)
+         1  POI - R:R 0.13 below minimum 0.5 (target 15m sell-side liquidity 1.32509 (x2
+         1  POI - R:R 0.31 below minimum 0.5 (target 15m sell-side liquidity 1.32509 (x2
+         1  POI - R:R 0.17 below minimum 0.5 (target 1H origin high 1.35169 (31 candles 
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_gbp_base_y26.csv (+ .equity.csv, .provenance.json)

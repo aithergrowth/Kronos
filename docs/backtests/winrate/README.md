@@ -171,3 +171,71 @@ improve, so the demo decides.
 
 Files per run: `<run>.csv` (ledger), `.equity_1H.csv`, `.equity.csv.gz`, `.provenance.json`, `.run.txt`, `<run>_equity.png`;
 `equity_all.png`, `headline.csv`.
+
+## Frequency: more trades without lower quality (4 October 2026)
+
+Max, 4 October: the challenge pace is too slow (+0.7R a month on EURUSD in 2026; +10 % at 1 % risk takes 14 months), "kunnen
+we het verhogen, bijv. 10 trades per maand?", and the markets he wants are EURUSD, gold and BTC. Everything below is the
+live profile (`config/dorus_live.yaml`, version 3) with one line changed per run, 2026 = 1 January to 25 September
+(HistData), BTC to 4 October (Bitstamp). Ledgers: `<tag>.csv` with `.run.txt` and `.provenance.json` in this folder.
+
+Where the signals die in 2026 (EURUSD, `out_base_y26.run.txt`): most scans have fewer than three timeframes aligned
+because the monthly and the weekly read 50/50 (an old unmitigated gap outvotes a fresh break, see the 1W and 1M notes of
+every dossier in `docs/practice/2026-09/EURUSD/v3`); then "no active visit"; then 18 zones refused as a second or third
+visit, 7 zones for R:R under 0.5, 2 signals for the open position.
+
+### EURUSD, one knob at a time
+
+| Variant (EURUSD) | 2026 trades | Win | Sum R | Max dd | 2023-2026 (guard off) | Verdict |
+|---|---|---|---|---|---|---|
+| Live profile | 10 | 70 % | +5.9R | -2.0R | 73 trades, 49 %, +11.8R, dd -11.3R | the reference |
+| Two open trades (`prop_firm.max_open_trades 2`, `lev_open2_y26`) | 11 | 73 % | +7.1R | -2.0R | see the line below the table | the 14 September 08:45 setup, +1.2R; kept per market in the demo (one process per market) |
+| Sessions 08-18 (`lev_sess0818_y26`) | 19 | 58 % | +6.7R | -3.0R | see the line below the table | twice the trades, lower quality; GBPUSD 2026 16 trades, +2.0R (from +3.1R) |
+| Second visits traded (`allow_retest`) | 10 | 70 % | +5.9R | -2.0R | - | no change: the refused visits never confirmed |
+| News filter off | 10 | 70 % | +5.9R | -2.0R | - | no change in 2026 |
+| Entry at most 20 pips outside the zone (`out_p20_y26`) | 9 | 67 % | +5.6R | -2.0R | - | the far entries (39, 23 pips) won; 25 % of the height: 6 trades +4.3R; 10 pips: 6, +3.4R |
+| Bias conflict rule "recent" (`rec_eu_y26`) | 30 | 40 % | -3.8R | -5.0R | - | more M+W+D swings, the scalps -7.5R; rejected |
+
+2023-2026 with the guard off: two open trades and sessions 08-18 are in `ng_open2_full` / `ng_sess0818_full` (rows
+filled in below when the runs end).
+
+### A second market: GBPUSD on the same profile
+
+| GBPUSD | Trades | Win | Sum R | Max dd | By year |
+|---|---|---|---|---|---|
+| 2026 (`gbp_base_y26`) | 11 | 55 % | +3.1R | -2.0R | - |
+| 2023-03 to 2026-09 (`gbp_base_full`, guard at the live margins, never halted) | 62 | 50 % | +8.2R | -5.4R | 2023 +0.1, 2024 -1.2, 2025 +6.2, 2026 +3.1 |
+| 2026, bias conflict rule "recent" (`rec_gb_y26`) | 43 | 42 % | +3.1R | -8.0R | four times the trades, the same sum, four times the drawdown |
+
+EURUSD and GBPUSD together in 2026: 21 trades, 62 %, +9.0R, max dd -3.0R, no overlapping open trades, one same-day entry,
+worst day -1.0R; by month Jan +2.2, Feb +0.9, Mar -1.1, Apr +1.6, May +1.0, Jun +1.9, Jul +0.3, Aug -0.3, Sep +2.5. Over
+2023-2026 the pair gives 135 trades, +20.0R, max dd -15.1R (2024 -7.3R for the two together).
+
+### BTC on the same profile (Bitstamp BTC/USD, 5m from 20 December 2025, 1H from 2023, 4H from 2019, 1D from 2015)
+
+The stop minimum is scaled to price: 8 pips on EURUSD is 0.07 % of price, 0.07 % of BTC at 85,000 is 60 USD.
+
+| BTC 2026 | Trades | Win | Sum R | Without the top 2 | Max dd | Note |
+|---|---|---|---|---|---|---|
+| Live profile, stop minimum 60 USD (`btc_base_y26`) | 25 | 40 % | +15.8R | -3.3R | -3.0R | 2 June short 69818 -> 65696 +11.8R, 2 October long +7.4R |
+| 1H not required in the bias (`btc_noreq_y26`) | 31 | 45 % | +26.6R | +7.4R | -5.4R | the ten added trades +9.5R, M+W+D swings; in `config/dorus_live_btc.yaml` |
+| Sessions off, 24/7 (`btc_allday_y26`) | 15 | 33 % | -0.7R | -6.7R | -4.2R | 8.3 % drawdown by February halted the run: night and weekend setups lose |
+| Two open trades | 27 | 33 % | +11.0R | -8.2R | -5.3R | the added trades -4.8R |
+| 15m zones with 1m entries | 26 | 38 % | +14.9R | -4.3R | -4.0R | one added trade, a loser |
+| Bias conflict rule "recent" | 46 | 37 % | +2.8R | - | -6.5R | rejected |
+| Target capped at 3R | 25 | 40 % | +15.8R | -3.3R | -3.0R | no change: `tp_max_rr` only caps the liquidity target, not the origin target |
+
+BTC pays through a few far targets (planned R:R 8-17 on the origin rule) at a 40 % win rate, the opposite shape of the
+EURUSD profile; the sum is strong, the month-to-month swing wide (June +11.7R / +22.2R, August -1.4R / -4.4R).
+
+### What goes into the demo and what does not
+
+- Per market one process with at most one open trade (EURUSD, GBPUSD on the live profile; BTC on
+  `config/dorus_live_btc.yaml`: stop minimum 60 USD, no 1H requirement). The guard reads the account's equity in every
+  process, so the FTMO margins hold account-wide.
+- Not taken: wider sessions, retests, the "recent" bias rule, an entry cap, 15m zones, BTC around the clock, a target cap.
+- The pace in 2026 for the three markets together, 1 % risk: about +3R a month (EURUSD +7.1R, GBPUSD +3.1R,
+  BTC +26.6R over nine months); without BTC's two best trades about +1.4R a month. At 1 % that is +10 % in 3 to 7 months,
+  at 2 % in 2 to 4 months with a deepest 2026 dip of about -8 % on the three together; 1.5 % keeps the dip near -6 %.
+- The open lever is the week and month bias: every mechanical rule tried reads them more often but worse. It needs
+  Max's own readings on dated days (`docs/dossiers/source_bias.yaml`).
