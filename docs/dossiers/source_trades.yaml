@@ -45,3 +45,12 @@
   target: 1.16823
   result: won
   source: "his weekly-chart recap (OANDA 1W): protect the low of the weekly P, target the weekly high"
+- id: BTC-2026-09-14
+  symbol: BTCUSD
+  direction: long
+  time: "2026-09-14 12:00"
+  entry: 76000
+  stop: 75200
+  target: 82400
+  result: won
+  source: "academy recording '21.000 euro verdiend met bitcoin', third buy; crosshair Mon 14 Sep 14:00 UTC+2 on the circled low 75,500-76,000, target the liquidity (x) at 82,400; ESTIMATED entry/stop (no order labels), see docs/dossiers/BTCUSD_2026-09-14/README.md"
