@@ -61,6 +61,8 @@ DEFAULT_SYMBOLS: Dict[str, SymbolSpec] = {
                        contract_size=1.0, ibkr_contract="cfd:IBUS30"),
     "BTCUSD": SymbolSpec("BTCUSD", 1.0, 1.0, typical_spread_pips=15.0, price_decimals=1, tradingview_symbol="BINANCE:BTCUSDT",
                          contract_size=1.0, ibkr_contract="crypto:BTC:PAXOS:USD"),
+    "DXY": SymbolSpec("DXY", 0.01, 1.0, typical_spread_pips=3.0, price_decimals=3, tradingview_symbol="TVC:DXY",
+                      contract_size=1.0),            # the dollar index as a CFD (ICE DX): a pip of 0.01 is 0.01 % of price, like EURUSD's
 }
 
 
