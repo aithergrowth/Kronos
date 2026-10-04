@@ -1,9 +1,15 @@
-# Live profile for BTCUSD on the demo, 4 October 2026: config/dorus_live.yaml (version 3) with two lines changed for BTC.
-# Evidence: Bitstamp BTC/USD 2026 (5m from 20 December 2025, higher timeframes to 2015), docs/backtests/winrate/README.md:
+# Live profile for BTCUSD on the demo, 4 October 2026 (evening): config/dorus_live.yaml (version 3) with three lines changed for BTC.
+# Evidence: Bitstamp BTC/USD, February 2024 to October 2026 (5m from January 2024), docs/backtests/winrate/README.md "BTC over 2024-2026":
 #   - min_stop_pips 60: 8 pips on EURUSD is 0.07 % of price; 0.07 % of BTC at 85,000 is 60 USD (a "pip" is 1 USD here).
-#   - required_aligned []: with the 1H required 25 trades, 40 %, +15.8R; without it 31 trades, 45 %, +26.6R (the ten added
-#     trades +9.5R, the M+W+D swing combination works on BTC). A 2026-only finding on 31 trades: the demo decides.
-#   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February and halted the run),
+#   - required_aligned []: with the 1H required 92 trades, 45 %, +30.8R over 2024-2026; without it 128 trades, 48 %, +40.6R
+#     (2024 +19.9, 2025 -4.9, 2026 +25.6), the M+W+D swing combination works on BTC (`btc_noreq_long`).
+#   - tp_policy previous_extreme: Astra, 4 October, from his BTC recap: he targets the liquidity left above earlier highs, not the
+#     origin of the move. Over 2024-2026: 133 trades, 35 %, +55.0R, drawdown -10.3R, 2024 +12.5 / 2025 -2.8 / 2026 +45.2, median
+#     planned R:R 2.8, longest losing run 8 (`btc_prevext_long`); the origin target 128 trades, 48 %, +40.6R, run of 5. The sum and
+#     his rule decide; the price is the lower win rate. With W+D+4H as well: +51.2R, 2025 -7.7R, drawdown -13.8R, so not that.
+#   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February 2026 and halted the run),
+#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R), the FTMO margins
+#   (the 8 % peak-drawdown halt would have fired once in 2024-2026 at 1 % risk; FTMO's own 10 % static was never reached).
 #   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R).
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
@@ -36,7 +42,7 @@ risk:
   stop_protection: recent_1h
   sl_offset_pips: 0.0
   min_stop_pips: 60.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
-  tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
+  tp_policy: previous_extreme       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
                                   # 18 Mar 2024 3.2 pips from his targets; 11 Nov 2025 8.6 pips nearer than his (the dip after the zone

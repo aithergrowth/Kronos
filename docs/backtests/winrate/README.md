@@ -280,8 +280,8 @@ exception, not their rule. Gold without the 1H requirement (`gold_noreq_full`): 
 |---|---|---|---|---|---|---|---|
 | Live profile, 1H required, stop minimum 60 USD (`btc_base_long`) | 92 | 45 % | +30.8R | +7.3R | -9.4R | +22.0 / -6.1 / +14.9 | +33 % |
 | No 1H requirement, the demo profile (`btc_noreq_long`) | 128 | 48 % | +40.6R | +16.2R | -9.1R | +19.9 / -4.9 / +25.6 | +44 % |
-| Previous-high target (`btc_prevext_long`) | see below | | | | | | |
-| Previous-high target + W+D+4H (`btc_prevext_wd4h_long`) | see below | | | | | | |
+| **Previous-high target (`btc_prevext_long`), the BTC profile from 5 October** | 133 | 35 % | **+55.0R** | +15.8R | -10.3R | +12.5 / -2.8 / +45.2 | +65 %, peak dd -9.9 %, longest losing run 8 |
+| Previous-high target + W+D+4H (`btc_prevext_wd4h_long`) | 155 | 33 % | +51.2R | +11.9R | -13.8R | +10.7 / -7.7 / +48.1 | +58 %, peak dd -13.2 % |
 
 BTC 2026 variants, all on the demo profile unless named (the morning's rows are in "Frequency" above): the New York
 session 13-22 (`btc_sess_ny_y26`) 33 trades -3.5R, no; two open trades 27, +11.0R, no; 15m zones with 1m entries 26,
@@ -303,7 +303,7 @@ requirement: 22, 45 %, +11.3R in 2026 but -25.9R drawdown over the years.
 ### What the demo runs from 5 October
 
 EURUSD on `config/dorus_live.yaml` (the book), XAUUSD on `config/dorus_live_gold.yaml` (two of 1D/4H/1H), BTCUSD on
-`config/dorus_live_btc.yaml` (no 1H requirement, stop minimum 60 USD; the previous-high target replaces the origin
-target if its 2024-2026 run holds). One process per market, one open trade each, 1 % per trade, the FTMO margins
+`config/dorus_live_btc.yaml` (no 1H requirement, stop minimum 60 USD, the previous-high target: +55.0R over 2024-2026 against
++40.6R for the origin target, at a 35 % win rate and runs of 8 losers). One process per market, one open trade each, 1 % per trade, the FTMO margins
 account-wide. 2026 on the three together at 1 %: EURUSD +5.9R, gold +10.3R, BTC +26.6R (origin) or +48.1R
 (previous high); the pace of a challenge is set by BTC's few far targets and by gold's steady 4 trades a month.
