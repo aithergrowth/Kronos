@@ -301,6 +301,11 @@ def build_setup(
         level = confirmation.invalidation_price
         stop_note = "stop behind the confirmation swing"
     stop = compute_stop(direction, level, spec, params)
+    if params.min_stop_zone_fraction > 0 and poi.height > 0:
+        least = poi.height * params.min_stop_zone_fraction
+        if abs(entry - stop) < least:
+            stop = spec.round_price(entry - least if direction is Direction.LONG else entry + least)
+            stop_note += f", widened to {params.min_stop_zone_fraction:.0%} of the zone's height"
     if direction is Direction.LONG and stop >= entry or direction is Direction.SHORT and stop <= entry:
         reasons.append(f"stop {stop} ({stop_note}) is not behind entry {entry}")
         return None, reasons

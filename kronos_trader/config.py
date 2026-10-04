@@ -216,6 +216,10 @@ class RiskParams:
                                         # readings C, D); the live replay of Aug-Sep 2026 entered 39 pips under a 61-pip 4H zone (14 Sep) and
                                         # 11 pips above a 29-pip 1H zone (3 Aug): docs/practice/2026-09/EURUSD/v3/README.md
     max_entry_outside_pips: float = 0.0 # 0 = off; else the same cap in pips, whichever of the two is hit first
+    min_stop_zone_fraction: float = 0.0 # 0 = off; else the stop lies at least this fraction of the zone's height from the entry (a sweep-extreme
+                                        # stop closer than that is widened). Loss anatomy, 4 October: on EURUSD 2023-2026 the third of the trades
+                                        # with the tightest stop against the zone (0.31 of its height) won 38 % for -1.0R, the widest third (0.9)
+                                        # 64 % for +12.7R; "SL altijd op minimale 1H P" (K1 06:30) is the course's version of the same idea
     tp_max_rr: float = 0.0              # 0 = off; else when the nearest liquidity on tp_floor_tf or higher lies beyond this R:R, the nearest liquidity
                                         # on any timeframe above the confirmation timeframe that still gives min_rr is taken instead ("mijn keuze gaat
                                         # eerder naar één of twee risk reward ... zolang het risk-reward-wijs aantrekkelijk blijft", A 01:28:01-01:28:23;

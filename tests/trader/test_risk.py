@@ -139,6 +139,21 @@ def test_max_entry_outside_rejects_a_shift_that_closed_far_from_the_zone(scenari
     assert refused is None and "94.0 pips" in reasons[0] and "max 50" in reasons[0]
 
 
+def test_min_stop_zone_fraction_widens_a_tight_stop(scenario):
+    """``min_stop_zone_fraction``: a stop closer to the entry than that fraction of the zone's height is widened to it;
+    a stop already wider is left alone. Off by default."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]          # bullish 100.6-110.0, height 9.4
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 104.0, 103.0, 103.5)
+    good = {T.H_1: StubStructure(bsl=[125.0])}
+    entry = 104.0                                                               # the confirmation's invalidation at 103.0: a 1.0 stop
+    default, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, entry, good, RiskParams(stop_basis="confirmation", min_rr=0.5), 100_000)
+    assert default is not None and default.stop == pytest.approx(103.0 - 2 * 0.01 - 0.0, abs=0.05)   # the spread buffer aside
+    wide, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, entry, good, RiskParams(stop_basis="confirmation", min_rr=0.5, min_stop_zone_fraction=0.5), 100_000)
+    assert wide is not None and wide.stop == pytest.approx(entry - 0.5 * poi.height, abs=0.011)
+    same, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, entry, good, RiskParams(stop_basis="confirmation", min_rr=0.5, min_stop_zone_fraction=0.05), 100_000)
+    assert same is not None and same.stop == default.stop
+
+
 def test_tp_max_rr_takes_a_nearer_liquidity_when_the_floor_target_is_too_far(scenario):
     """With ``tp_max_rr`` a liquidity level above the confirmation timeframe whose R:R lies between ``min_rr`` and the cap
     replaces a floor target beyond the cap: the nearest such level by default, the farthest with ``tp_cap_choice``;
