@@ -101,6 +101,10 @@ class BiasParams:
     extra_combos: Tuple[Tuple[Timeframe, ...], ...] = ((Timeframe.MN_1, Timeframe.D_1, Timeframe.H_4),)  # stated in A and D (two dated videos), absent from the K1 slide
     extra_combos_enabled: bool = True
     scalp_combo: Tuple[Timeframe, ...] = (Timeframe.D_1, Timeframe.H_4, Timeframe.H_1)
+    scalp_enabled: bool = True          # False: the scalp combination is not a match (loss anatomy, 4 October: on EURUSD 2023-2026 the
+                                        # 49 scalps won 43 % for -1.5R, the 24 full-combination trades 62 % for +13.3R)
+    no_trade_against: Tuple[Timeframe, ...] = ()   # timeframes that veto a match when they read the opposite direction (loss anatomy,
+                                        # 4 October: gold shorts 2023-2026 38 %, -8.6R against a bullish monthly; longs 47 %, +36.2R)
     conflict_rule: str = "neutral"      # what a timeframe reads when its liquidity view and balance view disagree: "neutral" = 50/50
                                         # (A 00:56:54, 02:14:26); "recent" = the more recent of the two events decides (a break after the
                                         # gap formed beats the gap, a gap formed after the break beats the break). Max, 4 October: "week en
@@ -148,6 +152,9 @@ class ConfirmationParams:
                                         # re-entered by the spike of 11 Nov 13:22; the stop above that spike's high)
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
+    max_zone_age_candles: int = 0       # 0 = off; else a zone older than this many candles of its own timeframe is not a candidate (loss
+                                        # anatomy, 4 October, three markets: zones under 24 h old won 43-48 %, older ones 12-33 %; BTC
+                                        # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)
     one_trade_per_visit: bool = False   # a zone traded during a visit is not traded again in that visit: the stop sat on its P, so a stop-out means
                                         # the P was traded through (R6: 46 re-entries after a stop-out on the same zone, 9 % won, -23.7R; first
                                         # attempts 43 %). Off here so the frozen profiles reproduce; on in config/dorus_course.yaml

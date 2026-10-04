@@ -93,3 +93,21 @@ def test_required_aligned_blocks_a_match_without_that_timeframe():
     assert blocked.mode is TradeMode.NONE and "1H not aligned (required)" in blocked.reason
     readings[T.H_1] = Bias.BULLISH
     assert combine_biases(readings, BiasParams(required_aligned=(T.H_1,))).mode is TradeMode.FULL
+
+
+def test_no_trade_against_vetoes_a_match_the_monthly_reads_the_other_way():
+    """``bias.no_trade_against``: a timeframe in that list that reads the opposite direction turns a match into no trade
+    (loss anatomy, 4 October: gold shorts against a bullish monthly 38 %, -8.6R). Off by default."""
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.NEUTRAL, T.D_1: Bias.BEARISH, T.H_4: Bias.BEARISH, T.H_1: Bias.BEARISH}
+    assert combine_biases(votes).mode is TradeMode.SCALP
+    d = combine_biases(votes, BiasParams(no_trade_against=(T.MN_1,)))
+    assert d.mode is TradeMode.NONE and d.direction is Bias.NEUTRAL and "1M against" in d.reason
+    assert combine_biases(votes, BiasParams(no_trade_against=(T.W_1,))).mode is TradeMode.SCALP   # neutral is not against
+
+
+def test_scalp_enabled_false_drops_the_scalp_combination():
+    votes = {T.MN_1: Bias.NEUTRAL, T.W_1: Bias.NEUTRAL, T.D_1: Bias.BEARISH, T.H_4: Bias.BEARISH, T.H_1: Bias.BEARISH}
+    assert combine_biases(votes).mode is TradeMode.SCALP
+    d = combine_biases(votes, BiasParams(scalp_enabled=False))
+    assert d.mode is TradeMode.NONE and "not a valid combination" in d.reason
+

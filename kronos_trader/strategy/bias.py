@@ -110,6 +110,10 @@ def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] =
         if len(aligned) < params.min_matching_timeframes:
             continue
         aligned_set = set(aligned)
+        vetoes = [tf for tf in params.no_trade_against if tf in conflicting]
+        if vetoes:
+            return BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
+                                f"{direction}: {'+'.join(tf.label for tf in vetoes)} against -> no trade")
         if params.required_aligned and not set(params.required_aligned) <= aligned_set:
             missing = "+".join(tf.label for tf in params.required_aligned if tf not in aligned_set)
             return BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
@@ -118,7 +122,7 @@ def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] =
             if set(combo) <= aligned_set:
                 return BiasDecision(direction, TradeMode.FULL, aligned, conflicting, neutral, tuple(combo),
                                     f"{direction}: {'+'.join(tf.label for tf in combo)} aligned -> full trade allowed")
-        if set(params.scalp_combo) <= aligned_set:
+        if params.scalp_enabled and set(params.scalp_combo) <= aligned_set:
             return BiasDecision(direction, TradeMode.SCALP, aligned, conflicting, neutral, tuple(params.scalp_combo),
                                 f"{direction}: 1D+4H+1H aligned -> scalp only")
         best = BiasDecision(direction, TradeMode.NONE, aligned, conflicting, neutral, None,

@@ -375,8 +375,14 @@ class StrategyEngine:
             return analysis
 
         for poi in candidates:
-            touch_ts, visits, invalid = tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
             label = poi.describe()
+            if s.confirmation.max_zone_age_candles > 0:
+                age = (pd.Timestamp(now) - pd.Timestamp(poi.created_at)) / poi.timeframe.delta()
+                if age > s.confirmation.max_zone_age_candles:
+                    analysis.rejections.append(f"{label}: zone {age:.0f} {poi.timeframe.label} candles old "
+                                               f"(max {s.confirmation.max_zone_age_candles})")
+                    continue
+            touch_ts, visits, invalid = tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
             if invalid:
                 analysis.rejections.append(f"{label}: invalidated on {lowest_tf.label}")
                 continue

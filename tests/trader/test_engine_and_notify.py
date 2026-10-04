@@ -204,6 +204,23 @@ def test_poi_timeframes_limits_the_zones_traded_in_full_mode(hk_data):
     assert any(t.meta["poi_tf"] != "1H" for t in base.trades)      # the default traded a higher-timeframe zone here
 
 
+def test_max_zone_age_candles_refuses_stale_zones(hk_data):
+    """``confirmation.max_zone_age_candles``: a zone older than that many candles of its own timeframe is not a candidate
+    (loss anatomy, 4 October: zones under a day old won 43-48 % on three markets, older ones 12-33 %). Off by default."""
+    s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    s2 = _settings(); s2.confirmation.allow_first_candle = True; s2.confirmation.entry_outside_zone = True
+    s2.prop_firm.max_drawdown_pct = 1000.0; s2.prop_firm.daily_loss_limit_pct = 1000.0
+    s2.confirmation.max_zone_age_candles = 2
+    fresh = Backtester(s2, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert len(fresh.trades) < len(base.trades)
+    assert any("candles old" in r for r in fresh.rejection_reasons)
+    for t in fresh.trades:
+        tf = T.parse(t.meta["poi_tf"])
+        assert (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["poi_formed"])) / tf.delta() <= 2 + 1   # the scan step adds at most one candle
+
+
 def test_mirror_bias_inverts_the_mirrored_timeframes(hk_data):
     """With ``bias.mirror_symbol`` set, the readings of ``mirror_timeframes`` come from the mirror market, inverted. Using
     the symbol's own candles as the mirror, the mirrored timeframes must read the opposite of the plain run and the
