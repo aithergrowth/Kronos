@@ -2847,3 +2847,43 @@ time,currency,importance,title
 2026-10-02 09:00,EUR,1,Inflation Rate YoY Flash
 2026-10-02 12:30,USD,1,Non Farm Payrolls
 2026-10-02 12:30,USD,1,Unemployment Rate
+2026-10-05 14:00,USD,1,ISM Services PMI
+2026-10-07 18:00,USD,1,FOMC Minutes
+2026-10-08 06:00,EUR,1,Balance of Trade
+2026-10-09 14:00,USD,1,Michigan Consumer Sentiment Prel
+2026-10-13 14:00,USD,1,Existing Home Sales
+2026-10-14 12:30,USD,1,Core Inflation Rate MoM
+2026-10-14 12:30,USD,1,Inflation Rate MoM
+2026-10-14 12:30,USD,1,Inflation Rate YoY
+2026-10-14 12:30,USD,1,Core Inflation Rate YoY
+2026-10-15 12:30,USD,1,PPI MoM
+2026-10-15 13:30,USD,1,Retail Sales MoM
+2026-10-20 09:00,EUR,1,ZEW Economic Sentiment Index
+2026-10-20 12:30,USD,1,Housing Starts
+2026-10-20 12:30,USD,1,Building Permits Prel
+2026-10-23 07:30,EUR,1,S&P Global Manufacturing PMI Flash
+2026-10-26 09:00,EUR,1,Ifo Business Climate
+2026-10-27 12:30,USD,1,Durable Goods Orders MoM
+2026-10-28 07:00,EUR,1,GfK Consumer Confidence
+2026-10-28 18:00,USD,1,Fed Interest Rate Decision
+2026-10-28 18:30,USD,1,Fed Press Conference
+2026-10-29 12:30,USD,1,Personal Spending MoM
+2026-10-29 12:30,USD,1,Personal Income MoM
+2026-10-29 12:30,USD,1,Core PCE Price Index MoM
+2026-10-29 12:30,USD,1,GDP Growth Rate QoQ Adv
+2026-10-29 13:15,EUR,1,Deposit Facility Rate
+2026-10-29 13:15,EUR,1,ECB Interest Rate Decision
+2026-10-29 13:45,EUR,1,ECB Press Conference
+2026-10-30 06:30,EUR,1,GDP Growth Rate QoQ Prel
+2026-10-30 06:30,EUR,1,GDP Growth Rate YoY Prel
+2026-10-30 07:45,EUR,1,Inflation Rate YoY Prel
+2026-10-30 09:00,EUR,1,GDP Growth Rate YoY Flash
+2026-10-30 09:00,EUR,1,GDP Growth Rate QoQ Flash
+2026-10-30 10:00,EUR,1,GDP Growth Rate QoQ Flash
+2026-10-30 10:00,EUR,1,GDP Growth Rate YoY Flash
+2026-10-30 13:00,EUR,1,Inflation Rate YoY Prel
+2026-11-02 14:00,USD,1,ISM Manufacturing PMI
+2026-11-03 00:00,USD,1,Midterm Elections
+2026-11-03 15:00,USD,1,JOLTs Job Openings
+2026-11-04 10:00,EUR,1,Inflation Rate YoY Flash
+2026-11-04 14:00,USD,1,ISM Services PMI

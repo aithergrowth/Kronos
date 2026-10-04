@@ -309,12 +309,16 @@ class LiveRunner:
         if self._news_refreshed is not None and now - self._news_refreshed < pd.Timedelta(int(n.refresh_minutes), unit="min"):
             return
         self._news_refreshed = now
-        try:
-            from .data.calendar import fetch_forexfactory
-            for week in ("thisweek", "nextweek"):
+        from .data.calendar import fetch_forexfactory
+        failed = []
+        for week in ("thisweek", "nextweek"):          # next week's file is often missing (404) until late in the week
+            try:
                 calendar.add(fetch_forexfactory(week))
-        except Exception as exc:
-            print(f"[live] {self.symbol}: news calendar refresh failed ({exc}); using the events already loaded")
+            except Exception as exc:
+                failed.append(f"{week}: {exc}")
+        if len(failed) == 2:
+            print(f"[live] {self.symbol}: news calendar refresh failed ({'; '.join(failed)}); using the events already "
+                  f"loaded (data/calendar/high_impact.csv, extended from the TradingView calendar when it runs out)")
 
     def stale_timeframes(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> Dict[Timeframe, pd.Timedelta]:
         """Timeframes whose newest candle closed more than ``live.max_data_age_bars`` candles before ``now``."""
