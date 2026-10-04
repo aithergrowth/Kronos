@@ -16,10 +16,12 @@ pip install -r requirements-trader.txt
 (`requirements.txt` is Kronos itself: torch and the model loader, only needed
 for the forecast indicator.)
 
-## 0. The EURUSD demo with reading F (2 October 2026)
+## 0. The EURUSD demo with reading F, version 3 (2 October 2026)
 
 The profile `config/dorus_live.yaml` holds the reading that reproduces Dorus's entries and stops and gave 2026 on EURUSD
-23 trades, 57 %, +11.2R (`docs/backtests/winrate/README.md`): 5m shifts for 1H zones (15m for 4H, 1H for daily), the
+23 trades, 57 %, +11.2R (`docs/backtests/winrate/README.md`), in its version 3 (the origin target, the 1H required in the
+bias, no W+D+4H combination: 2026 EURUSD 10 trades, 70 %, +5.9R; 2023-2026 73 trades, 49 %, +11.8R, never through the
+FTMO margins): 5m shifts for 1H zones (15m for 4H, 1H for daily), the
 sweep-extreme stop with an 8-pip minimum, the target on the low/high the zone's move started from (version 2, the
 "vorige high/low" of the course), one trade per zone per visit, entries at most half the zone deep, 1D/4H/1H zones only,
 sessions 09-11 and 13-17 Amsterdam, the news blackout, FTMO margins. EURUSD only; the same reading loses on gold. It needs no 1-minute candles: MT5's own bars (5m and up) are enough.
