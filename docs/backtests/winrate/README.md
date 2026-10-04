@@ -228,8 +228,6 @@ The stop minimum is scaled to price: 8 pips on EURUSD is 0.07 % of price, 0.07 %
 BTC pays through a few far targets (planned R:R 8-17 on the origin rule) at a 40 % win rate, the opposite shape of the
 EURUSD profile; the sum is strong, the month-to-month swing wide (June +11.7R / +22.2R, August -1.4R / -4.4R).
 
-### What goes into the demo and what does not
-
 ### September 2026 as a challenge month on the four markets Max watches
 
 EURUSD, gold, BTC and the dollar index, the live profile (BTC without the 1H requirement), 100k, each market its own
