@@ -36,6 +36,12 @@ does what it says, not evidence of an edge; the 2026 run with reading F is the t
 
 3 trades, 3 won, +3.5R: the 4H zones now take the entries of 11, 14 and 22 September with wider stops than the 1H zones of version 1 (7 trades, +8.1R with the minimum stop); the zone priority when a 4H and a 1H zone overlap is open.
 
+## Profile version 3, the live profile (`v3/`)
+
+The profile the demo runs (`config/dorus_live.yaml`, version 3) replayed from 1 August with a decision dossier at every
+signal: 4 trades, +2.5R, September 3 of 3 (+3.5R). `v3/README.md` is the watch-along guide: per signal the zone (B),
+the liquidity (X), the shift candle and the entry, with the dossier that shows how the engine found them.
+
 ## The month at a glance
 
 | Day | 1M | 1W | 1D | 4H | 1H | 3 of 5 | Price 09:00 | Zones near price (4H/1H) | Visited, no confirmation | Signals |
