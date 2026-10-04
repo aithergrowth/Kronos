@@ -253,3 +253,57 @@ max dd -11.4 % and a -5.0 % day in August, the challenge lost. So 1 % per trade,
   at 2 % in 2 to 4 months with a deepest 2026 dip of about -8 % on the three together; 1.5 % keeps the dip near -6 %.
 - The open lever is the week and month bias: every mechanical rule tried reads them more often but worse. It needs
   Max's own readings on dated days (`docs/dossiers/source_bias.yaml`).
+
+## BTC and gold over the years, the intraday bias, Dorus's BTC target (4 October 2026, evening)
+
+Max, 4 October: "ga echt veel meer kijken naar btc", "en doe ook goud", "we hoeven niet op maanden te traden, het kan op
+1 uur en 4 uur". The afternoon's 2026 findings were run over the years they can be run over: BTC February 2024 to
+October 2026 (Bitstamp 5m back to January 2024), gold and EURUSD March 2023 to September 2026. Guard off in every
+run here (halting limits 1000 %); "at 1 %" compounds 1 % of equity per trade. Ledgers `<tag>.csv` in this folder.
+
+### The intraday bias (two of 1D/4H/1H, or 4H+1H alone; the 1H always required)
+
+| Market, 2023-2026 (BTC 2024-2026) | Book's gate (live profile) | Two of 1D/4H/1H | 4H+1H alone |
+|---|---|---|---|
+| EURUSD | 73 trades, 49 %, +11.8R, dd -11.3R | 2026 only: 37, 41 %, +4.6R | 149 trades, 38 %, -7.3R, dd -21.7R (`intra_a_eu_full`); 2026 alone 27, 48 %, +11.4R |
+| GBPUSD | 62, 50 %, +8.2R | 2026: 46, 33 %, -8.9R | 2026: 33, 36 %, -8.0R |
+| Gold | 84, 38 %, +7.8R, dd -19.8R, through 10 % static in May 2024 | **163, 44 %, +27.6R, dd -12.9R, 2023 +3.5 / 2024 +7.7 / 2025 +6.1 / 2026 +10.3, never 10 % under the start** (`gold_intra_c_full`) | 2026 not run |
+| BTC | 92, 45 %, +30.8R (`btc_base_long`) | 2026: 69, 41 %, +23.6R, dd -10.8R | 2026: 62, 44 %, +29.0R, dd -7.4R |
+
+The same gate that loses on the currency pairs is gold's best reading by far: more trades, a higher win rate, every
+year positive. It goes into `config/dorus_live_gold.yaml`. EURUSD and GBPUSD keep the book's gate; 2026 was their
+exception, not their rule. Gold without the 1H requirement (`gold_noreq_full`): 143 trades, +11.9R, dd -25.9R, no.
+
+### BTC over 2024-2026
+
+| BTC, Feb 2024 - Oct 2026 | Trades | Win | Sum R | Without top 3 | Max dd | 2024 / 2025 / 2026 | At 1 % |
+|---|---|---|---|---|---|---|---|
+| Live profile, 1H required, stop minimum 60 USD (`btc_base_long`) | 92 | 45 % | +30.8R | +7.3R | -9.4R | +22.0 / -6.1 / +14.9 | +33 % |
+| No 1H requirement, the demo profile (`btc_noreq_long`) | 128 | 48 % | +40.6R | +16.2R | -9.1R | +19.9 / -4.9 / +25.6 | +44 % |
+| Previous-high target (`btc_prevext_long`) | see below | | | | | | |
+| Previous-high target + W+D+4H (`btc_prevext_wd4h_long`) | see below | | | | | | |
+
+BTC 2026 variants, all on the demo profile unless named (the morning's rows are in "Frequency" above): the New York
+session 13-22 (`btc_sess_ny_y26`) 33 trades -3.5R, no; two open trades 27, +11.0R, no; 15m zones with 1m entries 26,
++14.9R, no; the plan's W+D+4H combination back in (`btc_wd4h_y26`) 38, 45 %, +26.2R, neutral; the target at the
+previous high/low instead of the origin (`btc_prevext_y26`, Astra: in his BTC recap he targets the liquidity above
+earlier highs) 34, 35 %, +45.2R, without the top 2 +13.4R, dd -5.0R, median planned R:R 4.0; previous high/low with
+W+D+4H (`btc_prevext_wd4h_y26`) 41, 37 %, +48.1R, without the top 2 +16.3R, dd -5.0R. The two bias readings that would
+let the 14-16 September long through (`docs/dossiers/BTCUSD_2026-09-14`): conflict rule "recent" 97 trades, 27 %,
++39.8R but +0.6R without the top 3 and runs of 8 losers, no; a broken P read as 50/50 (`btc_pw_noflip_y26`) 34, 38 %,
++46.1R, the same trades as the target profile, and neither takes his long. His read of that sweep is still open.
+
+### Gold 2026 variants (on the live profile)
+
+New York session 13-22: 18 trades, 50 %, +9.7R (`gold_sess_ny_y26`), a little better than the book's windows, not
+taken for one year. Previous-high target: 16, 31 %, +2.0R (`gold_prevext_y26`): on gold the origin target is the right
+one, on BTC the previous high. Stop minimum 2.6 USD: identical to the profile, the minimum never binds. No 1H
+requirement: 22, 45 %, +11.3R in 2026 but -25.9R drawdown over the years.
+
+### What the demo runs from 5 October
+
+EURUSD on `config/dorus_live.yaml` (the book), XAUUSD on `config/dorus_live_gold.yaml` (two of 1D/4H/1H), BTCUSD on
+`config/dorus_live_btc.yaml` (no 1H requirement, stop minimum 60 USD; the previous-high target replaces the origin
+target if its 2024-2026 run holds). One process per market, one open trade each, 1 % per trade, the FTMO margins
+account-wide. 2026 on the three together at 1 %: EURUSD +5.9R, gold +10.3R, BTC +26.6R (origin) or +48.1R
+(previous high); the pace of a challenge is set by BTC's few far targets and by gold's steady 4 trades a month.
