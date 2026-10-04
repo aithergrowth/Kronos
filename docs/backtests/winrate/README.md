@@ -307,3 +307,50 @@ EURUSD on `config/dorus_live.yaml` (the book), XAUUSD on `config/dorus_live_gold
 +40.6R for the origin target, at a 35 % win rate and runs of 8 losers). One process per market, one open trade each, 1 % per trade, the FTMO margins
 account-wide. 2026 on the three together at 1 %: EURUSD +5.9R, gold +10.3R, BTC +26.6R (origin) or +48.1R
 (previous high); the pace of a challenge is set by BTC's few far targets and by gold's steady 4 trades a month.
+
+## Loss anatomy: what the losers did before the stop, and what separates them (4 October 2026, night)
+
+Max: "winrate moet wel wat omhoog ... analyseer de trades en zie of er wat mist of fout gaat". `scripts/loss_anatomy.py`
+takes a ledger and the 5m bars and adds to every trade its maximum favourable and adverse excursion in R (MFE, MAE),
+then cuts the ledger by zone timeframe, bias combination, hour, weekday, planned R:R, zone age and the wait between the
+touch and the shift. Outputs in `anatomy/` for the three demo profiles over the years: `v3_full_eurusd` (EURUSD, the
+book), `gold_intra_c_full` (gold, two of 1D/4H/1H), `btc_prevext_long` (BTC, previous-high target).
+
+| | EURUSD 2023-2026 | Gold 2023-2026 | BTC 2024-2026 |
+|---|---|---|---|
+| Trades, win, sum | 73, 49 %, +11.8R | 163, 44 %, +27.6R | 133, 35 %, +55.0R |
+| Losers that never went 0.25R in profit | 44 % | 33 % | 36 % |
+| Losers that saw +1R before the stop | 14 % | 16 % | 32 % |
+| Winners' median adverse excursion | 0.38R (33 % went past 0.5R) | 0.31R | 0.39R |
+| Stop size, losers vs winners (median) | 11.6 vs 16.5 pips | 5.7 vs 7.1 USD | 482 vs 402 USD |
+| Zones under 24 h old: trades, win, sum | 54, 48 %, +10.1R | 126, 45 %, +25.5R | 89, 43 %, +72.0R |
+| Zones 1-3 days old | 6, 33 %, -2.7R | 18, 28 %, -4.7R | 22, 23 %, -7.8R |
+| Zones older than 3 days | 13, 54 %, +4.3R (the swing zones) | 19, 47 %, +6.8R | 22, 9 %, -9.2R |
+| Bias combination, best / worst | M+W+D 19, 63 %, +11.5R / D+4H+1H (scalps) 49, 43 %, -1.5R | 4H+1H 70, 51 %, +25.3R / 1D+1H 44, 36 %, -6.0R | M+W+D 73, 30 %, +41.3R / D+4H+1H 39, 41 %, +9.6R |
+| Direction | shorts 29, 59 %, +11.2R; longs 44, 43 %, +0.6R | longs 113, 47 %, +36.2R; shorts 50, 38 %, -8.6R | shorts 48, 33 %, +39.6R; longs 85, 35 %, +15.4R |
+| Hour (Amsterdam), worst | 09:00: 21, 38 %, -3.9R | 10:00: 28, 32 %, -0.7R | 16:00: 14, 14 %, -8.9R |
+| Weekday, worst | Thursday 21, 38 %, -5.4R | Monday 37, 32 %, -8.9R | Wednesday 30, 23 %, -8.8R |
+| Wait touch -> shift, worst | 4-12 h: 11, 18 %, -3.0R | 4-12 h: 38, 37 %, -1.2R | 12-48 h: 29, 24 %, -10.3R |
+| Break-even at +1R, losers that saw it to zero (optimistic) | +16.8R | +41.6R | +82.0R |
+
+What it says:
+
+- **Half of the losers are bad entries, not bad management**: 33-44 % never go a quarter R in profit, and only 14-16 % on
+  the currency pair and gold ever see +1R. Tighter management does little there; on BTC a third of the losers see +1R
+  first, so a break-even at +1R is worth a run (`btc_pe_be1_y26`, below).
+- **Stale zones lose on all three markets.** Under a day old 43-48 %; one to three days old 23-33 %; on BTC anything
+  older than a day is -17R on 44 trades. The course says a zone that price has "volledig gebruikt" is spent
+  (A 00:33:37-00:33:56) and prefers the level the higher timeframe also balanced (A 02:05:53); the age limit is the
+  data's proxy for freshness. `confirmation.max_zone_age_candles 24` is running over the years on all three.
+- **On EURUSD the scalps lose and the swings win**: the 49 D+4H+1H trades 43 % for -1.5R, the 24 full-combination trades
+  62 % for +13.3R. `bias.scalp_enabled false` is running (`eu_noscalp_full`). Fewer trades, the win rate Dorus names.
+- **On gold the 1D+1H pair loses** (44 trades, 36 %, -6.0R) while 4H+1H carries the profile (70, 51 %, +25.3R):
+  `gold_no1d1h_full` drops it. Gold shorts against the bullish monthly lose (50, 38 %, -8.6R): `bias.no_trade_against
+  [1M]` is running on gold and EURUSD (`gold_against1m_full`, `eu_against1m_full`).
+- **The first hour on EURUSD** (09:00-10:00 Amsterdam: 21 trades, 38 %, -3.9R) is the worst hour; `eu_sess10_full`
+  starts at 10:00. On BTC the last hour (16:00) is the worst; on gold 10:00.
+- **Stops**: EURUSD and gold losers have the tighter stops (11.6 vs 16.5 pips; 5.7 vs 7.1 USD), BTC the wider. A larger
+  stop minimum on EURUSD (12 pips) is a reading to run after these.
+- The weekday and wait-time cuts differ per market and are left as observations.
+
+Results of these runs are added below when they finish.
