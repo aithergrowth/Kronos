@@ -35,16 +35,17 @@ python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --b
 python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute   # demo orders, after your Approve tap
 ```
 
-Three markets (4 October: EURUSD and GBPUSD on the live profile, BTCUSD on `config/dorus_live_btc.yaml`, which only
-raises the stop minimum to 60 USD and drops the 1H requirement from the bias; see `docs/backtests/winrate/README.md`,
-"Frequency"). One PowerShell window per market, each with the venv active; the guard in each window reads the same
-account's equity, so the FTMO margins hold account-wide while every market keeps at most one open trade:
+Three markets (4 October: EURUSD on the live profile, XAUUSD on `config/dorus_live_gold.yaml` (the bias gate: two of
+1D/4H/1H with the 1H), BTCUSD on `config/dorus_live_btc.yaml` (stop minimum 60 USD, no 1H requirement); GBPUSD runs on
+the live profile when wanted. See `docs/backtests/winrate/README.md`, "Frequency". One PowerShell window per market,
+each with the venv active; the guard in each window reads the same account's equity, so the FTMO margins hold
+account-wide while every market keeps at most one open trade:
 
 ```shell
-python -m kronos_trader --config config/dorus_live.yaml mt5-test --symbol GBPUSD --tf 15m      # once: the broker's symbol names
-python -m kronos_trader --config config/dorus_live_btc.yaml mt5-test --symbol BTCUSD --tf 15m  # (set mt5_symbol in the config if they differ)
+python -m kronos_trader --config config/dorus_live_gold.yaml mt5-test --symbol XAUUSD --tf 15m  # once: the broker's symbol names
+python -m kronos_trader --config config/dorus_live_btc.yaml mt5-test --symbol BTCUSD --tf 15m   # (set mt5_symbol in the config if they differ)
 python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5
-python -m kronos_trader --config config/dorus_live.yaml live --symbol GBPUSD --broker mt5
+python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5
 python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker mt5
 ```
 
