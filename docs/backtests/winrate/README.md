@@ -189,15 +189,15 @@ visit, 7 zones for R:R under 0.5, 2 signals for the open position.
 | Variant (EURUSD) | 2026 trades | Win | Sum R | Max dd | 2023-2026 (guard off) | Verdict |
 |---|---|---|---|---|---|---|
 | Live profile | 10 | 70 % | +5.9R | -2.0R | 73 trades, 49 %, +11.8R, dd -11.3R | the reference |
-| Two open trades (`prop_firm.max_open_trades 2`, `lev_open2_y26`) | 11 | 73 % | +7.1R | -2.0R | see the line below the table | the 14 September 08:45 setup, +1.2R; kept per market in the demo (one process per market) |
-| Sessions 08-18 (`lev_sess0818_y26`) | 19 | 58 % | +6.7R | -3.0R | see the line below the table | twice the trades, lower quality; GBPUSD 2026 16 trades, +2.0R (from +3.1R) |
+| Two open trades (`prop_firm.max_open_trades 2`, `lev_open2_y26`, `ng_open2_full`) | 11 | 73 % | +7.1R | -2.0R | 87 trades, 46 %, +10.3R, dd -15.3R (2024 -8.4R) | the 14 September 08:45 setup in 2026, but worse over the whole period; not taken (the demo runs one process per market with one open trade each) |
+| Sessions 08-18 (`lev_sess0818_y26`, `ng_sess0818_full`) | 19 | 58 % | +6.7R | -3.0R | 103 trades, 46 %, +0.9R, dd -9.8R | twice the trades, the edge gone over the whole period; GBPUSD 2026 16 trades, +2.0R (from +3.1R); not taken |
 | Second visits traded (`allow_retest`) | 10 | 70 % | +5.9R | -2.0R | - | no change: the refused visits never confirmed |
 | News filter off | 10 | 70 % | +5.9R | -2.0R | - | no change in 2026 |
 | Entry at most 20 pips outside the zone (`out_p20_y26`) | 9 | 67 % | +5.6R | -2.0R | - | the far entries (39, 23 pips) won; 25 % of the height: 6 trades +4.3R; 10 pips: 6, +3.4R |
 | Bias conflict rule "recent" (`rec_eu_y26`) | 30 | 40 % | -3.8R | -5.0R | - | more M+W+D swings, the scalps -7.5R; rejected |
 
-2023-2026 with the guard off: two open trades and sessions 08-18 are in `ng_open2_full` / `ng_sess0818_full` (rows
-filled in below when the runs end).
+2023-2026 with the guard off (the halting limits at 1000 %, as in the version-3 runs above): the live profile 73 trades,
+49 %, +11.8R, dd -11.3R.
 
 ### A second market: GBPUSD on the same profile
 
@@ -227,6 +227,22 @@ The stop minimum is scaled to price: 8 pips on EURUSD is 0.07 % of price, 0.07 %
 
 BTC pays through a few far targets (planned R:R 8-17 on the origin rule) at a 40 % win rate, the opposite shape of the
 EURUSD profile; the sum is strong, the month-to-month swing wide (June +11.7R / +22.2R, August -1.4R / -4.4R).
+
+### What goes into the demo and what does not
+
+### September 2026 as a challenge month on the four markets Max watches
+
+EURUSD, gold, BTC and the dollar index, the live profile (BTC without the 1H requirement), 100k, each market its own
+process. DXY (`dxy_sep`): Yahoo 5m/15m/1H bars from 26 July, the committed TradingView daily/weekly/monthly
+(`data/dxy`), a 0.01 pip; four trades, one won (+0.6R), three longs stopped on 2, 18 and 21 September while the EURUSD
+shorts of the same dollar view won. Together 12 trades, -0.3R: EURUSD +3.5R, gold -0.4R, BTC -1.0R, DXY -2.4R. At 1 %
+risk -0.3 %, max dd -2.5 %, worst day -1.0 %; at 2 % -0.8 %, dd -4.9 %, worst day -2.0 %. No rule broken, nothing
+earned. DXY stays the bias mirror for EURUSD (`bias.mirror_symbol`), not a market.
+
+2026 month by month on EURUSD + gold + BTC (R, closed trades): Jan +1.2, Feb -0.6, Mar +4.2, Apr +4.8, May 0.0,
+Jun +27.3 (BTC +22.2 in one trade), Jul -1.0, Aug -4.0, Sep +2.1, Oct +7.4. Compounded at 1 % of equity per trade:
++10 % on 3 June, +48.7 % by the end of September, max dd -7.7 %, worst day -2.8 %, inside FTMO's 5 % / 10 %. At 1.5 %:
+max dd -11.4 % and a -5.0 % day in August, the challenge lost. So 1 % per trade, three markets, and months, not weeks.
 
 ### What goes into the demo and what does not
 
