@@ -116,6 +116,29 @@ def test_max_entry_depth_rejects_an_entry_deep_in_the_zone(scenario):
     assert outside is not None and reasons == []
 
 
+def test_max_entry_outside_rejects_a_shift_that_closed_far_from_the_zone(scenario):
+    """With ``entry_outside_zone`` the shift's close may lie past the zone; ``max_entry_outside`` (fraction of the zone's
+    height) and ``max_entry_outside_pips`` cap how far, whichever is hit first.  Off by default; an entry inside the
+    zone is never affected."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]          # bullish 100.6-110.0, height 9.4
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 104.0, 100.0, 102.0)
+    good = {T.H_1: StubStructure(bsl=[130.0])}
+    near = round(poi.high + 0.1 * poi.height, 2)      # 10 % of the height past the zone (94 pips of 0.01)
+    far = round(poi.high + 0.6 * poi.height, 2)       # 60 %
+    default, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, far, good, RiskParams(stop_basis="confirmation", min_rr=0.5), 100_000)
+    assert default is not None
+    params = RiskParams(stop_basis="confirmation", min_rr=0.5, max_entry_outside=0.25)
+    refused, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, far, good, params, 100_000)
+    assert refused is None and "60%" in reasons[0] and "did not form at the zone" in reasons[0]
+    ok, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, near, good, params, 100_000)
+    assert ok is not None and reasons == []
+    inside, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, round(poi.high - 1.0, 2), good, params, 100_000)
+    assert inside is not None and reasons == []
+    by_pips = RiskParams(stop_basis="confirmation", min_rr=0.5, max_entry_outside_pips=50)
+    refused, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, near, good, by_pips, 100_000)
+    assert refused is None and "94.0 pips" in reasons[0] and "max 50" in reasons[0]
+
+
 def test_tp_max_rr_takes_a_nearer_liquidity_when_the_floor_target_is_too_far(scenario):
     """With ``tp_max_rr`` a liquidity level above the confirmation timeframe whose R:R lies between ``min_rr`` and the cap
     replaces a floor target beyond the cap: the nearest such level by default, the farthest with ``tp_cap_choice``;

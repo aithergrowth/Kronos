@@ -281,6 +281,19 @@ def build_setup(
             reasons.append(f"entry {entry} lies {depth:.0%} of the zone's height inside it (max {params.max_entry_depth:.0%}): "
                            f"no room for the stop")
             return None, reasons
+    if params.max_entry_outside > 0 or params.max_entry_outside_pips > 0:
+        outside = entry - poi.high if direction is Direction.LONG else poi.low - entry      # > 0: the close is past the zone
+        if outside > 0:
+            frac = outside / poi.height if poi.height > 0 else 0.0
+            pips = outside / spec.pip_size if spec.pip_size > 0 else 0.0
+            if params.max_entry_outside > 0 and frac > params.max_entry_outside:
+                reasons.append(f"entry {entry} lies {pips:.1f} pips ({frac:.0%} of the zone's height) outside the zone "
+                               f"(max {params.max_entry_outside:.0%}): the shift did not form at the zone")
+                return None, reasons
+            if params.max_entry_outside_pips > 0 and pips > params.max_entry_outside_pips:
+                reasons.append(f"entry {entry} lies {pips:.1f} pips outside the zone (max {params.max_entry_outside_pips:g}): "
+                               f"the shift did not form at the zone")
+                return None, reasons
     if params.stop_basis == "protector":
         level = protection_level if protection_level is not None else poi.protector_extreme
         stop_note = "stop behind the protected zone (P)"

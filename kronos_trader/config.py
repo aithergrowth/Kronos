@@ -197,6 +197,11 @@ class RiskParams:
                                         # edge price enters by (an entry outside the zone counts as 0): deeper, the P is a few pips away and the stop
                                         # has no room ("kan je stoploss nog wat ruimte geven", A 00:31:22; his entries sit at the zone's edge,
                                         # docs/dossiers/SOURCE_TRADES.md). R6: entries deeper than half the zone 48 trades, 12 % won
+    max_entry_outside: float = 0.0      # 0 = off; else with entry_outside_zone the shift's close may lie at most this fraction of the zone's height
+                                        # outside it (beyond the edge price left by). His entries sit 1.5-1.6 pips from the zone's edge (suite
+                                        # readings C, D); the live replay of Aug-Sep 2026 entered 39 pips under a 61-pip 4H zone (14 Sep) and
+                                        # 11 pips above a 29-pip 1H zone (3 Aug): docs/practice/2026-09/EURUSD/v3/README.md
+    max_entry_outside_pips: float = 0.0 # 0 = off; else the same cap in pips, whichever of the two is hit first
     tp_max_rr: float = 0.0              # 0 = off; else when the nearest liquidity on tp_floor_tf or higher lies beyond this R:R, the nearest liquidity
                                         # on any timeframe above the confirmation timeframe that still gives min_rr is taken instead ("mijn keuze gaat
                                         # eerder naar één of twee risk reward ... zolang het risk-reward-wijs aantrekkelijk blijft", A 01:28:01-01:28:23;
