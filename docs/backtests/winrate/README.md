@@ -625,3 +625,74 @@ the plan is 1.0 % with `[[-3, 0.5]]`: paying out every month keeps no buffer, an
 smaller than the backtest's loses most funded accounts within a year. The steps only change the stake, so the
 replay on fixed ledgers is exact apart from the compounding (the replay risks a share of the start, the bot of the
 equity).
+
+### Strategy sweep on recent data (5 October, afternoon)
+
+The backtester got about four times faster the same day (CandleSeries views instead of frame copies, cached zone
+scans, a bisect news check; trades and equity byte-identical to the old code on NAS100, EURUSD and gold over
+July 2025 to September 2026 and on BTC, February to March 2026), so each profile could be tried with a dozen changes
+on July 2025 to September 2026 (one open trade, guard off). Change in R against the profile (`sweep3`):
+
+| Variant | BTCUSD | XAUUSD | EURUSD | GBPUSD | NAS100 |
+|---|---|---|---|---|---|
+| base (R, trades, win %) | +45.0 (57, 44 %) | +14.0 (39, 54 %) | +17.6 (28, 71 %) | +4.8 (11, 64 %) | +3.3 (34, 44 %) |
+| nod1 | -0.7 | +0.0 | -0.2 | +0.0 | +1.0 |
+| minrr1 | -19.4 | -0.1 | -0.6 | -0.1 | -0.2 |
+| minrr15 | -22.3 | -5.6 | -12.2 | -2.9 | +1.9 |
+| tp_near | -10.7 | -1.6 | -0.6 | +0.0 | +4.4 |
+| tp_far | -9.6 | +0.4 | -3.8 | -2.4 | +0.6 |
+| stop_tight | +0.0 | +0.0 | -1.9 | +0.0 | +0.0 |
+| stop_wide | +0.0 | +0.0 | -6.1 | -0.4 | +0.0 |
+| depth03 | -27.7 | +1.7 | -2.9 | -1.0 | +1.2 |
+| conf15 | -43.7 | -12.1 | -11.6 | -6.0 | -5.3 |
+| bms | -6.8 | -13.8 | +2.3 | +5.8 | -3.9 |
+| sess_wide | -15.6 | +4.8 | -7.2 | -3.8 | +2.5 |
+| cap3 | -14.9 |  |  |  |  |
+
+nod1 = no daily zones; minrr1/minrr15 = minimum R:R 1.0/1.5; tp_near/tp_far = 2/3 or 5/3 of the target's lookback;
+stop_tight/stop_wide = 0.6/1.5 times the minimum stop; depth03 = entry at most 30 % into the zone; conf15 = 1H zones
+confirmed on 15m; bms = the plain structure break as a confirmation; sess_wide = 08-12 and 13-18; cap3 = BTC's R:R cap
+at 3. Checked over 2023-2026 where the recent window looked better:
+
+| Change | Recent window | 2023-2026 | Taken |
+|---|---|---|---|
+| Gold, sessions 08-12 and 13-18 | +4.8R | 150 trades, +28.1R against 119, +38.7R; drawdown -14.2R against -9.9R | no |
+| NAS100, the same sessions | +2.5R | 97 trades, +13.0R against 76, +13.6R | no |
+| EURUSD / GBPUSD, structure break entries | +2.3R / +5.8R | +21.3R against +21.1R / +17.5R against +12.7R with a -8.2R drawdown | no |
+| Minimum R:R 1.0 | about the same R, fewer trades | EURUSD +22.9R (42 trades) against +21.1R; GBPUSD, gold, NAS100 worse | no |
+| EURUSD fixed target 2R / 3R | +1.1R / -1.4R | +18.2R / +25.7R against +21.1R; drawdown -11R / -12R against -5.3R | no |
+| Gold fixed target 2R / 3R | +4.3R / +8.3R | +42.0R / +60.6R against +38.7R; 3R: +43.3R in 2025, worse in the other three years | no |
+| BTC 1H zones at most 24 candles old | | 128 trades, +59.3R against 145, +62.3R | no |
+| Break-even at 2R (EURUSD / GBPUSD / NAS100 / gold / BTC) | 0 / 0 / 0 / -1.6R / +1.0R | | no |
+| Entry on the first candle after the shift | identical on all five | | no |
+| **NAS100, close after 48 h (`exits.max_hold_hours`)** | | **78 trades, 53 %, +25.6R, drawdown -5.4R against 76, 47 %, +13.6R, -7.2R** (24 h: +26.8R) | **yes** |
+| The same 48 h limit on the others | | EURUSD +22.1R, GBPUSD +10.3R, gold +33.9R, BTC +53.5R (against +21.1R / +12.7R / +38.7R / +62.3R) | no |
+
+New markets on the EURUSD profile (10-pip minimum stop) and UK100 on the NAS100 profile (5 points), 2023-2026:
+GBPJPY 45 trades -22.7R, AUDJPY 45 trades -13.2R, UK100 67 trades -5.0R, EURJPY 48 trades +22.4R (2023 -5.8R,
+2024 -0.7R, 2025 +20.0R with one trade of +17.7R, 2026 +8.9R): none taken; EURJPY is watched. A correlation rule
+(no EURUSD and GBPUSD trade the same way at once) changed the five-market account by 4 trades: they overlapped six times
+in two and a half years. BTC's confirmation-candle volume (against the day's median) sorted nothing: the quartiles
+won 59 / 53 / 44 / 47 %, without a pattern across the years. Costs the backtests leave out (commission, slippage) take
+3-24 % of the R at FTMO-like rates: EURUSD +21.1R to +18.0-19.2R, gold +38.7R to +36.1-37.4R, BTC +62.3R to
++47.2-55.8R with 15-35 points more per trade.
+
+### The daily candles live sees (5 October, evening)
+
+A review of live against backtest found that the 1D/1W/1M candles of `data/histdata*` are TradingView OANDA bars,
+not built from the HistData minutes the rest uses, and that HistData's week holds a Friday hour in summer that no
+New York + 7 server has. `scripts/build_mt5_like.py` rebuilds every timeframe from the minutes (GBPUSD from its 5m bars): the weekend
+cut at Friday 17:00 to Sunday 17:00 New York, 4H and up anchored at 17:00 New York, the TradingView bars kept only
+before the first rebuilt one. The same profiles over 2023-2026:
+
+| Market | TradingView higher timeframes | MT5-like candles |
+|---|---|---|
+| EURUSD | 58 trades, 55 %, +21.1R, -5.3R | 57 trades, 49 %, +11.3R, -6.0R (+3.2 / -0.4 / +1.8 / +6.7) |
+| GBPUSD | 43 trades, 58 %, +12.7R, -5.0R | 48 trades, 54 %, +8.6R, -6.1R |
+| Gold | 119 trades, 45 %, +38.7R, -9.9R | 118 trades, 45 %, +36.6R, -8.2R (+8.5 / +10.4 / +8.6 / +9.1) |
+
+Gold holds; EURUSD and GBPUSD keep about half. On these candles, two open at 1.5 % with the drawdown steps, February
+2024 to September 2026: the four demo markets (EURUSD, GBPUSD, gold, BTC) 9.6 trades a month, the median month +1.7 %,
+the average +4.8 % (+2.6 % without June 2026), the challenge funded in 89 % of the starts (median 140 days); with
+NAS100 and its 48 h limit 11.4 trades a month, median +3.2 %, average +5.7 % (+3.6 % without June 2026), funded 98 %
+(median 105 days), 81 % with every trade 0.10R worse. From here on the research runs on these candles.
