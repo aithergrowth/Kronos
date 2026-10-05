@@ -640,3 +640,46 @@ def test_the_engine_recomputes_a_candle_whose_values_changed():
     a = eng.structure_for("EURUSD", early)
     assert eng.structure_for("EURUSD", early) is a
     assert eng.structure_for("EURUSD", late) is not a
+
+
+def test_a_refused_break_even_is_retried_without_a_new_trigger(setup):
+    """The trigger was reached once and the move refused: 15 minutes later it is sent again even though no newer candle
+    reached the trigger (the move is owed, the trigger is history)."""
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    pos.breakeven_r = 0.5
+    high = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.104, 1.099, 1.1)]
+    flat = [(1.1, 1.101, 1.099, 1.1)] * 3
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(high, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    calls = []
+    real = broker.modify_stop
+
+    def flaky(position_id, stop):
+        calls.append(stop)
+        if len(calls) == 1:
+            raise RuntimeError("modify stop failed: retcode 10018 Market closed")
+        real(position_id, stop)
+    broker.modify_stop = flaky
+    runner.step(NOW + pd.Timedelta(1, unit="min"))                         # refused
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(flat, T.MIN_15, start="2026-10-01 08:30", symbol="EURUSD")}
+    runner.step(NOW + pd.Timedelta(16, unit="min"))                        # no new trigger, but 15 minutes later
+    assert len(calls) == 2 and pos.breakeven_done and pos.stop == pos.entry
+
+
+def test_a_paper_restart_does_not_replay_old_candles_or_reuse_ids(setup):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True)
+    runner.step(NOW)
+    for _ in range(3):
+        broker.place_market_order("EURUSD", Direction.LONG, 0.1, 1.09, 1.12, 10.0, 0.01, 4.0, price=1.1, ts=NOW)
+    for p in list(broker.open_positions())[1:]:
+        broker.close_position(p.id, "manual", price=1.1, ts=NOW)
+    runner.save_paper()
+    fresh = PaperBroker(Settings())
+    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True)
+    assert again._fed_until == runner._fed_until and again._fed_until is not None
+    assert fresh.place_market_order("EURUSD", Direction.SHORT, 0.1, 1.11, 1.09, 10.0, 0.01, 4.0, price=1.1, ts=NOW).id == "P5"

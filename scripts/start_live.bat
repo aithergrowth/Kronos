@@ -9,6 +9,10 @@ rem The pull and the windows sit in one block: cmd reads the whole block before 
 rem this file cannot garble the lines still to come; the new version takes effect the next time. Without network
 rem the pull fails and the windows start on the code already here.
 cd /d "%~dp0.."
+rem The demo terminal by its own path: with the FTMO terminal installed too, the windows must not pick a terminal
+rem themselves (a reconnect could log the FTMO terminal in to the demo account). Set MT5_PATH yourself when the
+rem MetaQuotes terminal lives somewhere else.
+if not defined MT5_PATH if exist "C:\Program Files\MetaTrader 5\terminal64.exe" set "MT5_PATH=C:\Program Files\MetaTrader 5\terminal64.exe"
 (
   git pull --ff-only
   start "EURUSD" powershell -NoExit -Command ".\.venv\Scripts\Activate.ps1; python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute --no-approval"

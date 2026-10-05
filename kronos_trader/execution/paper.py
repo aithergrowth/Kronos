@@ -5,7 +5,6 @@ candle, fills a stop at the open when a candle gaps through it, moves the stop t
 break-even per the exit rules and never takes partials."""
 from __future__ import annotations
 
-import itertools
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -32,7 +31,7 @@ class PaperBroker(Broker):
         self.closed: List[ClosedTrade] = []
         self.equity_curve: List[Tuple[pd.Timestamp, float]] = []
         self._last_price: Dict[str, float] = {}
-        self._ids = itertools.count(1)
+        self._last_id = 0
         self._close_cursor = 0
         self._restored_realized: List[Tuple[pd.Timestamp, float]] = []   # closes before a restart (day/month baselines)
 
@@ -104,8 +103,7 @@ class PaperBroker(Broker):
                               "risk_amount": p.risk_amount, "risk_distance": p.risk_distance, "breakeven_r": p.breakeven_r,
                               "initial_stop": p.initial_stop, "breakeven_done": p.breakeven_done, "status": p.status,
                               "meta": {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v)) for k, v in p.meta.items()}})
-        ids = [int(p.id[1:]) for p in self.positions.values() if p.id[1:].isdigit()]
-        return {"balance": self._balance, "initial_balance": self.initial_balance, "next_id": max(ids + [0]) + 1,
+        return {"balance": self._balance, "initial_balance": self.initial_balance, "next_id": self._last_id + 1,
                 "positions": positions, "realized": realized}
 
     def restore(self, state: Dict[str, Any]) -> None:
@@ -120,7 +118,7 @@ class PaperBroker(Broker):
                            initial_stop=float(d["initial_stop"]), breakeven_done=bool(d.get("breakeven_done", False)),
                            meta=dict(d.get("meta") or {}), status=str(d.get("status", "filled")))
             self.positions[pos.id] = pos
-        self._ids = itertools.count(int(state.get("next_id", 1)))
+        self._last_id = int(state.get("next_id", 1)) - 1
         self._restored_realized = [(pd.Timestamp(at), float(p)) for at, p in state.get("realized", [])]
 
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
@@ -146,7 +144,7 @@ class PaperBroker(Broker):
         bid_off, ask_off = self._offsets(symbol)
         mid = fill - (ask_off if direction is Direction.LONG else bid_off)
         pos = Position(
-            id=f"P{next(self._ids)}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
+            id=f"P{self._next_id()}", symbol=symbol, direction=direction, lots=float(lots), entry=fill,
             stop=float(stop), take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None),
             risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
             initial_stop=float(stop), meta=dict(meta or {}),
@@ -154,6 +152,10 @@ class PaperBroker(Broker):
         self.positions[pos.id] = pos
         self._last_price[symbol] = mid
         return pos
+
+    def _next_id(self) -> int:
+        self._last_id += 1
+        return self._last_id
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         self.positions[position_id].stop = float(stop)

@@ -178,7 +178,15 @@ class TelegramNotifier:
         return self.send("\n".join(lines), reply_markup=keyboard)
 
     def test(self) -> bool:
-        return self.send("kronos_trader connected ✅")
+        """One message straight through the API: unlike send(), a refusal (a wrong chat id) raises TelegramError, so the
+        telegram-test command can say what is wrong."""
+        text = f"{self.prefix}kronos_trader connected ✅"
+        self.sent.append(text)
+        if self.dry_run:
+            print("[telegram dry-run]\n" + text)
+            return False
+        self._call("sendMessage", {"chat_id": self.chat_id, "text": text, "disable_web_page_preview": True})
+        return True
 
     # ------------------------------------------------------------ decisions
     def queue_decision(self, short_id: str, approved: bool, user_id: Optional[int] = None) -> None:

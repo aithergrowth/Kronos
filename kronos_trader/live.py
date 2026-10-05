@@ -334,7 +334,10 @@ class LiveRunner:
         if self.paper_path is None or not self.paper_path.exists():
             return
         try:
-            self.broker.restore(json.loads(self.paper_path.read_text(encoding="utf-8")))
+            saved = json.loads(self.paper_path.read_text(encoding="utf-8"))
+            self.broker.restore(saved.get("broker", saved))
+            if saved.get("fed_until"):                 # the candles it already saw are not fed again after a restart
+                self._fed_until = pd.Timestamp(saved["fed_until"])
             n = len(self.broker.open_positions())
             print(f"[live] {self.symbol}: paper account restored: balance {self.broker.balance():,.2f}, {n} open trade(s)")
         except Exception as exc:
@@ -346,7 +349,8 @@ class LiveRunner:
         try:
             self.paper_path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.paper_path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(self.broker.state(), indent=1), encoding="utf-8")
+            state = {"broker": self.broker.state(), "fed_until": str(self._fed_until) if self._fed_until is not None else None}
+            tmp.write_text(json.dumps(state, indent=1), encoding="utf-8")
             os.replace(tmp, self.paper_path)
         except Exception as exc:
             print(f"[live] {self.symbol}: paper account not saved ({exc})")
@@ -828,17 +832,22 @@ class LiveRunner:
             if retry_at is not None and last.timestamp < retry_at:
                 continue
             extreme = last.high if pos.direction.sign > 0 else last.low
-            if breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):
+            # once the trigger was reached, a refused move is tried again every 15 minutes whatever price does since:
+            # the trigger is history, the move is still owed
+            if pos.meta.get("breakeven_pending") or breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme,
+                                                                       pos.breakeven_r):
                 try:
                     self.broker.modify_stop(pos.id, pos.entry)
                 except Exception as exc:                   # e.g. 10016 when price is back under the entry: keep the
-                    pos.meta["breakeven_retry_at"] = last.timestamp + pd.Timedelta(15, unit="min")   # stop, try again later
+                    pos.meta["breakeven_pending"] = True   # stop, try again later
+                    pos.meta["breakeven_retry_at"] = last.timestamp + pd.Timedelta(15, unit="min")
                     if not pos.meta.get("breakeven_failed_sent"):
                         pos.meta["breakeven_failed_sent"] = True
                         self.note("breakeven_failed", id=pos.id, reason=str(exc))
                         self.notifier.send(f"⚠️ {self.symbol}: stop to break-even on {pos.id} refused ({exc}); trying again "
                                            f"every 15 min, the original stop stays")
                     continue
+                pos.meta.pop("breakeven_pending", None)
                 pos.breakeven_done = True
                 self.note("breakeven", id=pos.id, stop=float(pos.entry))
                 self.notifier.send(f"🔒 {self.symbol}: stop moved to break-even on {pos.id} ({pos.breakeven_r:.0f}R reached)")

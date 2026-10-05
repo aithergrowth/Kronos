@@ -89,6 +89,8 @@ class MT5Broker(Broker):
         self._offset_at: Optional[pd.Timestamp] = None
         self._filling: Dict[str, int] = {}       # per broker symbol: the filling mode the server accepted
         self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
+        self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
+        self.account_login: Optional[int] = None
         if connect:
             self.connect()
 
@@ -104,7 +106,16 @@ class MT5Broker(Broker):
         path = os.environ.get(p.path_env)
         login, password, server = os.environ.get(p.login_env), os.environ.get(p.password_env), os.environ.get(p.server_env)
         creds: Dict[str, Any] = {"login": int(login), "password": password, "server": server} if login and password and server else {}
-        attempts: List[Optional[str]] = [path] if path else [None] + terminal_candidates()
+        if path:
+            attempts: List[Optional[str]] = [path]
+        else:
+            found = terminal_candidates()
+            # with credentials, initialize() logs whatever terminal it reaches in to that account: with two terminals
+            # installed (the demo and FTMO) a scan could log the FTMO terminal in to the demo. Only one is unambiguous.
+            if creds and len(found) > 1:
+                raise RuntimeError(f"several MT5 terminals are installed ({'; '.join(found)}): set MT5_PATH to the "
+                                   f"terminal64.exe of the one for login {login}")
+            attempts = [None] + found
         errors = []
         for candidate in attempts:
             kwargs: Dict[str, Any] = dict(creds)
@@ -112,6 +123,8 @@ class MT5Broker(Broker):
                 kwargs["path"] = candidate
             if self.mt5.initialize(**kwargs):
                 self.terminal_path = candidate
+                info = self.mt5.account_info()
+                self.account_login = int(getattr(info, "login", 0) or 0) if info is not None else None
                 break
             errors.append(f"{candidate or 'running terminal'}: {self.mt5.last_error()}")
         else:
@@ -300,11 +313,25 @@ class MT5Broker(Broker):
                 continue
             offset, close_utc = best
             aligned = abs(offset - (ny_utcoffset(close_utc) + 7 * HOUR)) < pd.Timedelta(1, unit="min")
+            self._ny7 = aligned
             return ny_utcoffset(now) + 7 * HOUR if aligned else offset
         return None
 
     def to_utc(self, server_seconds) -> pd.Timestamp:
-        return pd.Timestamp(int(server_seconds), unit="s") - self.server_offset()
+        return self.stamps_to_utc(pd.Series([int(server_seconds)])).iloc[0]
+
+    def stamps_to_utc(self, server_seconds: pd.Series, symbol: Optional[str] = None) -> pd.Series:
+        """Server times (seconds) to naive UTC. On a New York + 7 server every stamp is converted with the daylight
+        saving of its own moment, so bars from before a switch keep their hour (with today's offset they moved by an
+        hour, and the zones keyed by their time with them); on any other server with the current offset."""
+        offset = self.server_offset(symbol)
+        stamps = pd.to_datetime(pd.Series(server_seconds).astype("int64").reset_index(drop=True), unit="s")
+        if not self._ny7:
+            return stamps - offset
+        local = pd.DatetimeIndex(stamps - pd.Timedelta(hours=7))
+        utc = pd.Series(local.tz_localize("America/New_York", ambiguous="NaT", nonexistent="NaT")
+                        .tz_convert("UTC").tz_localize(None))
+        return utc.where(utc.notna(), stamps - offset)
 
     def _position_from_mt5(self, p) -> Position:
         """A position found on the terminal (after a restart, or another window's): its break-even trigger comes from the
@@ -392,12 +419,27 @@ class MT5Broker(Broker):
             except Exception:
                 pass
             try:
-                self.connect()
+                # the terminal this process started on, nothing else: another terminal on the laptop (FTMO beside the
+                # demo) must never be logged in to this account or traded from this window
+                kwargs: Dict[str, Any] = {}
+                p = self.params
+                login, password, server = (os.environ.get(p.login_env), os.environ.get(p.password_env),
+                                           os.environ.get(p.server_env))
+                if login and password and server:
+                    kwargs = {"login": int(login), "password": password, "server": server}
+                if getattr(self, "terminal_path", None):
+                    kwargs["path"] = self.terminal_path
+                if not self.mt5.initialize(**kwargs):
+                    return False, f"MT5 not reachable ({self.mt5.last_error()})"
                 info = self.mt5.account_info()
             except Exception as exc:
                 return False, f"MT5 not reachable ({exc})"
             if info is None:
                 return False, "MT5 not reachable (terminal closed or restarting)"
+        expected = getattr(self, "account_login", None)
+        got = int(getattr(info, "login", 0) or 0)
+        if expected and got and got != expected:
+            return False, f"MT5 is logged in to account {got}, this window trades {expected}: not trading"
         term = self.mt5.terminal_info()
         if term is not None and not getattr(term, "connected", True):
             return False, "MT5 is not connected to its trade server"
@@ -589,10 +631,16 @@ class MT5Broker(Broker):
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             raise RuntimeError(f"close failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
         pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
-        deals = list(mt5.history_deals_get(position=int(p.ticket)) or [])          # the entry and the close: both commissions
-        if not deals and getattr(result, "deal", 0):
-            deals = list(mt5.history_deals_get(ticket=int(result.deal)) or [])
-        pnl = self._deal_pnl(deals) if deals else float(getattr(p, "profit", 0.0) or 0.0)
+        deals: List[Any] = []
+        for attempt in range(3):            # the closing deal can reach the terminal's history a moment after order_send
+            deals = list(mt5.history_deals_get(position=int(p.ticket)) or [])
+            if any(d.entry == mt5.DEAL_ENTRY_OUT for d in deals):
+                break
+            time.sleep(0.3 * self.retry_seconds)
+        if any(d.entry == mt5.DEAL_ENTRY_OUT for d in deals):
+            pnl = self._deal_pnl(deals)                                          # the entry and the close: both commissions
+        else:                                                                     # not in the history yet: the position's
+            pnl = float(getattr(p, "profit", 0.0) or 0.0) + self._deal_pnl(deals)  # profit and the entry's commission
         return self._finish(pos, float(result.price), reason, ts, pnl)
 
     def recent_closes(self) -> List[ClosedTrade]:
@@ -623,7 +671,7 @@ class MT5Broker(Broker):
                                + (f". Symbols on this server like it: {', '.join(near[:12])}" if near else "")
                                + f"; check the name in Market Watch (right-click, Symbols) and set mt5_symbol in the profile")
         df = pd.DataFrame(rates)
-        df["timestamp"] = pd.to_datetime(df["time"].astype("int64"), unit="s") - self.server_offset(symbol)
+        df["timestamp"] = self.stamps_to_utc(df["time"], symbol).values
         df = df.rename(columns={"tick_volume": "volume"})
         return CandleSeries(df[["timestamp", "open", "high", "low", "close", "volume"]].reset_index(drop=True),
                             timeframe, symbol.upper())

@@ -392,3 +392,15 @@ def test_a_second_account_has_its_own_journal_and_a_tag():
     n.send("EURUSD BUY filled")
     n.send_photo("charts/x.png", "EURUSD 1H touch")
     assert n.sent[0] == "[FTMO] EURUSD BUY filled" and n.sent[1].endswith("[FTMO] EURUSD 1H touch")
+
+
+def test_telegram_test_reports_a_rejected_chat():
+    """send() never raises, but the telegram-test check must: a wrong chat id comes back as TelegramError."""
+    from kronos_trader.notify.telegram import TelegramError, TelegramNotifier
+    n = TelegramNotifier(token="123:abc", chat_id="42")
+
+    def rejected(method, payload):
+        raise TelegramError(method, 400, "Bad Request: chat not found")
+    n._call = rejected
+    with pytest.raises(TelegramError, match="chat not found"):
+        n.test()

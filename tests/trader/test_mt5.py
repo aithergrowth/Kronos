@@ -506,3 +506,65 @@ def test_connection_ok_initialises_a_broken_link_again():
     api.initialize = lambda **kw: False                                    # the terminal stays closed
     ok, reason = b.connection_ok()
     assert not ok and "not reachable" in reason
+
+
+def test_reconnect_stays_on_its_terminal_and_its_account(monkeypatch):
+    """A reconnect goes to the terminal this process started on, never another one, and refuses to trade when that
+    terminal is now logged in to another account (the FTMO terminal beside the demo); with credentials and several
+    terminals installed the start asks for MT5_PATH instead of scanning them."""
+    from kronos_trader.execution import mt5 as mod
+    api = FlakyMT5()
+    b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    b.terminal_path = r"C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+    b.account_login = 62724281
+    seen = []
+    real_init = api.initialize
+
+    def init(**kw):
+        seen.append(kw.get("path"))
+        return real_init(**kw)
+    api.initialize = init
+    api.down = True
+    assert b.connection_ok() == (True, "ok") and seen == [b.terminal_path]
+    api.account_info = lambda: SimpleNamespace(login=531000123, server="FTMO-Demo", currency="USD", balance=10000.0,
+                                               equity=10000.0, leverage=100, trade_mode=0)
+    ok, reason = b.connection_ok()
+    assert not ok and "531000123" in reason and "62724281" in reason
+    monkeypatch.setenv("MT5_LOGIN", "62724281"); monkeypatch.setenv("MT5_PASSWORD", "pw"); monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
+    monkeypatch.delenv("MT5_PATH", raising=False)
+    monkeypatch.setattr(mod, "terminal_candidates", lambda: [r"C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+                                                              r"C:\\Program Files\\FTMO MetaTrader 5\\terminal64.exe"])
+    with pytest.raises(RuntimeError, match="set MT5_PATH"):
+        MT5Broker(Settings(), api=FakeMT5(), clock=lambda: NOW)
+
+
+def test_close_pnl_waits_for_the_closing_deal():
+    """Right after order_send the closing deal may not be in the history yet: the P&L is then the position's profit and
+    the entry's commission, never the entry commission alone."""
+    class Lagging(FakeMT5):
+        lag = False
+
+        def history_deals_get(self, *args, position=None, ticket=None):
+            deals = super().history_deals_get(*args, position=position, ticket=ticket)
+            return [d for d in deals if d.entry != self.DEAL_ENTRY_OUT] if self.lag else deals
+    api = Lagging()
+    b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    b.retry_seconds = 0.0
+    pos = b.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    api.positions[0].profit = 14.5
+    api.lag = True
+    trade = b.close_position(pos.id, "time", ts=NOW)
+    assert trade.pnl == pytest.approx(14.5 - 0.5)
+
+
+def test_bar_times_keep_their_hour_across_a_dst_switch(monkeypatch):
+    """On a New York + 7 server the bars from before the US switch (1 Nov 2026) keep their UTC hour after it: each stamp
+    is converted with its own daylight saving (with today's offset they moved by an hour)."""
+    monkeypatch.delenv("MT5_SERVER_OFFSET_HOURS", raising=False)
+    api = WeekFake(3, pd.Timestamp("2026-10-30 20:30"))
+    after = MT5Broker(Settings(), api=api, clock=lambda: pd.Timestamp("2026-11-02 10:00"))
+    assert after.server_offset() == pd.Timedelta(2, unit="h") and after._ny7
+    summer = int(pd.Timestamp("2026-10-30 23:00").timestamp())      # server time; New York 16:00 EDT = 20:00 UTC
+    winter = int(pd.Timestamp("2026-11-02 12:00").timestamp())      # server time; New York 05:00 EST = 10:00 UTC
+    out = after.stamps_to_utc(pd.Series([summer, winter]))
+    assert list(out) == [pd.Timestamp("2026-10-30 20:00"), pd.Timestamp("2026-11-02 10:00")]
