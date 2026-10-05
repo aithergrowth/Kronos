@@ -357,3 +357,53 @@ def test_realized_pnl_since_counts_trade_deals_only(broker):
     assert broker.realized_pnl_since(NOW - pd.Timedelta(hours=1)) == pytest.approx(-101.0)
     assert broker.realized_pnl_since(NOW + pd.Timedelta(minutes=30)) == pytest.approx(-100.5)
     assert broker.realized_pnl_since(NOW + pd.Timedelta(hours=2)) == pytest.approx(0.0)
+
+
+class FokOnlyMT5(FakeMT5):
+    """A server that takes only Fill-or-Kill deals and answers IOC with 10030, as MetaQuotes-Demo did on EURUSD."""
+    ORDER_FILLING_RETURN = 2
+
+    def __init__(self, filling_flags=0, refuse_all=False):
+        super().__init__()
+        self.filling_flags, self.refuse_all = filling_flags, refuse_all
+
+    def symbol_info(self, name):
+        info = super().symbol_info(name)
+        if info is not None and self.filling_flags:
+            info.filling_mode = self.filling_flags
+        return info
+
+    def order_send(self, request):
+        if request["action"] == self.TRADE_ACTION_DEAL and (self.refuse_all or request["type_filling"] != self.ORDER_FILLING_FOK):
+            self.requests.append(request)
+            return SimpleNamespace(retcode=10030, order=0, deal=0, price=0.0, comment="Unsupported filling mode")
+        return super().order_send(request)
+
+
+def test_unsupported_filling_mode_falls_back_and_is_remembered():
+    """retcode 10030 (Unsupported filling mode) on the profile's IOC: the same deal goes out again as FOK, and the symbol's
+    next deals (the close included) start with FOK."""
+    api = FokOnlyMT5()
+    b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    pos = b.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    assert pos.status == "filled"
+    assert [r["type_filling"] for r in api.requests] == [api.ORDER_FILLING_IOC, api.ORDER_FILLING_FOK]
+    api.requests.clear()
+    b.close_position(pos.id, "manual", ts=NOW)
+    b.place_market_order("EURUSD", Direction.SHORT, 0.5, 1.1050, 1.0800, 500.0, 0.0051, 4.0, ts=NOW)
+    assert [r["type_filling"] for r in api.requests] == [api.ORDER_FILLING_FOK, api.ORDER_FILLING_FOK]
+
+
+def test_symbol_filling_flags_choose_the_first_mode():
+    """``symbol_info.filling_mode`` bit 1 = FOK only: the first deal already goes out as FOK; nothing accepted -> the
+    refusal is raised with its retcode."""
+    api = FokOnlyMT5(filling_flags=1)
+    b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    assert b.filling_modes("EURUSD") == [api.ORDER_FILLING_FOK, api.ORDER_FILLING_RETURN, api.ORDER_FILLING_IOC]
+    b.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    assert [r["type_filling"] for r in api.requests] == [api.ORDER_FILLING_FOK]
+    stubborn = FokOnlyMT5(refuse_all=True)
+    with pytest.raises(RuntimeError, match="retcode 10030"):
+        MT5Broker(Settings(), api=stubborn, clock=lambda: NOW).place_market_order(
+            "EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    assert len(stubborn.requests) == 3                     # IOC, FOK and RETURN tried once each

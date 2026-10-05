@@ -373,7 +373,8 @@ class MT5Params:
     offset_env: str = "MT5_SERVER_OFFSET_HOURS"   # pin the server-time offset instead of estimating it from ticks
     magic: int = 20260930                         # marks the positions this program opened
     deviation_points: int = 20                    # max slippage for market orders
-    filling: str = "ORDER_FILLING_IOC"            # ORDER_FILLING_FOK for brokers that reject IOC
+    filling: str = "ORDER_FILLING_IOC"            # the first try when the symbol allows it; on retcode 10030 (unsupported filling mode)
+                                                  # the deal goes out again with the symbol's other modes (MT5Broker.filling_modes)
 
 
 @dataclass

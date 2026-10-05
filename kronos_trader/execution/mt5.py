@@ -40,6 +40,7 @@ def utc_now() -> pd.Timestamp:
 
 
 HOUR = pd.Timedelta(1, unit="h")
+INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
 NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
 WEEK_CLOSE_BARS = 3 * 7 * 48  # three weeks of M30 bars: at least two weekend gaps to read the close from
 
@@ -86,6 +87,7 @@ class MT5Broker(Broker):
         self._close_cursor = 0
         self._offset: Optional[pd.Timedelta] = None
         self._offset_at: Optional[pd.Timestamp] = None
+        self._filling: Dict[str, int] = {}       # per broker symbol: the filling mode the server accepted
         if connect:
             self.connect()
 
@@ -376,9 +378,8 @@ class MT5Broker(Broker):
             "magic": self.magic,
             "comment": str((meta or {}).get("comment", "kronos_trader"))[:31],
             "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": getattr(mt5, self.params.filling),
         }
-        result = mt5.order_send(request)
+        result = self._send_deal(request, name)
         if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED):
             raise RuntimeError(f"{symbol} order not accepted: retcode {getattr(result, 'retcode', None)} "
                                f"{getattr(result, 'comment', '')}")
@@ -400,6 +401,41 @@ class MT5Broker(Broker):
             pos.meta["entry_unconfirmed"] = True
         self._positions[pos.id] = pos
         return pos
+
+    def filling_modes(self, name: str) -> List[int]:
+        """The filling modes to try for a deal on ``name``, best first: the one the server took last time, the profile's
+        (mt5.filling) when the symbol allows it, the others the symbol allows (``symbol_info.filling_mode``: bit 1 FOK,
+        bit 2 IOC; none set = unknown, both tried), then RETURN. MetaQuotes-Demo refused IOC on EURUSD with 10030."""
+        mt5 = self.mt5
+        fok, ioc, ret = (getattr(mt5, "ORDER_FILLING_FOK", 0), getattr(mt5, "ORDER_FILLING_IOC", 1),
+                         getattr(mt5, "ORDER_FILLING_RETURN", 2))
+        configured = getattr(mt5, self.params.filling, ioc)
+        info = mt5.symbol_info(name)
+        flags = int(getattr(info, "filling_mode", 0) or 0) if info is not None else 0
+        allowed = [mode for bit, mode in ((1, fok), (2, ioc)) if flags & bit] if flags & 3 else [fok, ioc]
+        order = [self._filling.get(name)]
+        if configured in allowed or configured == ret:
+            order.append(configured)
+        order += allowed + [ret, configured]
+        out: List[int] = []
+        for mode in order:
+            if mode is not None and mode not in out:
+                out.append(mode)
+        return out
+
+    def _send_deal(self, request: Dict[str, Any], name: str):
+        """``order_send`` for a deal, on to the next filling mode while the server answers 10030; the accepted mode is
+        kept for the symbol's next deals."""
+        result = None
+        for mode in self.filling_modes(name):
+            result = self.mt5.order_send({**request, "type_filling": mode})
+            if result is None or result.retcode != INVALID_FILL:
+                if result is not None and result.retcode in (self.mt5.TRADE_RETCODE_DONE, self.mt5.TRADE_RETCODE_PLACED):
+                    if self._filling.get(name) != mode:
+                        print(f"  {name}: filling mode {mode} accepted", flush=True)
+                    self._filling[name] = mode
+                return result
+        return result
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         mt5 = self.mt5
@@ -426,9 +462,9 @@ class MT5Broker(Broker):
             "action": mt5.TRADE_ACTION_DEAL, "symbol": p.symbol, "volume": float(p.volume), "position": p.ticket,
             "type": mt5.ORDER_TYPE_SELL if is_long else mt5.ORDER_TYPE_BUY,
             "price": float(tick.bid if is_long else tick.ask), "deviation": self.deviation, "magic": self.magic,
-            "comment": str(reason)[:31], "type_time": mt5.ORDER_TIME_GTC, "type_filling": getattr(mt5, self.params.filling),
+            "comment": str(reason)[:31], "type_time": mt5.ORDER_TIME_GTC,
         }
-        result = mt5.order_send(request)
+        result = self._send_deal(request, p.symbol)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             raise RuntimeError(f"close failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
         pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
