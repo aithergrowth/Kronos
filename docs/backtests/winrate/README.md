@@ -558,6 +558,37 @@ a gain (8 % is 5.3R at 1.5 %), which the challenge simulations never counted as 
 morning session only, break-even at +1R and two BTC trades at once (each in yearly chunks), and AUDUSD, USDCAD,
 USDCHF and NZDUSD on the EURUSD profile.
 
+### Losing months and the monthly stop (5 October, afternoon)
+
+The five-market account (two open, 1.5 %) lost in 10 of 32 months, five of them more than 3 % (April 2024 -11.0 %:
+BTC -4.3R and gold -3.0R; June 2024 -5.4 %; August 2026 -5.2 %: BTC -2.9R, NAS100 -2.0R). July to September 2026 as a
+whole: 31 trades, 48 %, +0.6R. The August 2026 BTC losers were shorts with the monthly, weekly and daily bearish while
+the 4H had turned up at the bottom of the fall (six of eight lost, most never 0.4R in profit). Over the whole BTC
+ledger the trades against the 4H lost (19, 47 %, -3.5R; with the 4H 99, 59 %, +57.2R); `no_trade_against: [4H]` on
+BTC is running as a backtest. Both directions are traded: EURUSD 36 long / 22 short, gold 97 / 22 (the veto keeps it
+out of shorts against the bullish monthly), BTC 94 / 51, GBPUSD 22 / 21, NAS100 57 / 19.
+
+`scripts/loss_limits.py` replays the combined ledger with a rule that skips trades while it is active:
+
+| Rule | Trades | Sum R | Month avg / median | Losing months | Worst month | Drawdown |
+|---|---|---|---|---|---|---|
+| none | 365 | +128.0R | +6.00 % / +3.60 % | 10 | -11.0 % | -24.2 % |
+| no new trade after a month's closed loss of 2R | 261 | +109.7R | +5.14 % / -0.34 % | 17 | -4.2 % | -14.9 % |
+| **the same at 3R (4.5 % at 1.5 %)** | **311** | **+118.4R** | **+5.55 % / +2.77 %** | **13** | **-5.2 %** | **-15.3 %** |
+| the same at 4R | 342 | +123.9R | +5.81 % / +3.36 % | 11 | -6.3 % | -18.3 % |
+| a week's closed loss of 3R | 356 | +131.8R | +6.18 % / +3.60 % | 10 | -8.7 % | -21.9 % |
+| a pause of 7 days after 4 losses in a row on the account | 340 | +125.9R | +5.90 % / +3.60 % | 9 | -8.0 % | -21.5 % |
+
+A month stop cannot remove losing months (a stopped month cannot recover, so there are more of them), it caps how
+deep they go. At 3R the worst month is -5.2 % instead of -11.0 % and the drawdown halves for about 0.45 % a month; the
+challenge (790 starts) is funded in 91 % instead of 85 %, phase 1 in a median of 56 days instead of 42. Taken:
+`prop_firm.monthly_loss_limit_pct: 4.5` in the live profiles (new in the guard: the month's closed loss from the
+balance at the start of the month). The guard also takes its day and month baselines from the broker's closed P&L
+when it starts (`realized_pnl_since` on the paper and MT5 brokers), so a restart no longer forgets the day's or the
+month's losses. With the BTC 4H rule (ledger estimate) on top: +125.1R, average +5.86 %, worst month -5.1 %, funded
+90 %, phase 1 48 days. The FTMO 10k average payout Max aims at (780 EUR, 7.8 % a month) is +7.8 % on this ledger at
+2 % risk, where the challenge is funded in 74 % of the starts.
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.

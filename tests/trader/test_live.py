@@ -349,3 +349,11 @@ def test_chart_zones_are_the_nearest_tradable_ones(setup, scenario):
     assert 1 <= len(zones) <= 2 and all(z.direction is analysis.decision.direction for z in zones if
                                          any(p.direction is analysis.decision.direction for p in pois))
     assert any(z.key == setup.poi.key for z in runner.chart_zones(analysis, setup=setup, limit=1))
+
+
+
+def test_the_guard_reads_closed_pnl_from_the_broker(setup):
+    broker = PaperBroker(Settings())
+    runner, _ = _runner(setup, broker)
+    assert runner.guard.realized_since == broker.realized_pnl_since
+    assert broker.realized_pnl_since(NOW) == 0.0

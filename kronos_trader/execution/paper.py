@@ -83,6 +83,10 @@ class PaperBroker(Broker):
     def balance(self) -> float:
         return self._balance
 
+    def realized_pnl_since(self, since: pd.Timestamp) -> float:
+        """Closed P&L since ``since`` (naive UTC)."""
+        return float(sum(t.pnl for t in self.closed if t.closed_at is not None and t.closed_at >= pd.Timestamp(since)))
+
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         if symbol is None:
             return list(self.positions.values())

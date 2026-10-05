@@ -332,8 +332,10 @@ def cmd_live(args) -> int:
     print(f"live {symbol}: broker={args.broker} feed={kind} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
     pf = settings.prop_firm
-    print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade, stop at a day of -{pf.daily_loss_limit_pct}% "
-          f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open")
+    month = f", a month of -{pf.monthly_loss_limit_pct}%" if pf.monthly_loss_limit_pct else ""
+    print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
+          f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open "
+          f"({pf.max_open_per_symbol} per market)")
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
             balance = float(broker.balance())

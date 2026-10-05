@@ -51,3 +51,46 @@ def test_two_open_trades_on_the_account_but_one_per_market():
     broker.place_market_order("XAUUSD", Direction.SHORT, 0.1, 2010.0, 1980.0, 1000.0, 10.0, 4.0, price=2000.0, ts=ts)
     ok, reason = guard.can_open(broker, ts, "BTCUSD")
     assert not ok and "per account" in reason                    # two open on the account: the third waits
+
+
+class Account:
+    """Balance-only account for the guard: no open trades, equity = balance."""
+
+    def __init__(self, balance):
+        self.bal = float(balance)
+
+    def equity(self):
+        return self.bal
+
+    def balance(self):
+        return self.bal
+
+    def open_positions(self, symbol=None):
+        return []
+
+
+def test_monthly_loss_stop_waits_for_the_next_month():
+    guard = RiskGuard(PropFirmParams(monthly_loss_limit_pct=4.5), 10_000)
+    acct = Account(10_000)
+    guard.update(pd.Timestamp("2026-10-01 08:00"), acct.equity(), acct.balance())
+    acct.bal = 9_600                                                   # -4 % closed this month
+    assert guard.can_open(acct, pd.Timestamp("2026-10-06 09:00"), "EURUSD") == (True, "ok")
+    acct.bal = 9_540                                                   # -4.6 %
+    ok, reason = guard.can_open(acct, pd.Timestamp("2026-10-07 09:00"), "EURUSD")
+    assert not ok and "monthly loss" in reason and "next month" in reason
+    assert guard.can_open(acct, pd.Timestamp("2026-11-02 09:00"), "EURUSD") == (True, "ok")
+
+
+def test_a_restart_keeps_the_days_and_the_months_losses():
+    guard = RiskGuard(PropFirmParams(monthly_loss_limit_pct=4.5), 10_000)
+    asked = []
+
+    def realized(since):
+        asked.append(since)
+        return -400.0 if since < pd.Timestamp("2026-10-05") else -150.0   # this month -400, today -150
+
+    guard.realized_since = realized
+    guard.update(pd.Timestamp("2026-10-07 10:00"), 9_600, 9_600)
+    assert guard.day_start_balance == pytest.approx(9_750) and guard.month_start_balance == pytest.approx(10_000)
+    assert guard.daily_loss_pct(9_600) == pytest.approx(1.5) and guard.monthly_loss_pct() == pytest.approx(4.0)
+    assert pd.Timestamp("2026-10-06 22:00") in asked and pd.Timestamp("2026-09-30 22:00") in asked   # Prague midnights in UTC

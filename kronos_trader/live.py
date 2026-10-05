@@ -169,6 +169,8 @@ class LiveRunner:
         self.notifier = notifier or TelegramNotifier(params=settings.telegram, dry_run=True)
         self.engine = engine or StrategyEngine(settings)
         self.guard = guard or RiskGuard(settings.prop_firm, settings.account_size)
+        if broker is not None and callable(getattr(broker, "realized_pnl_since", None)) and self.guard.realized_since is None:
+            self.guard.realized_since = broker.realized_pnl_since     # a restart keeps the day's and the month's losses
         self.dry_run = dry_run
         self.require_approval = settings.live.require_approval if require_approval is None else require_approval
         self.approval_timeout_minutes = approval_timeout_minutes if approval_timeout_minutes is not None else settings.live.approval_timeout_minutes

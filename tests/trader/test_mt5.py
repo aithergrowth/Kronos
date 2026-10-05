@@ -346,3 +346,14 @@ def test_bars_are_retried_once_the_terminal_has_loaded_the_history(broker):
     broker.retry_seconds = 0.0
     assert len(broker.get_candles("EURUSD", T.MIN_15, 4)) == 4 and calls["n"] == 2
 
+
+
+
+def test_realized_pnl_since_counts_trade_deals_only(broker):
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    broker.mt5.server_closes(int(pos.id), "sl")                     # entry deal 09:00 (-0.5), exit deal 10:00 (-100.5)
+    broker.mt5.deals.append(SimpleNamespace(ticket=999, position_id=0, entry=0, reason=0, price=0.0, profit=100_000.0,
+                                            commission=0.0, swap=0.0, time=server_seconds(NOW), type=2))   # a deposit
+    assert broker.realized_pnl_since(NOW - pd.Timedelta(hours=1)) == pytest.approx(-101.0)
+    assert broker.realized_pnl_since(NOW + pd.Timedelta(minutes=30)) == pytest.approx(-100.5)
+    assert broker.realized_pnl_since(NOW + pd.Timedelta(hours=2)) == pytest.approx(0.0)

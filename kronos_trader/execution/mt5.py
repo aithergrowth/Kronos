@@ -301,6 +301,21 @@ class MT5Broker(Broker):
     def balance(self) -> float:
         return float(self.mt5.account_info().balance)
 
+    def realized_pnl_since(self, since: pd.Timestamp) -> Optional[float]:
+        """Closed P&L (profit, commission, swap, fee) of the account's trade deals since ``since`` (naive UTC); deposits
+        and other balance operations are left out.  None when the terminal does not answer."""
+        start = pd.Timestamp(since) + self.server_offset() - pd.Timedelta(days=1)      # server time, a day early
+        deals = self.mt5.history_deals_get(start.to_pydatetime(), (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        if deals is None:
+            return None
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        total = 0.0
+        for d in deals:
+            if getattr(d, "type", 0) not in trade_types or self.to_utc(d.time) < pd.Timestamp(since):
+                continue
+            total += self._deal_pnl([d]) + float(getattr(d, "fee", 0.0) or 0.0)
+        return total
+
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         raw = self.mt5.positions_get(symbol=self.mt5_symbol(symbol)) if symbol else self.mt5.positions_get()
         out: List[Position] = []

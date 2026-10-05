@@ -268,6 +268,7 @@ class PropFirmParams:
     max_open_trades: int = 1            # rule: max 1 trade per funded account
     max_open_per_symbol: int = 1        # open trades in one market (the backtests ran one market at a time with one trade open)
     daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
+    monthly_loss_limit_pct: float = 0.0 # 0 = off; else no new trade once the month's closed loss reaches this much of the account
     max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
     drawdown_basis: str = "peak"        # peak: from the highest equity seen (stricter); initial: static floor below the starting balance (FTMO)
     day_timezone: str = "Europe/Prague" # the day for the daily-loss rule starts at midnight here (FTMO: CE(S)T)
