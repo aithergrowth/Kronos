@@ -103,26 +103,31 @@ def map_pois(st: StructureAnalysis, params: Optional[StructureParams] = None, cu
     return unique
 
 
-def update_poi_status(poi: POI, series: CandleSeries, current_price: Optional[float] = None) -> POI:
+def poi_scan(poi: POI, series: CandleSeries) -> Tuple[bool, Optional[int]]:
+    """``(invalidated, first touch index)`` from the closed candles of ``series`` after the zone formed."""
+    start = poi.created_index + 1
+    if start >= len(series):
+        return False, None
+    if poi.direction is Bias.BULLISH:
+        invalid = np.flatnonzero(series.close[start:] < poi.low)
+        touched = np.flatnonzero(series.low[start:] <= poi.high)
+    else:
+        invalid = np.flatnonzero(series.close[start:] > poi.high)
+        touched = np.flatnonzero(series.high[start:] >= poi.low)
+    return bool(invalid.size), (start + int(touched[0]) if touched.size else None)
+
+
+def update_poi_status(poi: POI, series: CandleSeries, current_price: Optional[float] = None,
+                      scan: Optional[Tuple[bool, Optional[int]]] = None) -> POI:
     """Status as of the end of ``series`` (closed candles) and ``current_price``.
 
-    Invalidation = a close beyond the protection line (below P for a bullish zone)."""
-    n = len(series)
-    start = poi.created_index + 1
+    Invalidation = a close beyond the protection line (below P for a bullish zone).  ``scan`` is
+    ``poi_scan(poi, series)`` when the caller kept it (the candles did not change since)."""
     price = float(current_price) if current_price is not None else float(series.close[-1])
-    poi.first_touch_index = None
-    if start < n:
-        if poi.direction is Bias.BULLISH:
-            invalid = np.flatnonzero(series.close[start:] < poi.low)
-            touched = np.flatnonzero(series.low[start:] <= poi.high)
-        else:
-            invalid = np.flatnonzero(series.close[start:] > poi.high)
-            touched = np.flatnonzero(series.high[start:] >= poi.low)
-        if touched.size:
-            poi.first_touch_index = start + int(touched[0])
-        if invalid.size:
-            poi.status = POIStatus.INVALIDATED
-            return poi
+    invalidated, poi.first_touch_index = scan if scan is not None else poi_scan(poi, series)
+    if invalidated:
+        poi.status = POIStatus.INVALIDATED
+        return poi
     if poi.direction is Bias.BULLISH and price < poi.low or poi.direction is Bias.BEARISH and price > poi.high:
         poi.status = POIStatus.TESTED if poi.first_touch_index is not None else POIStatus.FRESH
         return poi
@@ -220,9 +225,10 @@ class VisitTracker:
         if state.last_ts is None:
             start = _visit_scan_start(poi, ltf)
         else:
-            start = int(ltf.timestamps.searchsorted(state.last_ts, side="right"))
+            start = ltf.index_after(state.last_ts)
+        high, low, close, ts_list = ltf.high, ltf.low, ltf.close, ltf.ts_list
         for k in range(start, n):
-            state.step(poi, ltf.high[k], ltf.low[k], ltf.close[k], ltf.ts_list[k], ext, check_invalid)
+            state.step(poi, high[k], low[k], close[k], ts_list[k], ext, check_invalid)
             if state.invalid:
                 break
         return state.visit_start_ts, state.visits, state.invalid

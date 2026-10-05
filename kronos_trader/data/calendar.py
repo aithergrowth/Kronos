@@ -10,6 +10,7 @@ feed, which needs no key.
 """
 from __future__ import annotations
 
+import bisect
 import csv
 from dataclasses import dataclass
 from pathlib import Path
@@ -116,6 +117,7 @@ class NewsCalendar:
         self.after = pd.Timedelta(int(after_minutes), unit="min")
         self.min_importance = min_importance
         self.events: List[NewsEvent] = []
+        self._times: List[pd.Timestamp] = []
         self.add(events)
 
     def add(self, events: Iterable[NewsEvent]) -> None:
@@ -125,12 +127,19 @@ class NewsCalendar:
                 self.events.append(e)
                 known.add((e.time, e.currency, e.title))
         self.events.sort(key=lambda e: e.time)
+        self._times = [e.time for e in self.events]
 
     def blackout(self, symbol: str, ts, spec: Optional[SymbolSpec] = None) -> Optional[NewsEvent]:
         ts = pd.Timestamp(ts)
         wanted = currencies_of(symbol, spec)
-        for e in self.events:
-            if e.currency in wanted and e.time - self.before <= ts <= e.time + self.after:
+        if len(self._times) != len(self.events):
+            self._times = [e.time for e in self.events]
+        # the events are sorted by time: start at the first one whose window has not ended before ``ts``
+        for i in range(bisect.bisect_left(self._times, ts - self.after), len(self.events)):
+            e = self.events[i]
+            if e.time - self.before > ts:
+                break
+            if e.currency in wanted:
                 return e
         return None
 

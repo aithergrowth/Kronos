@@ -103,7 +103,7 @@ def find_confirmation(
                     crossed.add(latest.index)
                     if within_zone_reach(close):      # every opposing gap can give a shift: a shift that fell outside the entry window,
                         invalidation = float(ltf.low[touch_index:k + 1].min()) if bullish else float(ltf.high[touch_index:k + 1].max())
-                        candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.timestamps.iloc[k],   # or was not taken,
+                        candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.ts_list[k],   # or was not taken,
                                                        poi.direction, level, invalidation, close))                     # does not block the next
 
     # structure breaks --------------------------------------------------------------------

@@ -103,10 +103,7 @@ class MultiTimeframeData:
             if n_closed == 0:
                 continue
             start = 0 if lookback is None else max(0, n_closed - lookback)
-            frame = s.df.iloc[start:n_closed]
-            if start:
-                frame = frame.reset_index(drop=True)
-            views[tf] = CandleSeries(frame, tf, s.symbol, validate=False)
+            views[tf] = s._view(start, n_closed)
         return views
 
     def describe(self) -> str:

@@ -13,7 +13,7 @@ from typing import Iterable, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 
-from .timeframe import Timeframe
+from .timeframe import Timeframe, _monthly_close_times
 
 COLUMNS = ["timestamp", "open", "high", "low", "close", "volume"]
 
@@ -71,14 +71,48 @@ class CandleSeries:
         frame = df.copy()
         if validate:
             frame = _normalise_frame(frame)
-        self.df = frame
+        self._df = frame
         # numpy views for fast rule evaluation
         self.open = frame["open"].to_numpy(dtype=float)
         self.high = frame["high"].to_numpy(dtype=float)
         self.low = frame["low"].to_numpy(dtype=float)
         self.close = frame["close"].to_numpy(dtype=float)
         self.volume = frame["volume"].to_numpy(dtype=float)
-        self.timestamps = frame["timestamp"]
+        self._timestamps = frame["timestamp"]
+        self._ts = self._timestamps.to_numpy(dtype="datetime64[ns]")
+        self._root, self._offset = None, 0          # a view keeps the series it was cut from and where it starts
+
+    def _view(self, start: int, stop: int) -> "CandleSeries":
+        """Candles ``start:stop`` without copying: numpy slices of this series' arrays, the frame and the
+        timestamps built only when asked for (a backtest takes several views of every timeframe at every step)."""
+        n = len(self)
+        start, stop = max(0, min(start, n)), max(0, min(stop, n))
+        stop = max(start, stop)
+        view = CandleSeries.__new__(CandleSeries)
+        view.timeframe, view.symbol = self.timeframe, self.symbol
+        view._df = view._timestamps = None
+        view.open, view.high, view.low = self.open[start:stop], self.high[start:stop], self.low[start:stop]
+        view.close, view.volume = self.close[start:stop], self.volume[start:stop]
+        view._ts = self._ts[start:stop]
+        view._root, view._offset = self._base, self._offset + start
+        return view
+
+    @property
+    def _base(self) -> "CandleSeries":
+        return self if self._root is None else self._root
+
+    @property
+    def df(self) -> pd.DataFrame:
+        if self._df is None:
+            start = self._offset
+            self._df = self._base.df.iloc[start:start + len(self)].reset_index(drop=True)
+        return self._df
+
+    @property
+    def timestamps(self) -> pd.Series:
+        if self._timestamps is None:
+            self._timestamps = self.df["timestamp"]
+        return self._timestamps
 
     # ------------------------------------------------------------ constructors
     @classmethod
@@ -130,14 +164,16 @@ class CandleSeries:
 
     # ------------------------------------------------------------ container API
     def __len__(self) -> int:
-        return len(self.df)
+        return len(self.close)
 
     def __getitem__(self, i: int) -> Candle:
         if i < 0:
             i += len(self)
+        if not 0 <= i < len(self):
+            raise IndexError(f"candle {i} out of range for {len(self)} candles")
         return Candle(
             index=i,
-            timestamp=self.timestamps.iloc[i],
+            timestamp=self._base.ts_list[self._offset + i],
             open=float(self.open[i]),
             high=float(self.high[i]),
             low=float(self.low[i]),
@@ -155,7 +191,9 @@ class CandleSeries:
 
     @property
     def last_timestamp(self) -> pd.Timestamp:
-        return self.timestamps.iloc[-1]
+        if not len(self):
+            raise IndexError("an empty series has no last timestamp")
+        return self._base.ts_list[self._offset + len(self) - 1]
 
     @property
     def last_close_time(self) -> pd.Timestamp:
@@ -164,16 +202,16 @@ class CandleSeries:
     def tail(self, n: int) -> "CandleSeries":
         if n >= len(self):
             return self
-        return CandleSeries(self.df.iloc[-n:].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
+        start, stop, _ = slice(-n, None).indices(len(self))      # the same rows as ``df.iloc[-n:]``
+        return self._view(start, stop)
 
     def head(self, n: int) -> "CandleSeries":
-        return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
+        start, stop, _ = slice(None, n).indices(len(self))       # the same rows as ``df.iloc[:n]``
+        return self._view(start, stop)
 
     def until(self, ts: pd.Timestamp) -> "CandleSeries":
-        """Candles whose *open* time is <= ``ts``."""
-        ts = pd.Timestamp(ts)
-        mask = self.timestamps <= ts
-        return CandleSeries(self.df.loc[mask].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
+        """Candles whose *open* time is <= ``ts`` (open times are strictly increasing)."""
+        return self._view(0, int(np.searchsorted(self._ts, _ns(ts), side="right")))
 
     def closed_as_of(self, ts: pd.Timestamp) -> "CandleSeries":
         """Only candles that are fully closed at ``ts`` (no look-ahead into a forming candle)."""
@@ -181,27 +219,38 @@ class CandleSeries:
         if len(self) == 0:
             return self
         if self.timeframe is Timeframe.MN_1:
-            n = int((self.timeframe.close_times(self.timestamps) <= ts).sum())
+            if self._root is None:
+                n = int((self.timeframe.close_times(self.timestamps) <= ts).sum())
+            else:          # a view: the same session-calendar closes from its numpy open times (no frame built)
+                n = int((_monthly_close_times(self._ts.tobytes(), len(self), "America/New_York") <= _ns(ts)).sum())
         else:
             # open + delta <= ts  <=>  open <= ts - delta  (candle opens sit on bin starts, so this is exact)
             cutoff = ts - self.timeframe.delta()
-            n = int(self.timestamps.searchsorted(cutoff, side="right"))
+            n = int(np.searchsorted(self._ts, _ns(cutoff), side="right"))
         if n >= len(self):
             return self
-        return CandleSeries(self.df.iloc[:n].reset_index(drop=True), self.timeframe, self.symbol, validate=False)
+        return self._view(0, n)
 
     @property
     def ts_list(self) -> list:
-        """The candle open times as a plain list of Timestamps (built once per series; scalar ``.iloc`` is slow)."""
+        """The candle open times as a plain list of Timestamps (built once per series; scalar ``.iloc`` is slow).
+        A view slices its root series' list."""
         cached = self.__dict__.get("_ts_list")
-        if cached is None or len(cached) != len(self.df):
-            cached = self.timestamps.tolist()
+        if cached is None or len(cached) != len(self):
+            if self._root is None:
+                cached = self.timestamps.tolist()
+            else:
+                cached = self._root.ts_list[self._offset:self._offset + len(self)]
             self.__dict__["_ts_list"] = cached
         return cached
 
     def index_at_or_after(self, ts: pd.Timestamp) -> int:
         """Index of the first candle opening at or after ``ts`` (``len`` if none)."""
-        return int(self.timestamps.searchsorted(pd.Timestamp(ts), side="left"))
+        return int(np.searchsorted(self._ts, _ns(ts), side="left"))
+
+    def index_after(self, ts: pd.Timestamp) -> int:
+        """Index of the first candle opening after ``ts`` (``len`` if none)."""
+        return int(np.searchsorted(self._ts, _ns(ts), side="right"))
 
     def to_kronos_inputs(self) -> Tuple[pd.DataFrame, pd.Series]:
         """``(x_df, x_timestamp)`` in the layout ``KronosPredictor.predict`` expects."""
@@ -219,6 +268,13 @@ class CandleSeries:
 
 
 # ---------------------------------------------------------------------- helpers
+
+def _ns(ts) -> np.datetime64:
+    """A moment as numpy nanoseconds, to search the open times with."""
+    if not isinstance(ts, pd.Timestamp):
+        ts = pd.Timestamp(ts)
+    return np.datetime64(ts.value, "ns")
+
 
 def _symbol_from_path(path) -> Optional[str]:
     stem = Path(path).stem

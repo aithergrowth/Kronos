@@ -49,3 +49,20 @@ def test_feed_parsers():
             return SimpleNamespace(status_code=200, json=lambda: ff)
 
     assert len(fetch_forexfactory(session=Session())) == 2
+
+
+def test_blackout_matches_a_full_scan():
+    """The blackout looks only at the events near ``ts`` (sorted by time); the answer is the full scan's."""
+    from itertools import cycle
+    start = pd.Timestamp("2026-01-05")
+    events = [NewsEvent(start + pd.Timedelta(minutes=23 * k), cur, f"event {k}", 1)
+              for k, cur in zip(range(400), cycle(["USD", "EUR", "JPY", "GBP", "USD"]))]
+    cal = NewsCalendar(events, before_minutes=30, after_minutes=15)
+
+    def full_scan(symbol, ts):
+        return next((e for e in cal.events if e.currency in currencies_of(symbol) and e.time - cal.before <= ts <= e.time + cal.after), None)
+
+    for minute in range(-60, 23 * 400 + 60, 4):
+        ts = start + pd.Timedelta(minutes=minute)
+        for symbol in ("EURUSD", "XAUUSD", "USDJPY", "GBPUSD", "AUDNZD"):
+            assert cal.blackout(symbol, ts) is full_scan(symbol, ts)

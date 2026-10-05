@@ -40,7 +40,7 @@ from ..config import SessionParams
 from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
-from .poi import current_visit, map_pois, update_poi_status, VisitTracker
+from .poi import current_visit, map_pois, poi_scan, update_poi_status, VisitTracker
 from .risk import build_setup
 from .structure import StructureAnalysis, analyze_structure
 
@@ -175,7 +175,7 @@ class StrategyEngine:
         self.traded: Dict[str, Dict[Tuple[str, int, str], int]] = {}   # per symbol: zone key -> visit number a trade was opened on
         self._mirror = None                 # MultiTimeframeData of bias.mirror_symbol, loaded on first use
         self._mirror_tried = False
-        self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI]]] = {}
+        self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI], list]] = {}   # + each zone's scan
 
     # ------------------------------------------------------------------ helpers
     def structure_for(self, symbol: str, view: CandleSeries) -> StructureAnalysis:
@@ -196,12 +196,12 @@ class StrategyEngine:
         stamp = (view.last_timestamp, len(view))
         cached = self._poi_cache.get(key)
         if cached is not None and cached[0] == stamp[0] and cached[1] == stamp[1]:
-            pois = cached[2]
-            for poi in pois:
-                update_poi_status(poi, st.series, price)
+            pois, scans = cached[2], cached[3]
+            for poi, scan in zip(pois, scans):        # the candles did not change: only the price can move the status
+                update_poi_status(poi, st.series, price, scan=scan)
             return pois
         pois = map_pois(st, self.settings.structure, price)
-        self._poi_cache[key] = (stamp[0], stamp[1], pois)
+        self._poi_cache[key] = (stamp[0], stamp[1], pois, [poi_scan(poi, st.series) for poi in pois])
         return pois
 
     def mirror_data(self):

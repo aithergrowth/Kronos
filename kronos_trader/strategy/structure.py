@@ -143,7 +143,6 @@ def analyze_structure(series: CandleSeries, params: Optional[StructureParams] = 
         return analysis
 
     opens, highs, lows, closes = series.open, series.high, series.low, series.close
-    ts = series.timestamps
     ts_list = series.ts_list
     swings = find_swings(series, params.swing_left, params.swing_right)
     analysis.swings = swings

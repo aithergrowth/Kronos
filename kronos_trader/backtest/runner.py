@@ -166,7 +166,8 @@ class Backtester:
 
         n = len(step)
         report_every = max(1, n // 20)
-        for i in range(n):
+        first = step.index_at_or_after(self.start) if self.start is not None else 0     # the candles before the start are skipped
+        for i in range(first, n):
             candle = step[i]
             ts = candle.timestamp
             if self.start is not None and ts < self.start:

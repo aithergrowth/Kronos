@@ -77,3 +77,46 @@ def test_csv_columns_with_pandas_string_dtype_are_coerced():
                          "Time": pd.array(["10:00", "10:05"], dtype=pd.StringDtype()),
                          "Open": [1.0, 1.1], "High": [1.2, 1.3], "Low": [0.9, 1.0], "Close": [1.1, 1.2]})
     assert len(_coerce_columns(raw2)) == 2
+
+
+def test_views_read_exactly_like_the_copies_they_replace():
+    """``as_of``/``tail``/``head``/``closed_as_of`` hand out views on the parent's arrays (no frame copy per step);
+    every way of reading one gives what the copied frame gave."""
+    import numpy as np
+    import pytest
+    from kronos_trader.data.resample import MultiTimeframeData
+    rows = [(1 + k / 100, 1.3 + k / 100, 0.9 + k / 100, 1.1 + k / 100, float(k)) for k in range(300)]
+    s = CandleSeries.from_records(rows, Timeframe.H_1, start="2024-01-01", symbol="EURUSD")
+    now = pd.Timestamp("2024-01-09 12:00")                                  # 204 candles closed
+    view = MultiTimeframeData({Timeframe.H_1: s}).as_of(now, lookback=100)[Timeframe.H_1]
+    expected = s.df.iloc[104:204].reset_index(drop=True)
+    assert len(view) == 100 and view.df.equals(expected) and view.timestamps.equals(expected["timestamp"])
+    assert view.ts_list == list(expected["timestamp"]) and np.array_equal(view.close, expected["close"].to_numpy())
+    assert view[0].timestamp == expected["timestamp"].iloc[0] and view[0].index == 0 and view[0].open == expected["open"].iloc[0]
+    assert view[-1] == view[99] and view.last_timestamp == expected["timestamp"].iloc[-1] and view.last.close == expected["close"].iloc[-1]
+    with pytest.raises(IndexError):
+        view[100]
+    with pytest.raises(IndexError):
+        view[-101]
+    for n in (10, 0, -5, 100, 150):                                         # python slice semantics, as ``df.iloc[-n:]``
+        assert view.tail(n).df.equals(expected.iloc[-n:].reset_index(drop=True))
+    for n in (5, 0, -5, 150):
+        assert view.head(n).df.equals(expected.iloc[:n].reset_index(drop=True))
+    tail = view.tail(10)
+    assert tail.ts_list == list(expected["timestamp"].iloc[-10:]) and tail[0].index == 0 and tail.tail(3).last_timestamp == view.last_timestamp
+    cut = pd.Timestamp("2024-01-06 07:30")
+    assert view.closed_as_of(cut).df.equals(expected[expected["timestamp"] + pd.Timedelta(hours=1) <= cut].reset_index(drop=True))
+    assert view.until(cut).df.equals(expected[expected["timestamp"] <= cut].reset_index(drop=True))
+    assert view.index_at_or_after(pd.Timestamp("2024-01-06 07:00")) == 23 and view.index_after(pd.Timestamp("2024-01-06 07:00")) == 24
+    with pytest.raises(IndexError):
+        view.head(0).last_timestamp
+
+
+def test_monthly_view_closes_like_the_root():
+    rows = [(1.0, 1.1, 0.9, 1.05)] * 30
+    root = CandleSeries.from_records(rows, Timeframe.MN_1, start="2023-01-01", symbol="EURUSD",
+                                     timestamps=pd.date_range("2023-01-01", periods=30, freq="MS"))
+    view = root.tail(20)
+    copy = CandleSeries(view.df, Timeframe.MN_1, "EURUSD", validate=False)
+    for ts in pd.date_range("2023-11-15", "2025-08-01", freq="9D"):
+        assert len(view.closed_as_of(ts)) == len(copy.closed_as_of(ts))
