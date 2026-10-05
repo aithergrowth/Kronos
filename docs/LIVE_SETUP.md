@@ -36,8 +36,8 @@ python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --b
 ```
 
 Three markets (4 October: EURUSD on the live profile, XAUUSD on `config/dorus_live_gold.yaml` (the bias gate: two of
-1D/4H/1H with the 1H), BTCUSD on `config/dorus_live_btc.yaml` (stop minimum 60 USD, no 1H requirement); GBPUSD runs on
-the live profile when wanted. See `docs/backtests/winrate/README.md`, "Frequency". One PowerShell window per market,
+1D/4H/1H with the 1H), BTCUSD on `config/dorus_live_btc.yaml` (stop minimum 60 USD, no 1H requirement). GBPUSD is out since 5 October
+(-25.3R over 2017-2026 on the corrected HistData clock). See `docs/backtests/winrate/README.md`, "Frequency". One PowerShell window per market,
 each with the venv active; the guard in each window reads the same account's equity, so the FTMO margins hold
 account-wide while every market keeps at most one open trade:
 
@@ -45,7 +45,6 @@ account-wide while every market keeps at most one open trade:
 python -m kronos_trader --config config/dorus_live_gold.yaml mt5-test --symbol XAUUSD --tf 15m  # once: the broker's symbol names
 python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute --no-approval
 python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5 --execute --no-approval
-python -m kronos_trader --config config/dorus_live.yaml live --symbol GBPUSD --broker mt5 --execute --no-approval
 ```
 
 **BTC when the broker's crypto price stands still.** On Monday 5 October 2026 the MetaQuotes demo's BTCUSD still showed
@@ -60,12 +59,12 @@ python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD
 The paper account is kept across restarts (`journal/paper_BTCUSD.json`: balance, open positions, the last closes);
 the trades go to the journal. On the FTMO account (crypto trades around the clock there) BTC runs on `--broker mt5`.
 
-**All four at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest version and opens the
-EURUSD, XAUUSD, GBPUSD and BTCUSD windows with the commands above. Every window sends the 08:45 briefing and, at 22:00
+**All three at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest version and opens the
+EURUSD, XAUUSD and BTCUSD windows with the commands above (GBPUSD out since 5 October: -25.3R over 2017-2026). Every window sends the 08:45 briefing and, at 22:00
 (`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen, equity and what is
 still open. Settings that are yours (another terminal path) go in `scripts\live_local.bat`, which git leaves alone.
 
-**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD, GBPUSD, NAS100 and BTCUSD on the FTMO terminal
+**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD, NAS100 and BTCUSD on the FTMO terminal
 with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
 Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
 each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from

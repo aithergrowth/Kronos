@@ -818,3 +818,6 @@ Gold earns in its 2023-2026 rally and loses before it. EURUSD has no edge over t
 | GBPUSD | -14.4R (58) | -25.3R |
 
 It is running as real backtests (`risk.min_rr` 2.0 and 1.5) on the corrected candles.
+
+**Taken (5 October, night):** GBPUSD is out of `scripts/start_live.bat` and `scripts/start_ftmo.bat`. It lost 25.3R over
+2017-2026, and 14.4R even on its trades at R:R 2 or more. EURUSD stays for now. The minimum R:R runs decide its place.

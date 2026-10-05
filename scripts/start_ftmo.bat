@@ -1,5 +1,6 @@
 @echo off
-rem FTMO windows beside the demo: EURUSD, XAUUSD, GBPUSD, NAS100 and BTCUSD on the FTMO MT5 terminal, orders without the
+rem FTMO windows beside the demo: EURUSD, XAUUSD, NAS100 and BTCUSD on the FTMO MT5 terminal (GBPUSD out since 5 October:
+rem -25.3R over 2017-2026 on the corrected clock), orders without the
 rem Approve tap, their own journal (journal_ftmo\) and "[FTMO]" in front of every Telegram message.
 rem Before: the FTMO terminal installed, logged in to the trial or challenge account, Algo Trading on (green).
 rem The password stays in the terminal: MT5_LOGIN, MT5_PASSWORD and MT5_SERVER are cleared for these windows, so they
@@ -35,7 +36,6 @@ if not defined FUNDED if defined WEEKEND_CLOSE set "COMMON=%COMMON% --weekend-cl
   git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
   start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%"
   start "FTMO XAUUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD %COMMON%"
-  start "FTMO GBPUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol GBPUSD %COMMON%"
   start "FTMO NAS100" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_nas100.yaml live --symbol NAS100 --mt5-symbol %NAS_NAME% %COMMON%"
   start "FTMO BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --mt5-symbol %BTC_NAME% %COMMON%"
   exit /b
