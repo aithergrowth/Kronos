@@ -757,3 +757,28 @@ def test_weekend_close_on_paper_and_on_a_real_broker(setup):
     runner.manage_positions(runner.fetch())
     runner.report_closes()
     assert server.open_positions() == [] and any("closed (weekend)" in m for m in notifier.sent)
+
+
+def test_a_repeating_loop_error_is_sent_once_per_half_hour(setup, monkeypatch, capsys):
+    """A scan failing the same way every minute sends one Telegram message, then at most one every 30 minutes with how
+    often it came back; a different error is sent at once; the traceback goes to the console."""
+    import kronos_trader.live as live_mod
+    clock = [1_000_000.0]
+    monkeypatch.setattr(live_mod.time, "time", lambda: clock[0])
+    runner, notifier = _runner(setup, PaperBroker(Settings()))
+    def boom():
+        raise RuntimeError("terminal gone")
+    for minute in range(31):
+        clock[0] = 1_000_000.0 + 60 * minute
+        try:
+            boom()
+        except RuntimeError as exc:
+            runner.report_loop_error(exc)
+    sent = [m for m in notifier.sent if "live loop error" in m]
+    assert len(sent) == 2 and "also 29x since the last message" in sent[1]
+    try:
+        raise ValueError("other")
+    except ValueError as exc:
+        runner.report_loop_error(exc)
+    assert sum("live loop error" in m for m in notifier.sent) == 3
+    assert "RuntimeError: terminal gone" in capsys.readouterr().err

@@ -252,6 +252,7 @@ class LiveRunner:
         self.load_traded()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
+        self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
         self._views: Dict[Timeframe, CandleSeries] = {}
         self._touched: set = set()                          # POI keys already announced as entered
 
@@ -501,11 +502,29 @@ class LiveRunner:
                 if self.connection_ok():
                     self.step()
             except Exception as exc:  # keep the loop alive and say what broke
-                self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}")
-            if self.broker is not None:
-                self.broker.idle(poll)
-            else:
+                self.report_loop_error(exc)
+            try:
+                if self.broker is not None:
+                    self.broker.idle(poll)
+                else:
+                    time.sleep(poll)
+            except Exception as exc:  # an event-loop broker (IBKR) can raise while waiting: wait plainly this once
+                self.report_loop_error(exc)
                 time.sleep(poll)
+
+    def report_loop_error(self, exc: Exception) -> None:
+        """A scan error: the traceback on the console, a Telegram message for a new error, and the same error again at most
+        every 30 minutes with how often it came back (a call failing every scan sent a message a minute)."""
+        import traceback
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        text, now = f"{type(exc).__name__}: {exc}", time.time()
+        last = self._loop_error
+        if last is not None and last[0] == text and now - last[1] < 1800:
+            self._loop_error = (text, last[1], last[2] + 1)
+            return
+        again = f" (also {last[2]}x since the last message)" if last is not None and last[0] == text and last[2] else ""
+        self._loop_error = (text, now, 0)
+        self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}{again}")
 
     # ------------------------------------------------------------ data
     def refresh_news(self, now: pd.Timestamp) -> None:
