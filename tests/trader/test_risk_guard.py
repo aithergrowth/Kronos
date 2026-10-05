@@ -94,3 +94,40 @@ def test_a_restart_keeps_the_days_and_the_months_losses():
     assert guard.day_start_balance == pytest.approx(9_750) and guard.month_start_balance == pytest.approx(10_000)
     assert guard.daily_loss_pct(9_600) == pytest.approx(1.5) and guard.monthly_loss_pct() == pytest.approx(4.0)
     assert pd.Timestamp("2026-10-06 22:00") in asked and pd.Timestamp("2026-09-30 22:00") in asked   # Prague midnights in UTC
+
+
+def test_worst_case_of_open_trades_and_the_new_one_stays_inside_the_limits():
+    """Before a new trade the guard adds what every open trade loses at its stop and the new trade's risk to the closed
+    loss: a day already 1.5 % down with one 1.5 % trade open refuses a third 1.5 % (4.5 % >= 4 %), a stop at the entry
+    risks nothing, and the static floor is checked the same way."""
+    p = PropFirmParams(daily_loss_limit_pct=4.0, max_drawdown_pct=8.0, drawdown_basis="initial", max_open_trades=3)
+    guard = RiskGuard(p, 100_000)
+    broker = PaperBroker(Settings(), use_spread=False)
+    ts = pd.Timestamp("2024-01-03 10:00")
+    guard.update(ts, 100_000, 100_000)
+    broker._balance = 98_500.0                                     # a 1.5 % loss closed today
+    guard.update(ts, 98_500, 98_500)
+    assert guard.can_open(broker, ts, "EURUSD", new_risk=1_500.0) == (True, "ok")             # 1.5 + 1.5 = 3 %
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0850, 1.1300, 1500.0, 0.015, 4.0, price=1.1000, ts=ts)
+    assert RiskGuard.open_risk(broker) == pytest.approx(1_500.0)
+    ok, reason = guard.can_open(broker, ts, "XAUUSD", new_risk=1_500.0)                       # 1.5 + 1.5 + 1.5 = 4.5 %
+    assert not ok and "daily loss would reach 4.50%" in reason
+    assert guard.can_open(broker, ts, "XAUUSD", new_risk=900.0) == (True, "ok")                # a smaller stake fits
+    pos = broker.open_positions("EURUSD")[0]
+    broker.modify_stop(pos.id, pos.entry)                                                      # at break-even: no risk
+    assert RiskGuard.open_risk(broker) == 0.0
+    assert guard.can_open(broker, ts, "XAUUSD", new_risk=1_500.0) == (True, "ok")
+    floor = RiskGuard(PropFirmParams(daily_loss_limit_pct=50.0, max_drawdown_pct=8.0, drawdown_basis="initial"), 100_000)
+    low = Account(93_000)
+    ok, reason = floor.can_open(low, ts, "EURUSD", new_risk=1_000.0)                           # 7 + 1 = 8 % from the start
+    assert not ok and "drawdown would reach 8.00%" in reason
+
+
+def test_a_day_change_takes_the_balance_at_midnight_not_at_the_first_look():
+    """The laptop slept through a stop hit after midnight: with the broker's closed P&L the new day's baseline is the
+    balance at midnight (Prague), so that loss counts against the new day."""
+    guard = RiskGuard(PropFirmParams(daily_loss_limit_pct=4.0), 100_000)
+    guard.update(pd.Timestamp("2024-01-02 20:00"), 100_000, 100_000)
+    guard.realized_since = lambda since: -1_500.0 if since <= pd.Timestamp("2024-01-03 05:00") else 0.0
+    guard.update(pd.Timestamp("2024-01-03 06:00"), 98_500, 98_500)     # first look of the day, after the night's stop-out
+    assert guard.day_start_balance == pytest.approx(100_000) and guard.daily_loss_pct(98_500) == pytest.approx(1.5)

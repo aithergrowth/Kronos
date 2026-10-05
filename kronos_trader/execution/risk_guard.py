@@ -81,14 +81,14 @@ class RiskGuard:
         if balance is not None:
             self.last_balance = float(balance)
         if self.day is None or day != self.day:
-            first = self.day is None
+            # the balance at the day's start, not at the first look of the day: a stop hit after midnight while nothing
+            # watched (the laptop asleep) counts against the new day, as at FTMO
             self.day = day
-            self.day_start_balance = self._baseline(day) if first else self.last_balance
+            self.day_start_balance = self._baseline(day)
         month = day.to_period("M")
         if self.month is None or month != self.month:
-            first = self.month is None
             self.month = month
-            self.month_start_balance = self._baseline(month.to_timestamp()) if first else self.last_balance
+            self.month_start_balance = self._baseline(month.to_timestamp())
         self.peak_equity = max(self.peak_equity, equity)
         if self.first_breach is None:
             p = self.params
@@ -123,7 +123,31 @@ class RiskGuard:
                 return label
         return None
 
-    def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None) -> Tuple[bool, str]:
+    @staticmethod
+    def open_risk(broker: Broker) -> float:
+        """What the open positions lose together if every one of them is stopped out (account currency); a stop at or
+        beyond the entry counts as no loss."""
+        total = 0.0
+        pnl_for = getattr(broker, "pnl_for", None)
+        for pos in broker.open_positions():
+            if not pos.stop or pos.direction.sign * (pos.stop - pos.entry) >= 0:
+                continue
+            loss = None
+            if callable(pnl_for):
+                try:
+                    loss = -float(pnl_for(pos.symbol, pos.direction, pos.entry, pos.stop, pos.lots))
+                except Exception:
+                    loss = None
+            if loss is None or loss <= 0:
+                loss = float(getattr(pos, "risk_amount", 0.0) or 0.0)
+            total += max(0.0, loss)
+        return total
+
+    def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None,
+                 new_risk: float = 0.0) -> Tuple[bool, str]:
+        """``new_risk`` is what the new trade loses at its stop (account currency). The day and static limits are checked
+        on the worst case: the closed balance less what every open trade and the new one lose at their stops, so two
+        markets opening at once cannot together carry the account past the limit."""
         ts = pd.Timestamp(ts)
         equity = broker.equity()
         balance = getattr(broker, "balance", None)
@@ -140,6 +164,16 @@ class RiskGuard:
         if self.drawdown_pct(equity) >= p.max_drawdown_pct:
             self.halted_reason = f"drawdown {self.drawdown_pct(equity):.2f}% reached the {p.max_drawdown_pct}% limit"
             return False, self.halted_reason
+        worst = self.last_balance - self.open_risk(broker) - max(0.0, float(new_risk or 0.0))
+        worst_day = (self.day_start_balance - worst) / self.account_size * 100.0
+        if worst_day >= p.daily_loss_limit_pct:
+            return False, (f"daily loss would reach {worst_day:.2f}% if the open trades and this one were stopped out "
+                           f"(limit {p.daily_loss_limit_pct}%)")
+        base = self.peak_equity if p.drawdown_basis == "peak" else self.account_size
+        worst_total = (base - worst) / self.account_size * 100.0
+        if worst_total >= p.max_drawdown_pct:
+            return False, (f"drawdown would reach {worst_total:.2f}% if the open trades and this one were stopped out "
+                           f"(limit {p.max_drawdown_pct}%)")
         if self.last_trade_ts is not None and p.min_minutes_between_trades:
             gap = (ts - self.last_trade_ts).total_seconds() / 60.0
             if gap < p.min_minutes_between_trades:

@@ -337,3 +337,43 @@ def test_volatility_percentile_ranks_the_last_day_against_sixty():
     s2 = CandleSeries.from_records(busy * 20 + quiet, TF.H_4, start="2026-07-01 00:00", symbol="TEST")
     assert volatility_percentile(s2) < 0.7                   # a quiet day after busy weeks
     assert volatility_percentile(CandleSeries.from_records(quiet[:20], TF.H_4, start="2026-07-01", symbol="TEST")) is None
+
+
+def test_telegram_send_never_raises():
+    """A message is not worth a scan: no network, a timeout or a refusal is printed and dropped; an HTML refusal (an
+    error text with a "<") goes again as plain text, a 429 waits its retry_after once."""
+    from kronos_trader.notify.telegram import TelegramError, TelegramNotifier
+    n = TelegramNotifier(token="123:abc", chat_id="42")
+    calls = []
+
+    def offline(method, payload):
+        calls.append(payload)
+        raise ConnectionError("no network")
+    n._call = offline
+    assert n.send("⚠️ EURUSD: live loop error") is False and len(calls) == 1
+
+    calls.clear()
+
+    def html_refused(method, payload):
+        calls.append(payload)
+        if "parse_mode" in payload:
+            raise TelegramError(method, 400, "Bad Request: can't parse entities: unsupported start tag")
+        return {"ok": True}
+    n._call = html_refused
+    assert n.send("order not accepted: <class 'RuntimeError'>") is True
+    assert "parse_mode" in calls[0] and "parse_mode" not in calls[1]
+
+    calls.clear()
+
+    def busy_once(method, payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            raise TelegramError(method, 429, "Too Many Requests: retry after 0", retry_after=0)
+        return {"ok": True}
+    n._call = busy_once
+    assert n.send("again") is True and len(calls) == 2
+
+    def refused(method, payload):
+        raise TelegramError(method, 403, "Forbidden: bot was blocked by the user")
+    n._call = refused
+    assert n.send("blocked") is False

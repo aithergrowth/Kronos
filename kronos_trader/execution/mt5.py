@@ -191,6 +191,22 @@ class MT5Broker(Broker):
                 setattr(spec, attr, v)
         return changes
 
+    def pnl_for(self, symbol: str, direction: Direction, entry: float, exit_price: float, lots: float) -> float:
+        """The server's profit (account currency) of ``lots`` from ``entry`` to ``exit_price`` (order_calc_profit), so a
+        stop-out is measured in R like the backtest; the profile's pip value when the server does not say."""
+        mt5 = self.mt5
+        calc = getattr(mt5, "order_calc_profit", None)
+        if calc is not None:
+            kind = mt5.ORDER_TYPE_BUY if direction is Direction.LONG else mt5.ORDER_TYPE_SELL
+            try:
+                value = calc(kind, self.mt5_symbol(symbol), float(lots), float(entry), float(exit_price))
+            except Exception:
+                value = None
+            if value is not None:
+                return float(value)
+        spec = self.settings.symbol(symbol)
+        return direction.sign * (float(exit_price) - float(entry)) / spec.pip_size * spec.pip_value_per_lot * float(lots)
+
     def account_currency(self) -> str:
         info = self.mt5.account_info()
         return str(getattr(info, "currency", "") or "") if info is not None else ""
@@ -290,13 +306,37 @@ class MT5Broker(Broker):
         return pd.Timestamp(int(server_seconds), unit="s") - self.server_offset()
 
     def _position_from_mt5(self, p) -> Position:
+        """A position found on the terminal (after a restart, or another window's): its break-even trigger comes from the
+        zone timeframe in the order comment ("1HPOI BS") and the profile's exits, its risk from the server's price of
+        the stop. Before 5 October it got a trigger of 0R and the first scan after a restart moved its stop to the entry."""
+        from ..strategy.exits import breakeven_trigger_r
         direction = Direction.LONG if p.type == self.mt5.POSITION_TYPE_BUY else Direction.SHORT
         sl = float(p.sl or 0.0)
-        risk_distance = abs(float(p.price_open) - sl) if sl else 0.0
-        return Position(id=str(p.ticket), symbol=self.our_symbol(p.symbol), direction=direction, lots=float(p.volume),
-                        entry=float(p.price_open), stop=sl, take_profit=float(p.tp or 0.0), opened_at=self.to_utc(p.time),
-                        risk_amount=0.0, risk_distance=risk_distance, breakeven_r=0.0, initial_stop=sl,
-                        meta={"comment": getattr(p, "comment", "")})
+        entry = float(p.price_open)
+        risk_distance = abs(entry - sl) if sl else 0.0
+        comment = str(getattr(p, "comment", "") or "")
+        poi_tf = None
+        if "POI" in comment:
+            try:
+                poi_tf = Timeframe.parse(comment.split("POI", 1)[0].strip())
+            except Exception:
+                poi_tf = None
+        exits = self.settings.exits
+        breakeven_r = breakeven_trigger_r(poi_tf, exits) if poi_tf is not None else exits.breakeven_r_intraday
+        symbol = self.our_symbol(p.symbol)
+        risk_amount = 0.0
+        if sl and direction.sign * (sl - entry) < 0:
+            try:
+                risk_amount = abs(self.pnl_for(symbol, direction, entry, sl, float(p.volume)))
+            except Exception:
+                risk_amount = 0.0
+        meta: Dict[str, Any] = {"comment": comment, "restored": True}
+        if poi_tf is not None:
+            meta["poi_tf"] = poi_tf.label
+        return Position(id=str(p.ticket), symbol=symbol, direction=direction, lots=float(p.volume),
+                        entry=entry, stop=sl, take_profit=float(p.tp or 0.0), opened_at=self.to_utc(p.time),
+                        risk_amount=risk_amount, risk_distance=risk_distance, breakeven_r=breakeven_r, initial_stop=sl,
+                        meta=meta)
 
     def _finish(self, pos: Position, exit_price: float, reason: str, ts, pnl: float) -> ClosedTrade:
         self._positions.pop(pos.id, None)

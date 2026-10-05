@@ -486,3 +486,38 @@ def test_drawdown_steps_lower_the_live_stake(setup):
         if steps:
             assert any("1 %: balance below the start" in m for m in notifier.sent)
     assert lots[((-3, 1.0),)] == pytest.approx(lots[()] / 1.5, rel=0.02)
+
+
+def test_a_refused_break_even_move_does_not_stop_the_scan(setup):
+    """modify_stop failing (10016: price back under the entry) leaves the stop, says so once and tries again later;
+    the scan goes on to report closes and look for setups."""
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    pos.breakeven_r = 0.5                                          # 1.10005 + 0.5 x 0.00515 = 1.1026: reached by 1.104
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.104, 1.099, 1.1)]
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+
+    def refuse(position_id, stop):
+        raise RuntimeError("modify stop failed: retcode 10016 Invalid stops")
+    broker.modify_stop = refuse
+    runner.step(NOW + pd.Timedelta(1, unit="min"))
+    runner.step(NOW + pd.Timedelta(2, unit="min"))
+    assert not pos.breakeven_done and pos.stop == 1.0949
+    assert sum("refused" in m for m in notifier.sent) == 1
+
+
+def test_closes_of_other_windows_are_not_reported_here(setup):
+    """On one MT5 account every window sees every position of the bot (the account-wide cap counts them); a close is
+    reported and journaled only by the window of its own market."""
+    from kronos_trader.execution.base import ClosedTrade
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker)
+    other = ClosedTrade(id="77", symbol="XAUUSD", direction=Direction.LONG, lots=1.0, entry=2650.0, exit=2670.0, stop=2640.0,
+                        take_profit=2670.0, opened_at=NOW, closed_at=NOW, reason="take_profit", pnl=2000.0, r=2.0,
+                        risk_amount=1000.0, initial_stop=2640.0, meta={})
+    broker.recent_closes = lambda: [other]
+    runner.report_closes()
+    assert not any("closed" in m for m in notifier.sent)

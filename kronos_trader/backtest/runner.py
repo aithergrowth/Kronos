@@ -197,7 +197,8 @@ class Backtester:
                 seen.add(key)
                 signals += 1
                 self._write_dossier(now)
-                ok, reason = guard.can_open(broker, now, self.symbol)
+                ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * stepped_risk(
+                    s.risk, broker.balance(), s.account_size).risk_pct / 100.0)
                 if not ok:
                     rejected += 1
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1

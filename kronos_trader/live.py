@@ -530,7 +530,7 @@ class LiveRunner:
             if self.broker is not None:
                 self.notifier.send(f"{self.symbol}: dry-run, order not sent")
             return
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol)
+        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
         if not ok:
             self.notifier.send_setup(setup, forecast, self.spec)
             self.notifier.send(f"⛔ {self.symbol}: setup NOT executable - {reason}")
@@ -545,9 +545,18 @@ class LiveRunner:
             return
         self.execute(setup, forecast, now)
 
+    def planned_risk(self) -> float:
+        """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps."""
+        from .strategy.risk import stepped_risk
+        try:
+            params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+            return float(self.broker.equity()) * params.risk_pct / 100.0
+        except Exception:
+            return 0.0
+
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
         sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol)
+        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
         if not ok:
             self.note("not_executed", now, id=sid, reason=reason)
             self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
@@ -673,9 +682,23 @@ class LiveRunner:
             self.known_positions.setdefault(pos.id, pos)
             if pos.breakeven_done or getattr(pos, "status", "filled") != "filled":
                 continue
+            if pos.breakeven_r <= 0 or pos.risk_distance <= 0:
+                continue                                   # no trigger or no risk known: never move a stop on a guess
+            retry_at = pos.meta.get("breakeven_retry_at")
+            if retry_at is not None and last.timestamp < retry_at:
+                continue
             extreme = last.high if pos.direction.sign > 0 else last.low
             if breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):
-                self.broker.modify_stop(pos.id, pos.entry)
+                try:
+                    self.broker.modify_stop(pos.id, pos.entry)
+                except Exception as exc:                   # e.g. 10016 when price is back under the entry: keep the
+                    pos.meta["breakeven_retry_at"] = last.timestamp + pd.Timedelta(15, unit="min")   # stop, try again later
+                    if not pos.meta.get("breakeven_failed_sent"):
+                        pos.meta["breakeven_failed_sent"] = True
+                        self.note("breakeven_failed", id=pos.id, reason=str(exc))
+                        self.notifier.send(f"⚠️ {self.symbol}: stop to break-even on {pos.id} refused ({exc}); trying again "
+                                           f"every 15 min, the original stop stays")
+                    continue
                 pos.breakeven_done = True
                 self.note("breakeven", id=pos.id, stop=float(pos.entry))
                 self.notifier.send(f"🔒 {self.symbol}: stop moved to break-even on {pos.id} ({pos.breakeven_r:.0f}R reached)")
@@ -684,6 +707,8 @@ class LiveRunner:
         if self.broker is None:
             return
         for trade in self.broker.recent_closes():
+            if str(trade.symbol).upper() != self.symbol:
+                continue                                   # another window's trade on the same account: its window reports it
             self.known_positions.pop(trade.id, None)
             self.note("closed", trade.closed_at, id=trade.id, direction=trade.direction.name, entry=float(trade.entry),
                       price=float(trade.exit), pnl=float(trade.pnl), r=float(trade.r), reason=trade.reason, lots=float(trade.lots))

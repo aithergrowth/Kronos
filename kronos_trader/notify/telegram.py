@@ -7,6 +7,7 @@ inline keyboard; ``poll_decisions`` reads the taps (or ``/approve <id>`` and
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -35,9 +36,9 @@ def masked(token: Optional[str]) -> str:
 
 
 class TelegramError(RuntimeError):
-    def __init__(self, method: str, status: int, description: str):
+    def __init__(self, method: str, status: int, description: str, retry_after: Optional[float] = None):
         super().__init__(f"Telegram {method} failed: {status} {description}")
-        self.method, self.status, self.description = method, status, description
+        self.method, self.status, self.description, self.retry_after = method, status, description, retry_after
 
 
 @dataclass
@@ -62,6 +63,7 @@ class TelegramNotifier:
         self.sent: list = []
         self._offset: Optional[int] = None
         self._queued: List[Decision] = []
+        self._warned_at = 0.0
 
     @property
     def configured(self) -> bool:
@@ -72,12 +74,22 @@ class TelegramNotifier:
         import requests
         resp = requests.post(API.format(token=self.token, method=method), json=payload, timeout=self.timeout)
         if resp.status_code != 200:
+            retry_after = None
             try:
-                description = str(resp.json().get("description", resp.text[:200]))
+                body = resp.json()
+                description = str(body.get("description", resp.text[:200]))
+                retry_after = (body.get("parameters") or {}).get("retry_after")
             except ValueError:
                 description = resp.text[:200]
-            raise TelegramError(method, resp.status_code, description)
+            raise TelegramError(method, resp.status_code, description, retry_after)
         return resp.json()
+
+    def _warn(self, text: str) -> None:
+        """A delivery problem on the console, at most once a minute (the scan goes on without the message)."""
+        now = time.time()
+        if now - self._warned_at >= 60:
+            self._warned_at = now
+            print(f"[telegram] {text}", flush=True)
 
     def check(self) -> str:
         """``getMe``: the bot's username when the token is accepted (TelegramError otherwise)."""
@@ -106,8 +118,25 @@ class TelegramNotifier:
                                    "disable_web_page_preview": True}
         if reply_markup:
             payload["reply_markup"] = reply_markup
-        self._call("sendMessage", payload)
-        return True
+        # never raises: a message is not worth a scan, let alone the process (an error text with a "<" in it was not
+        # valid HTML, Telegram answered 400, and the second failure inside the loop's error handler ended the window)
+        for attempt in range(3):
+            try:
+                self._call("sendMessage", payload)
+                return True
+            except TelegramError as exc:
+                if exc.status == 400 and "parse" in exc.description.lower() and payload.get("parse_mode"):
+                    payload = {k: v for k, v in payload.items() if k != "parse_mode"}     # send the text as it is
+                    continue
+                if exc.status == 429 and attempt < 2:
+                    time.sleep(min(10.0, float(exc.retry_after or 1.0)))
+                    continue
+                self._warn(f"message not sent: {exc}")
+                return False
+            except Exception as exc:                     # no network, a timeout
+                self._warn(f"message not sent: {exc}")
+                return False
+        return False
 
     def send_photo(self, path, caption: str = "") -> bool:
         """sendPhoto with an optional caption; in dry-run the path is printed."""
@@ -116,11 +145,15 @@ class TelegramNotifier:
             print(f"[telegram dry-run photo] {path}\n{caption}")
             return False
         import requests
-        with open(path, "rb") as fh:
-            r = requests.post(API.format(token=self.token, method="sendPhoto"), data={"chat_id": self.chat_id, "caption": caption[:1000],
-                                                                   "parse_mode": self.parse_mode},
-                              files={"photo": fh}, timeout=self.timeout * 2)
-        return r.ok
+        try:
+            with open(path, "rb") as fh:
+                r = requests.post(API.format(token=self.token, method="sendPhoto"), data={"chat_id": self.chat_id, "caption": caption[:1000],
+                                                                       "parse_mode": self.parse_mode},
+                                  files={"photo": fh}, timeout=self.timeout * 2)
+            return r.ok
+        except Exception as exc:                         # never raises, as send
+            self._warn(f"chart not sent: {exc}")
+            return False
 
     # ------------------------------------------------------------ messages
     def send_setup(self, setup: TradeSetup, forecast: Optional[ForecastSummary] = None, spec: Optional[SymbolSpec] = None) -> bool:

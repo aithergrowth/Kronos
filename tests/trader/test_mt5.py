@@ -459,3 +459,23 @@ def test_align_spec_refuses_a_symbol_the_server_lacks():
     with pytest.raises(RuntimeError, match="no symbol 'NAS100'"):
         b.align_spec("NAS100")
     assert s.symbol("NAS100").pip_value_per_lot == 1.0
+
+
+def test_a_restored_position_keeps_its_break_even_trigger():
+    """After a restart the positions come back from the terminal: the break-even trigger follows the zone timeframe in
+    the order comment ("1HPOI BS" -> 4R intraday, "1WPOI BS" -> 2R swing), never 0R, and the risk is the server's price
+    of the stop."""
+    s = Settings()
+    api = EuroAccountMT5()
+    first = MT5Broker(s, api=api, clock=lambda: NOW)
+    first.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 500.0, 0.0051, 4.0,
+                             meta={"comment": "1HPOI BS"}, ts=NOW)
+    first.place_market_order("XAUUSD", Direction.SHORT, 1.0, 1.1100, 1.0900, 500.0, 0.0099, 2.0,
+                             meta={"comment": "1WPOI BS"}, ts=NOW)
+    restarted = MT5Broker(Settings(), api=api, clock=lambda: NOW)             # a new process: nothing tracked yet
+    by_symbol = {p.symbol: p for p in restarted.open_positions()}
+    eu, xau = by_symbol["EURUSD"], by_symbol["XAUUSD"]
+    assert eu.breakeven_r == 4.0 and xau.breakeven_r == 2.0 and eu.meta["restored"]
+    assert eu.risk_distance == pytest.approx(1.1001 - 1.0950)
+    assert eu.risk_amount == pytest.approx((1.1001 - 1.0950) * 100_000 * 0.86, rel=1e-6)     # order_calc_profit, EUR
+    assert restarted.pnl_for("EURUSD", Direction.LONG, 1.1001, 1.0950, 1.0) == pytest.approx(-(1.1001 - 1.0950) * 86_000)
