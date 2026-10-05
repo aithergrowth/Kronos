@@ -131,3 +131,20 @@ def test_a_day_change_takes_the_balance_at_midnight_not_at_the_first_look():
     guard.realized_since = lambda since: -1_500.0 if since <= pd.Timestamp("2024-01-03 05:00") else 0.0
     guard.update(pd.Timestamp("2024-01-03 06:00"), 98_500, 98_500)     # first look of the day, after the night's stop-out
     assert guard.day_start_balance == pytest.approx(100_000) and guard.daily_loss_pct(98_500) == pytest.approx(1.5)
+
+
+def test_weekend_close_blocks_new_trades_until_the_sunday_open():
+    """``prop_firm.weekend_close`` (FTMO Account, Standard type: flat before the weekend): no new trade from Friday 16:45
+    New York until the market reopens Sunday 17:00 New York, in summer and winter time."""
+    from kronos_trader.strategy.exits import weekend_cutoff_after
+    guard = RiskGuard(PropFirmParams(weekend_close="16:45", max_open_trades=2), 100_000)
+    broker = PaperBroker(Settings(), use_spread=False)
+    for ts, allowed in (("2026-10-02 12:00", True), ("2026-10-02 20:44", True), ("2026-10-02 20:46", False),
+                        ("2026-10-03 12:00", False), ("2026-10-04 20:59", False), ("2026-10-04 21:01", True),
+                        ("2026-11-06 21:00", True), ("2026-11-06 21:46", False)):        # 6 November: New York on EST
+        ok, reason = guard.can_open(broker, pd.Timestamp(ts))
+        assert ok is allowed, ts
+        assert allowed or "weekend" in reason
+    assert weekend_cutoff_after(pd.Timestamp("2026-03-07 12:00"), "16:45") == pd.Timestamp("2026-03-13 20:45")   # past the switch
+    assert weekend_cutoff_after(pd.Timestamp("2026-10-09 20:45"), "16:45") == pd.Timestamp("2026-10-16 20:45")
+    assert RiskGuard(PropFirmParams(), 100_000).can_open(broker, pd.Timestamp("2026-10-03 12:00"))[0]           # off by default

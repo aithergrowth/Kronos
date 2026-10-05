@@ -292,6 +292,8 @@ class PropFirmParams:
     min_minutes_between_trades: int = 0
     max_margin_pct: float = 45.0        # live: one position ties up at most this much of equity as margin (and 90 % of the
                                         # free margin), lots cut to fit: two still fit, and a 1:2 crypto CFD is not refused; 0 = off
+    weekend_close: str = ""             # "" = off; "16:45": every position closed at Friday 16:45 New York and no new one until
+                                        # the Sunday 17:00 open (FTMO Account, Standard type: flat before the weekend)
 
 
 @dataclass

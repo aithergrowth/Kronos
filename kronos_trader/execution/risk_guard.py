@@ -181,6 +181,10 @@ class RiskGuard:
         label = self.in_blackout(ts)
         if label:
             return False, f"news blackout: {label}"
+        if p.weekend_close:
+            from ..strategy.exits import in_weekend_close
+            if in_weekend_close(ts, p.weekend_close):
+                return False, f"weekend: no new trade from Friday {p.weekend_close} New York until the Sunday open"
         return True, "ok"
 
     def record_trade(self, ts: pd.Timestamp) -> None:

@@ -336,6 +336,8 @@ def cmd_live(args) -> int:
     _apply_mt5_symbol(args, settings, symbol)
     if getattr(args, "account_size", None):
         settings.account_size = float(args.account_size)
+    if getattr(args, "weekend_close", None):
+        settings.prop_firm.weekend_close = args.weekend_close
     if getattr(args, "journal", None):
         settings.live.journal_path = args.journal
         settings.live.charts_dir = str(Path(args.journal).parent / "charts")
@@ -380,7 +382,7 @@ def cmd_live(args) -> int:
     steps = "".join(f", {float(r):g}% from {float(lvl):g}%" for lvl, r in settings.risk.drawdown_steps)
     print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade{steps}, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
           f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open "
-          f"({pf.max_open_per_symbol} per market)")
+          f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else ""))
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
             balance = float(broker.balance())
@@ -635,6 +637,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--journal", help="the journal file (default: the profile's live.journal_path, journal/trades.csv); a second "
                                       "account beside the demo needs its own, e.g. journal_ftmo/trades.csv")
     sp.add_argument("--tag", help="a label in front of every Telegram message, e.g. FTMO, when two accounts share the chat")
+    sp.add_argument("--weekend-close", metavar="HH:MM", help="flat by this Friday time (New York) and no new trade until the "
+                    "Sunday open, e.g. 16:45 on a funded FTMO Standard account (prop_firm.weekend_close)")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")

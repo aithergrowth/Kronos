@@ -735,4 +735,4 @@ few trades are still open then:
 | NAS100 (48 h) | 1 of 78 | +4.1 / +3.4 | +25.6 -> +25.0 |
 
 About 5R in all, against a third of gold and NAS100 and most of BTC on Swing's leverage. Standard is the type to
-buy. A weekend close for the funded stage is still to be built into the live loop (`scripts`-side estimate only).
+buy. A weekend close for the funded stage is still to be built into the live loop: the table is an estimate from the ledgers, not a backtest with the rule.

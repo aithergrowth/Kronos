@@ -730,3 +730,30 @@ def test_lots_are_cut_to_fit_the_margin(setup):
     runner4.settings.prop_firm.max_margin_pct = 0.0
     runner4.step(NOW)
     assert off.open_positions()[0].lots == pytest.approx(1.90)
+
+
+def test_weekend_close_on_paper_and_on_a_real_broker(setup):
+    """``prop_firm.weekend_close``: the paper broker closes a position at the market on the candle at Friday 16:45 New
+    York (reason "weekend"), and on a broker that does not simulate candles the live runner closes it and reports it."""
+    s = Settings(); s.prop_firm.weekend_close = "16:45"
+    broker = PaperBroker(s, use_spread=False)
+    t0 = pd.Timestamp("2026-10-07 09:00")                                      # a Wednesday
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1000, ts=t0)
+    assert broker.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-09 20:40"), 1.1, 1.101, 1.099, 1.1005)) == []
+    closed = broker.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-09 20:45"), 1.1005, 1.102, 1.1, 1.1015))
+    assert len(closed) == 1 and closed[0].reason == "weekend" and closed[0].exit == pytest.approx(1.1015)
+
+    class Server(PaperBroker):
+        on_candle = None                                                       # like MT5
+    server = Server(Settings())
+    server.set_price("EURUSD", 1.1)
+    server.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1, ts=NOW)
+    runner, notifier = _runner(setup, server)
+    runner.settings.prop_firm.weekend_close = "16:45"
+    runner.clock = lambda: pd.Timestamp("2026-10-02 20:30")                    # Friday 16:30 New York: still held
+    runner.manage_positions(runner.fetch())
+    assert len(server.open_positions()) == 1
+    runner.clock = lambda: pd.Timestamp("2026-10-02 20:46")
+    runner.manage_positions(runner.fetch())
+    runner.report_closes()
+    assert server.open_positions() == [] and any("closed (weekend)" in m for m in notifier.sent)

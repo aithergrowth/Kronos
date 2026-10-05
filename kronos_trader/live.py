@@ -829,21 +829,27 @@ class LiveRunner:
             return
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
         hold = self.settings.exits.max_hold_hours
-        if hold and not callable(getattr(self.broker, "on_candle", None)):
+        weekend = self.settings.prop_firm.weekend_close
+        if (hold or weekend) and not callable(getattr(self.broker, "on_candle", None)):
+            from .strategy.exits import weekend_cutoff_after
             now = self.clock()
             for pid, pos in list(open_by_id.items()):
                 if getattr(pos, "status", "filled") != "filled" or pos.opened_at is None:
                     continue
-                if now - pd.Timestamp(pos.opened_at) < pd.Timedelta(hours=float(hold)):
+                if hold and now - pd.Timestamp(pos.opened_at) >= pd.Timedelta(hours=float(hold)):
+                    reason, why = "time", f"after {hold:g} h"
+                elif weekend and now >= weekend_cutoff_after(pos.opened_at, weekend):
+                    reason, why = "weekend", f"before the weekend (Friday {weekend} New York)"
+                else:
                     continue
                 try:
-                    self.broker.close_position(pid, "time", ts=now)
+                    self.broker.close_position(pid, reason, ts=now)
                     open_by_id.pop(pid)
-                    self.note("time_exit", now, id=pid, note=f"open {hold:g} h")
+                    self.note(f"{reason}_exit", now, id=pid, note=why)
                 except Exception as exc:
-                    if not pos.meta.get("time_exit_failed_sent"):
-                        pos.meta["time_exit_failed_sent"] = True
-                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} after {hold:g} h failed ({exc}); trying every scan")
+                    if not pos.meta.get(f"{reason}_exit_failed_sent"):
+                        pos.meta[f"{reason}_exit_failed_sent"] = True
+                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying every scan")
         d = self.spec.price_decimals
         for pid in list(self.unconfirmed):
             current = open_by_id.get(pid)
