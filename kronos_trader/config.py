@@ -377,6 +377,7 @@ class LiveParams:
         Timeframe.D_1: 300, Timeframe.W_1: 120, Timeframe.MN_1: 72})
     notify_every_scan: bool = False
     briefing_time: Optional[str] = "08:45"   # Dorus analyses before the open: a bias and POI briefing at this local time (session timezone)
+    summary_time: Optional[str] = "22:00"    # the day's closed trades, R, P&L and equity per market at this local time (weekdays)
     notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
     send_charts: bool = True                 # a chart image with the briefing, the POI touch and every setup
     charts_dir: str = "charts"

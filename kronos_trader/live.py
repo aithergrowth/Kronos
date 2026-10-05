@@ -185,6 +185,7 @@ class LiveRunner:
         self._news_refreshed: Optional[pd.Timestamp] = None
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
+        self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._views: Dict[Timeframe, CandleSeries] = {}
         self._touched: set = set()                          # POI keys already announced as entered
 
@@ -209,6 +210,7 @@ class LiveRunner:
         self.process_decisions(now)
         self.report_closes()
         self.morning_briefing(analysis, now)
+        self.evening_summary(now)
         self.announce_poi_touch(analysis)
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
@@ -238,6 +240,41 @@ class LiveRunner:
         self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
         self.notifier.send_analysis(analysis, self.spec)
         self.send_chart(analysis, "briefing")
+
+    def evening_summary(self, now: pd.Timestamp) -> None:
+        """Once per weekday at ``live.summary_time`` local time: the day's closed trades of this market from the journal,
+        their R and P&L, the setups seen, the equity and what is still open."""
+        at = self.settings.live.summary_time
+        if not at:
+            return
+        tz = self.settings.session.timezone
+        local = now.tz_localize("UTC").tz_convert(tz)
+        hour, minute = (int(x) for x in at.split(":"))
+        if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._summarized_on == local.date():
+            return
+        self._summarized_on = local.date()
+        closed = setups = 0
+        wins, total_r, total_pnl = 0, 0.0, 0.0
+        if self.journal is not None and self.journal.path.exists():
+            try:
+                rows = pd.read_csv(self.journal.path, parse_dates=["time"])
+                rows = rows[rows["symbol"] == self.symbol]
+                day = rows["time"].dt.tz_localize("UTC").dt.tz_convert(tz).dt.date == local.date()
+                done = rows[day & (rows["event"] == "closed")]
+                closed, wins = len(done), int((done["r"] > 0).sum())
+                total_r, total_pnl = float(done["r"].sum()), float(done["pnl"].sum())
+                setups = int((day & (rows["event"] == "setup")).sum())
+            except Exception as exc:     # a summary must never stop the loop
+                print(f"[live] {self.symbol}: evening summary could not read the journal ({exc})")
+        line = (f"📊 {self.symbol} {local:%a %d %b}: {closed} trade(s) closed, {wins} won, {total_r:+.2f}R, "
+                f"P&L {total_pnl:+,.0f}; {setups} setup(s)")
+        if self.broker is not None:
+            try:
+                open_now = self.broker.open_positions(self.symbol)
+                line += f"; equity {self.broker.equity():,.0f}; open: {len(open_now) or 'none'}"
+            except Exception as exc:
+                print(f"[live] {self.symbol}: evening summary could not read the broker ({exc})")
+        self.notifier.send(line)
 
     def send_chart(self, analysis: Analysis, kind: str, timeframe: Optional[Timeframe] = None,
                    setup: Optional[TradeSetup] = None, forecast: Optional[ForecastSummary] = None) -> None:

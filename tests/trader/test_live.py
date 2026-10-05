@@ -298,3 +298,29 @@ def test_journal_records_the_whole_sequence(setup, tmp_path):
     assert rows.iloc[0]["rr"] == 3.85 and rows.iloc[0]["poi_tf"] == "1H" and rows.iloc[-1]["reason"] == "take_profit"
     s = summary(tmp_path / "trades.csv")
     assert s["closed"] == 1 and s["wins"] == 1 and s["win_rate"] == 1.0 and s["avg_r"] > 3
+
+
+def test_evening_summary_once_per_weekday_from_the_journal(setup, tmp_path):
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    settings.live.briefing_time = None
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 18:00", symbol="EURUSD")}
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier,
+                        engine=FakeEngine(setup, signal_on_first_call=False), clock=lambda: NOW)
+    runner.journal.log("setup", "EURUSD", time=pd.Timestamp("2026-10-01 08:05"))
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-10-01 08:30"), r=-1.0, pnl=-1000.0)
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-10-01 14:10"), r=2.5, pnl=2500.0)
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-09-30 14:10"), r=1.0, pnl=1000.0)   # yesterday
+    runner.journal.log("closed", "XAUUSD", time=pd.Timestamp("2026-10-01 14:10"), r=-1.0, pnl=-1000.0)  # another market
+    runner.step(pd.Timestamp("2026-10-01 19:55"))            # 21:55 Amsterdam: too early
+    assert not any("📊" in m for m in notifier.sent)
+    runner.step(pd.Timestamp("2026-10-01 20:01"))            # 22:01: the summary
+    runner.step(pd.Timestamp("2026-10-01 20:30"))            # not again today
+    summaries = [m for m in notifier.sent if "📊" in m]
+    assert len(summaries) == 1
+    assert "2 trade(s) closed, 1 won, +1.50R" in summaries[0] and "1 setup(s)" in summaries[0] and "equity" in summaries[0]
+    runner.step(pd.Timestamp("2026-10-03 20:30"))            # Saturday: nothing
+    assert sum("📊" in m for m in notifier.sent) == 1

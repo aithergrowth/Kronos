@@ -61,6 +61,11 @@ python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD
 The paper account lives in that window (a restart starts again at the account size); the trades go to the journal.
 On the FTMO account (crypto trades around the clock there) BTC goes back to `--broker mt5`.
 
+**All three at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest profiles and opens the
+EURUSD, XAUUSD and BTCUSD windows with the commands above, the venv active in each. Every window sends the 08:45
+briefing and, at 22:00 (`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen,
+equity and what is still open.
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop
