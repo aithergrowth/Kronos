@@ -428,3 +428,19 @@ def test_no_telegram_polling_without_a_setup_waiting(setup):
     runner.step(NOW + pd.Timedelta(minutes=1))                      # a setup waits: asked, the 409 does not end the scan
     assert Notifier.polls == 1 and "abc" in runner.pending
     assert not any("live loop error" in m for m in notifier.sent)
+
+
+def test_friday_summary_adds_the_week(setup, tmp_path):
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    settings.live.briefing_time = None
+    notifier = TelegramNotifier(dry_run=True)
+    runner = LiveRunner(settings, "EURUSD", lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15,
+                                                                                        start="2026-10-02 18:00", symbol="EURUSD")},
+                        notifier=notifier, engine=FakeEngine(setup, signal_on_first_call=False), clock=lambda: NOW)
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-09-28 09:00"), r=2.0, pnl=3000.0)   # Monday
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-10-01 14:00"), r=-1.0, pnl=-1500.0)  # Thursday
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-09-25 14:00"), r=5.0, pnl=7500.0)   # the week before
+    runner.step(pd.Timestamp("2026-10-02 20:05"))                 # Friday 22:05 Amsterdam
+    summary = next(m for m in notifier.sent if "📊" in m)
+    assert "this week: 2 trade(s), 50 % won, +1.00R" in summary

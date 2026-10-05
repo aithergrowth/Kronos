@@ -290,15 +290,23 @@ class LiveRunner:
         self._summarized_on = local.date()
         closed = setups = 0
         wins, total_r, total_pnl = 0, 0.0, 0.0
+        week_line = ""
         if self.journal is not None and self.journal.path.exists():
             try:
                 rows = pd.read_csv(self.journal.path, parse_dates=["time"])
                 rows = rows[rows["symbol"] == self.symbol]
-                day = rows["time"].dt.tz_localize("UTC").dt.tz_convert(tz).dt.date == local.date()
+                dates = rows["time"].dt.tz_localize("UTC").dt.tz_convert(tz).dt.date
+                day = dates == local.date()
                 done = rows[day & (rows["event"] == "closed")]
                 closed, wins = len(done), int((done["r"] > 0).sum())
                 total_r, total_pnl = float(done["r"].sum()), float(done["pnl"].sum())
                 setups = int((day & (rows["event"] == "setup")).sum())
+                if local.weekday() == 4:          # Friday: the week as well (Monday to today)
+                    monday = (local - pd.Timedelta(days=4)).date()
+                    week = rows[(dates >= monday) & (dates <= local.date()) & (rows["event"] == "closed")]
+                    wr = f", {100 * (week['r'] > 0).mean():.0f} % won" if len(week) else ""
+                    week_line = (f"\n📅 {self.symbol} this week: {len(week)} trade(s){wr}, {float(week['r'].sum()):+.2f}R, "
+                                 f"P&L {float(week['pnl'].sum()):+,.0f}")
             except Exception as exc:     # a summary must never stop the loop
                 print(f"[live] {self.symbol}: evening summary could not read the journal ({exc})")
         line = (f"📊 {self.symbol} {local:%a %d %b}: {closed} trade(s) closed, {wins} won, {total_r:+.2f}R, "
@@ -309,7 +317,7 @@ class LiveRunner:
                 line += f"; equity {self.broker.equity():,.0f}; open: {len(open_now) or 'none'}"
             except Exception as exc:
                 print(f"[live] {self.symbol}: evening summary could not read the broker ({exc})")
-        self.notifier.send(line)
+        self.notifier.send(line + week_line)
 
     def send_chart(self, analysis: Analysis, kind: str, timeframe: Optional[Timeframe] = None,
                    setup: Optional[TradeSetup] = None, forecast: Optional[ForecastSummary] = None) -> None:
