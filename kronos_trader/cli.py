@@ -318,6 +318,9 @@ def cmd_live(args) -> int:
     _apply_mt5_symbol(args, settings, symbol)
     if getattr(args, "account_size", None):
         settings.account_size = float(args.account_size)
+    if getattr(args, "journal", None):
+        settings.live.journal_path = args.journal
+        settings.live.charts_dir = str(Path(args.journal).parent / "charts")
     broker = _broker(args, settings)
     sizing_note = None
     if broker is not None and args.broker == "mt5":
@@ -342,6 +345,8 @@ def cmd_live(args) -> int:
     fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
                         broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
+    if getattr(args, "tag", None):
+        notifier.prefix = f"[{args.tag}] "
     if sizing_note:
         notifier.send(sizing_note)
     runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
@@ -608,6 +613,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="live candle source (default: broker bars with --broker ibkr/mt5, otherwise the cache); "
                          "bitstamp: BTCUSD/ETHUSD around the clock, with --broker paper")
     sp.add_argument("--account-size", type=float, help="account size for the paper broker and the guard, e.g. 10000")
+    sp.add_argument("--journal", help="the journal file (default: the profile's live.journal_path, journal/trades.csv); a second "
+                                      "account beside the demo needs its own, e.g. journal_ftmo/trades.csv")
+    sp.add_argument("--tag", help="a label in front of every Telegram message, e.g. FTMO, when two accounts share the chat")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")

@@ -377,3 +377,18 @@ def test_telegram_send_never_raises():
         raise TelegramError(method, 403, "Forbidden: bot was blocked by the user")
     n._call = refused
     assert n.send("blocked") is False
+
+
+def test_a_second_account_has_its_own_journal_and_a_tag():
+    """``live --journal journal_ftmo/trades.csv --tag FTMO``: the FTMO windows keep their own journal (traded zones, lock,
+    paper state) and every Telegram message says which account it is about."""
+    from kronos_trader.cli import build_parser
+    from kronos_trader.notify.telegram import TelegramNotifier
+    args = build_parser().parse_args(["live", "--symbol", "EURUSD", "--broker", "mt5", "--journal", "journal_ftmo/trades.csv",
+                                      "--tag", "FTMO", "--account-size", "10000"])
+    assert args.journal == "journal_ftmo/trades.csv" and args.tag == "FTMO" and args.account_size == 10000
+    n = TelegramNotifier(dry_run=True)
+    n.prefix = "[FTMO] "
+    n.send("EURUSD BUY filled")
+    n.send_photo("charts/x.png", "EURUSD 1H touch")
+    assert n.sent[0] == "[FTMO] EURUSD BUY filled" and n.sent[1].endswith("[FTMO] EURUSD 1H touch")

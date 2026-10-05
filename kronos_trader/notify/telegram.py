@@ -64,6 +64,7 @@ class TelegramNotifier:
         self._offset: Optional[int] = None
         self._queued: List[Decision] = []
         self._warned_at = 0.0
+        self.prefix = ""                     # e.g. "[FTMO] ": which account a message is about when two run side by side
 
     @property
     def configured(self) -> bool:
@@ -110,6 +111,7 @@ class TelegramNotifier:
         return list(seen.values())
 
     def send(self, text: str, reply_markup: Optional[Dict[str, Any]] = None) -> bool:
+        text = f"{self.prefix}{text}" if self.prefix else text
         self.sent.append(text)
         if self.dry_run:
             print("[telegram dry-run]\n" + text)
@@ -140,6 +142,7 @@ class TelegramNotifier:
 
     def send_photo(self, path, caption: str = "") -> bool:
         """sendPhoto with an optional caption; in dry-run the path is printed."""
+        caption = f"{self.prefix}{caption}" if self.prefix else caption
         self.sent.append(f"[photo] {path} {caption}".strip())
         if self.dry_run:
             print(f"[telegram dry-run photo] {path}\n{caption}")

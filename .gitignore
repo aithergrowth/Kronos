@@ -76,6 +76,7 @@ tmp/
 .python-version
 charts/
 journal/
+journal_ftmo/
 
 # multi-year history caches: rebuilt with `python -m kronos_trader histdata` / `dukascopy` (raw zips and 1-minute files are large)
 data/histdata/
