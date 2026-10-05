@@ -44,6 +44,13 @@ def _load_settings(args) -> Settings:
     return settings
 
 
+def _apply_mt5_symbol(args, settings: Settings, symbol: str) -> None:
+    """--mt5-symbol: the broker's own name for the market (MetaQuotes-Demo, prop firms: BTCUSD.x, XAUUSD.m), for this run."""
+    name = getattr(args, "mt5_symbol", None)
+    if name:
+        settings.symbols[symbol].mt5_symbol = name
+
+
 def _ensure_symbol(settings: Settings, symbol: str) -> str:
     key = symbol.upper()
     if key not in settings.symbols:
@@ -304,6 +311,7 @@ def cmd_live(args) -> int:
     from .live import LiveRunner, build_fetch
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
+    _apply_mt5_symbol(args, settings, symbol)
     broker = _broker(args, settings)
     data_dir = args.data_dir or settings.tradingview.cache_dir
     kind, feed = _feed(args, settings, broker)
@@ -376,6 +384,7 @@ def cmd_mt5_test(args) -> int:
     from .execution.mt5 import MT5Broker
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
+    _apply_mt5_symbol(args, settings, symbol)
     broker = MT5Broker(settings)
     d = broker.diagnostics()
     algo = "on" if d["algo_trading"] else "OFF (click 'Algo Trading' in the terminal toolbar before --execute)"
@@ -549,6 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("live", help="run the live loop: cache + broker bars -> engine -> Telegram (approve) -> broker")
     data_args(sp)
     sp.add_argument("--broker", choices=["none", "paper", "ibkr", "mt5"], default="none")
+    sp.add_argument("--mt5-symbol", help="the broker's name for the symbol when it differs (see mt5-symbols), e.g. BTCUSD.x")
     sp.add_argument("--execute", action="store_true", help="send real orders (default: dry-run, Telegram only)")
     sp.add_argument("--no-approval", action="store_true", help="execute without the Telegram approve step")
     sp.add_argument("--poll", type=int, default=60, help="seconds between scans")
@@ -572,6 +582,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=cmd_mt5_symbols)
     sp = sub.add_parser("mt5-test", help="connect to the MetaTrader 5 terminal and print account, server time offset and bars")
     sp.add_argument("--symbol", default="EURUSD")
+    sp.add_argument("--mt5-symbol", help="the broker's name for the symbol when it differs (see mt5-symbols)")
     sp.add_argument("--tf", default="15m")
     sp.set_defaults(func=cmd_mt5_test)
     sp = sub.add_parser("dukascopy", help="free Dukascopy history: pull 1-minute day files and build the cache for a symbol")
