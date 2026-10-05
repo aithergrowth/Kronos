@@ -736,3 +736,21 @@ few trades are still open then:
 
 About 5R in all, against a third of gold and NAS100 and most of BTC on Swing's leverage. Standard is the type to
 buy. A weekend close for the funded stage is still to be built into the live loop: the table is an estimate from the ledgers, not a backtest with the rule.
+
+What the margin cut does to the challenge (`scripts/risk_steps.py`, the five ledgers of "The daily candles live
+sees", two open, 1.5 % with the steps). Each BTC trade is scaled by what the margin allows, and the cost haircut
+is scaled with it:
+
+| BTC in the ledger | Funded (backtest) | Median days | Funded, -0.10R a trade | Median days |
+|---|---|---|---|---|
+| Full size (no margin limit) | 98 % | 105 | 81 % | 139 |
+| Cut at 1:3.3 | 100 % | 107 | 95 % | 166 |
+| Cut at 1:2 | 100 % | 106 | 99 % | 155 |
+| Flat half size | 100 % | 115 | 85 % | 150 |
+| No BTC | 100 % | 124 | 100 % | 169 |
+
+The cut shrinks the tight-stop trades most (they need the most exposure), and those carried BTC's 2026: per year
++5.6 / +1.8 / +7.9R cut at 1:2 against +9.5 / -0.1 / +52.9R full. On FTMO the bot therefore trades a smaller,
+steadier BTC that passes about as often as no BTC and gets there faster. The full-size BTC of the paper account
+is the variance the challenge can least afford. That is one more reason the demo's monthly numbers overstate a
+challenge account.
