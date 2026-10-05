@@ -246,3 +246,19 @@ def test_impulse_origin_target_is_the_extreme_before_the_zone_formed(scenario):
     level = impulse_origin_target(Direction.LONG, expected - 1.0, {T.H_1: st}, poi, params, pip_size=0.01)
     assert level is not None and level[0] == pytest.approx(expected) and "origin high" in level[1]
     assert impulse_origin_target(Direction.LONG, expected + 1.0, {T.H_1: st}, poi, params, pip_size=0.01) is None
+
+
+def test_stepped_risk_lowers_the_stake_below_the_start():
+    """``drawdown_steps``: at or below each level (% from the initial balance) a trade risks at most that step's risk; the
+    lowest applicable step wins; without steps or above every level the params come back unchanged."""
+    from kronos_trader.config import Settings
+    from kronos_trader.strategy.risk import stepped_risk
+    p = RiskParams(risk_pct=1.5, drawdown_steps=((-3, 1.0), (-6, 0.5)))
+    assert stepped_risk(p, 100_000, 100_000) is p and stepped_risk(p, 103_000, 100_000) is p
+    assert stepped_risk(p, 97_000, 100_000).risk_pct == 1.0 and stepped_risk(p, 96_500, 100_000).risk_pct == 1.0
+    assert stepped_risk(p, 94_000, 100_000).risk_pct == 0.5 and stepped_risk(p, 80_000, 100_000).risk_pct == 0.5
+    assert p.risk_pct == 1.5                                           # the profile's own params are not changed
+    flat = RiskParams(risk_pct=1.5)
+    assert stepped_risk(flat, 50_000, 100_000) is flat
+    loaded = Settings.from_dict({"risk": {"risk_pct": 1.5, "drawdown_steps": [[-3, 1.0], [-6, 0.5]]}}).risk
+    assert stepped_risk(loaded, 96_000, 100_000).risk_pct == 1.0

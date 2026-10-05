@@ -350,7 +350,8 @@ def cmd_live(args) -> int:
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
     pf = settings.prop_firm
     month = f", a month of -{pf.monthly_loss_limit_pct}%" if pf.monthly_loss_limit_pct else ""
-    print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
+    steps = "".join(f", {float(r):g}% from {float(lvl):g}%" for lvl, r in settings.risk.drawdown_steps)
+    print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade{steps}, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
           f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open "
           f"({pf.max_open_per_symbol} per market)")
     if broker is not None and args.broker in ("mt5", "ibkr"):

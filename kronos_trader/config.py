@@ -225,6 +225,9 @@ class RiskParams:
                                         # since the touch (the minimum the plan allows); poi = the zone's own P, his choice in the course
                                         # (daily P for a daily zone: A 01:08:49-01:09:03, 01:46:40-01:47:02; "op de protected", A 02:27:15)
     rr_includes_buffer: bool = True     # ASSUMPTION: R:R measured on the same distance used for sizing
+    drawdown_steps: Tuple[Tuple[float, float], ...] = ()   # (level %, risk %) pairs: with the balance at or below level % from the
+                                        # initial balance (account_size) a trade risks at most that risk %, e.g. ((-3, 1.0), (-6, 0.5));
+                                        # empty = risk_pct always. Only the stake changes, never which trades are taken
     max_entry_depth: float = 0.0        # 0 = off; else the entry may lie at most this fraction of the zone's height inside it, measured from the
                                         # edge price enters by (an entry outside the zone counts as 0): deeper, the P is a few pips away and the stop
                                         # has no room ("kan je stoploss nog wat ruimte geven", A 00:31:22; his entries sit at the zone's edge,

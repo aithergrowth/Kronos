@@ -465,3 +465,24 @@ def test_algo_trading_off_is_reported_once(setup):
     Broker.on = True
     runner.step(NOW + pd.Timedelta(minutes=22))
     assert sum("weer aan" in m for m in notifier.sent) == 1
+
+
+def test_drawdown_steps_lower_the_live_stake(setup):
+    """Live, a balance 4 % under the start (account_size) with ``risk.drawdown_steps`` ((-3, 1.0),) sizes the order at
+    1.0 % instead of the profile's 1.5 %, and the fill message says so."""
+    lots = {}
+    for steps in ((), ((-3, 1.0),)):
+        s = Settings(); s.account_size = 100_000.0
+        broker = PaperBroker(s)
+        broker.set_price("EURUSD", 1.1)
+        broker._balance = 96_000.0                                   # 4 % under the start after earlier losses
+        runner, notifier = _runner(setup, broker, require_approval=False)
+        runner.settings.account_size = 100_000.0
+        runner.settings.risk.risk_pct = 1.5
+        runner.settings.risk.drawdown_steps = steps
+        runner.step(NOW)
+        assert len(broker.open_positions()) == 1
+        lots[steps] = broker.open_positions()[0].lots
+        if steps:
+            assert any("1 %: balance below the start" in m for m in notifier.sent)
+    assert lots[((-3, 1.0),)] == pytest.approx(lots[()] / 1.5, rel=0.02)

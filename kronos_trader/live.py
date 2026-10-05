@@ -558,10 +558,11 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
             self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
             return None
-        from .strategy.risk import reconcile_risk, resize_at
+        from .strategy.risk import reconcile_risk, resize_at, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
+        risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
-                                                                self.spec, self.settings.risk)
+                                                                self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:
             self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
@@ -572,6 +573,8 @@ class LiveRunner:
             self.notifier.send(f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}")
             return None
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
+        if risk_params.risk_pct != self.settings.risk.risk_pct:
+            resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
         try:
             pos = self.broker.place_market_order(
                 self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
@@ -599,8 +602,9 @@ class LiveRunner:
                   stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
                   note=f"setup {sid}{resized}")
         if filled:
+            stepped = f" ({risk_params.risk_pct:g} %: balance below the start)" if risk_params.risk_pct != self.settings.risk.risk_pct else ""
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
-                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")
+                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}{stepped}  (id {pos.id})")
         else:
             self.unconfirmed[pos.id] = pos
             self.notifier.send(f"📨 {self.symbol} {side} {pos.lots:.2f} lots submitted, fill not confirmed yet  "

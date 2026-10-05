@@ -31,6 +31,10 @@ confirmation:
                                   # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
 risk:
   risk_pct: 1.5                   # 5 October, Max: 1.5 % (challenge sim, EURUSD + gold + BTC, 790 starts 2024-2026: funded 82 % vs 91 % at 1 %, phase 1 median 61 vs 116 days)
+  drawdown_steps: [[-3, 1.0], [-6, 0.5]]   # 5 October: with the balance 3 % under the start a trade risks 1.0 %, from 6 % under
+                                  # it 0.5 %; only the stake changes, never the trades. FTMO challenge, five markets, two open,
+                                  # 790 starts 2024-2026: funded 85 % flat -> 92 %. On the funded account plan 1.0 % with
+                                  # [[-3, 0.5]]: lost within a year 11 % flat -> 2 % (with every trade 0.15R worse live: 21 % -> 11 %)
   min_rr: 0.5                     # "boven de 0,5" from his 70 % win rate (A 01:44:08-01:45:07)
   max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades

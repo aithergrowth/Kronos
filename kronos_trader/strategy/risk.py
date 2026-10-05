@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Dict, List, Optional, Tuple
 
 from ..config import RiskParams, SymbolSpec
@@ -194,6 +195,20 @@ def nearer_liquidity_target(
     if not fitting:
         return None
     return fitting[-1] if params.tp_cap_choice == "farthest" else fitting[0]
+
+
+def stepped_risk(params: RiskParams, balance: float, initial: float) -> RiskParams:
+    """``params`` with ``risk_pct`` lowered by ``drawdown_steps`` for a balance this far from the initial one: each
+    (level %, risk %) step applies at or below its level and the lowest risk wins; ``params`` itself when nothing applies.
+    FTMO challenge, 790 starts 2024-2026 at 1.5 %: funded 85 % flat, 92 % with ((-3, 1.0), (-6, 0.5))."""
+    if not params.drawdown_steps or initial <= 0:
+        return params
+    from_start = (float(balance) - float(initial)) / float(initial) * 100.0
+    risk = params.risk_pct
+    for level, step_risk in params.drawdown_steps:
+        if from_start <= float(level):
+            risk = min(risk, float(step_risk))
+    return params if risk == params.risk_pct else replace(params, risk_pct=risk)
 
 
 def resize_at(

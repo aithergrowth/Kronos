@@ -21,7 +21,7 @@ from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
 from ..execution.risk_guard import RiskGuard
 from ..strategy.engine import StrategyEngine
-from ..strategy.risk import reconcile_risk, resize_at
+from ..strategy.risk import reconcile_risk, resize_at, stepped_risk
 
 
 @dataclass
@@ -208,7 +208,8 @@ class Backtester:
                 price_now = broker.fill_price(self.symbol, setup.direction, float(candle.close))   # the ask / the bid
                 wrong_side = (setup.direction.sign > 0 and price_now <= setup.stop) or (setup.direction.sign < 0 and price_now >= setup.stop)
                 lots_now, risk_amount_now, risk_distance_now, rr_now, _ = resize_at(
-                    price_now, setup.stop, setup.take_profit, broker.equity(), spec, s.risk)
+                    price_now, setup.stop, setup.take_profit, broker.equity(), spec,
+                    stepped_risk(s.risk, broker.balance(), s.account_size))
                 if wrong_side or rr_now < s.risk.min_rr or lots_now <= 0:
                     rejected += 1
                     reason = ("price moved: wrong side of the stop" if wrong_side else

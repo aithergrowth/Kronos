@@ -592,3 +592,36 @@ month's losses. With the BTC 4H rule (ledger estimate) on top: +125.1R, average 
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.
+
+### Risk steps for the challenge and the funded account (5 October, evening)
+
+The month stop above was switched off again the same day (Max: better entries, not a stop; `monthly_loss_limit_pct:
+0.0` in the live profiles). What does help the account without skipping a single trade is the stake:
+`risk.drawdown_steps` lowers the risk per trade while the balance is under the start (level % from `account_size`,
+risk %), in the backtest runner and live alike. `scripts/risk_steps.py` replays the five-market ledger (two open, one
+per market, 365 trades February 2024 to September 2026, +0.35R a trade) on the FTMO rules: the challenge from every
+day of February 2024 to March 2026 (phase 1 +10 %, phase 2 +5 %, -10 % static, -5 % a day), the funded account from
+every 7th day to September 2025 for 12 months (80 % of a positive month paid out, the balance back to the start).
+`--haircut` takes that many R off every trade, for a live result worse than the backtest:
+
+| Challenge | Funded (backtest) | Funded, -0.10R a trade | Funded, -0.15R a trade | Failed (backtest / -0.15R) |
+|---|---|---|---|---|
+| 1.5 % flat | 85 % | 72 % | 65 % | 15 % / 35 % |
+| **1.5 %, 1.0 % from -3 %, 0.5 % from -6 %** | **92 %** | **87 %** | **75 %** | **8 % / 25 %** |
+| 2.0 % with the same steps | 91 % | 89 % | 65 % | 9 % / 35 % |
+| 1.0 % flat | 92 % | | | 8 % / |
+
+| Funded account, 12 months | Lost (backtest) | Lost, -0.10R | Lost, -0.15R | Paid out a month (backtest / -0.15R) |
+|---|---|---|---|---|
+| 1.5 % flat | 21 % | 59 % | 90 % | 4.1 % / 1.3 % |
+| 1.0 % flat | 11 % | 16 % | 21 % | 2.9 % / 1.6 % |
+| **1.0 %, 0.5 % from -3 %** | **2 %** | **10 %** | **11 %** | **2.8 % / 1.4 %** |
+| 0.75 % flat | 8 % | 11 % | 13 % | 2.3 % / 1.3 % |
+
+The median time to funded grows with the steps (1.5 % flat 80 days, with the steps 96, 1.0 % flat 118).
+
+Taken: `drawdown_steps: [[-3, 1.0], [-6, 0.5]]` at 1.5 % in the live profiles (challenge mode). On a funded account
+the plan is 1.0 % with `[[-3, 0.5]]`: paying out every month keeps no buffer, and at 1.5 % flat a live edge a third
+smaller than the backtest's loses most funded accounts within a year. The steps only change the stake, so the
+replay on fixed ledgers is exact apart from the compounding (the replay risks a share of the start, the bot of the
+equity).
