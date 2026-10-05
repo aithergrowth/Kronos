@@ -866,3 +866,20 @@ all three. In the challenge replay from June 2020, EURUSD, gold and NAS100 at R:
 starts (2020-2022: 55 %). With the profile's BTC added it is 42 % (2020-2022: 9 %): the variance of a market with
 no edge outside one year. Max's decision (5 October): BTC stays in `scripts/start_ftmo.bat`. The bot trades the
 present, not 2020, and on FTMO the margin cap trades BTC at roughly half size anyway.
+
+**Can a 14-day trial pass? (5 October, night)** FTMO's free trial runs 14 days. On the corrected ledgers (EURUSD,
+gold and NAS100 at R:R 1.5, BTC from June 2020 cut to FTMO's margin, two open, 0.10R a trade for costs), every start
+day from June 2020 was replayed. The target is +10 % with at least 4 trading days, before a -5 % day or -10 %, and a
+trade counts when it opens and closes inside the window:
+
+| Risk a trade | Passed in 14 days | Failed | Trades in the window (median / 90th pct) |
+|---|---|---|---|
+| 1.5 % | 2 % | 0 % | 3 / 6 |
+| 2 % | 2-3 % | 1 % | 3 / 6 |
+| 3 % | 6-8 % | 7-10 % | 3 / 6 |
+| 5 % | 4 % | 55-75 % | 3 / 6 |
+
+Three trades in two weeks cannot make 10 % without gambling: at 5 % one loser and its costs breach the daily limit.
+The trial is a test of the set-up on FTMO's server (orders, names, sizing, the margin cut, Telegram). The challenge
+has no time limit. More trades with the same edge can only come from more markets that hold in both periods:
+AUDUSD, NZDUSD, USDCAD, USDCHF, USDJPY, silver, US500 and GER40 are running on the corrected candles.
