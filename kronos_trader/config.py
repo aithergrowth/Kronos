@@ -212,6 +212,7 @@ class RiskParams:
                                         # vorige liquiditeitsgebied", A 01:54:47; his targets: the 12:45 low on 11 Nov 2025, the 15 Mar low on 18 Mar 2024,
                                         # the 24 Aug low on K3, all within 72 candles of a 1H zone); falls back to liquidity_nearest when nothing lies beyond entry
     tp_buffer_pips: float = 0.0         # previous_extreme: the target sits this many pips before the extreme (his: 0.3 pip and 1.0 point before the low)
+    tp_fixed_rr: float = 0.0            # 0 = off; else the target sits this many R beyond the entry (R = the sizing distance) whatever the policy finds
     tp_origin_candles: int = 30         # tp_policy impulse_origin: the target is the extreme of this many zone-timeframe candles before the zone formed,
                                         # i.e. the low (short) / high (long) the move that created the zone started from: "stop loss op de low en take profit
                                         # bij de vorige high" (A 00:43:39, 01:09:01, 01:20:52, 02:45:57), the previous higher low whose break is the

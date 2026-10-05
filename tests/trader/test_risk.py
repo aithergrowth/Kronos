@@ -177,6 +177,23 @@ def test_tp_max_rr_takes_a_nearer_liquidity_when_the_floor_target_is_too_far(sce
     assert kept is not None and kept.take_profit == 115.0   # no nearer level with R:R >= min: the far target stays
 
 
+def test_tp_fixed_rr_puts_the_target_k_risk_distances_beyond_the_entry(scenario):
+    """``tp_fixed_rr``: the target sits that many sizing distances beyond the entry whatever the policy would find; the
+    R:R cap does not move it."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_1, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 108.5, 107.0, 108.0)
+    st = {T.H_1: StubStructure(bsl=[115.0]), T.MIN_15: StubStructure(bsl=[108.3, 109.5]), T.MIN_5: StubStructure(bsl=[109.0])}
+    fixed = RiskParams(stop_basis="confirmation", tp_policy="liquidity_nearest", tp_floor_tf=T.H_1, min_rr=0.5, tp_fixed_rr=2.0, tp_max_rr=1.5)
+    setup, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, st, fixed, 100_000)
+    assert setup is not None and reasons == [] and setup.tp_source == "fixed 2R"
+    assert setup.take_profit == pytest.approx(108.0 + 2.0 * setup.risk_distance, abs=0.011) and setup.rr == pytest.approx(2.0, abs=0.02)
+    short_conf = Confirmation(ConfirmationType.BOS, T.MIN_1, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BEARISH, 101.5, 103.0, 102.0)
+    nothing = {T.H_1: StubStructure()}                     # no liquidity at all: a fixed target needs none
+    short, _ = build_setup("TEST", TEST, Direction.SHORT, poi, short_conf, 102.0, nothing, fixed, 100_000)
+    if short is not None:
+        assert short.take_profit == pytest.approx(102.0 - 2.0 * short.risk_distance, abs=0.011)
+
+
 def test_previous_extreme_target_is_the_lowest_low_before_the_touch(scenario):
     """``tp_policy previous_extreme``: the target is the extreme of the last ``tp_lookback_candles`` candles on the zone's
     timeframe before the touch, a buffer before it; when nothing lies beyond entry it falls back to the nearest liquidity."""

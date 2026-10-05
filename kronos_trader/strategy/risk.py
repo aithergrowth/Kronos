@@ -315,21 +315,24 @@ def build_setup(
         stop_note += f"; moved out from {stop} to the {params.min_stop_pips:g}-pip minimum"
         stop = widened
 
-    target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
-                              touch_ts=touch_ts, pip_size=spec.pip_size, poi=poi)
+    lots, risk_amount, risk_distance, stop_pips = size_position(equity, entry, stop, spec, params)
+    rr_distance = risk_distance if params.rr_includes_buffer else abs(entry - stop)
+    if params.tp_fixed_rr > 0:
+        target = (entry + direction.sign * params.tp_fixed_rr * rr_distance, f"fixed {params.tp_fixed_rr:g}R")
+    else:
+        target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
+                                  touch_ts=touch_ts, pip_size=spec.pip_size, poi=poi)
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons
     tp_price, tp_source = spec.round_price(target[0]), target[1]
 
-    lots, risk_amount, risk_distance, stop_pips = size_position(equity, entry, stop, spec, params)
     reward_distance = abs(tp_price - entry)
-    rr_distance = risk_distance if params.rr_includes_buffer else abs(entry - stop)
     rr = reward_distance / rr_distance if rr_distance > 0 else 0.0
     if rr < params.min_rr:
         reasons.append(f"R:R {rr:.2f} below minimum {params.min_rr:.1f} (target {tp_source})")
         return None, reasons
-    if params.tp_max_rr > 0 and rr > params.tp_max_rr:
+    if params.tp_max_rr > 0 and rr > params.tp_max_rr and params.tp_fixed_rr <= 0:
         nearer = nearer_liquidity_target(direction, entry, structures, poi.timeframe, params, confirmation.timeframe, rr_distance)
         if nearer is not None:
             far_source, far_rr = tp_source, rr
