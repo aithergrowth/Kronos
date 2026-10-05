@@ -170,6 +170,8 @@ class ConfirmationParams:
     max_zone_age_candles: int = 0       # 0 = off; else a zone older than this many candles of its own timeframe is not a candidate (loss
                                         # anatomy, 4 October, three markets: zones under 24 h old won 43-48 %, older ones 12-33 %; BTC
                                         # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)
+    max_zone_age_by_tf: Dict[Timeframe, int] = field(default_factory=dict)   # the same limit per zone timeframe, in place of
+                                        # max_zone_age_candles for the timeframes it names (0 = no limit there), e.g. {1H: 24}
     one_trade_per_visit: bool = False   # a zone traded during a visit is not traded again in that visit: the stop sat on its P, so a stop-out means
                                         # the P was traded through (R6: 46 re-entries after a stop-out on the same zone, 9 % won, -23.7R; first
                                         # attempts 43 %). Off here so the frozen profiles reproduce; on in config/dorus_course.yaml

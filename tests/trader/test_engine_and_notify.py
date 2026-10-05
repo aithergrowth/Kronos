@@ -221,6 +221,22 @@ def test_max_zone_age_candles_refuses_stale_zones(hk_data):
         assert (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["poi_formed"])) / tf.delta() <= 2 + 1   # the scan step adds at most one candle
 
 
+def test_max_zone_age_by_tf_limits_only_the_named_timeframes(hk_data):
+    """``confirmation.max_zone_age_by_tf`` ({1H: 24} in YAML) limits the age of the zones of the timeframes it names; the zones
+    of the other timeframes keep ``max_zone_age_candles`` (here off)."""
+    from kronos_trader.config import Settings
+    assert Settings.from_dict({"confirmation": {"max_zone_age_by_tf": {"1H": 24}}}).confirmation.max_zone_age_by_tf == {T.H_1: 24}
+    s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    s.confirmation.max_zone_age_by_tf = {T.H_1: 2}
+    run = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert run.trades and any("1H" in r and "candles old (max 2)" in r for r in run.rejection_reasons)
+    assert not any("candles old" in r and " 1H " not in f" {r}" for r in run.rejection_reasons)
+    for t in run.trades:
+        if t.meta["poi_tf"] == "1H":
+            assert (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["poi_formed"])) / T.H_1.delta() <= 2 + 1
+
+
 def test_lower_zone_timeframes_are_mapped_only_when_the_profile_names_them(hk_data):
     """15m zones are mapped when ``confirmation.poi_timeframes`` (or ``scalp_poi_timeframes``) names the 15m; by default only
     the bias timeframes are. Before 5 October a 15m in the profile was silently ignored, so no 15m zone was ever traded."""
