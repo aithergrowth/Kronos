@@ -18,7 +18,9 @@ reported with P&L.  ``dry_run=True`` never sends an order.
 from __future__ import annotations
 
 import hashlib
+import json
 import time
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -186,6 +188,11 @@ class LiveRunner:
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
+        # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
+        # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
+        self.traded_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"traded_{self.symbol}.json"
+                                            if settings.live.journal_path else None)
+        self.load_traded()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._views: Dict[Timeframe, CandleSeries] = {}
@@ -242,6 +249,30 @@ class LiveRunner:
         self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
         self.notifier.send_analysis(analysis, self.spec)
         self.send_chart(analysis, "briefing")
+
+    def load_traded(self) -> None:
+        """Zones this market traded per visit, from the file the last run left (none when there is no file)."""
+        traded = getattr(self.engine, "traded", None)
+        if self.traded_path is None or traded is None or not self.traded_path.exists():
+            return
+        try:
+            rows = json.loads(self.traded_path.read_text(encoding="utf-8"))
+            mine = traded.setdefault(self.symbol, {})
+            for tf, direction, created, visit in rows:
+                mine[(str(tf), int(direction), str(created))] = int(visit)
+        except Exception as exc:     # a damaged file must not stop the loop
+            print(f"[live] {self.symbol}: could not read {self.traded_path} ({exc})")
+
+    def save_traded(self) -> None:
+        traded = getattr(self.engine, "traded", None)
+        if self.traded_path is None or traded is None:
+            return
+        try:
+            rows = [[k[0], int(k[1]), k[2], int(v)] for k, v in traded.get(self.symbol, {}).items()]
+            self.traded_path.parent.mkdir(parents=True, exist_ok=True)
+            self.traded_path.write_text(json.dumps(rows), encoding="utf-8")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.traded_path} ({exc})")
 
     def evening_summary(self, now: pd.Timestamp) -> None:
         """Once per weekday at ``live.summary_time`` local time: the day's closed trades of this market from the journal,
@@ -511,6 +542,7 @@ class LiveRunner:
         mark_traded = getattr(self.engine, "mark_traded", None)   # test doubles may lack it
         if mark_traded is not None:
             mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
+            self.save_traded()
         if getattr(pos, "status", "filled") == "filled" and hasattr(self.broker, "pnl_for"):
             reconcile_risk(pos, self.broker, risk_amount)
         self.known_positions[pos.id] = pos

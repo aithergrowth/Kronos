@@ -357,3 +357,20 @@ def test_the_guard_reads_closed_pnl_from_the_broker(setup):
     runner, _ = _runner(setup, broker)
     assert runner.guard.realized_since == broker.realized_pnl_since
     assert broker.realized_pnl_since(NOW) == 0.0
+
+
+def test_traded_zones_survive_a_restart(tmp_path):
+    from types import SimpleNamespace
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    key = ("1H", -1, "2026-10-05 03:00:00")
+    first = LiveRunner(settings, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True),
+                       engine=SimpleNamespace(traded={"EURUSD": {key: 1}}), clock=lambda: NOW)
+    first.save_traded()
+    assert (tmp_path / "traded_EURUSD.json").exists()
+    restarted = LiveRunner(settings, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True),
+                           engine=SimpleNamespace(traded={}), clock=lambda: NOW)
+    assert restarted.engine.traded == {"EURUSD": {key: 1}}
+    other = LiveRunner(settings, "XAUUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True),
+                       engine=SimpleNamespace(traded={}), clock=lambda: NOW)
+    assert other.engine.traded == {}                                   # each market keeps its own file
