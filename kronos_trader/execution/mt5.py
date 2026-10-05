@@ -172,7 +172,11 @@ class MT5Broker(Broker):
         replace the profile's, which assume a USD account and the usual contract (a EUR account risked 1.3 % where
         1.5 % was meant; an index contract of another size would multiply the risk). Returns what changed."""
         spec = self.settings.symbol(symbol)
-        info = self.mt5.symbol_info(self.mt5_symbol(symbol))
+        name = self.mt5_symbol(symbol)
+        self.mt5.symbol_select(name, True)
+        info = self.mt5.symbol_info(name)
+        if info is None:
+            raise RuntimeError(f"MT5 has no symbol '{name}' on this server")
         changes: List[str] = []
         value = self.pip_value(symbol)
         if value:

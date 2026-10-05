@@ -449,3 +449,13 @@ def test_align_spec_sizes_with_the_servers_contract():
     b2 = MT5Broker(s2, api=EuroAccountMT5(calc=False), clock=lambda: NOW)
     b2.align_spec("EURUSD")
     assert s2.symbol("EURUSD").pip_value_per_lot == pytest.approx(0.86 * 0.0001 / 0.00001)     # from the tick value
+
+
+def test_align_spec_refuses_a_symbol_the_server_lacks():
+    """A symbol the server does not have (NAS100 on MetaQuotes-Demo) is an error, not a sizing line with the profile's
+    numbers under the account's currency."""
+    s = Settings()
+    b = MT5Broker(s, api=EuroAccountMT5(), clock=lambda: NOW)
+    with pytest.raises(RuntimeError, match="no symbol 'NAS100'"):
+        b.align_spec("NAS100")
+    assert s.symbol("NAS100").pip_value_per_lot == 1.0
