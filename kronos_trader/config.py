@@ -57,6 +57,12 @@ DEFAULT_SYMBOLS: Dict[str, SymbolSpec] = {
                          contract_size=100.0, ibkr_contract="cfd:XAUUSD"),
     "NAS100": SymbolSpec("NAS100", 1.0, 1.0, typical_spread_pips=1.5, price_decimals=1, tradingview_symbol="OANDA:NAS100USD",
                          contract_size=1.0, ibkr_contract="cfd:IBUST100"),
+    "US500": SymbolSpec("US500", 1.0, 1.0, typical_spread_pips=0.5, price_decimals=1, tradingview_symbol="OANDA:SPX500USD",
+                        contract_size=1.0),         # S&P 500 CFD: a "pip" is one index point (HistData SPXUSD)
+    "GER40": SymbolSpec("GER40", 1.0, 1.0, typical_spread_pips=1.0, price_decimals=1, tradingview_symbol="OANDA:DE30EUR",
+                        contract_size=1.0),         # DAX CFD, one index point (HistData GRXEUR); P&L in EUR on the broker
+    "XAGUSD": SymbolSpec("XAGUSD", 0.01, 50.0, typical_spread_pips=2.5, price_decimals=3, tradingview_symbol="OANDA:XAGUSD",
+                         contract_size=5000.0),     # silver, 5,000 oz a lot: 50 USD a 0.01 move
     "US30": SymbolSpec("US30", 1.0, 1.0, typical_spread_pips=2.0, price_decimals=1, tradingview_symbol="OANDA:US30USD",
                        contract_size=1.0, ibkr_contract="cfd:IBUS30"),
     "BTCUSD": SymbolSpec("BTCUSD", 1.0, 1.0, typical_spread_pips=15.0, price_decimals=1, tradingview_symbol="BINANCE:BTCUSDT",
