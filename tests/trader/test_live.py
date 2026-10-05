@@ -521,3 +521,48 @@ def test_closes_of_other_windows_are_not_reported_here(setup):
     broker.recent_closes = lambda: [other]
     runner.report_closes()
     assert not any("closed" in m for m in notifier.sent)
+
+
+def test_link_and_feed_alerts_once_down_and_once_back(setup):
+    """The broker's link and the lowest timeframe's candles: one message when they fail during the session, one when they
+    are back, nothing in between; outside the session a quiet feed says nothing."""
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker)
+    state = {"ok": False}
+    broker.connection_ok = lambda: (state["ok"], "MT5 not reachable (terminal closed or restarting)")
+    assert runner.connection_ok() is False and runner.connection_ok() is False
+    state["ok"] = True
+    assert runner.connection_ok() is True
+    assert sum("not reachable" in m for m in notifier.sent) == 1 and sum("weer verbonden" in m for m in notifier.sent) == 1
+
+    runner.settings.session.enabled = True
+    runner.settings.session.windows = [["09:00", "17:00"]]
+    views = runner.fetch()
+    in_session_now = pd.Timestamp("2026-10-05 10:00")                       # Monday 12:00 Amsterdam, candles from Thursday
+    runner.stale = runner.stale_timeframes(views, in_session_now)
+    runner.check_feed(views, in_session_now)
+    runner.check_feed(views, in_session_now)
+    assert sum("geen nieuwe 15m-candles" in m for m in notifier.sent) == 1
+    runner.stale = {}
+    runner.check_feed(views, in_session_now)
+    assert sum("loopt weer" in m for m in notifier.sent) == 1
+    night = pd.Timestamp("2026-10-05 21:00")                                 # 23:00 Amsterdam: outside the session
+    runner.stale = runner.stale_timeframes(views, night)
+    runner.check_feed(views, night)
+    assert sum("geen nieuwe 15m-candles" in m for m in notifier.sent) == 1
+
+
+def test_account_lock_serialises_and_never_blocks_for_good(tmp_path):
+    from kronos_trader.live import AccountLock
+    path = tmp_path / "journal" / "account.lock"
+    with AccountLock(path) as first:
+        assert first.held and path.exists()
+        second = AccountLock(path, timeout=0.2).__enter__()                 # another window waits, then goes on without it
+        assert not second.held
+    assert not path.exists()
+    path.write_text("123")
+    import os, time as _t
+    old = _t.time() - 120
+    os.utime(path, (old, old))                                              # left behind by a killed window
+    with AccountLock(path, timeout=0.2) as third:
+        assert third.held

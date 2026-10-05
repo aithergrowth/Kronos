@@ -41,3 +41,10 @@ def scenario() -> CandleSeries:
 @pytest.fixture
 def scenario_rows():
     return list(SWEEP_BREAK_ROWS)
+
+
+@pytest.fixture(autouse=True)
+def _scratch_working_dir(tmp_path, monkeypatch):
+    """Every test runs in its own empty directory: the live runner's relative journal/ and charts/ paths (Settings())
+    land there, not in the repository's journal of the forward test."""
+    monkeypatch.chdir(tmp_path)

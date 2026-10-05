@@ -299,7 +299,7 @@ def test_market_order_tracking_breakeven_and_close(broker):
     broker.modify_stop(pos.id, 1.1001)
     assert broker.open_positions("EURUSD")[0].stop == 1.1001 and pos.breakeven_done
     trade = broker.close_position(pos.id, "manual", ts=NOW)
-    assert trade.reason == "manual" and trade.pnl == pytest.approx(14.5) and broker.open_positions() == []
+    assert trade.reason == "manual" and trade.pnl == pytest.approx(14.0) and broker.open_positions() == []   # both commissions
 
 
 def test_stop_and_target_hits_are_reported(broker):
@@ -307,7 +307,7 @@ def test_stop_and_target_hits_are_reported(broker):
     broker.mt5.server_closes(int(pos.id), "sl")
     closes = broker.recent_closes()
     assert len(closes) == 1 and closes[0].reason == "stop" and closes[0].exit == 1.0950
-    assert closes[0].pnl == pytest.approx(-100.5) and closes[0].r == pytest.approx(-1.0)
+    assert closes[0].pnl == pytest.approx(-101.0) and closes[0].r == pytest.approx(-1.0)      # the entry's commission too
     assert str(closes[0].closed_at) == "2026-10-01 10:00:00"
     assert broker.recent_closes() == []
     pos2 = broker.place_market_order("EURUSD", Direction.SHORT, 0.5, 1.1050, 1.0800, 500.0, 0.0050, 4.0, ts=NOW)
@@ -479,3 +479,30 @@ def test_a_restored_position_keeps_its_break_even_trigger():
     assert eu.risk_distance == pytest.approx(1.1001 - 1.0950)
     assert eu.risk_amount == pytest.approx((1.1001 - 1.0950) * 100_000 * 0.86, rel=1e-6)     # order_calc_profit, EUR
     assert restarted.pnl_for("EURUSD", Direction.LONG, 1.1001, 1.0950, 1.0) == pytest.approx(-(1.1001 - 1.0950) * 86_000)
+
+
+class FlakyMT5(FakeMT5):
+    """A terminal that was closed: account_info() is None until initialize() runs again."""
+    def __init__(self):
+        super().__init__()
+        self.down, self.inits = False, 0
+
+    def initialize(self, **kwargs):
+        self.inits += 1
+        self.down = False
+        return super().initialize(**kwargs)
+
+    def account_info(self):
+        return None if self.down else super().account_info()
+
+
+def test_connection_ok_initialises_a_broken_link_again():
+    api = FlakyMT5()
+    b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    assert b.connection_ok() == (True, "ok") and api.inits == 1
+    api.down = True
+    assert b.connection_ok() == (True, "ok") and api.inits == 2          # re-initialised and answering again
+    api.down = True
+    api.initialize = lambda **kw: False                                    # the terminal stays closed
+    ok, reason = b.connection_ok()
+    assert not ok and "not reachable" in reason

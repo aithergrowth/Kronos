@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -35,7 +36,7 @@ from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
 from .journal import Journal
 from .notify.telegram import TelegramNotifier
-from .strategy.engine import StrategyEngine
+from .strategy.engine import StrategyEngine, in_session
 from .strategy.exits import breakeven_reached
 
 
@@ -147,6 +148,48 @@ def build_fetch(
     return fetch
 
 
+class AccountLock:
+    """A lock file next to the journal, shared by the windows of one account. It waits up to ``timeout`` seconds and then
+    goes on without the lock, so a stuck file never stops trading; a file older than ``stale`` seconds is removed."""
+
+    def __init__(self, path: Optional[Path], timeout: float = 10.0, stale: float = 60.0):
+        self.path, self.timeout, self.stale, self.held = path, timeout, stale, False
+
+    def __enter__(self) -> "AccountLock":
+        if self.path is None:
+            return self
+        deadline = time.time() + self.timeout
+        while True:
+            try:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.write(fd, str(os.getpid()).encode())
+                os.close(fd)
+                self.held = True
+                return self
+            except FileExistsError:
+                try:
+                    if time.time() - self.path.stat().st_mtime > self.stale:
+                        self.path.unlink()
+                        continue
+                except FileNotFoundError:
+                    continue
+                if time.time() >= deadline:
+                    return self
+                time.sleep(0.05)
+            except OSError:
+                return self
+
+    def __exit__(self, *exc) -> bool:
+        if self.held:
+            try:
+                self.path.unlink()
+            except FileNotFoundError:
+                pass
+            self.held = False
+        return False
+
+
 class LiveRunner:
     def __init__(
         self,
@@ -191,11 +234,14 @@ class LiveRunner:
         self._poll_warned: Optional[pd.Timestamp] = None    # last time a failed Telegram poll was printed
         self._algo_checked: Optional[pd.Timestamp] = None   # last look at the terminal's Algo Trading button
         self._algo_on: Optional[bool] = None
+        self._link_down: Optional[str] = None               # why the broker link is down, while it is
+        self._feed_down: bool = False                       # the lowest timeframe went quiet during the session
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
         # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
         self.traded_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"traded_{self.symbol}.json"
                                             if settings.live.journal_path else None)
+        self.lock_path: Optional[Path] = Path(settings.live.journal_path).parent / "account.lock" if settings.live.journal_path else None
         self.load_traded()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
@@ -210,6 +256,7 @@ class LiveRunner:
         self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
+        self.check_feed(views, now)
         self.check_algo_trading(now)
         self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
@@ -418,7 +465,8 @@ class LiveRunner:
         poll = poll_seconds or self.settings.live.poll_seconds
         while True:
             try:
-                self.step()
+                if self.connection_ok():
+                    self.step()
             except Exception as exc:  # keep the loop alive and say what broke
                 self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}")
             if self.broker is not None:
@@ -472,6 +520,43 @@ class LiveRunner:
             if now > deadline:
                 out[tf] = now - last_close
         return out
+
+    def check_feed(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp, quiet_minutes: int = 20) -> None:
+        """Say once when the lowest timeframe has had no new candle for ``quiet_minutes`` during the entry session (the
+        bot cannot trade on it: a lost connection, a symbol the server lacks, cached bars), and once when it is back.
+        Outside the session nothing is said (weekends, the daily break of gold and indices)."""
+        if not views:
+            return
+        lowest = min(views)
+        age = self.stale.get(lowest)
+        session = self.settings.session
+        open_now = in_session(now, session)[0] if session.enabled else True
+        quiet = age is not None and age >= pd.Timedelta(minutes=quiet_minutes) and open_now
+        if quiet and not self._feed_down:
+            self._feed_down = True
+            self.notifier.send(f"⚠️ {self.symbol}: geen nieuwe {lowest.label}-candles sinds {_age_text(age)} tijdens de "
+                               f"handelstijden - zo kan de bot niet handelen. Controleer MT5 (verbinding, symbool).")
+        elif self._feed_down and age is None:
+            self._feed_down = False
+            self.notifier.send(f"✅ {self.symbol}: de koersdata loopt weer.")
+
+    def connection_ok(self) -> bool:
+        """The broker's link (MT5: re-initialised after a terminal restart): one message when it goes down and one when it
+        is back; while down the scan is skipped."""
+        check = getattr(self.broker, "connection_ok", None)
+        if not callable(check):
+            return True
+        try:
+            ok, reason = check()
+        except Exception as exc:
+            ok, reason = False, str(exc)
+        if not ok and self._link_down is None:
+            self._link_down = reason
+            self.notifier.send(f"⚠️ {self.symbol}: {reason} - de bot wacht en probeert het elke minuut opnieuw.")
+        elif ok and self._link_down is not None:
+            self._link_down = None
+            self.notifier.send(f"✅ {self.symbol}: weer verbonden met MT5.")
+        return ok
 
     def stale_text(self) -> str:
         return ", ".join(f"{tf.label} {_age_text(age)} old" for tf, age in sorted(self.stale.items()))
@@ -555,47 +640,50 @@ class LiveRunner:
             return 0.0
 
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
-        sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
-        if not ok:
-            self.note("not_executed", now, id=sid, reason=reason)
-            self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
-            return None
-        try:
-            price = self.broker.fill_price(self.symbol, setup.direction)       # the ask for a buy, the bid for a sell
-        except Exception as exc:
-            self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
-            self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
-            return None
-        from .strategy.risk import reconcile_risk, resize_at, stepped_risk
-        wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
-        risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
-        lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
-                                                                self.spec, risk_params)
-        if wrong_side or rr_now < self.settings.risk.min_rr:
-            self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
-            self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
-                               f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
-            return None
-        if lots <= 0:
-            self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
-            self.notifier.send(f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}")
-            return None
-        resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
-        if risk_params.risk_pct != self.settings.risk.risk_pct:
-            resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
-        try:
-            pos = self.broker.place_market_order(
-                self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
-                risk_distance, setup.breakeven_r,
-                meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
-                      "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
-                price=price, ts=now, price_is_fill=True,
-            )
-        except Exception as exc:
-            self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
-            self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
-            return None
+        # the cap check and the order under one lock shared by the windows of the account: two markets signalling in
+        # the same second could otherwise both take the last open slot
+        with AccountLock(self.lock_path):
+            sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
+            ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
+            if not ok:
+                self.note("not_executed", now, id=sid, reason=reason)
+                self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
+                return None
+            try:
+                price = self.broker.fill_price(self.symbol, setup.direction)       # the ask for a buy, the bid for a sell
+            except Exception as exc:
+                self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
+                self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
+                return None
+            from .strategy.risk import reconcile_risk, resize_at, stepped_risk
+            wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
+            risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+            lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
+                                                                    self.spec, risk_params)
+            if wrong_side or rr_now < self.settings.risk.min_rr:
+                self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
+                self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
+                                   f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
+                return None
+            if lots <= 0:
+                self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
+                self.notifier.send(f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}")
+                return None
+            resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
+            if risk_params.risk_pct != self.settings.risk.risk_pct:
+                resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
+            try:
+                pos = self.broker.place_market_order(
+                    self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
+                    risk_distance, setup.breakeven_r,
+                    meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
+                          "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
+                    price=price, ts=now, price_is_fill=True,
+                )
+            except Exception as exc:
+                self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
+                self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
+                return None
         self.guard.record_trade(now)
         mark_traded = getattr(self.engine, "mark_traded", None)   # test doubles may lack it
         if mark_traded is not None:

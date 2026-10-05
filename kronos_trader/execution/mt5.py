@@ -17,7 +17,7 @@ from __future__ import annotations
 import glob
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -88,6 +88,7 @@ class MT5Broker(Broker):
         self._offset: Optional[pd.Timedelta] = None
         self._offset_at: Optional[pd.Timestamp] = None
         self._filling: Dict[str, int] = {}       # per broker symbol: the filling mode the server accepted
+        self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
         if connect:
             self.connect()
 
@@ -370,7 +371,37 @@ class MT5Broker(Broker):
                 reason = "take_profit"
             else:
                 reason = "closed"
-            self._finish(pos, float(last.price), reason, self.to_utc(last.time), self._deal_pnl(outs))
+            ins = [d for d in deals if d.entry != self.mt5.DEAL_ENTRY_OUT]        # the entry's commission counts too
+            self._finish(pos, float(last.price), reason, self.to_utc(last.time), self._deal_pnl(outs) + self._deal_pnl(ins))
+
+    def connection_ok(self) -> Tuple[bool, str]:
+        """``(ok, reason)``: the Python link answers and the terminal is connected to its trade server. A broken link (the
+        terminal was closed or restarted: account_info() is None and every call fails) is initialised again, at most
+        once a minute; a terminal without its server connection is only reported (it reconnects by itself)."""
+        try:
+            info = self.mt5.account_info()
+        except Exception:
+            info = None
+        if info is None:
+            now = time.time()
+            if now - self._reconnect_at < 60:
+                return False, "MT5 not reachable (terminal closed or restarting)"
+            self._reconnect_at = now
+            try:
+                self.mt5.shutdown()
+            except Exception:
+                pass
+            try:
+                self.connect()
+                info = self.mt5.account_info()
+            except Exception as exc:
+                return False, f"MT5 not reachable ({exc})"
+            if info is None:
+                return False, "MT5 not reachable (terminal closed or restarting)"
+        term = self.mt5.terminal_info()
+        if term is not None and not getattr(term, "connected", True):
+            return False, "MT5 is not connected to its trade server"
+        return True, "ok"
 
     def algo_trading_on(self) -> bool:
         """The terminal's Algo Trading button (MT5 refuses orders from the API while it is off)."""
@@ -558,7 +589,9 @@ class MT5Broker(Broker):
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             raise RuntimeError(f"close failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
         pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
-        deals = list(mt5.history_deals_get(ticket=int(getattr(result, "deal", 0) or 0)) or []) if getattr(result, "deal", 0) else []
+        deals = list(mt5.history_deals_get(position=int(p.ticket)) or [])          # the entry and the close: both commissions
+        if not deals and getattr(result, "deal", 0):
+            deals = list(mt5.history_deals_get(ticket=int(result.deal)) or [])
         pnl = self._deal_pnl(deals) if deals else float(getattr(p, "profit", 0.0) or 0.0)
         return self._finish(pos, float(result.price), reason, ts, pnl)
 

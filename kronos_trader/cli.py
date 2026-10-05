@@ -332,8 +332,11 @@ def cmd_live(args) -> int:
                 sizing_note = (f"ℹ️ {symbol}: lots sized with MT5's contract: 1 lot = {spec.pip_value_per_lot:.4g} {currency} per pip "
                                f"of {spec.pip_size:g} (the profile assumed {before:g})")
         except Exception as exc:
-            print(f"[warn] {symbol}: could not read the contract from MT5 ({exc}); lots sized with the profile's numbers "
-                  f"(`python -m kronos_trader mt5-symbols --search <text>` lists the server's names)")
+            hint = "`python -m kronos_trader mt5-symbols --search <text>` lists the server's names"
+            if args.execute:                # real orders on a symbol the server lacks: stop here instead of idling on old bars
+                raise SystemExit(f"{symbol}: could not read the contract from MT5 ({exc}). Not started: set the broker's "
+                                 f"name with --mt5-symbol NAME ({hint}).")
+            print(f"[warn] {symbol}: could not read the contract from MT5 ({exc}); lots sized with the profile's numbers ({hint})")
     data_dir = args.data_dir or settings.tradingview.cache_dir
     kind, feed = _feed(args, settings, broker)
     fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
