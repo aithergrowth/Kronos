@@ -104,6 +104,10 @@ class FakeMT5:
         price = self.ask if request["type"] == self.ORDER_TYPE_BUY else self.bid
         if request.get("position"):                                                     # closing deal
             pos = next(p for p in self.positions if p.ticket == request["position"])
+            if request["volume"] < pos.volume - 1e-9:                                   # a partial close
+                pos.volume = round(pos.volume - request["volume"], 8)
+                d = self._deal(pos.ticket, self.DEAL_ENTRY_OUT, self.DEAL_REASON_CLIENT, price, 40.0, NOW)
+                return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=d.ticket, deal=d.ticket, price=price, comment="")
             self.positions.remove(pos)
             d = self._deal(pos.ticket, self.DEAL_ENTRY_OUT, self.DEAL_REASON_CLIENT, price, 15.0, NOW)
             return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=d.ticket, deal=d.ticket, price=price, comment="")
@@ -357,3 +361,18 @@ def test_realized_pnl_since_counts_trade_deals_only(broker):
     assert broker.realized_pnl_since(NOW - pd.Timedelta(hours=1)) == pytest.approx(-101.0)
     assert broker.realized_pnl_since(NOW + pd.Timedelta(minutes=30)) == pytest.approx(-100.5)
     assert broker.realized_pnl_since(NOW + pd.Timedelta(hours=2)) == pytest.approx(0.0)
+
+
+
+def test_partial_close_banks_a_share_and_the_close_counts_the_whole_trade(broker):
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    assert pos.initial_lots == 0.5
+    pnl = broker.close_partial(pos.id, 1 / 3)
+    req = broker.mt5.requests[-1]
+    assert req["volume"] == pytest.approx(0.16) and req["position"] == int(pos.id) and req["comment"] == "partial"
+    assert pnl == pytest.approx(39.5) and pos.partial_done and pos.lots == pytest.approx(0.34)   # 40 profit - 0.5 commission
+    assert broker.open_positions("EURUSD")[0].lots == pytest.approx(0.34)
+    broker.mt5.server_closes(int(pos.id), "sl")
+    trade = broker.recent_closes()[0]
+    assert trade.pnl == pytest.approx(39.5 - 100.5) and trade.lots == pytest.approx(0.5)
+    assert trade.meta["partial_pnl"] == pytest.approx(39.5)

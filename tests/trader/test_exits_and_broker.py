@@ -116,3 +116,36 @@ def test_shorts_are_valued_and_market_closed_on_the_ask():
                                    price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
     long_broker.on_candle("EURUSD", _candle(1.1000, 1.1060, 1.0990, 1.1050))
     assert long_broker.equity() == pytest.approx(100_000 + (1.1050 - 1.1001) / 0.0001 * 10)   # long closes on the bid itself
+
+
+
+def _partial_settings(k=1.0, fraction=1 / 3):
+    s = Settings()
+    s.exits.partial_at_r, s.exits.partial_fraction = k, fraction
+    return s
+
+
+def test_partial_at_1r_then_break_even():
+    from kronos_trader.core import Candle
+    broker = PaperBroker(_partial_settings(), use_spread=False)
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 3.0, 1.0990, 1.1030, 300.0, 0.0010, 4.0, price=1.1000,
+                                    ts=pd.Timestamp("2026-10-01 09:00"))
+    broker.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-01 09:05"), 1.1000, 1.1012, 1.0998, 1.1008))   # +1R reached
+    assert pos.partial_done and pos.lots == pytest.approx(2.0) and pos.stop == pytest.approx(1.1000)
+    closed = broker.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-01 09:10"), 1.1008, 1.1009, 1.0995, 1.0996))
+    assert closed[0].reason == "breakeven" and closed[0].r == pytest.approx(1 / 3) and closed[0].lots == pytest.approx(3.0)
+    assert closed[0].pnl == pytest.approx(100.0) and broker.balance() == pytest.approx(100_000 + 100.0)
+
+
+def test_partial_then_target_and_no_partial_when_the_target_comes_first():
+    from kronos_trader.core import Candle
+    broker = PaperBroker(_partial_settings(), use_spread=False)
+    broker.place_market_order("EURUSD", Direction.SHORT, 3.0, 1.1010, 1.0970, 300.0, 0.0010, 4.0, price=1.1000,
+                              ts=pd.Timestamp("2026-10-01 09:00"))
+    closed = broker.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-01 09:05"), 1.1000, 1.1002, 1.0965, 1.0968))
+    assert closed[0].reason == "take_profit" and closed[0].r == pytest.approx(1 / 3 + 2 / 3 * 3)
+    near = PaperBroker(_partial_settings(k=1.0), use_spread=False)
+    p2 = near.place_market_order("EURUSD", Direction.LONG, 3.0, 1.0990, 1.1008, 300.0, 0.0010, 4.0, price=1.1000,
+                                 ts=pd.Timestamp("2026-10-01 09:00"))                  # target at 0.8R: no partial
+    closed = near.on_candle("EURUSD", Candle(0, pd.Timestamp("2026-10-01 09:05"), 1.1000, 1.1012, 1.0998, 1.1008))
+    assert closed[0].reason == "take_profit" and closed[0].r == pytest.approx(0.8) and not p2.partial_done

@@ -30,11 +30,21 @@ class Position:
     breakeven_done: bool = False
     meta: Dict[str, Any] = field(default_factory=dict)
     status: str = "filled"             # "filled" (confirmed) | "pending" (submitted, fill not confirmed yet)
+    initial_lots: float = 0.0          # the size at the fill; lots is what is still open after a partial exit
+    partial_done: bool = False
+    partial_r: float = 0.0             # R banked by partial exits, in units of the whole position's risk
+    partial_pnl: float = 0.0           # money banked by partial exits
 
     def r_at(self, price: float) -> float:
         if self.risk_distance <= 0:
             return 0.0
         return self.direction.sign * (price - self.entry) / self.risk_distance
+
+    def total_r_at(self, price: float) -> float:
+        """The whole trade's R when the open part closes at ``price``: the banked partial plus the rest's share."""
+        if self.initial_lots <= 0 or self.lots >= self.initial_lots:
+            return self.partial_r + self.r_at(price)
+        return self.partial_r + self.lots / self.initial_lots * self.r_at(price)
 
     @property
     def planned_rr(self) -> float:
