@@ -30,7 +30,7 @@ confirmation:
   poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
                                   # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
 risk:
-  risk_pct: 1.0
+  risk_pct: 1.5                   # 5 October, Max: 1.5 % (challenge sim, EURUSD + gold + BTC, 790 starts 2024-2026: funded 82 % vs 91 % at 1 %, phase 1 median 61 vs 116 days)
   min_rr: 0.5                     # "boven de 0,5" from his 70 % win rate (A 01:44:08-01:45:07)
   max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
@@ -61,5 +61,8 @@ prop_firm:
   max_open_trades: 1
   daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
   max_drawdown_pct: 8.0           # inside FTMO's 10 % with margin
+  drawdown_basis: initial         # 5 October: FTMO's 10 % is static below the initial balance; from the peak the guard stopped
+                                  # the bot after a normal swing back from a gain (8 % is 5.3R at 1.5 %) while FTMO still allowed
+                                  # trading. The challenge simulations count the static rule
 kronos:
   mode: "off"

@@ -331,6 +331,17 @@ def cmd_live(args) -> int:
     mode = "EXECUTE" if args.execute else "dry-run"
     print(f"live {symbol}: broker={args.broker} feed={kind} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
+    pf = settings.prop_firm
+    print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade, stop at a day of -{pf.daily_loss_limit_pct}% "
+          f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open")
+    if broker is not None and args.broker in ("mt5", "ibkr"):
+        try:
+            balance = float(broker.balance())
+            if balance > 0 and abs(balance - settings.account_size) / settings.account_size > 0.2:
+                print(f"[warn] the broker's balance is {balance:,.0f} but the guard counts from {settings.account_size:,.0f}: "
+                      f"pass --account-size with the account's initial balance (e.g. 10000 on a 10k challenge)")
+        except Exception as exc:
+            print(f"[warn] could not read the broker's balance ({exc})")
     if args.once:
         print("scanning... (the first scan loads Kronos and can take a minute or two)")
         analysis = runner.step()
