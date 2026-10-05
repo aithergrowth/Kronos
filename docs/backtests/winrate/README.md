@@ -446,6 +446,23 @@ Challenge (`scripts/challenge_sim.py`, 790 starts, EURUSD + gold with the veto +
 The veto does not make the challenge faster (fewer trades), it makes it safer: at 1.5 % the failures drop from 26 %
 to 15 % because the drawdowns halve. That buys the higher risk.
 
+### Into the BTC profile: the 2R cap (5 October)
+
+`config/dorus_live_btc.yaml` takes `tp_max_rr: 2.0`, `tp_cap_choice: nearest` from 5 October. Plateau check at the same
+moment (29 March 2025, the cap runs at 1.5R and 2.5R still going): uncapped +9.4R, 2R cap +12.6R, 1.5R about +14.6 %,
+2.5R about +12.7 % equity, so the gain does not hang on the exact level.
+
+Challenge on the confirmed profiles (EURUSD version 4, gold with the veto, BTC with the 2R cap), and the same for
+starts in 2026 only (Jan-Jun, 181 starts; 2026 was a good year, so this is the favourable case):
+
+| Starts | Risk | Funded | Phase 1 (p25 / median / p75) | To funded (median) |
+|---|---|---|---|---|
+| Feb 2024 - Mar 2026 | 1 % | 91 % | 54 / 104 / 191 days | 164 days |
+| Feb 2024 - Mar 2026 | 1.5 % | 85 % | 33 / 65 / 116 days | 113 days |
+| Jan - Jun 2026 | 1 % | 97 % | 24 / 51 / 85 days | 78 days |
+| Jan - Jun 2026 | 1.5 % | 100 % | 18 / 32 / 61 days | 60 days |
+| Jan - Jun 2026, gold with the NY session and retests (2026 run before the veto) | 1.5 % | 94 % | 13 / 31 / 82 days | 68 days |
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.

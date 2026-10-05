@@ -1,4 +1,4 @@
-# Live profile for BTCUSD on the demo, 4 October 2026 (evening): config/dorus_live.yaml (version 3) with three lines changed for BTC.
+# Live profile for BTCUSD on the demo, 5 October 2026: config/dorus_live.yaml (version 3) with four lines changed for BTC.
 # Evidence: Bitstamp BTC/USD, February 2024 to October 2026 (5m from January 2024), docs/backtests/winrate/README.md "BTC over 2024-2026":
 #   - min_stop_pips 60: 8 pips on EURUSD is 0.07 % of price; 0.07 % of BTC at 85,000 is 60 USD (a "pip" is 1 USD here).
 #   - required_aligned []: with the 1H required 92 trades, 45 %, +30.8R over 2024-2026; without it 128 trades, 48 %, +40.6R
@@ -7,6 +7,9 @@
 #     origin of the move. Over 2024-2026: 133 trades, 35 %, +55.0R, drawdown -10.3R, 2024 +12.5 / 2025 -2.8 / 2026 +45.2, median
 #     planned R:R 2.8, longest losing run 8 (`btc_prevext_long`); the origin target 128 trades, 48 %, +40.6R, run of 5. The sum and
 #     his rule decide; the price is the lower win rate. With W+D+4H as well: +51.2R, 2025 -7.7R, drawdown -13.8R, so not that.
+#   - tp_max_rr 2 (nearest): 5 October, the target capped at 2R takes the nearest liquidity when the previous high lies further, and
+#     keeps the far target when nothing nearer fits: 2024-2026 145 trades, 51 %, +62.3R, drawdown -10.1R against 133, 35 %, +55.0R
+#     (`btc_cap2_long`); 1.5R and 2.5R gave the same picture to March 2025 (a plateau, not a spike).
 #   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February 2026 and halted the run),
 #   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R), the FTMO margins
 #   (the 8 % peak-drawdown halt would have fired once in 2024-2026 at 1 % risk; FTMO's own 10 % static was never reached).
@@ -50,7 +53,8 @@ risk:
   tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
-  tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
+  tp_max_rr: 2.0                  # 5 October: BTC 2024-2026 51 % and +62.3R against 35 % and +55.0R uncapped (see the header)
+  tp_cap_choice: nearest
   spread_buffer_pips: 1.0
 session:
   enabled: true
