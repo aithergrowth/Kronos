@@ -36,10 +36,11 @@ risk:
                                   # it 0.5 %; only the stake changes, never the trades. FTMO challenge, five markets, two open,
                                   # 790 starts 2024-2026: funded 85 % flat -> 92 %. On the funded account plan 1.0 % with
                                   # [[-3, 0.5]]: lost within a year 11 % flat -> 2 % (with every trade 0.15R worse live: 21 % -> 11 %)
-  min_rr: 2.0                     # 5 October (night): 2017-2026 on the corrected HistData clock, R:R 2 or more against 0.5:
-                                  # EURUSD -2.6R -> +9.7R, gold +29.7R -> +35.7R, NAS100 +39.5R -> +47.9R, better in 2017-2022
-                                  # on all three and a smaller drawdown (docs/backtests/winrate/README.md). His "boven de 0,5"
-                                  # assumed his 70 % win rate; the code's trades win about 40 %
+  min_rr: 1.5                     # 5 October (night): 2017-2026 on the corrected HistData clock, 0.5 / 1.5 / 2: EURUSD -2.6 / +14.4
+                                  # / +9.7R, gold +29.7 / +33.0 / +35.7R, NAS100 +39.5 / +51.2 / +47.9R; 1.5 and 2 both better in
+                                  # 2017-2022 and in drawdown, 1.5 with a third more trades: a challenge funded from 52 % of the starts
+                                  # (median 285 days) against 31 % at 0.5 (docs/backtests/winrate/README.md). His "boven de 0,5"
+                                  # assumed his 70 % win rate; the code's trades win about 30-40 %
   max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
   stop_protection: recent_1h

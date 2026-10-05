@@ -846,3 +846,16 @@ Taken: `min_rr: 2.0` in `config/dorus_live.yaml` (EURUSD), `config/dorus_live_go
 from Bitstamp since 2020): 296 trades, 46 %, +52.0R, but -10.0R in 2020-2023 and +53.8R in 2026 alone. Like gold, it
 earns in one regime. The price of R:R 2 is time: about 26 trades a year on the three markets, and a challenge that
 takes most of a year.
+
+**Minimum R:R 1.5 against 2 (5 October, night).** The same runs at `min_rr` 1.5:
+
+| Market | Trades | Total | 2017-2022 | 2023-2026 | Max dd |
+|---|---|---|---|---|---|
+| EURUSD | 67 | +14.4R | +2.5R | +11.8R | -10.0R |
+| Gold | 144 | +33.0R | -1.5R | +34.3R | -13.4R |
+| NAS100 | 114 | +51.2R | +17.9R | +33.4R | -10.0R |
+
+Both thresholds are a plateau above 0.5, not a single lucky value. The challenge at 1.5 % on the R:R 1.5 ledgers is
+funded from 52 % of all starts (2017-2022 31 %, 2023-2025 92 %), with a median of 285 days. At R:R 2 it is 50 %
+and 404 days, at 1.0 % risk 64 % and 497 days. Taken: `min_rr: 1.5` in the three profiles (it replaces the 2.0
+above), for the same edge on a third more trades.
