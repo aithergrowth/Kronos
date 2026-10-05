@@ -255,6 +255,7 @@ class ExitParams:
     breakeven_r_intraday: float = 4.0   # rule: intraday/scalp (D, 4H, 1H POI) -> break-even after 4R
     partials: bool = False              # rule: no partials
     breakeven_offset_pips: float = 0.0  # 0 = exact entry
+    max_hold_hours: float = 0.0         # 0 = off; else a trade still open this many hours after its fill is closed at the market
 
 
 @dataclass

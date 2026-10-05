@@ -213,6 +213,9 @@ class PaperBroker(Broker):
                 offset = self.settings.exits.breakeven_offset_pips * self._spec(symbol).pip_size
                 pos.stop = pos.entry + pos.direction.sign * offset
                 pos.breakeven_done = True
+            hold = self.settings.exits.max_hold_hours
+            if hold and pos.opened_at is not None and pd.Timestamp(close_ts) - pos.opened_at >= pd.Timedelta(hours=float(hold)):
+                closed.append(self.close_position(pos.id, "time", float(candle.close), close_ts, market=True))
         self._last_price[symbol] = float(candle.close)
         self.equity_curve.append((close_ts, self.equity()))
         return closed

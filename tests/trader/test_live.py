@@ -587,3 +587,32 @@ def test_a_paper_window_keeps_its_account_across_a_restart(setup):
         (pos.id, pos.direction, pos.lots, pos.entry, pos.stop, pos.breakeven_r)
     assert fresh.realized_pnl_since(NOW - pd.Timedelta(hours=3)) == pytest.approx(-500.0)
     assert fresh.place_market_order("EURUSD", Direction.SHORT, 1.0, 1.11, 1.09, 100.0, 0.01, 4.0, price=1.1, ts=NOW).id == "P2"
+
+
+def test_max_hold_hours_closes_a_lingering_trade():
+    """``exits.max_hold_hours``: the paper broker closes a trade at the market on the first candle at or past the limit
+    (reason "time"); nothing before it."""
+    s = Settings(); s.exits.max_hold_hours = 24
+    broker = PaperBroker(s, use_spread=False)
+    t0 = pd.Timestamp("2026-10-01 09:00")
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1000, ts=t0)
+    assert broker.on_candle("EURUSD", Candle(0, t0 + pd.Timedelta(hours=23, minutes=55), 1.1, 1.101, 1.099, 1.1005)) == []
+    closed = broker.on_candle("EURUSD", Candle(0, t0 + pd.Timedelta(hours=24), 1.1005, 1.102, 1.1, 1.1015))
+    assert len(closed) == 1 and closed[0].reason == "time" and closed[0].exit == pytest.approx(1.1015)
+    assert closed[0].r == pytest.approx(0.15)
+
+
+def test_max_hold_hours_closes_on_a_real_broker(setup):
+    """A broker that does not simulate candles (MT5): the live runner closes the trade itself once it has been open
+    ``exits.max_hold_hours`` and the close is reported."""
+    class Server(PaperBroker):
+        on_candle = None                                      # like MT5: the server, not the runner, runs SL and TP
+    broker = Server(Settings())
+    broker.set_price("EURUSD", 1.1)
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1,
+                              ts=NOW - pd.Timedelta(hours=49))
+    runner, notifier = _runner(setup, broker)
+    runner.settings.exits.max_hold_hours = 48
+    runner.manage_positions(runner.fetch())
+    runner.report_closes()
+    assert broker.open_positions() == [] and any("closed (time)" in m for m in notifier.sent)

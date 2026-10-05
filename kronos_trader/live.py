@@ -774,10 +774,27 @@ class LiveRunner:
 
     # ------------------------------------------------------------ positions
     def manage_positions(self, views: Dict[Timeframe, CandleSeries]) -> None:
-        """Confirm pending fills and move stops to break-even per the exit rules (no partials)."""
+        """Confirm pending fills, close trades past ``exits.max_hold_hours`` and move stops to break-even per the exit
+        rules (no partials). A simulated broker applies the time limit itself, candle by candle."""
         if self.broker is None or not views:
             return
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
+        hold = self.settings.exits.max_hold_hours
+        if hold and not callable(getattr(self.broker, "on_candle", None)):
+            now = self.clock()
+            for pid, pos in list(open_by_id.items()):
+                if getattr(pos, "status", "filled") != "filled" or pos.opened_at is None:
+                    continue
+                if now - pd.Timestamp(pos.opened_at) < pd.Timedelta(hours=float(hold)):
+                    continue
+                try:
+                    self.broker.close_position(pid, "time", ts=now)
+                    open_by_id.pop(pid)
+                    self.note("time_exit", now, id=pid, note=f"open {hold:g} h")
+                except Exception as exc:
+                    if not pos.meta.get("time_exit_failed_sent"):
+                        pos.meta["time_exit_failed_sent"] = True
+                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} after {hold:g} h failed ({exc}); trying every scan")
         d = self.spec.price_decimals
         for pid in list(self.unconfirmed):
             current = open_by_id.get(pid)
