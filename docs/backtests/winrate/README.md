@@ -463,6 +463,29 @@ starts in 2026 only (Jan-Jun, 181 starts; 2026 was a good year, so this is the f
 | Jan - Jun 2026 | 1.5 % | 100 % | 18 / 32 / 61 days | 60 days |
 | Jan - Jun 2026, gold with the NY session and retests (2026 run before the veto) | 1.5 % | 94 % | 13 / 31 / 82 days | 68 days |
 
+### Lower zone timeframes, now that they are mapped (5 October)
+
+Until commit `71af980` the engine mapped zones on 1M to 1H only, so every earlier "15m zones" run traded the profile's own
+zones (no 15m trade in any ledger). With 15m (and 5m) zones mapped and entered on 1m shifts, each variant against its
+profile over the same window (the 2026 runs start on 1 October 2025; stopped once the verdict was clear):
+
+| Variant | Window | Trades | R | Profile, same window |
+|---|---|---|---|---|
+| Gold + 15m zones | Oct 2025 - 18 May 2026 | 56 | about +7.6R | 19 trades, +14.8R |
+| Gold + 15m + 5m zones | Oct 2025 - 12 Mar 2026 | 71 | about -6.4R | 15 trades, +9.5R |
+| Gold + 15m + NY session + second visits | Oct 2025 - 18 May 2026 | 94 | about -6.2R | 19 trades, +14.8R |
+| Gold + the same, fresh zones only | Oct 2025 - 18 May 2026 | 74 | about +4.9R | 19 trades, +14.8R |
+| Gold + NY session + second visits (version 4) | Oct 2025 - 22 Jul 2026 | 35 | about +12.8R | 21 trades, +15.2R |
+| EURUSD + 15m zones | Oct 2025 - 3 Apr 2026 | 11 | about -3.0R | 4 trades, +0.1R |
+| EURUSD intraday gate + 15m zones | Oct 2025 - 3 Apr 2026 | 47 | about -6.4R | 4 trades, +0.1R |
+| BTC + 15m zones | Jan - 25 Jun 2026 | 56 | about +29.5R | 22 trades, +42.7R |
+
+The lower zones multiply the trades by two to five and the trades they add lose; the edge is in the 1H-and-up zones,
+as the course trades them. What does help is freshness: zones at most 24 candles of their own timeframe old
+(`confirmation.max_zone_age_candles 24`) on the earlier profiles: gold to October 2025 112 trades, about +27.1R against
+123 trades, +18.5R; BTC (previous high, no cap) to January 2026 90 trades, about +14.3R against 100, +8.7R. Running on
+the current profiles (`v4_gold_age24_full`, `btc_cap2_age24_long`, `v4_eu_age24_full`).
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.
