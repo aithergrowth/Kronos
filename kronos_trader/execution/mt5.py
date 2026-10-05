@@ -145,6 +145,52 @@ class MT5Broker(Broker):
                 "trade_mode", "currency_profit", "spread")
         return {"name": name, "found": True, **{k: getattr(info, k, None) for k in keys}}
 
+    def pip_value(self, symbol: str) -> Optional[float]:
+        """What a move of one pip (the profile's pip size) is worth for 1.0 lot in the account currency, by the server's
+        own numbers (order_calc_profit, else the tick value); None when the server does not say."""
+        mt5 = self.mt5
+        spec = self.settings.symbol(symbol)
+        name = self.mt5_symbol(symbol)
+        mt5.symbol_select(name, True)
+        tick = mt5.symbol_info_tick(name)
+        price = float(getattr(tick, "ask", 0.0) or 0.0) if tick is not None else 0.0
+        calc = getattr(mt5, "order_calc_profit", None)
+        if calc is not None and price > 0:
+            try:
+                value = calc(mt5.ORDER_TYPE_BUY, name, 1.0, price, price + spec.pip_size)
+            except Exception:
+                value = None
+            if value:
+                return abs(float(value))
+        info = mt5.symbol_info(name)
+        tick_value = float(getattr(info, "trade_tick_value", 0.0) or 0.0) if info is not None else 0.0
+        tick_size = float(getattr(info, "trade_tick_size", 0.0) or 0.0) if info is not None else 0.0
+        return tick_value * spec.pip_size / tick_size if tick_value > 0 and tick_size > 0 else None
+
+    def align_spec(self, symbol: str) -> List[str]:
+        """Size with the server's numbers: the value of a pip for 1.0 lot in the account currency and the lot limits
+        replace the profile's, which assume a USD account and the usual contract (a EUR account risked 1.3 % where
+        1.5 % was meant; an index contract of another size would multiply the risk). Returns what changed."""
+        spec = self.settings.symbol(symbol)
+        info = self.mt5.symbol_info(self.mt5_symbol(symbol))
+        changes: List[str] = []
+        value = self.pip_value(symbol)
+        if value:
+            if abs(value - spec.pip_value_per_lot) > 0.02 * spec.pip_value_per_lot:
+                changes.append(f"pip value per lot {spec.pip_value_per_lot:g} -> {value:.4g}")
+            spec.pip_value_per_lot = value
+        for attr, key in (("min_lot", "volume_min"), ("lot_step", "volume_step"), ("max_lot", "volume_max")):
+            v = float(getattr(info, key, 0.0) or 0.0) if info is not None else 0.0
+            if v > 0:
+                if abs(v - getattr(spec, attr)) > 1e-9:
+                    changes.append(f"{attr} {getattr(spec, attr):g} -> {v:g}")
+                setattr(spec, attr, v)
+        return changes
+
+    def account_currency(self) -> str:
+        info = self.mt5.account_info()
+        return str(getattr(info, "currency", "") or "") if info is not None else ""
+
     def mt5_symbol(self, symbol: str) -> str:
         spec = self.settings.symbols.get(symbol.upper())
         return spec.mt5_symbol if spec and spec.mt5_symbol else symbol.upper()

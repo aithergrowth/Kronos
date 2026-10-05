@@ -319,11 +319,27 @@ def cmd_live(args) -> int:
     if getattr(args, "account_size", None):
         settings.account_size = float(args.account_size)
     broker = _broker(args, settings)
+    sizing_note = None
+    if broker is not None and args.broker == "mt5":
+        spec = settings.symbol(symbol)
+        before = spec.pip_value_per_lot
+        try:
+            changes = broker.align_spec(symbol)
+            currency = broker.account_currency()
+            print(f"sizing: 1 lot {symbol} = {spec.pip_value_per_lot:.4g} {currency} per pip of {spec.pip_size:g}, lots "
+                  f"{spec.min_lot:g}-{spec.max_lot:g} step {spec.lot_step:g}" + (f" (server: {'; '.join(changes)})" if changes else ""))
+            if before > 0 and abs(spec.pip_value_per_lot - before) > 0.2 * before:
+                sizing_note = (f"ℹ️ {symbol}: lots sized with MT5's contract: 1 lot = {spec.pip_value_per_lot:.4g} {currency} per pip "
+                               f"of {spec.pip_size:g} (the profile assumed {before:g})")
+        except Exception as exc:
+            print(f"[warn] could not read {symbol}'s contract from MT5 ({exc}); lots sized with the profile's pip value")
     data_dir = args.data_dir or settings.tradingview.cache_dir
     kind, feed = _feed(args, settings, broker)
     fetch = build_fetch(settings, symbol, cache_dir=data_dir, broker=broker if kind == "broker" else None,
                         broker_timeframes=[] if kind == "cache" else None, feed=feed)
     notifier = TelegramNotifier(params=settings.telegram)
+    if sizing_note:
+        notifier.send(sizing_note)
     runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
                         engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,

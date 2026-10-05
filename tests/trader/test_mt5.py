@@ -407,3 +407,45 @@ def test_symbol_filling_flags_choose_the_first_mode():
         MT5Broker(Settings(), api=stubborn, clock=lambda: NOW).place_market_order(
             "EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
     assert len(stubborn.requests) == 3                     # IOC, FOK and RETURN tried once each
+
+
+class EuroAccountMT5(FakeMT5):
+    """A EUR account: the server values one EURUSD pip on 1.0 lot at 8.6 EUR, an index point at 0.86 EUR on a 1-unit
+    contract, and has its own lot limits."""
+    def __init__(self, calc=True):
+        super().__init__()
+        self.calc = calc
+
+    def account_info(self):
+        return SimpleNamespace(login=1, server="MetaQuotes-Demo", currency="EUR", balance=100000.0, equity=100000.0,
+                               leverage=100, trade_mode=0)
+
+    def symbol_info(self, name):
+        info = super().symbol_info(name)
+        if info is not None:
+            info.volume_min, info.volume_step, info.volume_max = 0.1, 0.1, 50.0
+            info.trade_tick_value, info.trade_tick_size = 0.86, 0.00001
+        return info
+
+    def __getattr__(self, item):
+        if item == "order_calc_profit" and self.calc:
+            return lambda kind, name, lots, open_price, close_price: round((close_price - open_price) * 100000 * lots * 0.86, 6)
+        raise AttributeError(item)
+
+
+def test_align_spec_sizes_with_the_servers_contract():
+    """Live on MT5 the pip value for 1.0 lot (account currency) and the lot limits come from the server: order_calc_profit,
+    else the tick value; the strategy's sizing then risks the intended share of the EUR equity."""
+    from kronos_trader.strategy.risk import size_position
+    s = Settings()
+    b = MT5Broker(s, api=EuroAccountMT5(), clock=lambda: NOW)
+    changes = b.align_spec("EURUSD")
+    spec = s.symbol("EURUSD")
+    assert spec.pip_value_per_lot == pytest.approx(8.6) and (spec.min_lot, spec.lot_step, spec.max_lot) == (0.1, 0.1, 50.0)
+    assert any("pip value per lot 10 -> 8.6" in c for c in changes) and b.account_currency() == "EUR"
+    lots, risk_amount, _, _ = size_position(100_000.0, 1.1000, 1.0990, spec, s.risk)          # 10 pips (+1 buffer)
+    assert lots * 11 * 8.6 == pytest.approx(risk_amount, rel=0.1)                             # the EUR risk, not USD
+    s2 = Settings()
+    b2 = MT5Broker(s2, api=EuroAccountMT5(calc=False), clock=lambda: NOW)
+    b2.align_spec("EURUSD")
+    assert s2.symbol("EURUSD").pip_value_per_lot == pytest.approx(0.86 * 0.0001 / 0.00001)     # from the tick value
