@@ -761,3 +761,60 @@ The cut shrinks the tight-stop trades most (they need the most exposure), and th
 steadier BTC that passes about as often as no BTC and gets there faster. The full-size BTC of the paper account
 is the variance the challenge can least afford. That is one more reason the demo's monthly numbers overstate a
 challenge account.
+
+## The HistData clock, and the strategy over 2017-2026 (5 October, night)
+
+**The clock.** The HistData loader added a fixed 5 hours, as HistData documents ("EST without daylight saving"). The data
+says otherwise. The 08:30 New York payrolls spike sat exactly 60 minutes late in every European-summer release of
+2024-2026 checked, and on time in every winter one, including the weeks when only the US is on summer time. The
+stamps plus 5 hours are London time (`kronos_trader/data/histdata.py`, `to_utc`).
+
+For about seven months a year, every HistData backtest above (EURUSD, GBPUSD, gold, NAS100, US500, GER40, silver) had
+its sessions, its news blackouts and its 17:00 New York anchors an hour off what a live MT5 feed shows. The
+"extra Friday hour" of "The daily candles live sees" was this shift, and its weekend cut removed the real last hour
+of every summer week. BTC (Bitstamp, UTC) is not affected. All numbers above the BTC ones are on the shifted clock.
+
+**2017-2026 on the corrected clock** (`fixed/`: HistData minutes 2016/2017 to September 2026 read right, MT5-like
+candles, daily/weekly/monthly history from 2007; the live profiles; one trade at a time; guard off; R):
+
+| Market | Trades | Win | 2017-2022 | 2023-2026 | Total | Max dd | Per year 2017 ... 2026 |
+|---|---|---|---|---|---|---|---|
+| NAS100 (48 h) | 230 | 48 % | +8.2R | +31.3R | **+39.5R** | -9.0R | -6.3 / +2.2 / +8.1 / -1.0 / +5.8 / -0.6 / +11.5 / -3.3 / +14.9 / +8.2 |
+| Gold | 285 | 40 % | -14.8R | +44.5R | +29.7R | -27.6R | -3.6 / -0.9 / +11.0 / -11.1 / -6.4 / -3.8 / +18.4 / +9.3 / +6.3 / +10.5 |
+| EURUSD | 163 | 41 % | -8.5R | +5.9R | -2.6R | -16.4R | +0.1 / -5.8 / -4.3 / -0.3 / +12.7 / -11.0 / +1.5 / -1.9 / -0.8 / +7.1 |
+| GBPUSD | 190 | 39 % | -31.4R | +6.1R | -25.3R | -38.9R | -1.4 / -11.9 / -4.7 / -1.5 / -8.9 / -2.9 / -1.0 / -3.9 / +4.7 / +6.3 |
+
+The profiles were read and tuned on 2023-2026, so only 2017-2022 is out of sample. NAS100 holds in both periods.
+Gold earns in its 2023-2026 rally and loses before it. EURUSD has no edge over the ten years, and GBPUSD loses.
+
+**Where the trades go** (`scripts/trade_paths.py`, on the live ledgers):
+
+- Between a third and a half of the losers never go 0.25R our way, and only 15-23 % see +1R before the stop. They are
+  entries the move never confirms, not trades managed badly.
+- 50-68 % of the stopped trades reach their target within 72 hours after the stop. Wider stops still lose, because
+  they cost more R per winner than they save. Re-entering the same zone after a stop lost before (R6: 9 % won).
+- Is the direction right? 72 hours after the fill, 2023-2026: gold our way in 62 % (median +2.1R), GBPUSD 60 %,
+  EURUSD 54 %, NAS100 54 %, BTC 51 %, ETH 39 % (median -0.85R). 2017-2022: EURUSD 40 %, GBPUSD 45 %, gold 40 %. The
+  edge, where there is one, is the direction call, and it holds in some years and not in others.
+
+**Tried on both periods and not taken:**
+
+- a daily trend filter (200-day average, 12-month or 60-day return: helps GBPUSD and gold in 2023-2026, costs NAS100
+  and EURUSD);
+- regime filters (efficiency ratio, ADX, distance to the 200-day average, volatility rank: no direction holds in both
+  periods);
+- earlier break-even (BTC +0.4R, NAS100 +1.3R in real runs);
+- the trigger candle's position in last week's range;
+- the session half, Monday/Friday;
+- the zone timeframe and the bias combination: the cuts that look good in one period turn in the other.
+
+**One cut points the same way in six of eight market-periods:** trades whose planned R:R is at least 2.
+
+| Market | R:R ≥ 2 | All trades |
+|---|---|---|
+| EURUSD | +7.8R (41 trades) | -2.6R |
+| Gold | +45.6R (106) | +29.7R |
+| NAS100 | +24.6R (79) | +39.5R |
+| GBPUSD | -14.4R (58) | -25.3R |
+
+It is running as real backtests (`risk.min_rr` 2.0 and 1.5) on the corrected candles.
