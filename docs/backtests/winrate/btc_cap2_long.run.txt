@@ -1,0 +1,71 @@
+code: 21a9fd3d0fbe8c07bca436d3cd4058e23ac803c9 source 915892cc94f3
+   1m: CandleSeries(BTCUSD 1m, n=415755, 2025-12-20 00:00:00 -> 2026-10-04 17:14:00)
+   5m: CandleSeries(BTCUSD 5m, n=290223, 2024-01-01 00:00:00 -> 2026-10-04 17:10:00)
+  15m: CandleSeries(BTCUSD 15m, n=96741, 2024-01-01 00:00:00 -> 2026-10-04 17:00:00)
+   1H: CandleSeries(BTCUSD 1H, n=32946, 2023-01-01 00:00:00 -> 2026-10-04 17:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17003, 2019-01-01 00:00:00 -> 2026-10-04 16:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  14511/290223 2024-02-20 09:15:00 equity=101,739 trades=2
+  29022/290223 2024-04-10 18:30:00 equity=101,032 trades=15
+  43533/290223 2024-05-31 03:45:00 equity=101,041 trades=21
+  58044/290223 2024-07-20 13:00:00 equity=100,458 trades=30
+  72555/290223 2024-09-08 22:15:00 equity=107,509 trades=34
+  87066/290223 2024-10-29 07:30:00 equity=104,676 trades=51
+  101577/290223 2024-12-18 16:45:00 equity=111,964 trades=64
+  116088/290223 2025-02-07 02:00:00 equity=110,295 trades=73
+  130599/290223 2025-03-29 11:15:00 equity=112,683 trades=77
+  145110/290223 2025-05-18 20:30:00 equity=116,194 trades=86
+  159621/290223 2025-07-08 05:45:00 equity=115,928 trades=88
+  174132/290223 2025-08-27 15:00:00 equity=114,516 trades=91
+  188643/290223 2025-10-17 00:15:00 equity=111,963 trades=102
+  203154/290223 2025-12-06 09:30:00 equity=110,365 trades=105
+  217665/290223 2026-01-25 18:45:00 equity=107,899 trades=109
+  232176/290223 2026-03-17 04:00:00 equity=108,613 trades=116
+  246687/290223 2026-05-06 13:15:00 equity=112,981 trades=125
+  261198/290223 2026-06-25 22:30:00 equity=160,731 trades=130
+  275709/290223 2026-08-15 07:45:00 equity=167,711 trades=141
+  290220/290223 2026-10-04 17:00:00 equity=176,994 trades=145
+Backtest BTCUSD  2024-02-01 00:00:00 -> 2026-10-04 17:10:00  (step 5m, 281295 steps, 8271.3s)
+  signals 204  guard-rejected 59  trades 145
+  wins 74  losses 71  break-even 0  win rate 51.0%
+  avg R +0.43  total R +62.3  best +23.9  worst -1.0
+  profit factor 1.95  net P&L +76,994  return +76.99%  max DD 10.54%
+  by_poi_tf:
+    1D: n=8 avgR=-0.38 sumR=-3.0
+    1H: n=112 avgR=+0.51 sumR=+57.1
+    4H: n=25 avgR=+0.33 sumR=+8.2
+  by_confirmation:
+    BS: n=145 avgR=+0.43 sumR=+62.3
+  by_exit:
+    stop: n=71 avgR=-1.00 sumR=-71.0
+    take_profit: n=74 avgR=+1.80 sumR=+133.3
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       54  max 1 open trade(s) per account
+        5  price moved: R:R below minimum
+  engine rejections (top):
+    183297  POI - no active visit on 5m
+     35137  POI - no active visit on 1m
+     13288  POI - touched
+     10176  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=50/5
+      9084  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+      8772  bullish - 1M+1W+4H aligned but not a valid combination -> no trade
+      8496  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=be
+      8172  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=bearish, 4H=
+  distinct zones behind the rejections (bars above count every candle):
+       647  POI - no active visit on 5m
+       355  POI - touched
+       216  POI - no active visit on 1m
+       142  POI - already traded on visit #1 - one trade per visit
+        91  POI - visit #2 - only the first return is traded
+        31  POI - visit #3 - only the first return is traded
+         5  POI - visit #4 - only the first return is traded
+         4  POI - visit #5 - only the first return is traded
+         1  POI - R:R 0.32 below minimum 0.5 (target 1H previous high 44873.00000 (72 ca
+         1  POI - R:R 0.05 below minimum 0.5 (target 1H previous high 65670.00000 (72 ca
+         1  POI - visit #8 - only the first return is traded
+         1  POI - R:R 0.30 below minimum 0.5 (target 1H previous high 66461.00000 (72 ca
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_cap2_long.csv (+ .equity.csv, .provenance.json)

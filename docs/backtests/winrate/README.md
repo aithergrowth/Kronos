@@ -353,4 +353,52 @@ What it says:
   stop minimum on EURUSD (12 pips) is a reading to run after these.
 - The weekday and wait-time cuts differ per market and are left as observations.
 
-Results of these runs are added below when they finish.
+### The win-rate levers over the years (5 October 2026)
+
+Guard off, compounded at 1 % per trade; the profile row is each market's demo profile.
+
+| Market | Run | Trades | Win | Sum R | Max dd | Per year | At 1 % |
+|---|---|---|---|---|---|---|---|
+| EURUSD 2023-2026 | profile, the book (`v3_full_eurusd`) | 73 | 49 % | +11.8R | -11.3R | -0.6 / -6.1 / +12.5 / +5.9 | +11.7k |
+| | target capped at 2R (`eu_cap2_full`) | 73 | 52 % | +5.1R | -11.3R | -4.0 / -4.5 / +7.7 / +5.9 | +4.8k |
+| | stop at least half the zone's height (`eu_stopzone_full`) | 71 | 52 % | +12.7R | -10.3R | +0.5 / -4.0 / +12.0 / +4.2 | +12.8k, never 10 % under the start |
+| | stop minimum 12 pips (`eu_stop12_full`) | 72 | 50 % | +7.7R | -11.4R | -2.1 / -6.9 / +11.9 / +4.8 | +7.4k |
+| Gold 2023-2026 | profile, two of 1D/4H/1H (`gold_intra_c_full`) | 163 | 44 % | +27.6R | -12.9R | +3.5 / +7.7 / +6.1 / +10.3 | +29.0k |
+| | target capped at 2R (`gold_cap2_full`) | 165 | 50 % | +15.5R | -11.7R | +0.1 / -0.9 / +1.6 / +14.6 | +15.2k |
+| | stop at least half the zone's height (`gold_stopzone_full`) | 152 | 49 % | +25.3R | -12.3R | +4.9 / +4.5 / +2.0 / +13.9 | +26.7k |
+| BTC 2024-2026 | profile, previous-high target (`btc_prevext_long`) | 133 | 35 % | +55.0R | -10.3R | +12.5 / -2.8 / +45.2 | +64.6k |
+| | **target capped at 2R (`btc_cap2_long`)** | **145** | **51 %** | **+62.3R** | **-10.1R** | +9.5 / -0.1 / +52.9 | **+77.7k** |
+| | stop at least half the zone's height (`btc_stopzone_long`) | 125 | 40 % | +15.0R | -14.2R | +6.6 / +2.3 / +6.2 | +14.5k |
+
+2026 only (no full-period run, the break-even rule changes nothing material): break-even at +1R on BTC 34 trades, 35 % won
+and 15 % at zero, +49.2R (`btc_pe_be1_y26`); on gold 46 %, +8.2R (`gold_g_be1_y26`); on EURUSD no change (`eu_be1_y26`).
+
+Reading: the 2R cap takes the nearest liquidity when the previous-high target lies beyond 2R and keeps the far target
+when nothing nearer fits, so BTC keeps its few far winners and wins half its trades: 35 % to 51 % with more R and a
+smaller drawdown, in every year but 2024. On the currency pair and gold the same cap raises the win rate and costs
+R: their profit is in the far targets. The stop of at least half the zone's height is a small gain on EURUSD only
+(the anatomy's "tight stops lose"), within noise on gold, and costs BTC most of its edge.
+
+### Dorus on "slechte marktcondities" and the higher-timeframe veto
+
+Course A 01:58:09-01:59:24: "zelfs met perfecte levels en met een perfecte strategie zijn er bepaalde condities waar je
+gewoon niet in wil traden ... als jij tegen je higher timeframe bias gaat traden ... Als de higher timeframe voor mij
+tegenzit, dan ga ik überhaupt niet een trade plaatsen ... als de higher timeframe zegt we zijn bullish, dan kijk ik voor
+longs." Then trading between POIs (waiting) and news (A 01:59:28-02:00:08). And A 01:23:25: "nooit een trade plaatsen
+die niet klopt met de bias ... dan is het voor mij überhaupt al geen A+ set-up." The code lets a scalp (D+4H+1H) and the
+gold profile's two-of-three gate through while the monthly or the weekly reads the other way. `bias.no_trade_against`
+is that rule. Estimated on the profile ledgers before any run (trades whose bias string shows the timeframe against):
+
+| Ledger | 1M against: vetoed | 1W against: vetoed | 1M or 1W against: vetoed | kept with 1M or 1W veto |
+|---|---|---|---|---|
+| EURUSD 2023-2026 | 14, 71 %, +8.4R | 15, 27 %, -9.3R | 26, 46 %, -1.2R | 47, 51 %, +13.0R (1W only: 58, 55 %, +21.1R) |
+| Gold 2023-2026 | 23, 35 %, -2.3R | 19, 37 %, -2.7R | 36, 36 %, -4.8R | 127, 46 %, +32.4R |
+| BTC 2024-2026 (2R cap) | 30, 53 %, +7.1R | 29, 55 %, +14.0R | 43, 56 %, +20.1R | 102, 49 %, +42.2R |
+
+The rule holds on gold, holds for the weekly on EURUSD (the monthly-against trades won there), and fails on BTC, where
+trades against the higher timeframes won more often. Runs: `eu_against_w_full`, `eu_against_mw_full`,
+`gold_against_mw_full` (with `eu_against1m_full`, `gold_against1m_full` from the anatomy batch).
+
+Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
+the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
+when they finish.
