@@ -280,6 +280,10 @@ class MT5Broker(Broker):
                 reason = "closed"
             self._finish(pos, float(last.price), reason, self.to_utc(last.time), self._deal_pnl(outs))
 
+    def algo_trading_on(self) -> bool:
+        """The terminal's Algo Trading button (MT5 refuses orders from the API while it is off)."""
+        return bool(getattr(self.mt5.terminal_info(), "trade_allowed", False))
+
     def diagnostics(self) -> Dict[str, Any]:
         info = self.mt5.account_info()
         term = self.mt5.terminal_info()

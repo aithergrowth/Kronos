@@ -444,3 +444,24 @@ def test_friday_summary_adds_the_week(setup, tmp_path):
     runner.step(pd.Timestamp("2026-10-02 20:05"))                 # Friday 22:05 Amsterdam
     summary = next(m for m in notifier.sent if "📊" in m)
     assert "this week: 2 trade(s), 50 % won, +1.00R" in summary
+
+
+def test_algo_trading_off_is_reported_once(setup):
+    class Broker(PaperBroker):
+        on = False
+
+        def algo_trading_on(self):
+            return Broker.on
+
+    broker = Broker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(Settings(), "EURUSD", fetch, broker=broker, notifier=notifier,
+                        engine=FakeEngine(setup, signal_on_first_call=False), dry_run=False, clock=lambda: NOW)
+    runner.step(NOW)
+    runner.step(NOW + pd.Timedelta(minutes=11))
+    assert sum("Algo Trading staat UIT" in m for m in notifier.sent) == 1
+    Broker.on = True
+    runner.step(NOW + pd.Timedelta(minutes=22))
+    assert sum("weer aan" in m for m in notifier.sent) == 1

@@ -189,6 +189,8 @@ class LiveRunner:
         self._news_refreshed: Optional[pd.Timestamp] = None
         self._news_warned: Optional[object] = None          # local date of the last calendar warning
         self._poll_warned: Optional[pd.Timestamp] = None    # last time a failed Telegram poll was printed
+        self._algo_checked: Optional[pd.Timestamp] = None   # last look at the terminal's Algo Trading button
+        self._algo_on: Optional[bool] = None
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
         # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
@@ -208,6 +210,7 @@ class LiveRunner:
         self.advance_paper(views, now)
         self.stale = self.stale_timeframes(views, now)
         self.report_feed(views)
+        self.check_algo_trading(now)
         self.refresh_news(now)
         equity = self.broker.equity() if self.broker is not None else self.settings.account_size
         if self.broker is not None:
@@ -251,6 +254,27 @@ class LiveRunner:
         self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
         self.notifier.send_analysis(analysis, self.spec)
         self.send_chart(analysis, "briefing")
+
+    def check_algo_trading(self, now: pd.Timestamp) -> None:
+        """Every ten minutes with real orders on: is the terminal's Algo Trading button on?  When it is off MT5 refuses every
+        order (retcode 10027, "AutoTrading disabled by client"); say so once when it goes off and once when it is back."""
+        if self.dry_run or self.broker is None or not callable(getattr(self.broker, "algo_trading_on", None)):
+            return
+        if self._algo_checked is not None and now - self._algo_checked < pd.Timedelta(minutes=10):
+            return
+        self._algo_checked = now
+        try:
+            on = bool(self.broker.algo_trading_on())
+        except Exception:
+            return
+        if on == self._algo_on:
+            return
+        if not on:
+            self.notifier.send(f"⚠️ {self.symbol}: Algo Trading staat UIT in MT5 - orders worden geweigerd. "
+                               f"Zet de knop Algo Trading bovenin MT5 aan (groen).")
+        elif self._algo_on is False:
+            self.notifier.send(f"✅ {self.symbol}: Algo Trading staat weer aan in MT5.")
+        self._algo_on = on
 
     def load_traded(self) -> None:
         """Zones this market traded per visit, from the file the last run left (none when there is no file)."""
