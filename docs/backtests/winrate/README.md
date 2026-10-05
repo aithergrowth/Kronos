@@ -821,3 +821,28 @@ It is running as real backtests (`risk.min_rr` 2.0 and 1.5) on the corrected can
 
 **Taken (5 October, night):** GBPUSD is out of `scripts/start_live.bat` and `scripts/start_ftmo.bat`. It lost 25.3R over
 2017-2026, and 14.4R even on its trades at R:R 2 or more. EURUSD stays for now. The minimum R:R runs decide its place.
+
+**Minimum R:R 2, run (5 October, night).** `risk.min_rr` 2.0 against 0.5, 2017-2026 on the corrected candles:
+
+| Market | Trades | Win | 2017-2022 | 2023-2026 | Total | Max dd |
+|---|---|---|---|---|---|---|
+| EURUSD | 163 -> 49 | 41 % -> 27 % | -8.5R -> +0.2R | +5.9R -> +9.6R | -2.6R -> **+9.7R** | -16.4R -> -9.2R |
+| Gold | 285 -> 113 | 40 % -> 26 % | -14.8R -> -3.3R | +44.5R -> +39.0R | +29.7R -> **+35.7R** | -27.6R -> -15.5R |
+| NAS100 (48 h) | 230 -> 85 | 48 % -> 36 % | +8.2R -> +16.0R | +31.3R -> +24.0R | +39.5R -> **+47.9R** | -9.0R -> -7.3R |
+
+All three are better in total, in the out-of-sample years and in drawdown, on a third of the trades. The challenge
+on these three ledgers (`scripts/risk_steps.py`, two open, steps, 0.10R a trade off for costs; FTMO has no time
+limit):
+
+| Ledgers, risk | Funded, all starts 2017-2025 | Starts 2017-2022 | Starts 2023-2025 | Median days to funded |
+|---|---|---|---|---|
+| R:R 0.5, 1.5 % | 31 % | 5 % | 79 % | 193 |
+| **R:R 2, 1.5 %** | **50 %** | 25 % | 94 % (none failed) | 404 |
+| R:R 2, 1.0 % | 62 % | | | 473 |
+| R:R 2, 2.0 % | 44 % | | | 219 |
+
+Taken: `min_rr: 2.0` in `config/dorus_live.yaml` (EURUSD), `config/dorus_live_gold.yaml` and
+`config/dorus_live_nas100.yaml`. BTC keeps 0.5 for now, because its target is capped at 2R. BTC over 2020-2026 (5m
+from Bitstamp since 2020): 296 trades, 46 %, +52.0R, but -10.0R in 2020-2023 and +53.8R in 2026 alone. Like gold, it
+earns in one regime. The price of R:R 2 is time: about 26 trades a year on the three markets, and a challenge that
+takes most of a year.
