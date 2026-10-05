@@ -221,6 +221,22 @@ def test_max_zone_age_candles_refuses_stale_zones(hk_data):
         assert (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["poi_formed"])) / tf.delta() <= 2 + 1   # the scan step adds at most one candle
 
 
+def test_lower_zone_timeframes_are_mapped_only_when_the_profile_names_them(hk_data):
+    """15m zones are mapped when ``confirmation.poi_timeframes`` (or ``scalp_poi_timeframes``) names the 15m; by default only
+    the bias timeframes are. Before 5 October a 15m in the profile was silently ignored, so no 15m zone was ever traded."""
+    from kronos_trader.core.timeframe import Timeframe as T
+    now = pd.Timestamp("2024-06-03 10:00")
+    views = hk_data.as_of(now, lookback=400)
+    default = StrategyEngine(_settings()).analyze("09988", views, now=now)
+    assert all(p.timeframe in (T.MN_1, T.W_1, T.D_1, T.H_4, T.H_1) for p in default.pois)
+    s = _settings()
+    s.confirmation.poi_timeframes = (T.D_1, T.H_4, T.H_1, T.MIN_15)
+    s.confirmation.scalp_poi_timeframes = (T.H_4, T.H_1, T.MIN_15)
+    s.confirmation.min_confirmation_tf = {**s.confirmation.min_confirmation_tf, T.MIN_15: T.MIN_5}
+    lower = StrategyEngine(s).analyze("09988", views, now=now)
+    assert any(p.timeframe is T.MIN_15 for p in lower.pois)
+
+
 def test_mirror_bias_inverts_the_mirrored_timeframes(hk_data):
     """With ``bias.mirror_symbol`` set, the readings of ``mirror_timeframes`` come from the mirror market, inverted. Using
     the symbol's own candles as the mirror, the mirrored timeframes must read the opposite of the plain run and the

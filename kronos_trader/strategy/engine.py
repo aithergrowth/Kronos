@@ -296,8 +296,11 @@ class StrategyEngine:
         decision = combine_biases({tf: b.bias for tf, b in biases.items()}, s.bias)
 
         # 3: POIs on every mapped timeframe, both sides --------------------------------
+        # the bias timeframes always; a lower zone timeframe (15m, 5m) only when the profile names it in
+        # confirmation.poi_timeframes or scalp_poi_timeframes (before 5 October such a name was silently ignored)
         pois: List[POI] = []
-        for tf in POI_TIMEFRAMES:
+        extra = [tf for tf in (*s.confirmation.poi_timeframes, *s.confirmation.scalp_poi_timeframes) if tf not in POI_TIMEFRAMES]
+        for tf in list(POI_TIMEFRAMES) + sorted(set(extra), reverse=True):
             if tf in views:
                 pois.extend(self.pois_for(symbol, tf, structures[tf], views[tf], price))
 
