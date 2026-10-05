@@ -27,7 +27,7 @@ import pandas as pd
 from .config import Settings
 from .core.candles import CandleSeries
 from .core.timeframe import Timeframe
-from .core.types import Analysis, Bias, ForecastSummary, TradeSetup
+from .core.types import Analysis, Bias, ForecastSummary, TradeMode, TradeSetup
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
@@ -290,7 +290,7 @@ class LiveRunner:
             if forecast is None and self.settings.kronos.mode != "off" and getattr(self.engine, "forecaster", None) is not None:
                 forecast = self.engine._forecast(series, [])
             bias = "  ".join(f"{t.label} {b.bias.name.lower()}" for t, b in sorted(analysis.biases.items())) if analysis.biases else ""
-            zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
+            zones = self.chart_zones(analysis, setup)
             title = f"{self.symbol} {tf.label}  {kind}"
             if setup is not None:
                 title += f"  R:R 1:{setup.rr:.1f}  {setup.lots:.2f} lots  risk {setup.risk_amount:,.0f}"
@@ -306,13 +306,36 @@ class LiveRunner:
         except Exception as exc:
             print(f"[live] {self.symbol}: chart failed ({exc})")
 
+    def tradable_timeframes(self, analysis: Analysis) -> Tuple[Timeframe, ...]:
+        """The zone timeframes the engine trades in this decision's mode (``poi_timeframes`` in full mode,
+        ``scalp_poi_timeframes`` in scalp mode)."""
+        c = self.settings.confirmation
+        return tuple(c.poi_timeframes) if analysis.decision.mode is TradeMode.FULL else tuple(c.scalp_poi_timeframes)
+
+    def chart_zones(self, analysis: Analysis, setup: Optional[TradeSetup] = None, limit: int = 4) -> list:
+        """The zones worth drawing: the bias direction, the timeframes the profile trades, the ``limit`` nearest to price
+        (and the setup's own zone).  A chart with every zone of every timeframe hides the one that matters."""
+        zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
+        if analysis.decision.tradable:
+            allowed = self.tradable_timeframes(analysis)
+            zones = [p for p in zones if p.timeframe in allowed] or zones
+        price = float(analysis.price)
+        zones = sorted(zones, key=lambda p: 0.0 if p.contains(price) else min(abs(price - p.low), abs(price - p.high)))[:limit]
+        if setup is not None and all(p.key != setup.poi.key for p in zones):
+            zones.append(setup.poi)
+        return zones
+
     def announce_poi_touch(self, analysis: Analysis) -> None:
-        """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form."""
+        """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form.
+        Only zones on the timeframes the profile trades: a touch of a monthly zone on a 1D/4H/1H profile is not a setup."""
         if not self.settings.live.notify_poi_touch or not analysis.decision.tradable:
             return
         d = self.spec.price_decimals
+        allowed = self.tradable_timeframes(analysis)
         for poi in analysis.pois:
             if poi.direction is not analysis.decision.direction or not poi.contains(analysis.price):
+                continue
+            if poi.timeframe not in allowed:
                 continue
             if poi.key in self._touched:
                 continue

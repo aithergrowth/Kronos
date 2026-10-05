@@ -324,3 +324,28 @@ def test_evening_summary_once_per_weekday_from_the_journal(setup, tmp_path):
     assert "2 trade(s) closed, 1 won, +1.50R" in summaries[0] and "1 setup(s)" in summaries[0] and "equity" in summaries[0]
     runner.step(pd.Timestamp("2026-10-03 20:30"))            # Saturday: nothing
     assert sum("📊" in m for m in notifier.sent) == 1
+
+
+def test_touch_only_on_the_zone_timeframes_the_profile_trades(setup):
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    settings = Settings()
+    settings.confirmation.poi_timeframes = (T.D_1, T.H_4)            # the setup's zone is a 1H zone: not traded in full mode
+    notifier = TelegramNotifier(dry_run=True)
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)
+    runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+    runner.step(NOW)
+    assert not any("inside the" in m for m in notifier.sent)
+    settings.confirmation.poi_timeframes = (T.D_1, T.H_4, T.H_1)
+    runner.step(NOW + pd.Timedelta(15, unit="min"))
+    assert sum("inside the" in m for m in notifier.sent) == 1
+
+
+def test_chart_zones_are_the_nearest_tradable_ones(setup, scenario):
+    pois = map_pois(analyze_structure(scenario), current_price=101.0)
+    runner = LiveRunner(Settings(), "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True),
+                        engine=FakeEngine(setup, pois=pois, price=101.0, signal_on_first_call=False), clock=lambda: NOW)
+    analysis = runner.engine.analyze("EURUSD", {}, now=NOW)
+    zones = runner.chart_zones(analysis, limit=2)
+    assert 1 <= len(zones) <= 2 and all(z.direction is analysis.decision.direction for z in zones if
+                                         any(p.direction is analysis.decision.direction for p in pois))
+    assert any(z.key == setup.poi.key for z in runner.chart_zones(analysis, setup=setup, limit=1))
