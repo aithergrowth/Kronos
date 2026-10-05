@@ -62,6 +62,9 @@ exits:
   breakeven_r_intraday: 4.0       # the written plan: break-even after 4R intraday, 2R swing, no partials
   breakeven_r_swing: 2.0
   partials: false
+  max_hold_hours: 48             # 5 October: a NAS100 trade still open 48 h after its fill is closed at the market. 2023-2026
+                                  # (`NAS100_hold48_full`): 78 trades, 53 %, +25.6R, drawdown -5.4R against 76, 47 %, +13.6R, -7.2R.
+                                  # Only here: gold -4.8R, GBPUSD -2.4R, EURUSD +1R with the same limit
 prop_firm:
   max_open_trades: 2              # 5 October: two open on the account, one per market (EURUSD, gold, BTC, GBPUSD, NAS100 at 1.5 %,
   max_open_per_symbol: 1          # 790 challenge starts 2024-2026: funded 85 %, phase 1 median 42 days; one open on the account 74 %, 51 days)
