@@ -149,6 +149,22 @@ def adverse_move_atr(h1: CandleSeries, direction: Direction, candles: int = 24) 
     move = close[-1] - close[-candles - 1]
     return float(-direction.sign * move / atr)
 
+
+def volatility_percentile(h4: CandleSeries, bars: int = 6, window: int = 360) -> Optional[float]:
+    """Where the average true range of the last ``bars`` closed 4H candles ranks among the same average over the last
+    ``window`` candles (0 = the quietest, 1 = the busiest); None with too little history."""
+    df = h4.df
+    if len(df) < bars + 30:
+        return None
+    high, low, close = df["high"].to_numpy(float), df["low"].to_numpy(float), df["close"].to_numpy(float)
+    prev = np.concatenate(([close[0]], close[:-1]))
+    tr = np.maximum(high - low, np.maximum(np.abs(high - prev), np.abs(low - prev)))
+    atr = pd.Series(tr).rolling(bars).mean().to_numpy()[-window:]
+    atr = atr[~np.isnan(atr)]
+    if len(atr) < 30:
+        return None
+    return float((atr <= atr[-1]).mean())
+
 class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
@@ -384,6 +400,16 @@ class StrategyEngine:
             if adverse is not None and adverse >= s.confirmation.max_adverse_move_atr:
                 analysis.rejections.append(f"the last 24 1H candles ran {adverse:.1f} average ranges against the {direction.name.lower()} "
                                            f"(max {s.confirmation.max_adverse_move_atr:g}); no entry into that")
+                if assume_direction is None:
+                    return analysis
+                diagnostic = True
+
+        # a quiet market: the day's average 4H range low against the last 60 days --------------------------------------
+        if s.confirmation.min_volatility_percentile > 0 and Timeframe.H_4 in views:
+            rank = volatility_percentile(views[Timeframe.H_4])
+            if rank is not None and rank < s.confirmation.min_volatility_percentile:
+                analysis.rejections.append(f"a quiet market: the day's 4H range ranks {rank:.0%} of the last 60 days "
+                                           f"(min {s.confirmation.min_volatility_percentile:.0%})")
                 if assume_direction is None:
                     return analysis
                 diagnostic = True

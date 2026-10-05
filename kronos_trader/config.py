@@ -163,6 +163,10 @@ class ConfirmationParams:
     max_adverse_move_atr: float = 0.0   # 0 = off; else no entry when the last 24 closed 1H candles moved this many average 1H ranges
                                         # (ATR 24) against the trade: the zone is being run through, not tested (entry anatomy, 5 October,
                                         # five markets 2023-2026: 14 trades at 3 or more won 21 %, -7.9R, negative in 2024, 2025 and 2026)
+    min_volatility_percentile: float = 0.0  # 0 = off; else no entry unless the average 4H range of the last day (6 candles) ranks at
+                                        # least this high among the last 360 4H candles (60 days): the zones pay when the market moves
+                                        # (big-winner anatomy, 5 October: BTC 2024-2026 in the top 40 % 71 trades, 65 %, +75.2R; below it
+                                        # 74 trades, 38 %, -12.9R)
     max_zone_age_candles: int = 0       # 0 = off; else a zone older than this many candles of its own timeframe is not a candidate (loss
                                         # anatomy, 4 October, three markets: zones under 24 h old won 43-48 %, older ones 12-33 %; BTC
                                         # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)

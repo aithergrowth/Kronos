@@ -309,3 +309,15 @@ def test_adverse_move_counts_the_last_day_against_the_trade():
     assert adverse_move_atr(h1, Direction.SHORT) == pytest.approx(-against_long)   # with a short
     short = CandleSeries.from_records(rows[:10], TF.H_1, start="2026-10-01 00:00", symbol="TEST")
     assert adverse_move_atr(short, Direction.LONG) is None                   # too little history
+
+
+def test_volatility_percentile_ranks_the_last_day_against_sixty():
+    from kronos_trader.core import Timeframe as TF
+    from kronos_trader.strategy.engine import volatility_percentile
+    quiet = [(100, 101, 99, 100)] * 200                     # 2-point ranges
+    busy = [(100, 110, 90, 100)] * 6                        # 20-point ranges in the last day
+    s = CandleSeries.from_records(quiet + busy, TF.H_4, start="2026-07-01 00:00", symbol="TEST")
+    assert volatility_percentile(s) == pytest.approx(1.0)
+    s2 = CandleSeries.from_records(busy * 20 + quiet, TF.H_4, start="2026-07-01 00:00", symbol="TEST")
+    assert volatility_percentile(s2) < 0.7                   # a quiet day after busy weeks
+    assert volatility_percentile(CandleSeries.from_records(quiet[:20], TF.H_4, start="2026-07-01", symbol="TEST")) is None
