@@ -616,3 +616,27 @@ def test_max_hold_hours_closes_on_a_real_broker(setup):
     runner.manage_positions(runner.fetch())
     runner.report_closes()
     assert broker.open_positions() == [] and any("closed (time)" in m for m in notifier.sent)
+
+
+def test_a_paper_fill_is_stamped_at_its_candle_start(setup):
+    """The paper broker checks stops and targets from the candle a fill falls in: the fill is stamped at that candle's
+    start on the lowest timeframe (stamped at the poll time the broker skipped the whole candle)."""
+    broker = PaperBroker(Settings())
+    runner, _ = _runner(setup, broker)
+    runner._views = runner.fetch()                                           # 15m is the lowest timeframe here
+    assert runner.fill_stamp(pd.Timestamp("2026-10-01 08:47:23")) == pd.Timestamp("2026-10-01 08:45")
+
+
+def test_the_engine_recomputes_a_candle_whose_values_changed():
+    """The structure cache knows a view by its last candle's time, values and the length: a daily candle completed
+    after it was first seen (its last minutes arrived late) is analysed again."""
+    from kronos_trader.strategy.engine import StrategyEngine
+    from kronos_trader.config import Settings
+    eng = StrategyEngine(Settings())
+    rows = [(1.0 + k / 100, 1.02 + k / 100, 0.99 + k / 100, 1.01 + k / 100) for k in range(60)]
+    early = CandleSeries.from_records(rows, T.D_1, start="2026-07-01", symbol="EURUSD")
+    late_rows = rows[:-1] + [(rows[-1][0], rows[-1][1] + 0.05, rows[-1][2], rows[-1][3] + 0.04)]
+    late = CandleSeries.from_records(late_rows, T.D_1, start="2026-07-01", symbol="EURUSD")
+    a = eng.structure_for("EURUSD", early)
+    assert eng.structure_for("EURUSD", early) is a
+    assert eng.structure_for("EURUSD", late) is not a

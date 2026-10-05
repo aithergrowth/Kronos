@@ -170,38 +170,44 @@ class StrategyEngine:
         self.settings = settings or Settings()
         self.forecaster = forecaster
         self.calendar = calendar            # NewsCalendar: no new entries around high-impact news (G 11:08)
-        self._structure_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, StructureAnalysis]] = {}
+        self._structure_cache: Dict[Tuple[str, Timeframe], tuple] = {}   # (stamp, structure)
         self.visits: Dict[str, VisitTracker] = {}      # per symbol: visit history per zone beyond the analysis window
         self.traded: Dict[str, Dict[Tuple[str, int, str], int]] = {}   # per symbol: zone key -> visit number a trade was opened on
         self._mirror = None                 # MultiTimeframeData of bias.mirror_symbol, loaded on first use
         self._mirror_tried = False
-        self._poi_cache: Dict[Tuple[str, Timeframe], Tuple[pd.Timestamp, int, List[POI], list]] = {}   # + each zone's scan
+        self._poi_cache: Dict[Tuple[str, Timeframe], tuple] = {}   # (stamp, zones, each zone's scan)
 
     # ------------------------------------------------------------------ helpers
     def structure_for(self, symbol: str, view: CandleSeries) -> StructureAnalysis:
         key = (symbol, view.timeframe)
         if len(view) == 0:
             return analyze_structure(view, self.settings.structure)
-        stamp = (view.last_timestamp, len(view))
+        stamp = self._stamp(view)
         cached = self._structure_cache.get(key)
-        if cached is not None and cached[0] == stamp[0] and cached[1] == stamp[1]:
-            return cached[2]
+        if cached is not None and cached[0] == stamp:
+            return cached[1]
         st = analyze_structure(view, self.settings.structure)
-        self._structure_cache[key] = (stamp[0], stamp[1], st)
+        self._structure_cache[key] = (stamp, st)
         return st
+
+    @staticmethod
+    def _stamp(view: CandleSeries) -> tuple:
+        """What identifies a view for the caches: its last candle (time and values) and its length. The values count
+        because a live feed can complete a candle after it was first seen (a daily candle missing its last minutes)."""
+        return (view.last_timestamp, len(view), float(view.high[-1]), float(view.low[-1]), float(view.close[-1]))
 
     def pois_for(self, symbol: str, tf: Timeframe, st: StructureAnalysis, view: CandleSeries, price: float) -> List[POI]:
         """The zones of one timeframe: mapped once per closed candle of that timeframe, status refreshed every call."""
         key = (symbol, tf)
-        stamp = (view.last_timestamp, len(view))
+        stamp = self._stamp(view)
         cached = self._poi_cache.get(key)
-        if cached is not None and cached[0] == stamp[0] and cached[1] == stamp[1]:
-            pois, scans = cached[2], cached[3]
+        if cached is not None and cached[0] == stamp:
+            pois, scans = cached[1], cached[2]
             for poi, scan in zip(pois, scans):        # the candles did not change: only the price can move the status
                 update_poi_status(poi, st.series, price, scan=scan)
             return pois
         pois = map_pois(st, self.settings.structure, price)
-        self._poi_cache[key] = (stamp[0], stamp[1], pois, [poi_scan(poi, st.series) for poi in pois])
+        self._poi_cache[key] = (stamp, pois, [poi_scan(poi, st.series) for poi in pois])
         return pois
 
     def mirror_data(self):

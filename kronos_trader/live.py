@@ -658,6 +658,13 @@ class LiveRunner:
             return
         self.execute(setup, forecast, now)
 
+    def fill_stamp(self, now: pd.Timestamp) -> pd.Timestamp:
+        """The fill time a simulated broker records: the start of the lowest timeframe's candle the fill falls in, so the
+        paper broker checks that candle's stop and target too (stamped at the poll time it skipped the whole candle)."""
+        if callable(getattr(self.broker, "on_candle", None)) and self._views:
+            return pd.Timestamp(now).floor(f"{min(self._views).minutes}min")
+        return now
+
     def planned_risk(self) -> float:
         """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps."""
         from .strategy.risk import stepped_risk
@@ -706,7 +713,7 @@ class LiveRunner:
                     risk_distance, setup.breakeven_r,
                     meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
                           "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
-                    price=price, ts=now, price_is_fill=True,
+                    price=price, ts=self.fill_stamp(now), price_is_fill=True,
                 )
             except Exception as exc:
                 self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
