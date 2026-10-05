@@ -187,6 +187,7 @@ class LiveRunner:
         self._fed_until: Optional[pd.Timestamp] = None   # last candle handed to a simulated broker
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
+        self._news_warned: Optional[object] = None          # local date of the last calendar warning
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
         # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
@@ -402,14 +403,26 @@ class LiveRunner:
         if self._news_refreshed is not None and now - self._news_refreshed < pd.Timedelta(int(n.refresh_minutes), unit="min"):
             return
         self._news_refreshed = now
-        from .data.calendar import fetch_forexfactory
+        from .data.calendar import fetch_forexfactory, load_events, save_events
+        # one download an hour for all windows: the first window to need it saves the week next to the journal and the
+        # others read that file (five windows asking every hour drew ForexFactory's 429 "too many requests")
+        cache_dir = Path(self.settings.live.journal_path).parent if self.settings.live.journal_path else None
+        max_age = pd.Timedelta(int(n.refresh_minutes), unit="min")
         failed = []
         for week in ("thisweek", "nextweek"):          # next week's file is often missing (404) until late in the week
+            cache = cache_dir / f"forexfactory_{week}.csv" if cache_dir is not None else None
             try:
-                calendar.add(fetch_forexfactory(week))
+                if cache is not None and cache.exists() and time.time() - cache.stat().st_mtime < max_age.total_seconds():
+                    calendar.add(load_events(cache))
+                    continue
+                events = fetch_forexfactory(week)
+                calendar.add(events)
+                if cache is not None:
+                    save_events(events, cache)
             except Exception as exc:
                 failed.append(f"{week}: {exc}")
-        if len(failed) == 2:
+        if len(failed) == 2 and self._news_warned != now.date():
+            self._news_warned = now.date()            # once a day is enough: the loaded calendar covers the gap
             print(f"[live] {self.symbol}: news calendar refresh failed ({'; '.join(failed)}); using the events already "
                   f"loaded (data/calendar/high_impact.csv, extended from the TradingView calendar when it runs out)")
 

@@ -374,3 +374,34 @@ def test_traded_zones_survive_a_restart(tmp_path):
     other = LiveRunner(settings, "XAUUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True),
                        engine=SimpleNamespace(traded={}), clock=lambda: NOW)
     assert other.engine.traded == {}                                   # each market keeps its own file
+
+
+def test_news_download_is_shared_between_windows(tmp_path, monkeypatch, capsys):
+    from types import SimpleNamespace
+    from kronos_trader.data import calendar as cal
+    calls = []
+    event = cal.NewsEvent(pd.Timestamp("2026-10-07 12:30"), "USD", "CPI", 3)
+
+    def fake_fetch(week="thisweek", **kw):
+        calls.append(week)
+        if week == "nextweek":
+            raise RuntimeError("ForexFactory calendar 404")
+        return [event]
+
+    monkeypatch.setattr(cal, "fetch_forexfactory", fake_fetch)
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    settings.news.enabled, settings.news.forexfactory = True, True
+    added = []
+    engine = SimpleNamespace(calendar=SimpleNamespace(add=lambda ev: added.extend(ev)), traded={})
+    for symbol in ("EURUSD", "XAUUSD"):
+        LiveRunner(settings, symbol, lambda: {}, notifier=TelegramNotifier(dry_run=True), engine=engine,
+                   clock=lambda: NOW).refresh_news(NOW)
+    assert calls.count("thisweek") == 1                          # the second window read the first one's file
+    assert len(added) == 2 and all(e.title == "CPI" for e in added)
+    monkeypatch.setattr(cal, "fetch_forexfactory", lambda week="thisweek", **kw: (_ for _ in ()).throw(RuntimeError("ForexFactory calendar 429")))
+    (tmp_path / "forexfactory_thisweek.csv").unlink()
+    runner = LiveRunner(settings, "GBPUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), engine=engine, clock=lambda: NOW)
+    runner.refresh_news(NOW)
+    runner.refresh_news(NOW + pd.Timedelta(hours=2))
+    assert capsys.readouterr().out.count("news calendar refresh failed") == 1   # once a day
