@@ -9,7 +9,7 @@ YAML.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -406,7 +406,8 @@ class LiveParams:
 class Settings:
     account_size: float = 100_000.0
     account_currency: str = "USD"
-    symbols: Dict[str, SymbolSpec] = field(default_factory=lambda: dict(DEFAULT_SYMBOLS))
+    symbols: Dict[str, SymbolSpec] = field(default_factory=lambda: {k: replace(v) for k, v in DEFAULT_SYMBOLS.items()})   # own copies: a
+                                        # live run sets its symbol's contract from the broker (MT5Broker.align_spec)
     structure: StructureParams = field(default_factory=StructureParams)
     bias: BiasParams = field(default_factory=BiasParams)
     session: SessionParams = field(default_factory=SessionParams)
