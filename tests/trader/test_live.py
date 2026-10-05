@@ -683,3 +683,50 @@ def test_a_paper_restart_does_not_replay_old_candles_or_reuse_ids(setup):
     again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True)
     assert again._fed_until == runner._fed_until and again._fed_until is not None
     assert fresh.place_market_order("EURUSD", Direction.SHORT, 0.1, 1.11, 1.09, 10.0, 0.01, 4.0, price=1.1, ts=NOW).id == "P5"
+
+
+class MarginBroker(PaperBroker):
+    """A paper account whose server asks ``per_lot`` margin a lot, as MT5's order_calc_margin does (FTMO crypto: 1:2)."""
+
+    def __init__(self, settings, per_lot, free=None):
+        super().__init__(settings)
+        self.per_lot, self.free = per_lot, free
+
+    def margin_per_lot(self, symbol, direction, price):
+        return self.per_lot
+
+    def free_margin(self):
+        return self.free
+
+
+def test_lots_are_cut_to_fit_the_margin(setup):
+    """A full-size position needing more margin than the account has is refused by MT5 ("No money"): the live loop cuts
+    the lots so one position ties up at most 45 % of equity and 90 % of the free margin, says so, and skips the setup
+    only when not even the minimum lot fits."""
+    broker = MarginBroker(Settings(), per_lot=50_000.0)
+    broker.set_price("EURUSD", 1.1)
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    assert pos.lots == pytest.approx(0.90)                                     # 45 % of 100,000 over 50,000 a lot
+    assert pos.meta["risk_budget"] == pytest.approx(1000.0 * 0.90 / 1.90)     # the planned 1.90 lots, risk cut alike
+    assert any("margin: lots cut from 1.90, risk 47 % of planned" in m for m in notifier.sent)
+
+    tight = MarginBroker(Settings(), per_lot=50_000.0, free=20_000.0)
+    tight.set_price("EURUSD", 1.1)
+    runner2, _ = _runner(setup, tight, require_approval=False)
+    runner2.step(NOW)
+    assert tight.open_positions()[0].lots == pytest.approx(0.36)              # 90 % of the 20,000 free
+
+    full = MarginBroker(Settings(), per_lot=1e7)
+    full.set_price("EURUSD", 1.1)
+    runner3, notifier3 = _runner(setup, full, require_approval=False)
+    runner3.step(NOW)
+    assert full.open_positions() == [] and any("not enough margin for the minimum lot" in m for m in notifier3.sent)
+
+    off = MarginBroker(Settings(), per_lot=50_000.0)
+    off.set_price("EURUSD", 1.1)
+    runner4, _ = _runner(setup, off, require_approval=False)
+    runner4.settings.prop_firm.max_margin_pct = 0.0
+    runner4.step(NOW)
+    assert off.open_positions()[0].lots == pytest.approx(1.90)

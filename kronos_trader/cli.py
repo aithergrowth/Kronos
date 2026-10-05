@@ -311,6 +311,24 @@ def _feed(args, settings: Settings, broker):
     return kind, feed
 
 
+def _print_margin(broker, settings: Settings, symbol: str, currency: str) -> None:
+    """The server's margin for one lot and the leverage it implies, with what the live loop does about it."""
+    from .core.types import Direction
+    spec = settings.symbol(symbol)
+    try:
+        price = broker.current_price(symbol)
+        per_lot = broker.margin_per_lot(symbol, Direction.LONG, price)
+    except Exception:
+        return
+    if not per_lot:
+        return
+    leverage = price / spec.pip_size * spec.pip_value_per_lot / per_lot
+    pct = settings.prop_firm.max_margin_pct
+    print(f"margin: 1 lot {symbol} ties up {per_lot:,.0f} {currency} at {price:.{spec.price_decimals}f} (about 1:{leverage:.3g}); "
+          + (f"a position may use {pct:g} % of equity as margin, larger ones are cut to fit" if pct
+             else "no margin cap (prop_firm.max_margin_pct 0)"))
+
+
 def cmd_live(args) -> int:
     from .live import LiveRunner, build_fetch
     settings = _load_settings(args)
@@ -334,6 +352,7 @@ def cmd_live(args) -> int:
             if before > 0 and abs(spec.pip_value_per_lot - before) > 0.2 * before:
                 sizing_note = (f"ℹ️ {symbol}: lots sized with MT5's contract: 1 lot = {spec.pip_value_per_lot:.4g} {currency} per pip "
                                f"of {spec.pip_size:g} (the profile assumed {before:g})")
+            _print_margin(broker, settings, symbol, currency)
         except Exception as exc:
             hint = "`python -m kronos_trader mt5-symbols --search <text>` lists the server's names"
             if args.execute:                # real orders on a symbol the server lacks: stop here instead of idling on old bars

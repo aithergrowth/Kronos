@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import time
 from pathlib import Path
@@ -669,6 +670,28 @@ class LiveRunner:
             return pd.Timestamp(now).floor(f"{min(self._views).minutes}min")
         return now
 
+    def margin_room(self, direction, price: float) -> Optional[Tuple[float, float]]:
+        """``(most lots, margin available)`` for a new position at ``price``, or None when the broker cannot tell (paper,
+        a server without order_calc_margin). One position may tie up prop_firm.max_margin_pct of equity and at most 90 %
+        of the free margin: at 1.5 % risk a BTC trade needs about 2.5x its account in exposure, which a 10k FTMO account
+        (crypto at about 1:2) refuses as "No money"; cut to fit, it trades smaller instead of not at all."""
+        pct = self.settings.prop_firm.max_margin_pct
+        per_lot_fn, free_fn = getattr(self.broker, "margin_per_lot", None), getattr(self.broker, "free_margin", None)
+        if not pct or per_lot_fn is None:
+            return None
+        try:
+            per_lot = per_lot_fn(self.symbol, direction, float(price))
+            free = free_fn() if free_fn is not None else None
+            room = float(self.broker.equity()) * pct / 100.0
+        except Exception:
+            return None
+        if not per_lot or per_lot <= 0:
+            return None
+        if free is not None:
+            room = min(room, 0.9 * float(free))
+        room = max(0.0, room)
+        return room / per_lot, room
+
     def planned_risk(self) -> float:
         """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps."""
         from .strategy.risk import stepped_risk
@@ -711,6 +734,20 @@ class LiveRunner:
             resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
             if risk_params.risk_pct != self.settings.risk.risk_pct:
                 resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
+            margin_note = ""
+            room = self.margin_room(setup.direction, price)
+            if room is not None and lots > room[0] + 1e-9:
+                fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
+                if fit < self.spec.min_lot:
+                    self.note("not_executed", now, id=sid, price=float(price), reason=f"margin: {room[1]:,.0f} available, "
+                              f"{lots:.2f} lots wanted, {room[0]:.3f} fit")
+                    self.notifier.send(f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot "
+                                       f"({room[1]:,.0f} available, {self.spec.min_lot:g} lots needed)")
+                    return None
+                margin_note = f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
+                resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
+                risk_amount *= fit / lots
+                lots = fit
             try:
                 pos = self.broker.place_market_order(
                     self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
@@ -740,7 +777,8 @@ class LiveRunner:
         if filled:
             stepped = f" ({risk_params.risk_pct:g} %: balance below the start)" if risk_params.risk_pct != self.settings.risk.risk_pct else ""
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
-                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}{stepped}  (id {pos.id})")
+                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}{stepped}{margin_note}  "
+                               f"(id {pos.id})")
         else:
             self.unconfirmed[pos.id] = pos
             self.notifier.send(f"📨 {self.symbol} {side} {pos.lots:.2f} lots submitted, fill not confirmed yet  "

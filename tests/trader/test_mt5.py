@@ -568,3 +568,41 @@ def test_bar_times_keep_their_hour_across_a_dst_switch(monkeypatch):
     winter = int(pd.Timestamp("2026-11-02 12:00").timestamp())      # server time; New York 05:00 EST = 10:00 UTC
     out = after.stamps_to_utc(pd.Series([summer, winter]))
     assert list(out) == [pd.Timestamp("2026-10-30 20:00"), pd.Timestamp("2026-11-02 10:00")]
+
+
+def test_margin_per_lot_and_free_margin_come_from_the_server(broker):
+    """order_calc_margin for one lot at the price (FTMO's crypto at 1:2 ties up half the notional) and the account's free
+    margin; a server without them gives None, so the live loop leaves the lots alone."""
+    class CryptoMT5(FakeMT5):
+        def order_calc_margin(self, action, symbol, volume, price):
+            self.margin_args = (action, symbol, volume, price)
+            return volume * price / 2.0 if symbol == "BTCUSD.x" else None
+
+        def account_info(self):
+            return SimpleNamespace(**{**vars(super().account_info()), "margin_free": 41_000.0})
+
+    s = Settings()
+    s.symbol("BTCUSD").mt5_symbol = "BTCUSD.x"
+    b = MT5Broker(s, api=CryptoMT5(), clock=lambda: NOW)
+    assert b.margin_per_lot("BTCUSD", Direction.SHORT, 100_000.0) == pytest.approx(50_000.0)
+    assert b.mt5.margin_args == (FakeMT5.ORDER_TYPE_SELL, "BTCUSD.x", 1.0, 100_000.0)
+    assert b.free_margin() == pytest.approx(41_000.0)
+    assert b.margin_per_lot("EURUSD", Direction.LONG, 1.1) is None
+    assert broker.margin_per_lot("EURUSD", Direction.LONG, 1.1) is None and broker.free_margin() is None
+
+
+def test_startup_shows_the_servers_leverage(capsys):
+    """The live window prints the margin one lot ties up and the leverage that means (FTMO-like 1:30 here)."""
+    from kronos_trader.cli import _print_margin
+
+    class LeveredMT5(FakeMT5):
+        def order_calc_margin(self, action, symbol, volume, price):
+            return volume * 100_000 * price / 30.0
+
+    s = Settings()
+    b = MT5Broker(s, api=LeveredMT5(), clock=lambda: NOW)
+    _print_margin(b, s, "EURUSD", "USD")
+    out = capsys.readouterr().out
+    assert "ties up 3,667 USD at 1.10005 (about 1:30)" in out and "45 % of equity" in out
+    _print_margin(MT5Broker(s, api=FakeMT5(), clock=lambda: NOW), s, "EURUSD", "USD")       # no order_calc_margin: silent
+    assert capsys.readouterr().out == ""

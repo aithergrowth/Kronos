@@ -290,6 +290,8 @@ class PropFirmParams:
     record_max_loss_pct: float = 10.0   # 10 % static below the initial balance), whatever the halting limits above are set to
     news_blackout_minutes: int = 0      # optional: block entries N minutes around high-impact news
     min_minutes_between_trades: int = 0
+    max_margin_pct: float = 45.0        # live: one position ties up at most this much of equity as margin (and 90 % of the
+                                        # free margin), lots cut to fit: two still fit, and a 1:2 crypto CFD is not refused; 0 = off
 
 
 @dataclass

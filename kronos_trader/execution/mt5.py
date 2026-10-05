@@ -225,6 +225,25 @@ class MT5Broker(Broker):
         info = self.mt5.account_info()
         return str(getattr(info, "currency", "") or "") if info is not None else ""
 
+    def margin_per_lot(self, symbol: str, direction: Direction, price: float) -> Optional[float]:
+        """The margin one lot of ``symbol`` ties up at ``price`` (account currency, order_calc_margin): the server's own
+        leverage for the symbol, e.g. about 1:2 on crypto at FTMO. None when the server does not say."""
+        mt5 = self.mt5
+        calc = getattr(mt5, "order_calc_margin", None)
+        if calc is None:
+            return None
+        kind = mt5.ORDER_TYPE_BUY if direction is Direction.LONG else mt5.ORDER_TYPE_SELL
+        try:
+            value = calc(kind, self.mt5_symbol(symbol), 1.0, float(price))
+        except Exception:
+            return None
+        return float(value) if value is not None and value > 0 else None
+
+    def free_margin(self) -> Optional[float]:
+        info = self.mt5.account_info()
+        value = getattr(info, "margin_free", None) if info is not None else None
+        return float(value) if value is not None else None
+
     def mt5_symbol(self, symbol: str) -> str:
         spec = self.settings.symbols.get(symbol.upper())
         return spec.mt5_symbol if spec and spec.mt5_symbol else symbol.upper()

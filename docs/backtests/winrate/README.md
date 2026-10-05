@@ -696,3 +696,27 @@ Gold holds; EURUSD and GBPUSD keep about half. On these candles, two open at 1.5
 the average +4.8 % (+2.6 % without June 2026), the challenge funded in 89 % of the starts (median 140 days); with
 NAS100 and its 48 h limit 11.4 trades a month, median +3.2 %, average +5.7 % (+3.6 % without June 2026), funded 98 %
 (median 105 days), 81 % with every trade 0.10R worse. From here on the research runs on these candles.
+
+### Margin on a 10k FTMO account (5 October, evening)
+
+The backtests size every trade at its risk with no margin limit. A broker does have one: exposure divided by
+leverage has to fit in the free margin, or MT5 refuses the order ("No money", 10019). At 1.5 % risk the exposure a
+trade needs is 1.5 % of the account divided by the stop as a share of the price (MT5-like candles, 2023-2026):
+
+| Market | Stop, median (smallest) | Exposure, median / 90th pct / largest | R at 1:100 / 1:50 / 1:30 / 1:20 / 1:10 |
+|---|---|---|---|
+| EURUSD | 0.12 % (0.07 %) | 12x / 20x / 22x | 11.3 / - / 8.6 / - / - |
+| GBPUSD | 0.11 % (0.06 %) | 14x / 21x / 24x | 8.6 / - / 9.2 / - / - |
+| Gold | 0.19 % (0.05 %) | 8x / 15x / 31x | - / 36.9 / 35.3 / 31.0 / 20.8 |
+| NAS100 (48 h) | 0.17 % (0.07 %) | 9x / 15x / 21x | - / 25.6 / - / 27.7 / 20.2 |
+| BTC | 0.60 % (0.09 %) | 2.5x / 7.4x / 17x | at 1:3.3 24.3, at 1:2 15.2, at 1:1 7.4 (62.3 unlimited) |
+
+The R columns assume one position may hold 45 % of equity as margin, cut to fit. FTMO's Standard account
+gives about 1:100 on forex and 1:50 on indices and gold, which never binds. Crypto gets about 1:2 to 1:3.3, and
+there 81-91 % of the BTC trades need more. The live loop now cuts the lots to fit instead of sending an order the
+server refuses. `margin_per_lot` (order_calc_margin) gives the server's own leverage, and one position ties up at
+most `prop_firm.max_margin_pct` (45) of equity and 90 % of the free margin, so the second open position still fits.
+Below the minimum lot the setup is skipped with a message. The fill message says when the lots were cut, and the
+window prints the leverage at start (`margin: 1 lot BTCUSD ties up ... (about 1:2)`). On FTMO, BTC therefore adds
+roughly a quarter to a third of its backtest R. The Swing account type (1:30 forex, 1:10 indices and gold, 1:1
+crypto) would cost gold and NAS100 a third and BTC almost everything, so the Standard type fits these profiles.
