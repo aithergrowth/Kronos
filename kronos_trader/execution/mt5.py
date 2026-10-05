@@ -247,16 +247,12 @@ class MT5Broker(Broker):
                         meta={"comment": getattr(p, "comment", "")})
 
     def _finish(self, pos: Position, exit_price: float, reason: str, ts, pnl: float) -> ClosedTrade:
-        """``pnl`` is the whole trade's money (the history's closing deals include a partial exit's deal)."""
         self._positions.pop(pos.id, None)
-        meta = dict(pos.meta)
-        if pos.partial_pnl or pos.partial_r:
-            meta.update(partial_r=round(pos.partial_r, 4), partial_pnl=round(pos.partial_pnl, 2))
         trade = ClosedTrade(
-            id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.initial_lots or pos.lots, entry=pos.entry,
-            exit=float(exit_price), stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,
+            id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.lots, entry=pos.entry, exit=float(exit_price),
+            stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,
             closed_at=pd.Timestamp(ts) if ts is not None else self.clock(), reason=reason, pnl=float(pnl),
-            r=pos.total_r_at(float(exit_price)), risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=meta,
+            r=pos.r_at(float(exit_price)), risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=dict(pos.meta),
         )
         self._closed.append(trade)
         return trade
@@ -337,7 +333,6 @@ class MT5Broker(Broker):
                     pos.meta.pop("entry_unconfirmed", None)
             if not pos.breakeven_done and pos.stop and pos.direction.sign * (pos.stop - pos.entry) >= 0:
                 pos.breakeven_done = True                    # the stop already sits at or beyond the entry
-                pos.partial_done = True                      # after a restart: a partial, if any, came with that move
             out.append(pos)
         self._sync_closed()
         return out
@@ -397,49 +392,10 @@ class MT5Broker(Broker):
             risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
             initial_stop=float(stop), meta=dict(meta or {}), status="filled" if confirmed else "pending",
         )
-        pos.initial_lots = float(lots)
         if not confirmed:
             pos.meta["entry_unconfirmed"] = True
         self._positions[pos.id] = pos
         return pos
-
-    def close_partial(self, position_id: str, fraction: float, price: Optional[float] = None, ts=None) -> Optional[float]:
-        """Close ``fraction`` of the position at market (rounded down to the symbol's volume step); the money is banked
-        on the tracked position. None when the volume cannot be split."""
-        mt5 = self.mt5
-        p = next((x for x in mt5.positions_get() or [] if str(x.ticket) == str(position_id)), None)
-        if p is None:
-            raise KeyError(f"position {position_id} not found")
-        info = mt5.symbol_info(p.symbol)
-        step = float(getattr(info, "volume_step", 0.01) or 0.01)
-        vmin = float(getattr(info, "volume_min", 0.01) or 0.01)
-        volume = float(p.volume)                                  # before the order: the terminal's object may update
-        out = int(volume * float(fraction) / step + 1e-9) * step
-        pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
-        if out < vmin or volume - out < vmin - 1e-12:
-            pos.partial_done = True
-            return None
-        tick = mt5.symbol_info_tick(p.symbol)
-        is_long = p.type == mt5.POSITION_TYPE_BUY
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL, "symbol": p.symbol, "volume": round(out, 8), "position": p.ticket,
-            "type": mt5.ORDER_TYPE_SELL if is_long else mt5.ORDER_TYPE_BUY,
-            "price": float(tick.bid if is_long else tick.ask), "deviation": self.deviation, "magic": self.magic,
-            "comment": "partial", "type_time": mt5.ORDER_TIME_GTC, "type_filling": getattr(mt5, self.params.filling),
-        }
-        result = mt5.order_send(request)
-        if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
-            raise RuntimeError(f"partial close failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
-        deals = list(mt5.history_deals_get(ticket=int(getattr(result, "deal", 0) or 0)) or []) if getattr(result, "deal", 0) else []
-        fill = float(getattr(result, "price", 0.0) or request["price"])
-        pnl = self._deal_pnl(deals) if deals else pos.direction.sign * (fill - pos.entry) / max(pos.risk_distance, 1e-12) * \
-            pos.risk_amount * out / (pos.initial_lots or volume)
-        base = pos.initial_lots or volume
-        pos.partial_r += out / base * pos.r_at(fill)
-        pos.partial_pnl += pnl
-        pos.lots = round(volume - out, 8)
-        pos.partial_done = True
-        return pnl
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         mt5 = self.mt5
@@ -474,7 +430,7 @@ class MT5Broker(Broker):
         pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
         deals = list(mt5.history_deals_get(ticket=int(getattr(result, "deal", 0) or 0)) or []) if getattr(result, "deal", 0) else []
         pnl = self._deal_pnl(deals) if deals else float(getattr(p, "profit", 0.0) or 0.0)
-        return self._finish(pos, float(result.price), reason, ts, pnl + pos.partial_pnl)
+        return self._finish(pos, float(result.price), reason, ts, pnl)
 
     def recent_closes(self) -> List[ClosedTrade]:
         self._sync_closed()

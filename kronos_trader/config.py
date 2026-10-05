@@ -249,10 +249,6 @@ class ExitParams:
     breakeven_r_intraday: float = 4.0   # rule: intraday/scalp (D, 4H, 1H POI) -> break-even after 4R
     partials: bool = False              # rule: no partials
     breakeven_offset_pips: float = 0.0  # 0 = exact entry
-    partial_at_r: float = 0.0           # 0 = off; else at +partial_at_r R close partial_fraction of the position and move the
-    partial_fraction: float = 0.0       # stop on the rest to the entry (only when the target lies beyond that level). Not in his
-                                        # plan ("no partials"); the big-winner anatomy (5 October) found it lifts the win rate and
-                                        # the pass rate on NAS100, GBPUSD and BTC (a third at 1R), and costs gold and EURUSD
 
 
 @dataclass

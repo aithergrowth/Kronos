@@ -16,7 +16,7 @@ import pandas as pd
 FIELDS = ["time", "symbol", "event", "id", "direction", "poi_tf", "confirmation", "entry", "stop", "take_profit", "rr",
           "lots", "risk", "price", "pnl", "r", "reason", "note"]
 EVENTS = ("briefing", "poi_touch", "setup", "approval_requested", "approved", "approved_late", "skipped", "expired",
-          "not_executed", "filled", "submitted", "fill_confirmed", "did_not_fill", "breakeven", "partial", "closed", "stale")
+          "not_executed", "filled", "submitted", "fill_confirmed", "did_not_fill", "breakeven", "closed", "stale")
 
 
 class Journal:

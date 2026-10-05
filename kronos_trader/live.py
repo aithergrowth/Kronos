@@ -641,33 +641,9 @@ class LiveRunner:
         if len(lowest) == 0:
             return
         last = lowest.last
-        ex = self.settings.exits
-        simulated = callable(getattr(self.broker, "on_candle", None))    # the paper broker takes its partials on the candles
         for pos in open_by_id.values():
             self.known_positions.setdefault(pos.id, pos)
-            if getattr(pos, "status", "filled") != "filled":
-                continue
-            if (not simulated and ex.partial_at_r > 0 and ex.partial_fraction > 0 and not getattr(pos, "partial_done", True)
-                    and pos.planned_rr > ex.partial_at_r + 1e-9 and pos.risk_distance > 0):
-                level = pos.entry + pos.direction.sign * ex.partial_at_r * pos.risk_distance
-                seen = last.high if pos.direction.sign > 0 else last.low
-                try:
-                    now_px = float(self.broker.current_price(self.symbol))
-                except Exception:
-                    now_px = seen
-                if any((x >= level) if pos.direction.sign > 0 else (x <= level) for x in (seen, now_px)):
-                    try:
-                        pnl = self.broker.close_partial(pos.id, ex.partial_fraction, ts=last.timestamp)
-                        if pnl is not None:
-                            self.broker.modify_stop(pos.id, pos.entry)
-                            pos.breakeven_done = True
-                            self.note("partial", id=pos.id, pnl=float(pnl), r=float(pos.partial_r), stop=float(pos.entry))
-                            self.notifier.send(f"💰 {self.symbol}: {ex.partial_fraction:.0%} closed at +{ex.partial_at_r:g}R "
-                                               f"(P&L {pnl:+,.0f}), stop on the rest to the entry  id {pos.id}")
-                    except Exception as exc:
-                        self.notifier.send(f"⚠️ {self.symbol}: partial close failed on {pos.id} ({exc}); the trade runs on")
-                        pos.partial_done = True
-            if pos.breakeven_done:
+            if pos.breakeven_done or getattr(pos, "status", "filled") != "filled":
                 continue
             extreme = last.high if pos.direction.sign > 0 else last.low
             if breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme, pos.breakeven_r):

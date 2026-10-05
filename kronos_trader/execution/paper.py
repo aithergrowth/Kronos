@@ -115,29 +115,9 @@ class PaperBroker(Broker):
             risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
             initial_stop=float(stop), meta=dict(meta or {}),
         )
-        pos.initial_lots = float(lots)
         self.positions[pos.id] = pos
         self._last_price[symbol] = mid
         return pos
-
-    def close_partial(self, position_id: str, fraction: float, price: float, ts=None) -> Optional[float]:
-        """Close ``fraction`` of the open lots at ``price`` (a level already on the bid/ask side); the money is banked
-        in the balance and on the position.  None when the size cannot be split at the lot step."""
-        pos = self.positions[position_id]
-        spec = self._spec(pos.symbol)
-        step = spec.lot_step or 0.01
-        out = int(pos.lots * float(fraction) / step + 1e-9) * step
-        if out < spec.min_lot or pos.lots - out < spec.min_lot - 1e-12:
-            pos.partial_done = True
-            return None
-        pnl = self.pnl_for(pos.symbol, pos.direction, pos.entry, float(price), out)
-        self._balance += pnl
-        base = pos.initial_lots or pos.lots
-        pos.partial_r += out / base * pos.r_at(float(price))
-        pos.partial_pnl += pnl
-        pos.lots = round(pos.lots - out, 8)
-        pos.partial_done = True
-        return pnl
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         self.positions[position_id].stop = float(stop)
@@ -154,15 +134,12 @@ class PaperBroker(Broker):
             exit_price = float(price)
         pnl = self.pnl_for(pos.symbol, pos.direction, pos.entry, exit_price, pos.lots)
         self._balance += pnl
-        r = pos.total_r_at(exit_price)
-        meta = dict(pos.meta)
-        if pos.partial_pnl or pos.partial_r:
-            meta.update(partial_r=round(pos.partial_r, 4), partial_pnl=round(pos.partial_pnl, 2))
+        r = pos.r_at(exit_price)
         trade = ClosedTrade(
-            id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.initial_lots or pos.lots, entry=pos.entry, exit=exit_price,
+            id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.lots, entry=pos.entry, exit=exit_price,
             stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,
-            closed_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None), reason=reason,
-            pnl=pnl + pos.partial_pnl, r=r, risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=meta,
+            closed_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None), reason=reason, pnl=pnl, r=r,
+            risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=dict(pos.meta),
         )
         self.closed.append(trade)
         return trade
@@ -193,15 +170,6 @@ class PaperBroker(Broker):
                 reason = "breakeven" if pos.breakeven_done else "stop"
                 closed.append(self.close_position(pos.id, reason, stop_fill, close_ts))
                 continue
-            ex = self.settings.exits
-            if (ex.partial_at_r > 0 and ex.partial_fraction > 0 and not pos.partial_done
-                    and pos.planned_rr > ex.partial_at_r + 1e-9):
-                level = pos.entry + pos.direction.sign * ex.partial_at_r * pos.risk_distance
-                if (extreme >= level) if pos.direction is Direction.LONG else (extreme <= level):
-                    self.close_partial(pos.id, ex.partial_fraction, level, close_ts)
-                    offset = ex.breakeven_offset_pips * self._spec(symbol).pip_size
-                    pos.stop = pos.entry + pos.direction.sign * offset
-                    pos.breakeven_done = True
             if hit_tp:
                 closed.append(self.close_position(pos.id, "take_profit", pos.take_profit, close_ts))
                 continue
