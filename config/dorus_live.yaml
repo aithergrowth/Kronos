@@ -61,9 +61,10 @@ prop_firm:
   max_open_trades: 2              # 5 October: two open on the account, one per market (EURUSD, gold, BTC, GBPUSD, NAS100 at 1.5 %,
   max_open_per_symbol: 1          # 790 challenge starts 2024-2026: funded 85 %, phase 1 median 42 days; one open on the account 74 %, 51 days)
   daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
-  monthly_loss_limit_pct: 4.5     # 5 October: no new trade once the month's closed loss is 3R at 1.5 %. Five markets, two open,
+  monthly_loss_limit_pct: 0.0     # off by Max's choice (5 October): better entries, not a stop. At 4.5 % (3R at 1.5 %), five markets, two open,
                                   # 2024-2026: worst month -11.0 % -> -5.2 %, drawdown -24 % -> -15 %, the average month +6.0 %
-                                  # -> +5.6 %, 790 challenge starts funded 85 % -> 91 % (phase 1 median 42 -> 56 days)
+                                  # -> +5.6 %, 790 challenge starts funded 85 % -> 91 % (phase 1 median 42 -> 56 days); set 4.5 to
+                                  # turn it on
   max_drawdown_pct: 8.0           # inside FTMO's 10 % with margin
   drawdown_basis: initial         # 5 October: FTMO's 10 % is static below the initial balance; from the peak the guard stopped
                                   # the bot after a normal swing back from a gain (8 % is 5.3R at 1.5 %) while FTMO still allowed
