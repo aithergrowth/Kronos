@@ -49,7 +49,7 @@ def test_paper_broker_moves_to_breakeven_after_4r():
     broker = PaperBroker(Settings())
     pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1300, 1000.0, 0.0051, 4.0,
                                     price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
-    assert broker.on_candle("EURUSD", _candle(1.1000, 1.1210, 1.0999, 1.1205)) == []
+    assert broker.on_candle("EURUSD", _candle(1.1000, 1.1210, 1.1010, 1.1205)) == []   # reaches 4R, stays above the entry
     assert pos.breakeven_done and pos.stop == pytest.approx(pos.entry)
     closed = broker.on_candle("EURUSD", _candle(1.1205, 1.1210, 1.0999, 1.1000, "2024-01-02 11:00"))
     assert closed[0].reason == "breakeven" and closed[0].pnl == pytest.approx(0.0)
@@ -137,3 +137,17 @@ def test_backtest_commission_comes_off_pnl_and_r():
     plain = PaperBroker(Settings(), use_spread=False)
     plain.place_market_order("EURUSD", Direction.LONG, 2.0, 1.0900, 1.1200, 200.0, 0.01, 4.0, price=1.1000, ts=t0)
     assert plain.close_position(plain.open_positions()[0].id, "manual", 1.1010, t0).pnl == pytest.approx(200.0)
+
+
+def test_a_candle_that_reaches_break_even_and_trades_back_closes_at_break_even():
+    """The trigger candle also traded back through the entry: the order inside the candle is unknown, so the backtest
+    takes the break-even stop instead of keeping the trade for a later target."""
+    s = Settings()
+    broker = PaperBroker(s, use_spread=False)
+    t0 = pd.Timestamp("2026-10-01 09:00")
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.1100, 100.0, 0.0010, 4.0, price=1.1000, ts=t0)
+    closed = broker.on_candle("EURUSD", Candle(0, t0, 1.1000, 1.1045, 1.0995, 1.1001))   # +4.5R high, back under the entry
+    assert len(closed) == 1 and closed[0].reason == "breakeven" and closed[0].r == pytest.approx(0.0)
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.1100, 100.0, 0.0010, 4.0, price=1.1000, ts=t0)
+    assert broker.on_candle("EURUSD", Candle(0, t0, 1.1000, 1.1045, 1.1002, 1.1040)) == []    # stays above: kept at BE
+    assert broker.open_positions()[0].breakeven_done

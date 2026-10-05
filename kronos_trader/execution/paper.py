@@ -228,6 +228,12 @@ class PaperBroker(Broker):
                 offset = self.settings.exits.breakeven_offset_pips * self._spec(symbol).pip_size
                 pos.stop = pos.entry + pos.direction.sign * offset
                 pos.breakeven_done = True
+                # the candle that reached the trigger also traded back through the new stop: which came first is unknown,
+                # so the backtest takes the stop (keeping the trade open booked a later target that was not certain)
+                back = (bid_low <= pos.stop) if pos.direction is Direction.LONG else (ask_high >= pos.stop)
+                if back:
+                    closed.append(self.close_position(pos.id, "breakeven", pos.stop, close_ts))
+                    continue
             hold = self.settings.exits.max_hold_hours
             if hold and pos.opened_at is not None and pd.Timestamp(close_ts) - pos.opened_at >= pd.Timedelta(hours=float(hold)):
                 closed.append(self.close_position(pos.id, "time", float(candle.close), close_ts, market=True))

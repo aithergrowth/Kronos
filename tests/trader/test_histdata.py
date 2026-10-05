@@ -18,11 +18,16 @@ def test_periods_and_urls():
     assert period_url("XAUUSD", 2026, 9).endswith("/xauusd/2026/9")
 
 
-def test_parse_csv_converts_est_to_utc():
+def test_parse_csv_converts_the_clock_to_utc():
+    """HistData's stamps plus 5 h are London time: in British summer time 00:00 is 04:00 UTC (a fixed +5 h put every
+    summer candle an hour late: the 08:30 New York payrolls spike showed at 13:30 UTC instead of 12:30)."""
     df = parse_csv(CSV)
     assert list(df.columns) == ["timestamp", "open", "high", "low", "close", "volume"] and len(df) == 2
-    assert str(df["timestamp"].iloc[0]) == "2025-08-01 05:00:00"          # 00:00 EST = 05:00 UTC, no daylight saving
+    assert str(df["timestamp"].iloc[0]) == "2025-08-01 04:00:00"
     assert df["close"].iloc[1] == 1.14185
+    nfp = parse_csv("20250703 083000;1.1;1.1;1.1;1.1;0\n20250110 083000;1.0;1.0;1.0;1.0;0\n"     # payrolls, summer / winter
+                    "20241101 073000;1.0;1.0;1.0;1.0;0\n")                                      # US summer, UK winter
+    assert [str(t) for t in nfp.timestamp] == ["2025-07-03 12:30:00", "2025-01-10 13:30:00", "2024-11-01 12:30:00"]
 
 
 def test_unzip_and_build_cache(tmp_path):

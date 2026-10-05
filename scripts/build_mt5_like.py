@@ -1,6 +1,7 @@
 """Candles as an MT5 server on New York + 7 builds them, from HistData minutes (or 5-minute bars):
-the weekend cut at Friday 17:00 to Sunday 17:00 New York (HistData's week ends at 17:00 EST all year, so in summer it
-holds a Friday hour no such server has), 5m/15m/1H on the clock, 4H/1D/1W/1MO anchored at 17:00 New York, and the
+the weekend cut at Friday 17:00 to Sunday 17:00 New York (with the HistData clock read right, see
+kronos_trader/data/histdata.py, it removes only stray minutes; with the old fixed +5 h it cut the real last hour of every
+summer week), 5m/15m/1H on the clock, 4H/1D/1W/1MO anchored at 17:00 New York, and the
 daily, weekly and monthly bars of the source directory kept only before the first rebuilt one (the monthly and weekly
 readings need years). Run from the repository root:
 
