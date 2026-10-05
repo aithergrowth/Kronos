@@ -399,6 +399,27 @@ The rule holds on gold, holds for the weekly on EURUSD (the monthly-against trad
 trades against the higher timeframes won more often. Runs: `eu_against_w_full`, `eu_against_mw_full`,
 `gold_against_mw_full` (with `eu_against1m_full`, `gold_against1m_full` from the anatomy batch).
 
+### How fast a challenge passes on these trades (`scripts/challenge_sim.py`)
+
+Max, 5 October: "hoe snel kunnen we nu zo'n challenge als we alle markten pakken?" Every calendar day from 1 February
+2024 to 31 March 2026 is a start (790 starts); from that day the profiles' real trades count, P&L = R x risk % of the
+initial balance at the close. Phase 1 +10 %, phase 2 +5 % on a fresh account, each at least 4 trading days; a phase
+fails on -10 % static or a -5 % day. Calendar days, p25 / median / p75:
+
+| Markets | Risk | Funded | Failed | Phase 1 | Phase 2 | To funded |
+|---|---|---|---|---|---|---|
+| EURUSD + gold + BTC (BTC profile as pushed, previous-high target) | 1 % | 86 % | 14 % | 68 / 110 / 171 | 28 / 49 / 124 | 113 / 196 / 256 |
+| EURUSD + gold + BTC (BTC with the 2R cap) | 1 % | 90 % | 10 % | 52 / 108 / 202 | 26 / 34 / 62 | 108 / 154 / 255 |
+| EURUSD + gold + BTC (2R cap) + GBPUSD | 1 % | 89 % | 11 % | 51 / 101 / 175 | 26 / 29 / 62 | 98 / 139 / 231 |
+| EURUSD + gold + BTC (2R cap) + GBPUSD | 1.5 % | 72 % | 28 % | 33 / 55 / 107 | 17 / 27 / 37 | 64 / 91 / 152 |
+| EURUSD alone | 1 % | 55 % | 3 % (42 % unfinished) | 165 / 260 / 426 | | 390 / 477 / 648 |
+| gold alone | 1 % | 40 % | 6 % (54 % unfinished) | 131 / 234 / 325 | | 144 / 263 / 392 |
+| BTC alone (2R cap) | 1 % | 99 % | 1 % | 191 / 300 / 435 | | 282 / 419 / 595 |
+
+All markets together at 1 %: phase 1 in a median of about three and a half months, a quarter of the starts in seven
+weeks or less, funded in a median of four and a half months, one start in nine fails. 1.5 % halves the time and fails
+one start in four. No single market comes close; the markets together are what makes it work.
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.
