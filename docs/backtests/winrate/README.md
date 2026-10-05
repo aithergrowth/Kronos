@@ -720,3 +720,19 @@ Below the minimum lot the setup is skipped with a message. The fill message says
 window prints the leverage at start (`margin: 1 lot BTCUSD ties up ... (about 1:2)`). On FTMO, BTC therefore adds
 roughly a quarter to a third of its backtest R. The Swing account type (1:30 forex, 1:10 indices and gold, 1:1
 crypto) would cost gold and NAS100 a third and BTC almost everything, so the Standard type fits these profiles.
+
+Which account type to buy: FTMO's FAQ (October 2026) lets the Challenge and the Verification hold over the weekend
+and through news on either type. On the funded FTMO Account, the Standard type has to be flat shortly before the
+weekend close (and over a market break longer than 2 hours), and it keeps the news restrictions. Closing every
+position at Friday 16:45 New York, on the trade ledgers above (MT5-like candles, 2023-2026), costs little because
+few trades are still open then:
+
+| Market | Open at a Friday 16:45 | Their R as held / closed on Friday | Total R |
+|---|---|---|---|
+| EURUSD | 2 of 57 | -0.4 / +0.1 | +11.3 -> +11.7 |
+| GBPUSD | 5 of 48 | +2.8 / +1.8 | +8.6 -> +7.6 |
+| Gold | 5 of 118 | +8.5 / +5.0 | +36.6 -> +33.1 |
+| NAS100 (48 h) | 1 of 78 | +4.1 / +3.4 | +25.6 -> +25.0 |
+
+About 5R in all, against a third of gold and NAS100 and most of BTC on Swing's leverage. Standard is the type to
+buy. A weekend close for the funded stage is still to be built into the live loop (`scripts`-side estimate only).
