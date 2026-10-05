@@ -29,6 +29,10 @@ confirmation:
     1H: 5m
   entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
   one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+  max_zone_age_candles: 24        # 5 October: only zones at most 24 candles of their own timeframe old ("volledig gebruikt" zones are
+                                  # spent, A 00:33:37). Gold 2023-2026 (`v4_gold_age24_full`): 119 trades, 45 %, +38.7R, drawdown -9.9R,
+                                  # every year better (+8.3 / +12.1 / +9.2 / +9.2) against 129, 46 %, +30.4R, -10.8R; 12 and 48 candles
+                                  # sat on the same level where they were stopped. Not on EURUSD (same R) or BTC (+54.4R against +62.3R)
   poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
                                   # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
 risk:

@@ -486,6 +486,30 @@ as the course trades them. What does help is freshness: zones at most 24 candles
 123 trades, +18.5R; BTC (previous high, no cap) to January 2026 90 trades, about +14.3R against 100, +8.7R. Running on
 the current profiles (`v4_gold_age24_full`, `btc_cap2_age24_long`, `v4_eu_age24_full`).
 
+### Fresh zones on the current profiles (5 October)
+
+Guard off, 1 % per trade, each against its profile over the same data (EURUSD and gold to 24 September 2026, BTC to
+4 October 2026):
+
+| Market | Run | Trades | Win | Sum R | Per trade | Max dd | Per year |
+|---|---|---|---|---|---|---|---|
+| Gold | profile, veto 1M+1W (`gold_against_mw_full`) | 129 | 46 % | +30.4R | +0.24R | -10.8R | +6.9 / +8.1 / +7.1 / +8.2 |
+| | **zones at most 24 candles old (`v4_gold_age24_full`)** | **119** | **45 %** | **+38.7R** | **+0.33R** | **-9.9R** | +8.3 / +12.1 / +9.2 / +9.2 |
+| EURUSD | profile, version 4 (`eu_against_w_full`) | 58 | 55 % | +21.1R | +0.36R | -5.3R | +2.3 / -1.4 / +12.2 / +7.9 |
+| | zones at most 24 candles old (`v4_eu_age24_full`) | 53 | 53 % | +21.1R | +0.40R | -5.3R | +2.3 / -1.0 / +13.1 / +6.7 |
+| BTC | profile, 2R cap (`btc_cap2_long`) | 145 | 51 % | +62.3R | +0.43R | -10.1R | +9.5 / -0.1 / +52.9 |
+| | zones at most 24 candles old (`btc_cap2_age24_long`) | 124 | 50 % | +54.4R | +0.44R | -13.7R | +10.7 / -5.4 / +49.0 |
+
+Gold gains in every year with a smaller drawdown, so `config/dorus_live_gold.yaml` takes `max_zone_age_candles: 24`.
+The plateau check was stopped once it was clear: at 16 April 2025 the 12-, 24- and 48-candle limits stood at 126,719,
+126,276 and 126,239 against the profile's 123,587 (equity from 100,000), so the gain does not hang on the exact age.
+EURUSD makes the same R with five trades fewer and keeps its profile; BTC loses 8R and gains drawdown, and keeps its
+profile (its 12- and 48-candle runs were also under the profile when stopped, 16 April and 8 July 2025).
+
+New markets on the EURUSD version 4 profile, stopped where the verdict was clear (equity from 100,000 at 1 %):
+US500 94,255 after 46 trades (21 April 2025), GER40 93,611 after 43 (6 August 2025), XAGUSD 92,277 after 24 (21 April
+2025). Not taken. NAS100, GBPUSD and USDJPY run to the end.
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.
