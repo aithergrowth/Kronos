@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import glob
 import os
+import time
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -122,6 +123,26 @@ class MT5Broker(Broker):
         self.mt5.shutdown()
 
     # ------------------------------------------------------------ helpers
+    retry_seconds: float = 1.0
+
+    def find_symbols(self, text: str) -> List[str]:
+        """Names of the server's symbols that contain ``text`` (case-insensitive), e.g. BTC -> BTCUSD, BTCEUR."""
+        try:
+            found = self.mt5.symbols_get(f"*{text.upper()}*") or self.mt5.symbols_get() or []
+        except Exception:
+            return []
+        names = [getattr(x, "name", str(x)) for x in found]
+        return sorted(n for n in names if text.upper() in n.upper())
+
+    def symbol_details(self, name: str) -> Dict[str, Any]:
+        """What the terminal says about one symbol: description, digits, contract size, volume limits, trade mode."""
+        info = self.mt5.symbol_info(name)
+        if info is None:
+            return {"name": name, "found": False}
+        keys = ("description", "digits", "point", "trade_contract_size", "volume_min", "volume_step", "volume_max",
+                "trade_mode", "currency_profit", "spread")
+        return {"name": name, "found": True, **{k: getattr(info, k, None) for k in keys}}
+
     def mt5_symbol(self, symbol: str) -> str:
         spec = self.settings.symbols.get(symbol.upper())
         return spec.mt5_symbol if spec and spec.mt5_symbol else symbol.upper()
@@ -407,10 +428,22 @@ class MT5Broker(Broker):
         timeframe = Timeframe.parse(timeframe)
         mt5 = self.mt5
         name = self.mt5_symbol(symbol)
-        mt5.symbol_select(name, True)
-        rates = mt5.copy_rates_from_pos(name, getattr(mt5, MT5_TIMEFRAMES[timeframe]), 0, int(count))
+        if mt5.symbol_select(name, True) is False:
+            near = self.find_symbols(symbol[:3])
+            raise RuntimeError(f"MT5 has no symbol {name!r} on this server" + (f"; it has: {', '.join(near[:12])}" if near else "")
+                               + f". Set symbols: {symbol.upper()}: mt5_symbol: <name> in the profile "
+                               f"(`python -m kronos_trader mt5-symbols --search {symbol[:3]}` lists them)")
+        rates = None
+        for attempt in range(3):          # the first request after selecting a symbol can fail while the terminal loads history
+            rates = mt5.copy_rates_from_pos(name, getattr(mt5, MT5_TIMEFRAMES[timeframe]), 0, int(count))
+            if rates is not None and len(rates) > 0:
+                break
+            time.sleep(self.retry_seconds)
         if rates is None or len(rates) == 0:
-            raise RuntimeError(f"MT5 returned no bars for {symbol} {timeframe.label}: {mt5.last_error()}")
+            near = [n for n in self.find_symbols(symbol[:3]) if n != name]
+            raise RuntimeError(f"MT5 returned no bars for {symbol} {timeframe.label} ({name!r}): {mt5.last_error()}"
+                               + (f". Symbols on this server like it: {', '.join(near[:12])}" if near else "")
+                               + f"; check the name in Market Watch (right-click, Symbols) and set mt5_symbol in the profile")
         df = pd.DataFrame(rates)
         df["timestamp"] = pd.to_datetime(df["time"].astype("int64"), unit="s") - self.server_offset(symbol)
         df = df.rename(columns={"tick_volume": "volume"})

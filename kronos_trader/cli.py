@@ -353,6 +353,25 @@ def cmd_ibkr_test(args) -> int:
     return 0
 
 
+def cmd_mt5_symbols(args) -> int:
+    """The server's symbols matching --search, so the profile's mt5_symbol can be set to the broker's own name."""
+    from .execution.mt5 import MT5Broker
+    settings = _load_settings(args)
+    broker = MT5Broker(settings)
+    names = broker.find_symbols(args.search)
+    if not names:
+        print(f"no symbol containing {args.search!r} on this server; this account may not offer it (check Market Watch, right-click, Symbols)")
+        broker.disconnect()
+        return 1
+    for name in names:
+        d = broker.symbol_details(name)
+        print(f"{name:14s} {str(d.get('description') or ''):32s} digits {d.get('digits')}  contract {d.get('trade_contract_size')}  "
+              f"lots {d.get('volume_min')}-{d.get('volume_max')} step {d.get('volume_step')}  profit in {d.get('currency_profit')}  trade_mode {d.get('trade_mode')}")
+    print("set it in the profile, e.g.:\nsymbols:\n  BTCUSD:\n    mt5_symbol: <name from the list>")
+    broker.disconnect()
+    return 0
+
+
 def cmd_mt5_test(args) -> int:
     from .execution.mt5 import MT5Broker
     settings = _load_settings(args)
@@ -548,6 +567,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--tf", default="15m")
     sp.set_defaults(func=cmd_feed_test)
 
+    sp = sub.add_parser("mt5-symbols", help="list the MT5 server's symbols that contain a text (e.g. BTC) with contract size and lot limits")
+    sp.add_argument("--search", required=True)
+    sp.set_defaults(func=cmd_mt5_symbols)
     sp = sub.add_parser("mt5-test", help="connect to the MetaTrader 5 terminal and print account, server time offset and bars")
     sp.add_argument("--symbol", default="EURUSD")
     sp.add_argument("--tf", default="15m")

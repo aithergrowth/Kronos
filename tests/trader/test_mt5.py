@@ -61,8 +61,20 @@ class FakeMT5:
     def terminal_info(self):
         return SimpleNamespace(connected=True, trade_allowed=True)
 
+    known = ("EURUSD", "XAUUSD", "BTCUSD.x", "BTCEUR.x")
+
     def symbol_select(self, name, enable=True):
-        return True
+        return name in self.known
+
+    def symbols_get(self, group="*"):
+        text = group.strip("*").upper()
+        return [SimpleNamespace(name=n) for n in self.known if text in n.upper()]
+
+    def symbol_info(self, name):
+        if name not in self.known:
+            return None
+        return SimpleNamespace(description=f"{name} CFD", digits=2, point=0.01, trade_contract_size=1.0, volume_min=0.01,
+                               volume_step=0.01, volume_max=100.0, trade_mode=4, currency_profit="USD", spread=20)
 
     def symbol_info_tick(self, name):
         return SimpleNamespace(bid=self.bid, ask=self.ask, time=server_seconds(NOW))
@@ -308,3 +320,29 @@ def test_rejected_order_raises(broker):
     with pytest.raises(RuntimeError, match="not accepted"):
         broker.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0)
     assert broker.open_positions() == []
+
+
+def test_unknown_symbol_names_the_servers_alternatives(broker):
+    """A symbol the server does not have (MetaQuotes-Demo names BTC differently) fails with the names it does have."""
+    with pytest.raises(RuntimeError, match=r"no symbol 'BTCUSD'.*BTCUSD\.x.*mt5_symbol"):
+        broker.get_candles("BTCUSD", T.MIN_15, 5)
+    assert broker.find_symbols("btc") == ["BTCEUR.x", "BTCUSD.x"]
+    d = broker.symbol_details("BTCUSD.x")
+    assert d["found"] and d["trade_contract_size"] == 1.0 and d["volume_min"] == 0.01
+    assert broker.symbol_details("NOPE") == {"name": "NOPE", "found": False}
+
+
+def test_bars_are_retried_once_the_terminal_has_loaded_the_history(broker):
+    calls = {"n": 0}
+    real = broker.mt5.copy_rates_from_pos
+
+    def slow(name, tf, start, count):
+        if tf != FakeMT5.TIMEFRAME_M15:                     # the server-offset read asks for M30 bars; not counted
+            return real(name, tf, start, count)
+        calls["n"] += 1
+        return None if calls["n"] == 1 else real(name, tf, start, count)
+
+    broker.mt5.copy_rates_from_pos = slow
+    broker.retry_seconds = 0.0
+    assert len(broker.get_candles("EURUSD", T.MIN_15, 4)) == 4 and calls["n"] == 2
+
