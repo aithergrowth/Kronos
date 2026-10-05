@@ -188,6 +188,7 @@ class LiveRunner:
         self._feed_line: Optional[str] = None
         self._news_refreshed: Optional[pd.Timestamp] = None
         self._news_warned: Optional[object] = None          # local date of the last calendar warning
+        self._poll_warned: Optional[pd.Timestamp] = None    # last time a failed Telegram poll was printed
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
         # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
@@ -576,7 +577,18 @@ class LiveRunner:
 
     # ------------------------------------------------------------ approvals
     def process_decisions(self, now: pd.Timestamp) -> None:
-        for decision in self.notifier.poll_decisions():
+        # Telegram serves one getUpdates poller per bot: five windows polling every minute drew "409 Conflict: terminated by
+        # other getUpdates request", and the error ended the window's scan. Only a window with a setup waiting for an answer
+        # asks (none ever does without the approve step), and a failed ask leaves the scan running.
+        decisions = []
+        if self.pending or getattr(self.notifier, "_queued", None):
+            try:
+                decisions = self.notifier.poll_decisions()
+            except Exception as exc:
+                if self._poll_warned is None or now - self._poll_warned >= pd.Timedelta(hours=1):
+                    self._poll_warned = now
+                    print(f"[live] {self.symbol}: Telegram answers not read ({exc}); retrying next scan")
+        for decision in decisions:
             pending = self.pending.pop(decision.short_id, None)
             if pending is None:
                 self.notifier.send(f"{self.symbol}: no pending setup with id {decision.short_id} (expired or already handled)")

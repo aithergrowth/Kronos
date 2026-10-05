@@ -1,4 +1,5 @@
 """Live loop: approve / skip / expire flow, execution through the paper broker, close reports, composite fetch."""
+from types import SimpleNamespace
 import pandas as pd
 import pytest
 
@@ -405,3 +406,25 @@ def test_news_download_is_shared_between_windows(tmp_path, monkeypatch, capsys):
     runner.refresh_news(NOW)
     runner.refresh_news(NOW + pd.Timedelta(hours=2))
     assert capsys.readouterr().out.count("news calendar refresh failed") == 1   # once a day
+
+
+def test_no_telegram_polling_without_a_setup_waiting(setup):
+    class Notifier(TelegramNotifier):
+        polls = 0
+
+        def poll_decisions(self):
+            Notifier.polls += 1
+            raise RuntimeError("Telegram getUpdates failed: 409 Conflict: terminated by other getUpdates request")
+
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    notifier = Notifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(Settings(), "EURUSD", fetch, broker=broker, notifier=notifier,
+                        engine=FakeEngine(setup, signal_on_first_call=False), dry_run=False, require_approval=False, clock=lambda: NOW)
+    runner.step(NOW)
+    assert Notifier.polls == 0                                       # nothing to approve: Telegram is not asked
+    runner.pending["abc"] = SimpleNamespace(short_id="abc", expires_at=NOW + pd.Timedelta(hours=1), setup=setup, forecast=None)
+    runner.step(NOW + pd.Timedelta(minutes=1))                      # a setup waits: asked, the 409 does not end the scan
+    assert Notifier.polls == 1 and "abc" in runner.pending
+    assert not any("live loop error" in m for m in notifier.sent)
