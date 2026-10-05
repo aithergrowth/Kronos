@@ -294,7 +294,8 @@ def _broker(args, settings: Settings):
 
 
 def _feed(args, settings: Settings, broker):
-    """Live candle source: 'broker' (IBKR / MT5 bars), 'oanda' (practice API) or 'cache' (TradingView CSVs only)."""
+    """Live candle source: 'broker' (IBKR / MT5 bars), 'oanda' (practice API), 'bitstamp' (public crypto candles)
+    or 'cache' (TradingView CSVs only)."""
     kind = getattr(args, "feed", None)
     if kind is None:
         kind = "broker" if getattr(args, "broker", "none") in ("ibkr", "mt5") else "cache"
@@ -304,6 +305,9 @@ def _feed(args, settings: Settings, broker):
     if kind == "oanda":
         from .data.oanda import OandaFeed
         feed = OandaFeed(settings=settings)
+    if kind == "bitstamp":
+        from .data.bitstamp import BitstampFeed
+        feed = BitstampFeed()
     return kind, feed
 
 
@@ -312,6 +316,8 @@ def cmd_live(args) -> int:
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     _apply_mt5_symbol(args, settings, symbol)
+    if getattr(args, "account_size", None):
+        settings.account_size = float(args.account_size)
     broker = _broker(args, settings)
     data_dir = args.data_dir or settings.tradingview.cache_dir
     kind, feed = _feed(args, settings, broker)
@@ -564,8 +570,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--poll", type=int, default=60, help="seconds between scans")
     sp.add_argument("--once", action="store_true", help="run a single scan and exit")
     sp.add_argument("--notify-every-scan", action="store_true")
-    sp.add_argument("--feed", choices=["broker", "oanda", "cache"],
-                    help="live candle source (default: broker bars with --broker ibkr/mt5, otherwise the cache)")
+    sp.add_argument("--feed", choices=["broker", "oanda", "bitstamp", "cache"],
+                    help="live candle source (default: broker bars with --broker ibkr/mt5, otherwise the cache); "
+                         "bitstamp: BTCUSD/ETHUSD around the clock, with --broker paper")
+    sp.add_argument("--account-size", type=float, help="account size for the paper broker and the guard, e.g. 10000")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")

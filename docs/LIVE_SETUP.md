@@ -49,6 +49,18 @@ python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUS
 python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker mt5
 ```
 
+**BTC when the broker's crypto price stands still.** On Monday 5 October 2026 the MetaQuotes demo's BTCUSD still showed
+Friday's close (84,316 against 86,229 on the market), so the bot saw only stale data and ignored every setup. The
+`bitstamp` feed takes BTCUSD (and ETHUSD) candles from Bitstamp's public API around the clock, the source the BTC
+backtests ran on; the paper broker fills the orders on those candles and reports fills and closes in Telegram:
+
+```shell
+python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker paper --feed bitstamp --account-size 10000 --execute --no-approval
+```
+
+The paper account lives in that window (a restart starts again at the account size); the trades go to the journal.
+On the FTMO account (crypto trades around the clock there) BTC goes back to `--broker mt5`.
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop
