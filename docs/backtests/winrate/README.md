@@ -510,6 +510,54 @@ New markets on the EURUSD version 4 profile, stopped where the verdict was clear
 US500 94,255 after 46 trades (21 April 2025), GER40 93,611 after 43 (6 August 2025), XAGUSD 92,277 after 24 (21 April
 2025). Not taken. NAS100, GBPUSD and USDJPY run to the end.
 
+### Targets, new markets and the account (5 October, afternoon)
+
+**Closer targets.** `scripts/target_sweep.py` walks every trade of a profile ledger on the 5m bars again with the target
+capped at k R (or fixed at k R); the stop counts first when stop and target sit in one bar, and the walk reproduces the
+ledgers within 1-2R (EURUSD +21.3R against +21.1R, gold +39.6R against +38.7R, BTC +64.2R against +62.3R):
+
+| Market | Profile target | Capped 1R | Capped 1.5R | Capped 2R | Fixed 2R | Fixed 3R |
+|---|---|---|---|---|---|---|
+| EURUSD | 55 %, +21.1R | 60 %, +7.9R | 60 %, +15.6R | 60 %, +20.0R | 50 %, +25.8R | 40 %, +27.1R |
+| Gold | 45 %, +38.7R | 59 %, +15.4R | 51 %, +13.9R | 49 %, +18.7R | 41 %, +28.0R | 33 %, +37.0R |
+| BTC | 51 %, +62.3R | 61 %, +21.9R | 57 %, +25.1R | 54 %, +19.7R | 43 %, +39.3R | 35 %, +51.7R |
+
+Closer targets lift the win rate to 60-70 % and cost half the R or more: the profit is in the far targets, the
+profiles keep theirs.
+
+**Markets** on the EURUSD version 4 profile (2023 to 24 September 2026, guard off, 1 %), ETH on the BTC profile:
+
+| Market | Trades | Win | Sum R | Max dd | Per year | Taken |
+|---|---|---|---|---|---|---|
+| GBPUSD (`mk_gbpusd_full`) | 43 | 58 % | +12.7R | -5.0R | +0.2 / +1.1 / +7.2 / +4.2 | yes, `config/dorus_live.yaml` |
+| NAS100, 12-point stop minimum (`mk_nas100_full`) | 76 | 47 % | +13.6R | -7.2R | +8.2 / -4.6 / +3.2 / +6.9 | yes, `config/dorus_live_nas100.yaml` |
+| USDJPY (`mk_usdjpy_full`) | 54 | 41 % | -8.2R | | | no |
+| ETH 2026 (`eth_cap2_y26`; 2024 to 29 Oct -9.6 %, 2025 to 17 Oct +3.8 % when stopped) | 37 | 38 % | -10.7R | | | no |
+| EURUSD, stop at least half the zone (`v4_eu_stopzone_full`) | 60 | 57 % | +19.6R (+17.5R to 24 Sep) | -5.3R | | no |
+
+**The account.** In a single-market run the one-open-trade rule already skips signals (BTC 54 of 204, EURUSD 18 of 84,
+gold 12 of 136); on one account the markets share it as well. `scripts/portfolio.py` combines the ledgers first come,
+first served under an account-wide cap (one per market, as in the runs) and `scripts/challenge_sim.py` takes the
+result (790 starts, February 2024 to March 2026; the month statistics over February 2024 to September 2026):
+
+| Markets | Open at once | Risk | Funded | Phase 1 days (p25 / median / p75) | To funded (median) | Month avg / median / worst |
+|---|---|---|---|---|---|---|
+| EURUSD, gold, BTC | 1 | 1 % | 91 % | 61 / 92 / 135 | 168 days | |
+| EURUSD, gold, BTC | 1 | 1.5 % | 86 % | 36 / 56 / 100 | 97 days | +4.8 % / +3.2 % / -11.0 % |
+| EURUSD, gold, BTC | 2 | 1.5 % | 82 % | 35 / 61 / 107 | 104 days | +4.9 % / +2.6 % / -11.0 % |
+| + GBPUSD, NAS100 | 1 | 1.5 % | 74 % | 32 / 51 / 97 | 86 days | +5.0 % / +2.0 % / -11.0 % |
+| **+ GBPUSD, NAS100** | **2** | **1.5 %** | **85 %** | **26 / 42 / 66** | **79 days** | **+6.0 % / +3.6 % / -11.0 %** |
+| + GBPUSD, NAS100 | 2 | 1 % | 92 % | 45 / 66 / 134 | 117 days | |
+
+With five markets one slot turns good trades away (74 % funded); two slots, one per market, keep the pass rate of three
+markets at 1.5 % and shorten phase 1 from 56 to 42 days; a month in the best quarter makes +10.5 % or more. Taken
+from 5 October: risk 1.5 % (Max's choice), `prop_firm.max_open_trades: 2` with `max_open_per_symbol: 1` (new in the
+guard), GBPUSD and NAS100 in `scripts/start_live.bat`. The guard's 8 % now counts from the initial balance
+(`drawdown_basis: initial`) like FTMO's static 10 %: from the peak it stopped the bot after an ordinary swing back from
+a gain (8 % is 5.3R at 1.5 %), which the challenge simulations never counted as a failure. Running: BTC in the
+morning session only, break-even at +1R and two BTC trades at once (each in yearly chunks), and AUDUSD, USDCAD,
+USDCHF and NZDUSD on the EURUSD profile.
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.

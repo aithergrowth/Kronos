@@ -38,3 +38,16 @@ def test_drawdown_basis_initial_is_a_static_floor():
     peak = RiskGuard(PropFirmParams(drawdown_basis="peak", max_drawdown_pct=10.0), 100_000)
     peak.update(pd.Timestamp("2024-01-02 10:00"), 120_000, 120_000)
     assert peak.drawdown_pct(109_000) == pytest.approx(11.0)
+
+
+def test_two_open_trades_on_the_account_but_one_per_market():
+    guard = RiskGuard(PropFirmParams(max_open_trades=2, max_open_per_symbol=1), 100_000)
+    broker = PaperBroker(Settings(), use_spread=False)
+    ts = pd.Timestamp("2024-01-03 10:00")
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1000, ts=ts)
+    ok, reason = guard.can_open(broker, ts, "EURUSD")
+    assert not ok and "in EURUSD" in reason                      # a second EURUSD trade waits
+    assert guard.can_open(broker, ts, "XAUUSD") == (True, "ok")   # another market may open
+    broker.place_market_order("XAUUSD", Direction.SHORT, 0.1, 2010.0, 1980.0, 1000.0, 10.0, 4.0, price=2000.0, ts=ts)
+    ok, reason = guard.can_open(broker, ts, "BTCUSD")
+    assert not ok and "per account" in reason                    # two open on the account: the third waits

@@ -35,7 +35,7 @@ class RiskGuard:
         return {"account_size": self.account_size, "day_timezone": p.day_timezone,
                 "recorded_against": {"daily_loss_pct_of_initial": p.record_daily_loss_pct, "max_loss_pct_of_initial_static": p.record_max_loss_pct},
                 "halting_limits": {"daily_loss_pct": p.daily_loss_limit_pct, "max_drawdown_pct": p.max_drawdown_pct, "drawdown_basis": p.drawdown_basis,
-                                   "max_open_trades": p.max_open_trades}}
+                                   "max_open_trades": p.max_open_trades, "max_open_per_symbol": p.max_open_per_symbol}}
 
     def _day_of(self, ts: pd.Timestamp) -> pd.Timestamp:
         ts = pd.Timestamp(ts)
@@ -95,6 +95,8 @@ class RiskGuard:
         p = self.params
         if len(broker.open_positions()) >= p.max_open_trades:
             return False, f"max {p.max_open_trades} open trade(s) per account"
+        if symbol and len(broker.open_positions(symbol)) >= max(1, p.max_open_per_symbol):
+            return False, f"max {max(1, p.max_open_per_symbol)} open trade(s) in {symbol}"
         if self.daily_loss_pct(equity) >= p.daily_loss_limit_pct:
             return False, f"daily loss {self.daily_loss_pct(equity):.2f}% reached the {p.daily_loss_limit_pct}% limit"
         if self.drawdown_pct(equity) >= p.max_drawdown_pct:

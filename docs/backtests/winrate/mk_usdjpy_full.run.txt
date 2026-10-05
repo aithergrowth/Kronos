@@ -1,0 +1,70 @@
+code: b9c9175c30daddcbf60d71ee28420a9857d7faf3 source 5c4f75d1bbd8 (uncommitted changes)
+   5m: CandleSeries(USDJPY 5m, n=268838, 2023-01-01 22:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(USDJPY 15m, n=89635, 2023-01-01 22:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(USDJPY 1H, n=22411, 2023-01-01 22:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(USDJPY 4H, n=5912, 2023-01-01 22:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(USDJPY 1D, n=5000, 2007-07-01 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(USDJPY 1W, n=1006, 2007-06-25 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(USDJPY 1M, n=231, 2007-07-01 00:00:00 -> 2026-09-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  13441/268838 2023-03-14 09:30:00 equity=100,000 trades=0
+  26882/268838 2023-06-15 08:35:00 equity=100,635 trades=1
+  40323/268838 2023-09-01 06:55:00 equity=97,251 trades=8
+  53764/268838 2023-11-07 00:15:00 equity=101,037 trades=16
+  67205/268838 2024-01-12 08:15:00 equity=100,634 trades=19
+  80646/268838 2024-03-18 23:20:00 equity=100,634 trades=19
+  94087/268838 2024-05-22 17:25:00 equity=100,898 trades=22
+  107528/268838 2024-07-26 09:30:00 equity=102,765 trades=26
+  120969/268838 2024-10-01 06:05:00 equity=103,660 trades=27
+  134410/268838 2024-12-05 16:45:00 equity=102,522 trades=30
+  147851/268838 2025-02-11 23:50:00 equity=101,532 trades=31
+  161292/268838 2025-04-17 17:50:00 equity=100,638 trades=34
+  174733/268838 2025-06-23 10:15:00 equity=100,864 trades=37
+  188174/268838 2025-08-27 02:30:00 equity=98,971 trades=39
+  201615/268838 2025-10-30 17:50:00 equity=99,945 trades=40
+  215056/268838 2026-01-07 01:35:00 equity=97,998 trades=42
+  228497/268838 2026-03-12 16:40:00 equity=96,651 trades=45
+  241938/268838 2026-05-18 11:00:00 equity=93,913 trades=48
+  255379/268838 2026-07-22 07:10:00 equity=92,171 trades=52
+  268820/268838 2026-09-24 23:30:00 equity=91,963 trades=54
+Backtest USDJPY  2023-03-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 257346 steps, 9660.6s)
+  signals 72  guard-rejected 18  trades 54
+  wins 22  losses 32  break-even 0  win rate 40.7%
+  avg R -0.15  total R -8.2  best +2.5  worst -1.0
+  profit factor 0.74  net P&L -8,037  return -8.04%  max DD 12.45%
+  by_poi_tf:
+    1D: n=2 avgR=-1.00 sumR=-2.0
+    1H: n=42 avgR=-0.09 sumR=-3.9
+    4H: n=10 avgR=-0.22 sumR=-2.2
+  by_confirmation:
+    BS: n=54 avgR=-0.15 sumR=-8.2
+  by_exit:
+    stop: n=32 avgR=-1.00 sumR=-32.0
+    take_profit: n=22 avgR=+1.08 sumR=+23.8
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       15  max 1 open trade(s) per account
+        3  price moved: R:R below minimum
+  engine rejections (top):
+    110006  POI - no active visit on 5m
+     34293  bullish - 1H not aligned (required) -> no trade
+      9609  bullish - 1W against -> no trade
+      8454  POI - touched
+      8173  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=bullish, 4H=50
+      7970  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bull
+      7012  fewer than 3 timeframes agree (1M=50/50, 1W=bullish, 1D=bullish, 4H=50
+      6803  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bullish, 4H=50/5
+  distinct zones behind the rejections (bars above count every candle):
+       695  POI - no active visit on 5m
+       262  POI - touched
+        52  POI - already traded on visit #1 - one trade per visit
+        48  POI - visit #2 - only the first return is traded
+        11  POI - visit #3 - only the first return is traded
+         4  POI - visit #4 - only the first return is traded
+         2  POI - R:R 0.03 below minimum 0.5 (target 15m buy-side liquidity 150.83100 (x
+         2  POI - R:R 0.04 below minimum 0.5 (target 1D buy-side liquidity 159.45400 (x1
+         1  POI - R:R 0.49 below minimum 0.5 (target 1H origin high 139.65600 (31 candle
+         1  POI - R:R 0.13 below minimum 0.5 (target 1H origin high 140.35500 (31 candle
+         1  POI - entry 140.114 lies 84% of the zone's height inside it (max 50%): no ro
+         1  POI - R:R 0.26 below minimum 0.5 (target 1H buy-side liquidity 142.84300 (x1
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_mk_usdjpy_full.csv (+ .equity.csv, .provenance.json)

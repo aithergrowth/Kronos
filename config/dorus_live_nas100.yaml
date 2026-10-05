@@ -1,25 +1,18 @@
-# Live profile for BTCUSD on the demo, 5 October 2026: config/dorus_live.yaml (version 3) with four lines changed for BTC.
-# Evidence: Bitstamp BTC/USD, February 2024 to October 2026 (5m from January 2024), docs/backtests/winrate/README.md "BTC over 2024-2026":
-#   - min_stop_pips 60: 8 pips on EURUSD is 0.07 % of price; 0.07 % of BTC at 85,000 is 60 USD (a "pip" is 1 USD here).
-#   - required_aligned []: with the 1H required 92 trades, 45 %, +30.8R over 2024-2026; without it 128 trades, 48 %, +40.6R
-#     (2024 +19.9, 2025 -4.9, 2026 +25.6), the M+W+D swing combination works on BTC (`btc_noreq_long`).
-#   - tp_policy previous_extreme: Astra, 4 October, from his BTC recap: he targets the liquidity left above earlier highs, not the
-#     origin of the move. Over 2024-2026: 133 trades, 35 %, +55.0R, drawdown -10.3R, 2024 +12.5 / 2025 -2.8 / 2026 +45.2, median
-#     planned R:R 2.8, longest losing run 8 (`btc_prevext_long`); the origin target 128 trades, 48 %, +40.6R, run of 5. The sum and
-#     his rule decide; the price is the lower win rate. With W+D+4H as well: +51.2R, 2025 -7.7R, drawdown -13.8R, so not that.
-#   - tp_max_rr 2 (nearest): 5 October, the target capped at 2R takes the nearest liquidity when the previous high lies further, and
-#     keeps the far target when nothing nearer fits: 2024-2026 145 trades, 51 %, +62.3R, drawdown -10.1R against 133, 35 %, +55.0R
-#     (`btc_cap2_long`); 1.5R and 2.5R gave the same picture to March 2025 (a plateau, not a spike).
-#   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February 2026 and halted the run),
-#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R), the FTMO margins
-#   (the 8 % peak-drawdown halt would have fired once in 2024-2026 at 1 % risk; FTMO's own 10 % static was never reached).
-#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R).
+# Live profile for NAS100, 5 October 2026: config/dorus_live.yaml (version 4) with the stop minimum in index points.
+# Evidence (HistData NSXUSD 1m, 2023-2026, `mk_nas100_full`): 76 trades, 47 %, +13.6R, drawdown -7.2R, per year +8.2 / -4.6 /
+# +3.2 / +6.9, about 1.8 trades a month. In the account with EURUSD, gold, BTC and GBPUSD, two open at a time, 1.5 %: 790
+# challenge starts 2024-2026 funded 85 %, phase 1 median 42 days (docs/backtests/winrate/README.md). The broker may call it
+# USTEC, NAS100.cash or US100: `mt5-symbols --search 100` and `--mt5-symbol`.
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
   full_combos: [[1M, 1W, 1D], [1M, 1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out: it lost in every run on
                                               # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
-  required_aligned: []            # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
+  required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
                                   # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
+  no_trade_against: [1W]          # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
+                                  # plaatsen" (A 01:58:37-01:59:24). EURUSD 2023-2026: 58 trades, 55 %, +21.1R, drawdown -5.3R against 73,
+                                  # 49 %, +11.8R, -11.3R (`eu_against_w_full`); chosen on EURUSD, GBPUSD agrees (kept 43, 58 %, +12.7R
+                                  # against 62, +8.2R). The monthly is left out: on EURUSD the monthly-against trades won (14, 71 %)
 confirmation:
   allow_first_candle: false
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
@@ -44,8 +37,8 @@ risk:
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
   stop_protection: recent_1h
   sl_offset_pips: 0.0
-  min_stop_pips: 60.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
-  tp_policy: previous_extreme       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
+  min_stop_pips: 12.0             # index points: 12 on NAS100 (the 8 pips of the currency profile, in the test `mk_nas100_full`)
+  tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
                                   # 18 Mar 2024 3.2 pips from his targets; 11 Nov 2025 8.6 pips nearer than his (the dip after the zone
@@ -53,8 +46,7 @@ risk:
   tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
-  tp_max_rr: 2.0                  # 5 October: BTC 2024-2026 51 % and +62.3R against 35 % and +55.0R uncapped (see the header)
-  tp_cap_choice: nearest
+  tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
   spread_buffer_pips: 1.0
 session:
   enabled: true
