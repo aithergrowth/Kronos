@@ -148,3 +148,4 @@ def test_weekend_close_blocks_new_trades_until_the_sunday_open():
     assert weekend_cutoff_after(pd.Timestamp("2026-03-07 12:00"), "16:45") == pd.Timestamp("2026-03-13 20:45")   # past the switch
     assert weekend_cutoff_after(pd.Timestamp("2026-10-09 20:45"), "16:45") == pd.Timestamp("2026-10-16 20:45")
     assert RiskGuard(PropFirmParams(), 100_000).can_open(broker, pd.Timestamp("2026-10-03 12:00"))[0]           # off by default
+

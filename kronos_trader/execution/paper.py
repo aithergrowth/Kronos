@@ -68,6 +68,15 @@ class PaperBroker(Broker):
         pips = direction.sign * (exit_price - entry) / spec.pip_size
         return pips * spec.pip_value_per_lot * lots
 
+    def commission(self, symbol: str, entry: float, lots: float) -> float:
+        """The round-turn commission of ``lots`` (account currency) from the symbol's ``commission_per_lot`` and
+        ``commission_pct`` of the notional; 0 unless a backtest sets them (``--costs``)."""
+        spec = self._spec(symbol)
+        cost = spec.commission_per_lot * lots
+        if spec.commission_pct:
+            cost += spec.commission_pct / 100.0 * abs(entry) / spec.pip_size * spec.pip_value_per_lot * lots
+        return cost
+
     def set_price(self, symbol: str, price: float) -> None:
         self._last_price[symbol.upper()] = float(price)
 
@@ -171,8 +180,12 @@ class PaperBroker(Broker):
         else:
             exit_price = float(price)
         pnl = self.pnl_for(pos.symbol, pos.direction, pos.entry, exit_price, pos.lots)
-        self._balance += pnl
         r = pos.r_at(exit_price)
+        cost = self.commission(pos.symbol, pos.entry, pos.lots)
+        if cost:
+            pnl -= cost
+            r -= cost / pos.risk_amount if pos.risk_amount > 0 else 0.0
+        self._balance += pnl
         trade = ClosedTrade(
             id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.lots, entry=pos.entry, exit=exit_price,
             stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,

@@ -136,6 +136,12 @@ def cmd_scan(args) -> int:
     return 0
 
 
+# FTMO's commission (October 2026, account currency USD): forex about 3 a 1.0 lot round turn, crypto 0.0325 % of the
+# notional a side, metals and indices none (their cost is in the spread, which the backtest models separately)
+FX_PAIRS = ("EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY", "EURJPY", "GBPJPY", "AUDJPY", "EURGBP")
+FTMO_COSTS = {**{pair: (3.0, 0.0) for pair in FX_PAIRS}, "BTCUSD": (0.0, 0.065), "ETHUSD": (0.0, 0.065)}
+
+
 def cmd_backtest(args) -> int:
     from .backtest.runner import Backtester
     from .backtest.report import format_report
@@ -144,6 +150,10 @@ def cmd_backtest(args) -> int:
     print(f"code: {code.get('commit')} source {code['source_sha256'][:12]}{' (uncommitted changes)' if code.get('dirty') else ''}")
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
+    if getattr(args, "costs", "none") == "ftmo":
+        spec = settings.symbol(symbol)
+        spec.commission_per_lot, spec.commission_pct = FTMO_COSTS.get(symbol, (0.0, 0.0))
+        print(f"costs: FTMO commission {spec.commission_per_lot:g} a lot + {spec.commission_pct:g} % of the notional, round turn")
     data = _load_data(args, settings, symbol)
     print(data.describe())
     bt = Backtester(settings, data, symbol, step_tf=args.step_tf, engine=_engine(settings),
@@ -569,6 +579,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--progress", action="store_true")
     sp.add_argument("--dossier-dir", help="write a decision dossier (charts, bias notes, gaps, zones, rejections) at every signal, from the run's own engine state")
     sp.add_argument("--dossier-limit", type=int, default=200, help="at most this many dossiers per run")
+    sp.add_argument("--costs", choices=("none", "ftmo"), default="none",
+                    help="commission per trade: none (default) or FTMO's (forex 3 a lot round turn, crypto 0.065 %% of "
+                         "the notional, metals and indices in the spread)")
     sp.add_argument("--out", help="write the trade list to this CSV")
     sp.set_defaults(func=cmd_backtest)
 

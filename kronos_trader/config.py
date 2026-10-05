@@ -37,6 +37,8 @@ class SymbolSpec:
     contract_size: float = 100_000.0           # units per 1.0 lot (forex standard lot)
     ibkr_contract: Optional[str] = None        # "forex" | "cfd:IBUST100" | "stock:AAPL:SMART:USD" | "crypto:BTC:PAXOS:USD"
     oanda_instrument: Optional[str] = None     # OANDA v20 name, e.g. EUR_USD (derived from the symbol when unset)
+    commission_per_lot: float = 0.0           # backtest costs: account currency a 1.0 lot round turn (FTMO forex: about 3)
+    commission_pct: float = 0.0               # and/or % of the entry's notional, round turn (FTMO crypto: about 0.065)
 
     def pips(self, distance: float) -> float:
         return distance / self.pip_size

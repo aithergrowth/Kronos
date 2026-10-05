@@ -121,7 +121,11 @@ def write_provenance(path, *, settings, symbol: str, data_dir, result=None, quot
         "data": data_manifest(data_dir, symbol) if data_dir else {},
         "calendar": calendar_manifest(getattr(settings.news, "calendar_csv", None)) if settings.news.enabled else {"enabled": False},
         "costs": {"quote_basis": quote_basis, "spread_pips": settings.symbol(symbol).typical_spread_pips,
-                  "commission": "none modelled", "slippage": "none modelled", "swap": "none modelled"},
+                  "commission": ({"per_lot_round_turn": settings.symbol(symbol).commission_per_lot,
+                                  "pct_of_notional_round_turn": settings.symbol(symbol).commission_pct}
+                                 if settings.symbol(symbol).commission_per_lot or settings.symbol(symbol).commission_pct
+                                 else "none modelled"),
+                  "slippage": "none modelled", "swap": "none modelled"},
     }
     if result is not None:
         doc["run"] = {"start": str(result.start), "end": str(result.end), "step_tf": result.step_tf.label, "steps": result.steps,

@@ -116,3 +116,24 @@ def test_shorts_are_valued_and_market_closed_on_the_ask():
                                    price=1.1000, ts=pd.Timestamp("2024-01-02 09:00"))
     long_broker.on_candle("EURUSD", _candle(1.1000, 1.1060, 1.0990, 1.1050))
     assert long_broker.equity() == pytest.approx(100_000 + (1.1050 - 1.1001) / 0.0001 * 10)   # long closes on the bid itself
+
+
+def test_backtest_commission_comes_off_pnl_and_r():
+    """``commission_per_lot`` (forex, a lot round turn) and ``commission_pct`` (crypto, of the notional) come off the
+    closed trade's P&L and R; none by default."""
+    s = Settings()
+    s.symbol("EURUSD").commission_per_lot = 3.0
+    broker = PaperBroker(s, use_spread=False)
+    t0 = pd.Timestamp("2026-10-01 09:00")
+    broker.place_market_order("EURUSD", Direction.LONG, 2.0, 1.0900, 1.1200, 200.0, 0.01, 4.0, price=1.1000, ts=t0)
+    trade = broker.close_position(broker.open_positions()[0].id, "manual", 1.1010, t0)
+    assert trade.pnl == pytest.approx(10 * 10 * 2 - 6.0) and trade.r == pytest.approx(0.1 - 6.0 / 200.0)
+    s2 = Settings()
+    s2.symbol("BTCUSD").commission_pct = 0.065
+    btc = PaperBroker(s2, use_spread=False)
+    btc.place_market_order("BTCUSD", Direction.SHORT, 0.5, 100_500.0, 99_000.0, 250.0, 500.0, 4.0, price=100_000.0, ts=t0)
+    trade = btc.close_position(btc.open_positions()[0].id, "manual", 99_500.0, t0)
+    assert trade.pnl == pytest.approx(250.0 - 0.00065 * 100_000.0 * 0.5)                  # 32.5 of commission
+    plain = PaperBroker(Settings(), use_spread=False)
+    plain.place_market_order("EURUSD", Direction.LONG, 2.0, 1.0900, 1.1200, 200.0, 0.01, 4.0, price=1.1000, ts=t0)
+    assert plain.close_position(plain.open_positions()[0].id, "manual", 1.1010, t0).pnl == pytest.approx(200.0)
