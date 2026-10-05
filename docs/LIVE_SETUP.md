@@ -64,7 +64,7 @@ EURUSD, XAUUSD and BTCUSD windows with the commands above (GBPUSD out since 5 Oc
 (`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen, equity and what is
 still open. Settings that are yours (another terminal path) go in `scripts\live_local.bat`, which git leaves alone.
 
-**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD, NAS100 and BTCUSD on the FTMO terminal
+**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD and NAS100 on the FTMO terminal
 with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
 Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
 each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from

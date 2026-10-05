@@ -859,3 +859,10 @@ Both thresholds are a plateau above 0.5, not a single lucky value. The challenge
 funded from 52 % of all starts (2017-2022 31 %, 2023-2025 92 %), with a median of 285 days. At R:R 2 it is 50 %
 and 404 days, at 1.0 % risk 64 % and 497 days. Taken: `min_rr: 1.5` in the three profiles (it replaces the 2.0
 above), for the same edge on a third more trades.
+
+**BTC out of the FTMO set (5 October, night).** BTC 2020-2026 with minimum R:R 2 is worse (target capped at 3R:
++28.4R, -23.7R drawdown; uncapped: +35.1R, -22.0R; the profile: +52.0R, -13.3R), and 2020-2023 stays negative in
+all three. In the challenge replay from June 2020, EURUSD, gold and NAS100 at R:R 1.5 are funded from 75 % of the
+starts (2020-2022: 55 %). With the profile's BTC added it is 42 % (2020-2022: 9 %): the variance of a market with
+no edge outside one year. `scripts/start_ftmo.bat` now opens EURUSD, gold and NAS100. BTC stays on the demo's own
+paper account as an observation.
