@@ -883,3 +883,24 @@ Three trades in two weeks cannot make 10 % without gambling: at 5 % one loser an
 The trial is a test of the set-up on FTMO's server (orders, names, sizing, the margin cut, Telegram). The challenge
 has no time limit. More trades with the same edge can only come from more markets that hold in both periods:
 AUDUSD, NZDUSD, USDCAD, USDCHF, USDJPY, silver, US500 and GER40 are running on the corrected candles.
+
+**More markets on the corrected candles (5 October, night).** Each market below ran on the live profile of its
+kind at R:R 1.5 (the EURUSD profile for the pairs, gold's for silver, NAS100's for the indices), 2018 to September
+2026, one trade at a time:
+
+| Market | Trades | R | Max dd | 2018-2022 | 2023-2026 |
+|---|---|---|---|---|---|
+| AUDUSD | 55 | +4.9R | -14.1R | +15.7R | -10.7R |
+| NZDUSD | 45 | -2.9R | -9.1R | | |
+| USDCAD | 59 | -20.4R | -27.0R | | |
+| USDCHF | 53 | -13.2R | -22.2R | | |
+| USDJPY | 54 | -2.4R | -9.0R | | |
+| Silver | 132 | -30.4R | -39.2R | | |
+| US500 | 84 | -17.1R | -29.1R | | |
+| GER40 | 65 | -0.3R | -15.7R | | |
+| *NAS100, for comparison* | 105 | +56.5R | -10.0R | | |
+| *Gold, for comparison* | 133 | +40.8R | -13.4R | | |
+
+None is taken. The edge sits in gold and NAS100, and a little in EURUSD. Out of a dozen markets tried, a few
+positive ones could also be luck, so the live results stay the judge. `scripts/start_ftmo.bat` gets a `RISK`
+line for `scripts/ftmo_local.bat`, for a calmer challenge (1.0 %) or a deliberate trial gamble (see the 14-day table).

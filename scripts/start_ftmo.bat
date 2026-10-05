@@ -10,6 +10,7 @@ rem   set "MT5_PATH=D:\FTMO MetaTrader 5\terminal64.exe"     the terminal (right
 rem   set "ACCOUNT=25000"                                     the challenge size: the guard's -4 %% day and -8 %% count from it
 rem   set "NAS_NAME=US100.cash"  /  set "BTC_NAME=BTCUSD"     the server's names
 rem   set "FUNDED=1"                                          once funded: 1.0 %% risk (0.5 %% from -3 %%) and flat by Friday 15:45 New York
+rem   set "RISK=1.0"                                          risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED)
 rem To list the server's names, in PowerShell in the Kronos folder:
 rem   $env:MT5_PATH="C:\Program Files\FTMO MetaTrader 5\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
 rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
@@ -22,6 +23,7 @@ set "ACCOUNT=10000"
 set "NAS_NAME=US100.cash"
 set "BTC_NAME=BTCUSD"
 set "FUNDED="
+set "RISK="
 set "WEEKEND_CLOSE="
 if exist "%~dp0ftmo_local.bat" call "%~dp0ftmo_local.bat"
 set MT5_LOGIN=
@@ -33,6 +35,7 @@ rem The challenge and the verification may hold over the weekend; a funded FTMO 
 rem 15:45: an hour before the forex close, so US100.cash (whose Friday may end at 16:00 New York) is closed in time too
 if defined FUNDED set "COMMON=%COMMON% --risk-pct 1.0 --drawdown-steps=-3:0.5 --weekend-close 15:45"
 if not defined FUNDED if defined WEEKEND_CLOSE set "COMMON=%COMMON% --weekend-close %WEEKEND_CLOSE%"
+if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
 (
   git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
   start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%"
