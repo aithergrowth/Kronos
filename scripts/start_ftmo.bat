@@ -15,7 +15,11 @@ set "BTC_NAME=BTCUSD"
 set MT5_LOGIN=
 set MT5_PASSWORD=
 set MT5_SERVER=
+rem The challenge and the verification may hold over the weekend. A funded FTMO Account of the Standard type may not:
+rem set WEEKEND_CLOSE=16:45 there, and every position is closed Friday 16:45 New York with no new one until Sunday.
+set "WEEKEND_CLOSE="
 set "COMMON=--broker mt5 --execute --no-approval --account-size %ACCOUNT% --journal journal_ftmo/trades.csv --tag FTMO"
+if defined WEEKEND_CLOSE set "COMMON=%COMMON% --weekend-close %WEEKEND_CLOSE%"
 (
   git pull --ff-only
   start "FTMO EURUSD" powershell -NoExit -Command ".\.venv\Scripts\Activate.ps1; python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%"
