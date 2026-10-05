@@ -735,7 +735,14 @@ few trades are still open then:
 | NAS100 (48 h) | 1 of 78 | +4.1 / +3.4 | +25.6 -> +25.0 |
 
 About 5R in all, against a third of gold and NAS100 and most of BTC on Swing's leverage. Standard is the type to
-buy. A weekend close for the funded stage is still to be built into the live loop: the table is an estimate from the ledgers, not a backtest with the rule.
+buy.
+
+Built since: `prop_firm.weekend_close` ("16:45"; `--weekend-close` on the live command, the `WEEKEND_CLOSE` line in
+`scripts/start_ftmo.bat`) closes every position at Friday 16:45 New York and opens nothing until the Sunday open, in
+the backtest and live. Run as backtests on the same candles: EURUSD +12.0R (3 weekend exits), GBPUSD +6.6R (5), gold
++30.8R (5), NAS100 +24.9R (1). That is about 8R in all over three and a half years, 5.8R of it gold: a little more
+than the estimate, because a trade closed on Friday also frees the market for the next signal. Off until the account
+is funded.
 
 What the margin cut does to the challenge (`scripts/risk_steps.py`, the five ledgers of "The daily candles live
 sees", two open, 1.5 % with the steps). Each BTC trade is scaled by what the margin allows, and the cost haircut
