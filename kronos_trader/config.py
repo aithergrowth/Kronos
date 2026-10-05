@@ -160,6 +160,9 @@ class ConfirmationParams:
                                         # re-entered by the spike of 11 Nov 13:22; the stop above that spike's high)
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
+    max_adverse_move_atr: float = 0.0   # 0 = off; else no entry when the last 24 closed 1H candles moved this many average 1H ranges
+                                        # (ATR 24) against the trade: the zone is being run through, not tested (entry anatomy, 5 October,
+                                        # five markets 2023-2026: 14 trades at 3 or more won 21 %, -7.9R, negative in 2024, 2025 and 2026)
     max_zone_age_candles: int = 0       # 0 = off; else a zone older than this many candles of its own timeframe is not a candidate (loss
                                         # anatomy, 4 October, three markets: zones under 24 h old won 43-48 %, older ones 12-33 %; BTC
                                         # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)

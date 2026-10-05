@@ -296,3 +296,16 @@ def test_telegram_errors_carry_the_api_description(monkeypatch):
     with pytest.raises(TelegramError) as exc:
         TelegramNotifier(token="123:abc", chat_id="42").check()
     assert exc.value.status == 404 and exc.value.description == "Not Found" and exc.value.method == "getMe"
+
+
+def test_adverse_move_counts_the_last_day_against_the_trade():
+    from kronos_trader.core import Direction, Timeframe as TF
+    from kronos_trader.strategy.engine import adverse_move_atr
+    # 30 hourly candles falling 10 points each with a 10-point range: 24 candles x 10 = 240 down, ATR about 10-20
+    rows = [(1000 - 10 * i, 1000 - 10 * i + 5, 1000 - 10 * i - 5, 1000 - 10 * (i + 1)) for i in range(30)]
+    h1 = CandleSeries.from_records(rows, TF.H_1, start="2026-10-01 00:00", symbol="TEST")
+    against_long = adverse_move_atr(h1, Direction.LONG)
+    assert against_long is not None and against_long > 10                   # far against a long
+    assert adverse_move_atr(h1, Direction.SHORT) == pytest.approx(-against_long)   # with a short
+    short = CandleSeries.from_records(rows[:10], TF.H_1, start="2026-10-01 00:00", symbol="TEST")
+    assert adverse_move_atr(short, Direction.LONG) is None                   # too little history

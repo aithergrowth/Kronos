@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 from ..config import Settings
@@ -131,6 +132,22 @@ class LazyStructures(dict):
         self._all()
         return iter(list(self._views))
 
+
+
+def adverse_move_atr(h1: CandleSeries, direction: Direction, candles: int = 24) -> Optional[float]:
+    """How far the last ``candles`` closed 1H candles moved against ``direction``, in average 1H true ranges over the same
+    candles; None with too little history."""
+    df = h1.df
+    if len(df) < candles + 2:
+        return None
+    high, low, close = df["high"].to_numpy(float), df["low"].to_numpy(float), df["close"].to_numpy(float)
+    prev = close[-candles - 1:-1]
+    tr = np.maximum(high[-candles:] - low[-candles:], np.maximum(abs(high[-candles:] - prev), abs(low[-candles:] - prev)))
+    atr = float(tr.mean())
+    if atr <= 0:
+        return None
+    move = close[-1] - close[-candles - 1]
+    return float(-direction.sign * move / atr)
 
 class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
@@ -357,6 +374,16 @@ class StrategyEngine:
             event = self.calendar.blackout(symbol, now)
             if event is not None:
                 analysis.rejections.append(f"news blackout: {event.title} ({event.currency}) at {event.time:%H:%M} UTC; open trades run on")
+                if assume_direction is None:
+                    return analysis
+                diagnostic = True
+
+        # the last day against the trade: a run of several average 1H ranges against the direction is a zone being run through --
+        if s.confirmation.max_adverse_move_atr > 0 and Timeframe.H_1 in views:
+            adverse = adverse_move_atr(views[Timeframe.H_1], direction)
+            if adverse is not None and adverse >= s.confirmation.max_adverse_move_atr:
+                analysis.rejections.append(f"the last 24 1H candles ran {adverse:.1f} average ranges against the {direction.name.lower()} "
+                                           f"(max {s.confirmation.max_adverse_move_atr:g}); no entry into that")
                 if assume_direction is None:
                     return analysis
                 diagnostic = True
