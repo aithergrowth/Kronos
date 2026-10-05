@@ -11,15 +11,14 @@
 #     keeps the far target when nothing nearer fits: 2024-2026 145 trades, 51 %, +62.3R, drawdown -10.1R against 133, 35 %, +55.0R
 #     (`btc_cap2_long`); 1.5R and 2.5R gave the same picture to March 2025 (a plateau, not a spike).
 #   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February 2026 and halted the run),
-#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R), the FTMO margins
-#   (the 8 % peak-drawdown halt would have fired once in 2024-2026 at 1 % risk; FTMO's own 10 % static was never reached).
-#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), max 1 open trade (two lost -4.8R).
+#   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), one BTC trade at a time (two lost -4.8R), and
+#   the account guard of config/dorus_live.yaml (two open on the account, one per market, -4 % a day, -8 % static from the start).
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
   full_combos: [[1M, 1W, 1D], [1M, 1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out: it lost in every run on
                                               # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
-  required_aligned: []            # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
-                                  # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
+  required_aligned: []            # BTC: no timeframe required (the header: with the 1H required +30.8R, without +40.6R over 2024-2026);
+                                  # EURUSD, GBPUSD and gold keep the 1H required
 confirmation:
   allow_first_candle: false
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)

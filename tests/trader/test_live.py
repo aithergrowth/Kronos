@@ -782,3 +782,42 @@ def test_a_repeating_loop_error_is_sent_once_per_half_hour(setup, monkeypatch, c
         runner.report_loop_error(exc)
     assert sum("live loop error" in m for m in notifier.sent) == 3
     assert "RuntimeError: terminal gone" in capsys.readouterr().err
+
+
+def test_break_even_counts_every_candle_since_the_last_look(setup):
+    """On a real broker the runner moves the stop itself: a trigger reached by an earlier candle (between two polls, or
+    while the window was down) counts, not only the newest candle's extreme, as in the backtest."""
+    class Server(PaperBroker):
+        on_candle = None
+    broker = Server(Settings())
+    broker.set_price("EURUSD", 1.1)
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0949, 1.1200, 1000.0, 0.0051, 0.5, price=1.1,
+                              ts=pd.Timestamp("2026-10-01 08:15"))                 # trigger at 0.5R: about 1.1026
+    runner, notifier = _runner(setup, broker)
+    rows = [(1.1, 1.101, 1.099, 1.1), (1.1, 1.104, 1.099, 1.1), (1.1, 1.101, 1.099, 1.1)]   # only the middle one reaches it
+    views = {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner.manage_positions(views)
+    pos = broker.open_positions()[0]
+    assert pos.breakeven_done and pos.stop == pytest.approx(pos.entry)
+    assert any("break-even" in m for m in notifier.sent)
+
+
+def test_exits_run_even_when_the_analysis_fails(setup):
+    """An engine error on one day's data must not keep a trade past its time limit (or weekend close, or break-even):
+    the exits run before the analysis, on their own."""
+    class Server(PaperBroker):
+        on_candle = None
+    broker = Server(Settings())
+    broker.set_price("EURUSD", 1.1)
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0900, 1.1200, 1000.0, 0.01, 4.0, price=1.1,
+                              ts=NOW - pd.Timedelta(hours=49))
+    runner, notifier = _runner(setup, broker)
+    runner.settings.exits.max_hold_hours = 48
+
+    class Broken:
+        def analyze(self, *args, **kwargs):
+            raise RuntimeError("engine bug")
+    runner.engine = Broken()
+    with pytest.raises(RuntimeError, match="engine bug"):
+        runner.step(NOW)
+    assert broker.open_positions() == [] and any("closed (time)" in m for m in notifier.sent)

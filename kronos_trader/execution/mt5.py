@@ -245,14 +245,18 @@ class MT5Broker(Broker):
         return float(value) if value is not None else None
 
     def mt5_symbol(self, symbol: str) -> str:
+        """The server's name: the profile's mt5_symbol, our name upper-cased, or a server name this window does not know
+        (another window's market, e.g. US100.cash) as it is: the terminal may match names case-sensitively."""
         spec = self.settings.symbols.get(symbol.upper())
-        return spec.mt5_symbol if spec and spec.mt5_symbol else symbol.upper()
+        if spec is not None:
+            return spec.mt5_symbol or symbol.upper()
+        return symbol
 
     def our_symbol(self, name: str) -> str:
         for sym, spec in self.settings.symbols.items():
             if spec.mt5_symbol == name:
                 return sym
-        return name.upper()
+        return name.upper() if name.upper() in self.settings.symbols else name
 
     def server_offset(self, symbol: Optional[str] = None) -> pd.Timedelta:
         """Broker server time minus UTC.
@@ -360,7 +364,10 @@ class MT5Broker(Broker):
         direction = Direction.LONG if p.type == self.mt5.POSITION_TYPE_BUY else Direction.SHORT
         sl = float(p.sl or 0.0)
         entry = float(p.price_open)
-        risk_distance = abs(entry - sl) if sl else 0.0
+        # the stop it was opened with (its opening order's): at break-even the position's own sl sits on the entry, and a
+        # risk measured from there made every later close a 0R trade in the journal
+        initial = self._original_stop(p.ticket) or sl
+        risk_distance = abs(entry - initial) if initial else 0.0
         comment = str(getattr(p, "comment", "") or "")
         poi_tf = None
         if "POI" in comment:
@@ -372,9 +379,9 @@ class MT5Broker(Broker):
         breakeven_r = breakeven_trigger_r(poi_tf, exits) if poi_tf is not None else exits.breakeven_r_intraday
         symbol = self.our_symbol(p.symbol)
         risk_amount = 0.0
-        if sl and direction.sign * (sl - entry) < 0:
+        if initial and direction.sign * (initial - entry) < 0:
             try:
-                risk_amount = abs(self.pnl_for(symbol, direction, entry, sl, float(p.volume)))
+                risk_amount = abs(self.pnl_for(symbol, direction, entry, initial, float(p.volume)))
             except Exception:
                 risk_amount = 0.0
         meta: Dict[str, Any] = {"comment": comment, "restored": True}
@@ -382,8 +389,24 @@ class MT5Broker(Broker):
             meta["poi_tf"] = poi_tf.label
         return Position(id=str(p.ticket), symbol=symbol, direction=direction, lots=float(p.volume),
                         entry=entry, stop=sl, take_profit=float(p.tp or 0.0), opened_at=self.to_utc(p.time),
-                        risk_amount=risk_amount, risk_distance=risk_distance, breakeven_r=breakeven_r, initial_stop=sl,
+                        risk_amount=risk_amount, risk_distance=risk_distance, breakeven_r=breakeven_r, initial_stop=initial,
                         meta=meta)
+
+    def _original_stop(self, ticket) -> Optional[float]:
+        """The stop of the order that opened position ``ticket`` (history_orders_get), None when the terminal cannot say."""
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is None:
+            return None
+        try:
+            orders = list(get(position=int(ticket)) or [])
+        except Exception:
+            return None
+        orders.sort(key=lambda o: (getattr(o, "time_setup_msc", 0) or 0, getattr(o, "time_setup", 0) or 0))
+        for o in orders:
+            sl = float(getattr(o, "sl", 0.0) or 0.0)
+            if sl:
+                return sl
+        return None
 
     def _finish(self, pos: Position, exit_price: float, reason: str, ts, pnl: float) -> ClosedTrade:
         self._positions.pop(pos.id, None)
@@ -506,8 +529,10 @@ class MT5Broker(Broker):
 
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         raw = self.mt5.positions_get(symbol=self.mt5_symbol(symbol)) if symbol else self.mt5.positions_get()
+        if raw is None:         # an error, not "no positions": the guard would count no open trade and no risk
+            raise RuntimeError(f"MT5 did not list the open positions: {self.mt5.last_error()}")
         out: List[Position] = []
-        for p in (raw or []):
+        for p in raw:
             if p.magic != self.magic:
                 continue
             pid = str(p.ticket)
@@ -582,6 +607,12 @@ class MT5Broker(Broker):
         if not confirmed:
             pos.meta["entry_unconfirmed"] = True
         self._positions[pos.id] = pos
+        # the other windows count open trades from positions_get, which can list a new position a moment after the deal:
+        # wait for it (up to 2 s, inside the account lock) so a second window cannot take the last open slot meanwhile
+        for _ in range(10):
+            if not confirmed or any(str(x.ticket) == pid for x in (mt5.positions_get(symbol=name) or [])):
+                break
+            time.sleep(0.2 * self.retry_seconds)
         return pos
 
     def filling_modes(self, name: str) -> List[int]:

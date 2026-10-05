@@ -25,8 +25,10 @@ class RiskGuard:
         self.peak_equity = float(account_size)
         self.day: Optional[pd.Timestamp] = None
         self.day_start_balance = float(account_size)
+        self.day_known = True               # False while the broker's history could not give the day's start balance
         self.month: Optional[pd.Period] = None
         self.month_start_balance = float(account_size)
+        self.month_known = True
         # the broker's closed P&L since a UTC time, when it can tell: a guard that starts mid-day or mid-month (a restart)
         # takes its baselines from it instead of from the balance it first sees
         self.realized_since: Optional[Callable[[pd.Timestamp], Optional[float]]] = None
@@ -59,16 +61,19 @@ class RiskGuard:
             return pd.Timestamp(local_start)
         return pd.Timestamp(local_start).tz_localize(tz).tz_convert("UTC").tz_localize(None)
 
-    def _baseline(self, local_start: pd.Timestamp) -> float:
-        """The balance at ``local_start``: the current balance less what closed since, when the broker can say."""
+    def _baseline(self, local_start: pd.Timestamp) -> Tuple[float, bool]:
+        """``(balance at local_start, known)``: the current balance less what closed since, when the broker can say. A
+        broker that keeps a history but did not answer (None, an error: a terminal just started) gives ``known`` False:
+        taking the current balance then would read a morning's losses as zero for the rest of the day."""
         if self.realized_since is not None:
             try:
                 done = self.realized_since(self._utc_start(local_start))
                 if done is not None:
-                    return self.last_balance - float(done)
+                    return self.last_balance - float(done), True
             except Exception:
                 pass
-        return self.last_balance
+            return self.last_balance, False
+        return self.last_balance, True
 
     def update(self, ts: pd.Timestamp, equity: float, balance: Optional[float] = None) -> None:
         """Feed every observation (each closed candle in a backtest, each loop in live), not only signals.
@@ -80,15 +85,15 @@ class RiskGuard:
         day = self._day_of(ts)
         if balance is not None:
             self.last_balance = float(balance)
-        if self.day is None or day != self.day:
+        if self.day is None or day != self.day or not self.day_known:
             # the balance at the day's start, not at the first look of the day: a stop hit after midnight while nothing
-            # watched (the laptop asleep) counts against the new day, as at FTMO
+            # watched (the laptop asleep) counts against the new day, as at FTMO; asked again every update until known
             self.day = day
-            self.day_start_balance = self._baseline(day)
+            self.day_start_balance, self.day_known = self._baseline(day)
         month = day.to_period("M")
-        if self.month is None or month != self.month:
+        if self.month is None or month != self.month or not self.month_known:
             self.month = month
-            self.month_start_balance = self._baseline(month.to_timestamp())
+            self.month_start_balance, self.month_known = self._baseline(month.to_timestamp())
         self.peak_equity = max(self.peak_equity, equity)
         if self.first_breach is None:
             p = self.params
@@ -153,6 +158,8 @@ class RiskGuard:
         balance = getattr(broker, "balance", None)
         self.update(ts, equity, balance() if callable(balance) else None)
         p = self.params
+        if not self.day_known or (p.monthly_loss_limit_pct and not self.month_known):
+            return False, "the day's start balance is unknown (the terminal's trade history did not answer); asking again every scan"
         if len(broker.open_positions()) >= p.max_open_trades:
             return False, f"max {p.max_open_trades} open trade(s) per account"
         if symbol and len(broker.open_positions(symbol)) >= max(1, p.max_open_per_symbol):

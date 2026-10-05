@@ -82,3 +82,8 @@ journal_ftmo/
 data/histdata/
 data/dukascopy/
 data/histdata_1m/
+
+# local settings and secrets that stay on the laptop
+.env.*
+journal*/
+scripts/*_local.bat

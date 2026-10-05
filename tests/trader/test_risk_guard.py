@@ -149,3 +149,22 @@ def test_weekend_close_blocks_new_trades_until_the_sunday_open():
     assert weekend_cutoff_after(pd.Timestamp("2026-10-09 20:45"), "16:45") == pd.Timestamp("2026-10-16 20:45")
     assert RiskGuard(PropFirmParams(), 100_000).can_open(broker, pd.Timestamp("2026-10-03 12:00"))[0]           # off by default
 
+
+
+def test_an_unknown_day_start_balance_blocks_new_trades_until_the_history_answers():
+    """A window restarting mid-day whose terminal does not answer the history call (None) must not read the morning's
+    closed losses as zero: no new trade until the start balance is known, asked again on every update."""
+    terminal = {"answers": False}
+    guard = RiskGuard(PropFirmParams(daily_loss_limit_pct=4.0, max_open_trades=2), 10_000)
+    guard.realized_since = lambda since: -350.0 if terminal["answers"] else None
+    broker = PaperBroker(Settings(), equity=9_650.0, use_spread=False)
+    ok, reason = guard.can_open(broker, pd.Timestamp("2026-10-06 12:00"), new_risk=150.0)
+    assert not ok and "start balance is unknown" in reason
+    ok, reason = guard.can_open(broker, pd.Timestamp("2026-10-06 12:01"), new_risk=150.0)
+    assert not ok and "start balance is unknown" in reason
+    terminal["answers"] = True
+    ok, reason = guard.can_open(broker, pd.Timestamp("2026-10-06 12:02"), new_risk=150.0)
+    assert guard.day_known and guard.day_start_balance == pytest.approx(10_000.0)
+    assert not ok and "would reach 5.00%" in reason                 # -3.5 % closed plus 1.5 % at risk: over the 4 %
+    small = guard.can_open(broker, pd.Timestamp("2026-10-06 12:03"), new_risk=40.0)
+    assert small[0]                                                 # 3.9 %: inside the limit

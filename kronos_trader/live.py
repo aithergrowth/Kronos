@@ -185,7 +185,7 @@ class AccountLock:
         if self.held:
             try:
                 self.path.unlink()
-            except FileNotFoundError:
+            except OSError:                 # gone already, or held by a virus scanner / OneDrive (WinError 32): stale in 60 s
                 pass
             self.held = False
         return False
@@ -273,9 +273,15 @@ class LiveRunner:
                 self.guard.update(now, equity, self.broker.balance())
             except Exception as exc:     # a feed hiccup must not stop the loop; the guard re-checks before any order
                 print(f"[live] {self.symbol}: guard update failed ({exc})")
+        # exits first and on their own: a failing analysis (an engine error on one day's data) must not keep a trade past
+        # its time limit, its weekend close or its break-even
+        try:
+            self.manage_positions(views)
+            self.report_closes()
+        except Exception as exc:
+            self.report_loop_error(exc)
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
-        self.manage_positions(views)
         self.process_decisions(now)
         self.report_closes()
         self.morning_briefing(analysis, now)
@@ -720,65 +726,71 @@ class LiveRunner:
         except Exception:
             return 0.0
 
+    def _open_locked(self, setup: TradeSetup, now: pd.Timestamp):
+        """The checks and the order, inside the account lock: the message to send on a refusal, else
+        ``(position, setup id, risk amount, risk params, resize note, margin note)``."""
+        sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
+        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
+        if not ok:
+            self.note("not_executed", now, id=sid, reason=reason)
+            return f"⛔ {self.symbol}: not executed - {reason}"
+        try:
+            price = self.broker.fill_price(self.symbol, setup.direction)       # the ask for a buy, the bid for a sell
+        except Exception as exc:
+            self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
+            return f"⛔ {self.symbol}: not executed - no current price ({exc})"
+        from .strategy.risk import resize_at, stepped_risk
+        wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
+        risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+        lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
+                                                                self.spec, risk_params)
+        if wrong_side or rr_now < self.settings.risk.min_rr:
+            self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
+            return (f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
+                    f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
+        if lots <= 0:
+            self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
+            return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
+        resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
+        if risk_params.risk_pct != self.settings.risk.risk_pct:
+            resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
+        margin_note = ""
+        room = self.margin_room(setup.direction, price)
+        if room is not None and lots > room[0] + 1e-9:
+            fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
+            if fit < self.spec.min_lot:
+                self.note("not_executed", now, id=sid, price=float(price), reason=f"margin: {room[1]:,.0f} available, "
+                          f"{lots:.2f} lots wanted, {room[0]:.3f} fit")
+                return (f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot "
+                        f"({room[1]:,.0f} available, {self.spec.min_lot:g} lots needed)")
+            margin_note = f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
+            resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
+            risk_amount *= fit / lots
+            lots = fit
+        try:
+            pos = self.broker.place_market_order(
+                self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
+                risk_distance, setup.breakeven_r,
+                meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
+                      "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
+                price=price, ts=self.fill_stamp(now), price_is_fill=True,
+            )
+        except Exception as exc:
+            self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
+            return f"⛔ {self.symbol}: order failed - {exc}"
+        return pos, sid, risk_amount, risk_params, resized, margin_note
+
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
         # the cap check and the order under one lock shared by the windows of the account: two markets signalling in
-        # the same second could otherwise both take the last open slot
+        # the same second could otherwise both take the last open slot. Telegram waits until the lock is released: a
+        # slow send inside it held the other windows for 15 s, after 10 s they go on without it
         with AccountLock(self.lock_path):
-            sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
-            ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
-            if not ok:
-                self.note("not_executed", now, id=sid, reason=reason)
-                self.notifier.send(f"⛔ {self.symbol}: not executed - {reason}")
-                return None
-            try:
-                price = self.broker.fill_price(self.symbol, setup.direction)       # the ask for a buy, the bid for a sell
-            except Exception as exc:
-                self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
-                self.notifier.send(f"⛔ {self.symbol}: not executed - no current price ({exc})")
-                return None
-            from .strategy.risk import reconcile_risk, resize_at, stepped_risk
-            wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
-            risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
-            lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
-                                                                    self.spec, risk_params)
-            if wrong_side or rr_now < self.settings.risk.min_rr:
-                self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
-                self.notifier.send(f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
-                                   f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
-                return None
-            if lots <= 0:
-                self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
-                self.notifier.send(f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}")
-                return None
-            resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
-            if risk_params.risk_pct != self.settings.risk.risk_pct:
-                resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
-            margin_note = ""
-            room = self.margin_room(setup.direction, price)
-            if room is not None and lots > room[0] + 1e-9:
-                fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
-                if fit < self.spec.min_lot:
-                    self.note("not_executed", now, id=sid, price=float(price), reason=f"margin: {room[1]:,.0f} available, "
-                              f"{lots:.2f} lots wanted, {room[0]:.3f} fit")
-                    self.notifier.send(f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot "
-                                       f"({room[1]:,.0f} available, {self.spec.min_lot:g} lots needed)")
-                    return None
-                margin_note = f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
-                resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
-                risk_amount *= fit / lots
-                lots = fit
-            try:
-                pos = self.broker.place_market_order(
-                    self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
-                    risk_distance, setup.breakeven_r,
-                    meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
-                          "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
-                    price=price, ts=self.fill_stamp(now), price_is_fill=True,
-                )
-            except Exception as exc:
-                self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
-                self.notifier.send(f"⛔ {self.symbol}: order failed - {exc}")
-                return None
+            opened = self._open_locked(setup, now)
+        if isinstance(opened, str):
+            self.notifier.send(opened)
+            return None
+        pos, sid, risk_amount, risk_params, resized, margin_note = opened
+        from .strategy.risk import reconcile_risk
         self.guard.record_trade(now)
         mark_traded = getattr(self.engine, "mark_traded", None)   # test doubles may lack it
         if mark_traded is not None:
@@ -894,7 +906,14 @@ class LiveRunner:
             retry_at = pos.meta.get("breakeven_retry_at")
             if retry_at is not None and last.timestamp < retry_at:
                 continue
-            extreme = last.high if pos.direction.sign > 0 else last.low
+            # every candle since the last look (or the fill), not only the newest: a touch of the trigger in the last
+            # seconds of a candle between two polls, or while the window was down, counts as in the backtest
+            since = pos.meta.get("be_checked_until") or pos.opened_at
+            k0 = len(lowest) - 1
+            if since is not None:
+                k0 = min(max(0, lowest.index_at_or_after(pd.Timestamp(since))), len(lowest) - 1)
+            extreme = float(lowest.high[k0:].max()) if pos.direction.sign > 0 else float(lowest.low[k0:].min())
+            pos.meta["be_checked_until"] = last.timestamp               # the newest candle may still be forming: again next scan
             # once the trigger was reached, a refused move is tried again every 15 minutes whatever price does since:
             # the trigger is history, the move is still owed
             if pos.meta.get("breakeven_pending") or breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme,

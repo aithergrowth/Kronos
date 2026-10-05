@@ -87,3 +87,11 @@ def test_yaml_off_is_read_as_the_string_off(tmp_path):
     path.write_text("kronos:\n  mode: off\nrisk:\n  min_rr: 1.5\n", encoding="utf-8")
     s = Settings.load(path)
     assert s.kronos.mode == "off" and s.risk.min_rr == 1.5
+
+
+def test_a_missing_config_file_is_an_error(tmp_path):
+    """A typo in --config, or a profile renamed by an update, stops the start instead of trading the built-in defaults."""
+    from kronos_trader.config import Settings
+    with pytest.raises(FileNotFoundError, match="config file not found"):
+        Settings.load(tmp_path / "dorus_live_typo.yaml")
+    assert Settings.load(None).risk.risk_pct > 0                       # no path given: the defaults, as before

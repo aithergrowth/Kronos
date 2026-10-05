@@ -43,10 +43,9 @@ account-wide while every market keeps at most one open trade:
 
 ```shell
 python -m kronos_trader --config config/dorus_live_gold.yaml mt5-test --symbol XAUUSD --tf 15m  # once: the broker's symbol names
-python -m kronos_trader --config config/dorus_live_btc.yaml mt5-test --symbol BTCUSD --tf 15m   # (set mt5_symbol in the config if they differ)
-python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5
-python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5
-python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker mt5
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute --no-approval
+python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5 --execute --no-approval
+python -m kronos_trader --config config/dorus_live.yaml live --symbol GBPUSD --broker mt5 --execute --no-approval
 ```
 
 **BTC when the broker's crypto price stands still.** On Monday 5 October 2026 the MetaQuotes demo's BTCUSD still showed
@@ -58,13 +57,20 @@ backtests ran on; the paper broker fills the orders on those candles and reports
 python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker paper --feed bitstamp --account-size 10000 --execute --no-approval
 ```
 
-The paper account lives in that window (a restart starts again at the account size); the trades go to the journal.
-On the FTMO account (crypto trades around the clock there) BTC goes back to `--broker mt5`.
+The paper account is kept across restarts (`journal/paper_BTCUSD.json`: balance, open positions, the last closes);
+the trades go to the journal. On the FTMO account (crypto trades around the clock there) BTC runs on `--broker mt5`.
 
-**All three at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest profiles and opens the
-EURUSD, XAUUSD and BTCUSD windows with the commands above, the venv active in each. Every window sends the 08:45
-briefing and, at 22:00 (`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen,
-equity and what is still open.
+**All four at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest version and opens the
+EURUSD, XAUUSD, GBPUSD and BTCUSD windows with the commands above. Every window sends the 08:45 briefing and, at 22:00
+(`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen, equity and what is
+still open. Settings that are yours (another terminal path) go in `scripts\live_local.bat`, which git leaves alone.
+
+**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD, GBPUSD, NAS100 and BTCUSD on the FTMO terminal
+with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
+Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
+each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from
+-3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). With two terminals installed, every manual MT5 command needs the terminal first:
+`$env:MT5_PATH="C:\Program Files\FTMO MetaTrader 5\terminal64.exe"` in that PowerShell window.
 
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
@@ -247,8 +253,8 @@ python -m kronos_trader live --symbol EURUSD --broker ibkr --once
 Approval requests expire after one confirmation-timeframe candle (minimum 5
 minutes); an approval that arrives after that is refused. An approved order
 is re-checked against the risk guard and a fresh current price (R:R still
-≥ 1:3) before it is sent, and not sent at all when no current price can be
-had. An order counts as filled only once the broker confirms the fill;
+at least the profile's `risk.min_rr`, 0.5 in the live profiles) before it is
+sent, and not sent at all when no current price can be had. An order counts as filled only once the broker confirms the fill;
 otherwise the loop reports it as submitted and confirms it, or reports that
 it did not fill, on a later poll.
 
@@ -288,8 +294,11 @@ confirmation closes, then fills, break-even moves and closes. Entries only
 between 09:00 and 17:00 Amsterdam and never inside a high-impact news window.
 
 Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
-at 5 % daily and 10 % total loss, the guard stops at 4 % and 8 %, one open
-trade, 1 % risk.
+at 5 % daily and 10 % total loss, the guard stops at 4 % a day and 8 % below
+the start; two open trades on the account, one per market; 1.5 % risk, 1.0 %
+from 3 % under the start and 0.5 % from 6 % (`risk.drawdown_steps`). A
+position never ties up more than 45 % of equity as margin (the lots are cut
+to fit).
 
 ### The journal
 
@@ -317,8 +326,7 @@ Backtest trades can be drawn the same way, one image per trade with the zone, th
 target, so a trade list can be checked by eye instead of replaying each setup:
 
 ```
-python -m kronos_trader --config config/dorus_pure.yaml trade-charts --symbol EURUSD --data-dir data/histdata \
-    --trades docs/backtests/phase2/EURUSD_5m_pure.csv --out charts/backtest --max 20
+python -m kronos_trader --config config/dorus_pure.yaml trade-charts --symbol EURUSD --data-dir data/histdata --trades docs/backtests/phase2/EURUSD_5m_pure.csv --out charts/backtest --max 20
 ```
 
 `--max 0` draws every trade; the default spreads 20 images over the list.

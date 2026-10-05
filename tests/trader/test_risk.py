@@ -262,3 +262,14 @@ def test_stepped_risk_lowers_the_stake_below_the_start():
     assert stepped_risk(flat, 50_000, 100_000) is flat
     loaded = Settings.from_dict({"risk": {"risk_pct": 1.5, "drawdown_steps": [[-3, 1.0], [-6, 0.5]]}}).risk
     assert stepped_risk(loaded, 96_000, 100_000).risk_pct == 1.0
+
+
+def test_live_risk_flags_parse_and_refuse_typos():
+    """--drawdown-steps=-3:0.5 / --risk-pct for the funded account, and a weekend close given as HH:MM."""
+    from kronos_trader.cli import _parse_steps, _valid_clock
+    assert _parse_steps("-3:1.0,-6:0.5") == ((-3.0, 1.0), (-6.0, 0.5)) and _parse_steps("none") == ()
+    for bad in ("3:0.5", "-3", "-3:x", "-3:9"):
+        with pytest.raises(SystemExit):
+            _parse_steps(bad)
+    assert _valid_clock("16:45") and _valid_clock("9:30")
+    assert not _valid_clock("16.45") and not _valid_clock("25:00") and not _valid_clock("16:75")

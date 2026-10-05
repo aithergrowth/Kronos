@@ -473,7 +473,9 @@ class Settings:
     def load(cls, path: Optional["str | Path"] = None) -> "Settings":
         """Load ``path`` if given, else ``KRONOS_TRADER_CONFIG`` if set, else defaults."""
         path = path or os.environ.get("KRONOS_TRADER_CONFIG")
-        if path and Path(path).exists():
+        if path:
+            if not Path(path).exists():     # a typo or a renamed profile must stop the start, not trade the built-in defaults
+                raise FileNotFoundError(f"config file not found: {path}")
             return cls.from_yaml(path)
         return cls()
 

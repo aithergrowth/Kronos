@@ -552,7 +552,7 @@ result (790 starts, February 2024 to March 2026; the month statistics over Febru
 With five markets one slot turns good trades away (74 % funded); two slots, one per market, keep the pass rate of three
 markets at 1.5 % and shorten phase 1 from 56 to 42 days; a month in the best quarter makes +10.5 % or more. Taken
 from 5 October: risk 1.5 % (Max's choice), `prop_firm.max_open_trades: 2` with `max_open_per_symbol: 1` (new in the
-guard), GBPUSD and NAS100 in `scripts/start_live.bat`. The guard's 8 % now counts from the initial balance
+guard), GBPUSD and NAS100 in `scripts/start_live.bat` (NAS100 later moved to `scripts/start_ftmo.bat`: MetaQuotes-Demo has no Nasdaq-100). The guard's 8 % now counts from the initial balance
 (`drawdown_basis: initial`) like FTMO's static 10 %: from the peak it stopped the bot after an ordinary swing back from
 a gain (8 % is 5.3R at 1.5 %), which the challenge simulations never counted as a failure. Running: BTC in the
 morning session only, break-even at +1R and two BTC trades at once (each in yearly chunks), and AUDUSD, USDCAD,

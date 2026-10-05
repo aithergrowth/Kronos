@@ -29,7 +29,10 @@ DEFAULT_TIMEFRAMES = [Timeframe.MIN_5, Timeframe.MIN_15, Timeframe.H_1, Timefram
 
 
 def _load_settings(args) -> Settings:
-    settings = Settings.load(getattr(args, "config", None))
+    try:
+        settings = Settings.load(getattr(args, "config", None))
+    except FileNotFoundError as exc:
+        raise SystemExit(f"{exc}: not started (a missing profile would trade the built-in defaults). Check the --config path.")
     kronos_mode = getattr(args, "kronos", None)
     if kronos_mode:
         settings.kronos.mode = kronos_mode
@@ -321,6 +324,25 @@ def _feed(args, settings: Settings, broker):
     return kind, feed
 
 
+def _valid_clock(text: str) -> bool:
+    import re
+    m = re.fullmatch(r"(\d{1,2}):(\d{2})", str(text).strip())
+    return bool(m) and int(m.group(1)) < 24 and int(m.group(2)) < 60
+
+
+def _parse_steps(text: str):
+    """``-3:1.0,-6:0.5`` -> ((-3.0, 1.0), (-6.0, 0.5)); ``none`` -> ()."""
+    if str(text).strip().lower() in ("", "none", "off"):
+        return ()
+    try:
+        steps = tuple(tuple(float(x) for x in part.split(":")) for part in str(text).split(",") if part.strip())
+    except ValueError:
+        steps = ((0.0,),)
+    if any(len(st) != 2 or st[0] >= 0 or not 0 < st[1] <= 5 for st in steps):
+        raise SystemExit(f"--drawdown-steps {text!r}: give level:risk pairs below the start, e.g. -3:1.0,-6:0.5")
+    return steps
+
+
 def _print_margin(broker, settings: Settings, symbol: str, currency: str) -> None:
     """The server's margin for one lot and the leverage it implies, with what the live loop does about it."""
     from .core.types import Direction
@@ -348,6 +370,14 @@ def cmd_live(args) -> int:
         settings.account_size = float(args.account_size)
     if getattr(args, "weekend_close", None):
         settings.prop_firm.weekend_close = args.weekend_close
+    if settings.prop_firm.weekend_close and not _valid_clock(settings.prop_firm.weekend_close):
+        raise SystemExit(f"weekend close {settings.prop_firm.weekend_close!r} is not a time like 16:45 (New York)")
+    if getattr(args, "risk_pct", None):
+        if not 0 < args.risk_pct <= 5:
+            raise SystemExit(f"--risk-pct {args.risk_pct} is outside 0-5 %")
+        settings.risk.risk_pct = float(args.risk_pct)
+    if getattr(args, "drawdown_steps", None):
+        settings.risk.drawdown_steps = _parse_steps(args.drawdown_steps)
     if getattr(args, "journal", None):
         settings.live.journal_path = args.journal
         settings.live.charts_dir = str(Path(args.journal).parent / "charts")
@@ -652,6 +682,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--tag", help="a label in front of every Telegram message, e.g. FTMO, when two accounts share the chat")
     sp.add_argument("--weekend-close", metavar="HH:MM", help="flat by this Friday time (New York) and no new trade until the "
                     "Sunday open, e.g. 16:45 on a funded FTMO Standard account (prop_firm.weekend_close)")
+    sp.add_argument("--risk-pct", type=float, help="risk per trade in %% of equity, in place of the profile's (e.g. 1.0 on a "
+                    "funded account)")
+    sp.add_argument("--drawdown-steps", help="risk.drawdown_steps in place of the profile's: level %%:risk %% pairs below the "
+                    "start, e.g. --drawdown-steps=-3:0.5 (the = keeps the minus sign from reading as a flag); 'none' for none")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")

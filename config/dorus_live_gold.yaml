@@ -3,8 +3,8 @@
 # required) gold gives 84 trades, 38 %, +7.8R over 2023-2026 with a -19.8R drawdown and a run through 10 % static in May 2024;
 # with two of 1D/4H/1H aligned (the 1H still required) 163 trades, 44 %, +27.6R, every year positive (2023 +3.5, 2024 +7.7,
 # 2025 +6.1, 2026 +10.3), drawdown -12.9R, never 10 % under the start at 1 % risk. The same gate loses on EURUSD and GBPUSD
-# (2023-2026 EURUSD -7.3R), so it is gold's reading only. Everything else as the live profile; the guard halts at the 8 % peak
-# drawdown, which this reading touched once (peak -12.2 % at 1 %), so the demo may see a halt where the backtest ran on.
+# (2023-2026 EURUSD -7.3R), so it is gold's reading only. Everything else as the live profile, the account guard included
+# (-8 % static from the start since 5 October; from the peak this reading would have touched the halt once, peak -12.2 % at 1 %).
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
   full_combos: [[1M, 1W, 1D], [1M, 1D, 1H], [1D, 1H], [4H, 1H]]   # gold, 4 October: two of 1D/4H/1H with the 1H is a match

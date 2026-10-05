@@ -55,7 +55,7 @@ class FakeMT5:
         return (500, 4000, "01 Jan 2026")
 
     def account_info(self):
-        return SimpleNamespace(login=62724281, server="MetaQuotes-Demo", currency="EUR", balance=50000.0,
+        return SimpleNamespace(login=11112222, server="MetaQuotes-Demo", currency="EUR", balance=50000.0,
                                equity=50010.0, leverage=100, trade_mode=0)
 
     def terminal_info(self):
@@ -139,14 +139,14 @@ class FakeMT5:
 def broker(monkeypatch):
     for key in ("MT5_PATH", "MT5_SERVER_OFFSET_HOURS"):
         monkeypatch.delenv(key, raising=False)
-    monkeypatch.setenv("MT5_LOGIN", "62724281")
+    monkeypatch.setenv("MT5_LOGIN", "11112222")
     monkeypatch.setenv("MT5_PASSWORD", "pw")
     monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
     return MT5Broker(Settings(), api=FakeMT5(), clock=lambda: NOW)
 
 
 def test_initialize_uses_the_environment(broker):
-    assert broker.mt5.init_kwargs == {"login": 62724281, "password": "pw", "server": "MetaQuotes-Demo"}
+    assert broker.mt5.init_kwargs == {"login": 11112222, "password": "pw", "server": "MetaQuotes-Demo"}
     d = broker.diagnostics()
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
 
@@ -160,7 +160,7 @@ def test_without_credentials_the_terminal_account_is_used(monkeypatch):
 
 def test_initialize_failure_names_the_account(monkeypatch):
     monkeypatch.setenv("MT5_PATH", r"C:\mt5\terminal64.exe")
-    monkeypatch.setenv("MT5_LOGIN", "62724281")
+    monkeypatch.setenv("MT5_LOGIN", "11112222")
     monkeypatch.setenv("MT5_PASSWORD", "pw")
     monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
 
@@ -172,7 +172,7 @@ def test_initialize_failure_names_the_account(monkeypatch):
         def last_error(self):
             return (-6, "Terminal: Authorization failed")
 
-    with pytest.raises(RuntimeError, match="for login 62724281 on MetaQuotes-Demo.*Authorization failed"):
+    with pytest.raises(RuntimeError, match="for login 11112222 on MetaQuotes-Demo.*Authorization failed"):
         MT5Broker(Settings(), api=Refusing(), clock=lambda: NOW)
 
 
@@ -516,7 +516,7 @@ def test_reconnect_stays_on_its_terminal_and_its_account(monkeypatch):
     api = FlakyMT5()
     b = MT5Broker(Settings(), api=api, clock=lambda: NOW)
     b.terminal_path = r"C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-    b.account_login = 62724281
+    b.account_login = 11112222
     seen = []
     real_init = api.initialize
 
@@ -526,11 +526,11 @@ def test_reconnect_stays_on_its_terminal_and_its_account(monkeypatch):
     api.initialize = init
     api.down = True
     assert b.connection_ok() == (True, "ok") and seen == [b.terminal_path]
-    api.account_info = lambda: SimpleNamespace(login=531000123, server="FTMO-Demo", currency="USD", balance=10000.0,
+    api.account_info = lambda: SimpleNamespace(login=33334444, server="FTMO-Demo", currency="USD", balance=10000.0,
                                                equity=10000.0, leverage=100, trade_mode=0)
     ok, reason = b.connection_ok()
-    assert not ok and "531000123" in reason and "62724281" in reason
-    monkeypatch.setenv("MT5_LOGIN", "62724281"); monkeypatch.setenv("MT5_PASSWORD", "pw"); monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
+    assert not ok and "33334444" in reason and "11112222" in reason
+    monkeypatch.setenv("MT5_LOGIN", "11112222"); monkeypatch.setenv("MT5_PASSWORD", "pw"); monkeypatch.setenv("MT5_SERVER", "MetaQuotes-Demo")
     monkeypatch.delenv("MT5_PATH", raising=False)
     monkeypatch.setattr(mod, "terminal_candidates", lambda: [r"C:\\Program Files\\MetaTrader 5\\terminal64.exe",
                                                               r"C:\\Program Files\\FTMO MetaTrader 5\\terminal64.exe"])
@@ -606,3 +606,58 @@ def test_startup_shows_the_servers_leverage(capsys):
     assert "ties up 3,667 USD at 1.10005 (about 1:30)" in out and "45 % of equity" in out
     _print_margin(MT5Broker(s, api=FakeMT5(), clock=lambda: NOW), s, "EURUSD", "USD")       # no order_calc_margin: silent
     assert capsys.readouterr().out == ""
+
+
+def test_a_restored_position_at_break_even_keeps_its_original_risk():
+    """At break-even the position's own stop sits on the entry: after a restart its risk comes from the stop of the order
+    that opened it (history_orders_get), so the close is measured in the R it was opened with, not as 0R."""
+    class OrdersMT5(EuroAccountMT5):
+        opened_sl = {}
+
+        def history_orders_get(self, position=None):
+            return [SimpleNamespace(ticket=position, position_id=position, sl=self.opened_sl[position], time_setup=1,
+                                    time_setup_msc=1000)]
+    api = OrdersMT5()
+    first = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    pos = first.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0950, 1.1200, 500.0, 0.0051, 4.0,
+                                   meta={"comment": "1HPOI BS"}, ts=NOW)
+    api.opened_sl[int(pos.id)] = 1.0950
+    first.modify_stop(pos.id, 1.1001)                                          # moved to break-even
+    back = MT5Broker(Settings(), api=api, clock=lambda: NOW).open_positions()[0]
+    assert back.stop == pytest.approx(1.1001) and back.breakeven_done
+    assert back.risk_distance == pytest.approx(1.1001 - 1.0950) and back.initial_stop == pytest.approx(1.0950)
+    assert back.risk_amount == pytest.approx((1.1001 - 1.0950) * 86_000, rel=1e-6)
+    assert back.r_at(1.1001 + 2 * (1.1001 - 1.0950)) == pytest.approx(2.0)
+
+
+def test_positions_the_terminal_does_not_list_are_an_error():
+    """positions_get() answers None on an error: that is not "no positions" (the guard would count no open trade)."""
+    class Silent(FakeMT5):
+        def positions_get(self, symbol=None):
+            return None
+    with pytest.raises(RuntimeError, match="did not list the open positions"):
+        MT5Broker(Settings(), api=Silent(), clock=lambda: NOW).open_positions()
+
+
+def test_another_windows_market_keeps_the_servers_spelling():
+    """Only the NAS100 window knows US100.cash: in the other windows the position keeps the server's spelling, so a
+    terminal that matches names case-sensitively still prices its stop and the guard counts its risk."""
+    from kronos_trader.execution import RiskGuard
+
+    class CaseSensitive(EuroAccountMT5):
+        known = FakeMT5.known + ("US100.cash",)
+
+        def __getattr__(self, item):
+            if item == "order_calc_profit":
+                return lambda kind, name, lots, o, c: round((c - o) * lots * 0.86, 6) if name in self.known else None
+            raise AttributeError(item)
+    api = CaseSensitive()
+    nas = Settings()
+    nas.symbol("NAS100").mt5_symbol = "US100.cash"
+    MT5Broker(nas, api=api, clock=lambda: NOW).place_market_order("NAS100", Direction.LONG, 2.0, 1.0, 2.0, 10.0, 0.1, 4.0,
+                                                                   ts=NOW)
+    eu = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    other = eu.open_positions()[0]
+    assert other.symbol == "US100.cash" and eu.mt5_symbol("US100.cash") == "US100.cash"
+    assert other.risk_amount == pytest.approx((1.1001 - 1.0) * 2.0 * 0.86, rel=1e-6)
+    assert RiskGuard.open_risk(eu) == pytest.approx(other.risk_amount)
