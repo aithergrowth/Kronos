@@ -864,5 +864,5 @@ above), for the same edge on a third more trades.
 +28.4R, -23.7R drawdown; uncapped: +35.1R, -22.0R; the profile: +52.0R, -13.3R), and 2020-2023 stays negative in
 all three. In the challenge replay from June 2020, EURUSD, gold and NAS100 at R:R 1.5 are funded from 75 % of the
 starts (2020-2022: 55 %). With the profile's BTC added it is 42 % (2020-2022: 9 %): the variance of a market with
-no edge outside one year. `scripts/start_ftmo.bat` now opens EURUSD, gold and NAS100. BTC stays on the demo's own
-paper account as an observation.
+no edge outside one year. Max's decision (5 October): BTC stays in `scripts/start_ftmo.bat`. The bot trades the
+present, not 2020, and on FTMO the margin cap trades BTC at roughly half size anyway.

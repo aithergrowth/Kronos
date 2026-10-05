@@ -4,7 +4,6 @@ rem BTCUSD on Bitstamp prices with paper fills. Double-click this file in Explor
 rem Before: MT5 open and logged in, Algo Trading on. To stop a market, press Ctrl+C in its window or close it.
 rem NAS100 is left out: MetaQuotes-Demo has no Nasdaq-100 (5 October: the window ran on stale cached bars). GBPUSD is out
 rem since 5 October: -25.3R over 2017-2026 on the corrected HistData clock (docs/backtests/winrate/README.md).
-rem BTCUSD runs here on its own paper account as an observation only; it is out of the FTMO set (start_ftmo.bat).
 rem Your own settings go in scripts\live_local.bat (not in git, so an update never clashes with them), e.g.
 rem   set "MT5_PATH=D:\MetaTrader 5\terminal64.exe"
 rem The pull and the windows sit in one block that ends with exit /b: cmd reads the whole block before it runs it and
