@@ -11,6 +11,10 @@ bias:
                                               # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
   required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
                                   # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
+  no_trade_against: [1W]          # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
+                                  # plaatsen" (A 01:58:37-01:59:24). EURUSD 2023-2026: 58 trades, 55 %, +21.1R, drawdown -5.3R against 73,
+                                  # 49 %, +11.8R, -11.3R (`eu_against_w_full`); chosen on EURUSD, GBPUSD agrees (kept 43, 58 %, +12.7R
+                                  # against 62, +8.2R). The monthly is left out: on EURUSD the monthly-against trades won (14, 71 %)
 confirmation:
   allow_first_candle: false
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)

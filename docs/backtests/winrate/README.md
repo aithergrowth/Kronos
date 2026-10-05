@@ -420,6 +420,32 @@ All markets together at 1 %: phase 1 in a median of about three and a half month
 weeks or less, funded in a median of four and a half months, one start in nine fails. 1.5 % halves the time and fails
 one start in four. No single market comes close; the markets together are what makes it work.
 
+### The higher-timeframe veto, run (5 October): into the profiles
+
+| Market | Run | Trades | Win | Sum R | Max dd | Per year | At 1 % |
+|---|---|---|---|---|---|---|---|
+| EURUSD 2023-2026 | profile, the book | 73 | 49 % | +11.8R | -11.3R | -0.6 / -6.1 / +12.5 / +5.9 | +11.7k, once 10 % under the start |
+| | **no trade against the weekly (`eu_against_w_full`)** | **58** | **55 %** | **+21.1R** | **-5.3R** | +2.3 / -1.4 / +12.2 / +7.9 | **+22.7k, never** |
+| | no trade against the monthly or the weekly (`eu_against_mw_full`) | 47 | 51 % | +13.0R | -6.7R | +2.3 / -5.7 / +10.0 / +6.3 | +13.3k, never |
+| Gold 2023-2026 | profile, two of 1D/4H/1H | 163 | 44 % | +27.6R | -12.9R | +3.5 / +7.7 / +6.1 / +10.3 | +29.0k |
+| | **no trade against the monthly or the weekly (`gold_against_mw_full`)** | **129** | **46 %** | **+30.4R** | **-10.8R** | +6.9 / +8.1 / +7.1 / +8.2 | **+33.0k** |
+
+The runs match the ledger estimates almost trade for trade: the veto removes trades and changes little else. The
+weekly veto was chosen on EURUSD; GBPUSD, not used to choose it, agrees on its ledger (the 19 weekly-against trades won
+32 % for -4.5R, the 43 kept 58 % for +12.7R against 62 trades, +8.2R). In the profiles from 5 October:
+`config/dorus_live.yaml` and `config/dorus_pilot.yaml` `no_trade_against: [1W]` (version 4), `config/dorus_live_gold.yaml`
+`[1M, 1W]`; BTC none (its trades against the higher timeframes won more often).
+
+Challenge (`scripts/challenge_sim.py`, 790 starts, EURUSD + gold with the veto + BTC with the 2R cap):
+
+| Risk | Funded | Failed | Phase 1 | Phase 2 | To funded |
+|---|---|---|---|---|---|
+| 1 % | 91 % | 9 % | 54 / 104 / 191 | 27 / 35 / 62 | 113 / 164 / 241 |
+| 1.5 % | 85 % | 15 % | 33 / 65 / 116 | 18 / 33 / 62 | 77 / 113 / 184 |
+
+The veto does not make the challenge faster (fewer trades), it makes it safer: at 1.5 % the failures drop from 26 %
+to 15 % because the drawdowns halve. That buys the higher risk.
+
 Results of the anatomy runs (zone age, scalps, the 10:00 start, gold's 1D+1H pair), the higher-timeframe veto runs,
 the BTC cap at 1.5R and 2.5R (a plateau check) and the Kronos filter judged on the profiles' trades are added below
 when they finish.
