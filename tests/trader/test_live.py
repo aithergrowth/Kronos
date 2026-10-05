@@ -566,3 +566,24 @@ def test_account_lock_serialises_and_never_blocks_for_good(tmp_path):
     os.utime(path, (old, old))                                              # left behind by a killed window
     with AccountLock(path, timeout=0.2) as third:
         assert third.held
+
+
+def test_a_paper_window_keeps_its_account_across_a_restart(setup):
+    """With keep_paper_account (the CLI sets it for --broker paper, the BTC window) the balance, the open trades and the
+    recent closed P&L come back after a restart; the position ids go on where they stopped."""
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True)
+    runner.step(NOW)
+    pos = broker.open_positions()[0]
+    broker._balance = 101_234.5
+    broker._restored_realized = [(NOW - pd.Timedelta(hours=2), -500.0)]
+    runner.save_paper()
+    fresh = PaperBroker(Settings())
+    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True)
+    assert fresh.balance() == pytest.approx(101_234.5)
+    back = fresh.open_positions()[0]
+    assert (back.id, back.direction, back.lots, back.entry, back.stop, back.breakeven_r) == \
+        (pos.id, pos.direction, pos.lots, pos.entry, pos.stop, pos.breakeven_r)
+    assert fresh.realized_pnl_since(NOW - pd.Timedelta(hours=3)) == pytest.approx(-500.0)
+    assert fresh.place_market_order("EURUSD", Direction.SHORT, 1.0, 1.11, 1.09, 100.0, 0.01, 4.0, price=1.1, ts=NOW).id == "P2"

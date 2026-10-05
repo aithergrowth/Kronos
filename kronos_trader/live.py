@@ -205,6 +205,7 @@ class LiveRunner:
         approval_timeout_minutes: Optional[int] = None,
         notify_every_scan: Optional[bool] = None,
         clock: Optional[Callable[[], pd.Timestamp]] = None,
+        keep_paper_account: bool = False,
     ):
         self.settings = settings
         self.symbol = symbol.upper()
@@ -242,6 +243,11 @@ class LiveRunner:
         self.traded_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"traded_{self.symbol}.json"
                                             if settings.live.journal_path else None)
         self.lock_path: Optional[Path] = Path(settings.live.journal_path).parent / "account.lock" if settings.live.journal_path else None
+        # a paper account (BTC on Bitstamp prices) keeps its balance and open trades across a restart
+        self.paper_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"paper_{self.symbol}.json"
+                                           if keep_paper_account and settings.live.journal_path
+                                           and callable(getattr(broker, "restore", None)) else None)
+        self.load_paper()
         self.load_traded()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
@@ -277,6 +283,7 @@ class LiveRunner:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
             self.notifier.send_analysis(analysis, self.spec)
+        self.save_paper()
         return analysis
 
     def note(self, event: str, now: Optional[pd.Timestamp] = None, **fields) -> None:
@@ -322,6 +329,27 @@ class LiveRunner:
         elif self._algo_on is False:
             self.notifier.send(f"✅ {self.symbol}: Algo Trading staat weer aan in MT5.")
         self._algo_on = on
+
+    def load_paper(self) -> None:
+        if self.paper_path is None or not self.paper_path.exists():
+            return
+        try:
+            self.broker.restore(json.loads(self.paper_path.read_text(encoding="utf-8")))
+            n = len(self.broker.open_positions())
+            print(f"[live] {self.symbol}: paper account restored: balance {self.broker.balance():,.2f}, {n} open trade(s)")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: paper account not restored ({exc}); starting fresh")
+
+    def save_paper(self) -> None:
+        if self.paper_path is None:
+            return
+        try:
+            self.paper_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.paper_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self.broker.state(), indent=1), encoding="utf-8")
+            os.replace(tmp, self.paper_path)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: paper account not saved ({exc})")
 
     def load_traded(self) -> None:
         """Zones this market traded per visit, from the file the last run left (none when there is no file)."""

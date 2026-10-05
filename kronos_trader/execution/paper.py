@@ -34,6 +34,7 @@ class PaperBroker(Broker):
         self._last_price: Dict[str, float] = {}
         self._ids = itertools.count(1)
         self._close_cursor = 0
+        self._restored_realized: List[Tuple[pd.Timestamp, float]] = []   # closes before a restart (day/month baselines)
 
     def recent_closes(self) -> List[ClosedTrade]:
         out = self.closed[self._close_cursor:]
@@ -84,8 +85,43 @@ class PaperBroker(Broker):
         return self._balance
 
     def realized_pnl_since(self, since: pd.Timestamp) -> float:
-        """Closed P&L since ``since`` (naive UTC)."""
-        return float(sum(t.pnl for t in self.closed if t.closed_at is not None and t.closed_at >= pd.Timestamp(since)))
+        """Closed P&L since ``since`` (naive UTC), the closes from before a restart included."""
+        since = pd.Timestamp(since)
+        now = sum(t.pnl for t in self.closed if t.closed_at is not None and t.closed_at >= since)
+        return float(now + sum(p for at, p in self._restored_realized if at >= since))
+
+    # ------------------------------------------------------------ restart memory
+    def state(self) -> Dict[str, Any]:
+        """Balance, open positions and the last 500 closes' P&L as plain JSON values, so a live paper window (BTC on
+        Bitstamp prices) keeps its account, and its day and month baselines, across a restart."""
+        realized = [(str(at), p) for at, p in self._restored_realized]
+        realized += [(str(t.closed_at), float(t.pnl)) for t in self.closed if t.closed_at is not None]
+        realized = realized[-500:]
+        positions = []
+        for p in self.positions.values():
+            positions.append({"id": p.id, "symbol": p.symbol, "direction": p.direction.name, "lots": p.lots, "entry": p.entry,
+                              "stop": p.stop, "take_profit": p.take_profit, "opened_at": str(p.opened_at),
+                              "risk_amount": p.risk_amount, "risk_distance": p.risk_distance, "breakeven_r": p.breakeven_r,
+                              "initial_stop": p.initial_stop, "breakeven_done": p.breakeven_done, "status": p.status,
+                              "meta": {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v)) for k, v in p.meta.items()}})
+        ids = [int(p.id[1:]) for p in self.positions.values() if p.id[1:].isdigit()]
+        return {"balance": self._balance, "initial_balance": self.initial_balance, "next_id": max(ids + [0]) + 1,
+                "positions": positions, "realized": realized}
+
+    def restore(self, state: Dict[str, Any]) -> None:
+        self._balance = float(state.get("balance", self._balance))
+        self.initial_balance = float(state.get("initial_balance", self.initial_balance))
+        self.positions = {}
+        for d in state.get("positions", []):
+            pos = Position(id=str(d["id"]), symbol=str(d["symbol"]), direction=Direction[d["direction"]], lots=float(d["lots"]),
+                           entry=float(d["entry"]), stop=float(d["stop"]), take_profit=float(d["take_profit"]),
+                           opened_at=pd.Timestamp(d["opened_at"]), risk_amount=float(d["risk_amount"]),
+                           risk_distance=float(d["risk_distance"]), breakeven_r=float(d["breakeven_r"]),
+                           initial_stop=float(d["initial_stop"]), breakeven_done=bool(d.get("breakeven_done", False)),
+                           meta=dict(d.get("meta") or {}), status=str(d.get("status", "filled")))
+            self.positions[pos.id] = pos
+        self._ids = itertools.count(int(state.get("next_id", 1)))
+        self._restored_realized = [(pd.Timestamp(at), float(p)) for at, p in state.get("realized", [])]
 
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
         if symbol is None:

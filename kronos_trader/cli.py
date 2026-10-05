@@ -347,7 +347,7 @@ def cmd_live(args) -> int:
     runner = LiveRunner(settings, symbol, fetch, broker=broker, notifier=notifier,
                         engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,
-                        notify_every_scan=args.notify_every_scan)
+                        notify_every_scan=args.notify_every_scan, keep_paper_account=args.broker == "paper")
     mode = "EXECUTE" if args.execute else "dry-run"
     print(f"live {symbol}: broker={args.broker} feed={kind} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")
