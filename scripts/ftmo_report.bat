@@ -6,6 +6,8 @@ rem Reads only: it sends no order and changes nothing. Writes journal_ftmo\repor
 rem Your own values (ACCOUNT, NAS_NAME, BTC_NAME, PRODUCT) come from scripts\ftmo_local.bat, as for start_ftmo.bat.
 cd /d "%~dp0.."
 set "MT5_PATH=C:\Program Files\FTMO MetaTrader 5\terminal64.exe"
+rem FTMO's own installer puts the terminal here (6 October, Max's laptop)
+if exist "C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe" set "MT5_PATH=C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"
 set "ACCOUNT=10000"
 set "NAS_NAME=US100.cash"
 set "BTC_NAME=BTCUSD"

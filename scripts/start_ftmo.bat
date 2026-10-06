@@ -18,13 +18,15 @@ rem                                                           1.25 with ftmo_2st
 rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
 rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
 rem To list the server's names, in PowerShell in the Kronos folder:
-rem   $env:MT5_PATH="C:\Program Files\FTMO MetaTrader 5\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
+rem   $env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
 rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
 rem Out since 5 October (docs/backtests/winrate/README.md): GBPUSD (-25.3R over 2017-2026 on the corrected clock). BTCUSD
 rem stays (Max, 5 October); FTMO's crypto leverage makes the margin cap trade it smaller.
 rem The pull and the windows sit in one block that ends with exit /b (see start_live.bat).
 cd /d "%~dp0.."
 set "MT5_PATH=C:\Program Files\FTMO MetaTrader 5\terminal64.exe"
+rem FTMO's own installer puts the terminal here (6 October, Max's laptop)
+if exist "C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe" set "MT5_PATH=C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"
 set "ACCOUNT=10000"
 set "NAS_NAME=US100.cash"
 set "BTC_NAME=BTCUSD"
