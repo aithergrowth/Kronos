@@ -826,3 +826,38 @@ def test_the_spread_report_compares_the_live_spread_with_the_backtest_and_the_ca
     assert "cap refuses stops under 3.3 pips" in lines[0]
     api.bid = api.ask = 0.0
     assert "no prices" in spread_report(broker, settings, ["EURUSD"], minutes=0, sleep=lambda s: None, clock=lambda: 0.0)[0]
+
+
+def test_a_terminal_answering_not_found_means_nothing_open():
+    """Build 6244 (the FTMO terminal, 6 October) answers positions_get / orders_get / history_deals_get that match nothing
+    with None and (-4, 'Terminal: Not found'): that is no position, no order, no deal - not a failure. Any other None stays
+    an error (the guard must never count a failed answer as no risk)."""
+    from kronos_trader.execution import RiskGuard
+
+    class NewBuild(LimitMT5):
+        error = (-4, "Terminal: Not found")
+
+        def last_error(self):
+            return self.error
+
+        def positions_get(self, symbol=None):
+            found = [p for p in self.positions if symbol is None or p.symbol == symbol]
+            return tuple(found) if found else None
+
+        def orders_get(self, symbol=None):
+            found = [o for o in self.orders if symbol is None or o.symbol == symbol]
+            return tuple(found) if found else None
+
+        def history_deals_get(self, *args, position=None, ticket=None):
+            found = super().history_deals_get(*args, position=position, ticket=ticket)
+            return tuple(found) if found else None
+    api = NewBuild()
+    broker = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    assert broker.open_positions("EURUSD") == [] and broker.open_positions() == [] and broker.limit_orders("EURUSD") == []
+    assert RiskGuard.open_risk(broker) == 0.0 and broker.realized_pnl_since(NOW - pd.Timedelta(days=1)) == 0.0
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.1200, 500.0, 0.0051, 4.0, ts=NOW)
+    assert [p.id for p in broker.open_positions("EURUSD")] == [pos.id] and broker.open_positions("XAUUSD") == []
+    api.error = (-10001, "IPC send failed")
+    with pytest.raises(RuntimeError, match="did not list the open positions"):
+        broker.open_positions("XAUUSD")
+    assert broker.realized_pnl_since(NOW - pd.Timedelta(days=30)) is not None      # deals exist: read as before

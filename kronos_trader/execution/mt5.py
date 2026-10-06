@@ -42,6 +42,8 @@ def utc_now() -> pd.Timestamp:
 HOUR = pd.Timedelta(1, unit="h")
 INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
 INVALID_EXPIRATION = 10022  # TRADE_RETCODE_INVALID_EXPIRATION: the server does not take this order expiry
+NOT_FOUND = -4              # RES_E_NOT_FOUND: newer terminals (build 6244, FTMO, 6 October) answer a filter that matches nothing
+                            # (no position, no pending order, no deal yet) with None and this code instead of an empty tuple
 NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
 WEEK_CLOSE_BARS = 3 * 7 * 48  # three weeks of M30 bars: at least two weekend gaps to read the close from
 
@@ -520,7 +522,10 @@ class MT5Broker(Broker):
         start = pd.Timestamp(since) + self.server_offset() - pd.Timedelta(days=1)      # server time, a day early
         deals = self.mt5.history_deals_get(start.to_pydatetime(), (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
         if deals is None:
-            return None
+            err = self.mt5.last_error()
+            if not ((err[0] if isinstance(err, (tuple, list)) and err else err) == NOT_FOUND):
+                return None
+            deals = ()                                   # no deal in the range yet (a new account): nothing closed
         trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
         total = 0.0
         for d in deals:
@@ -529,10 +534,20 @@ class MT5Broker(Broker):
             total += self._deal_pnl([d]) + float(getattr(d, "fee", 0.0) or 0.0)
         return total
 
+    def _listed(self, raw, what: str):
+        """``raw`` from a positions/orders/deals query: itself, an empty tuple when the terminal says nothing matched
+        (NOT_FOUND), else an error - None for any other reason is not "nothing": the guard would count no trade and no risk."""
+        if raw is not None:
+            return raw
+        err = self.mt5.last_error()
+        code = err[0] if isinstance(err, (tuple, list)) and err else err
+        if code == NOT_FOUND:
+            return ()
+        raise RuntimeError(f"MT5 did not list {what}: {err}")
+
     def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
-        raw = self.mt5.positions_get(symbol=self.mt5_symbol(symbol)) if symbol else self.mt5.positions_get()
-        if raw is None:         # an error, not "no positions": the guard would count no open trade and no risk
-            raise RuntimeError(f"MT5 did not list the open positions: {self.mt5.last_error()}")
+        raw = self._listed(self.mt5.positions_get(symbol=self.mt5_symbol(symbol)) if symbol else self.mt5.positions_get(),
+                           "the open positions")
         out: List[Position] = []
         for p in raw:
             if p.magic != self.magic:
@@ -700,9 +715,7 @@ class MT5Broker(Broker):
         get = getattr(self.mt5, "orders_get", None)
         if get is None:
             return []
-        raw = get(symbol=self.mt5_symbol(symbol)) if symbol else get()
-        if raw is None:
-            raise RuntimeError(f"MT5 did not list the pending orders: {self.mt5.last_error()}")
+        raw = self._listed(get(symbol=self.mt5_symbol(symbol)) if symbol else get(), "the pending orders")
         kinds = {getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2), getattr(self.mt5, "ORDER_TYPE_SELL_LIMIT", 3)}
         return [o for o in raw if int(getattr(o, "magic", 0)) == int(self.magic) and int(getattr(o, "type", -1)) in kinds]
 
