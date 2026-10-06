@@ -50,7 +50,7 @@ in the MT5 terminal and tokens in environment variables.
 - The open-slot and worst-case checks and the order run under one lock shared by the account's windows. A window that
   cannot get the lock defers the entry and tries again every scan until it expires; it never trades without it.
 - Every start writes a `start` row to the journal and `starts/<symbol>_<time>.json` next to it: code revision, source
-  hash, resolved settings (secrets as variable names only) and their hash. Each forward trade traces to the program
+  hash, package versions, resolved settings (secrets as variable names only) and their hash. Each forward trade traces to the program
   and the profile that took it; `python -m kronos_trader journal` summarises the forward record.
 
 ## In the code, measured, not used

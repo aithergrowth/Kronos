@@ -632,6 +632,7 @@ def test_a_live_start_records_the_code_and_the_settings_without_secrets(setup, t
     assert "never-in-a-file" not in text and "TELEGRAM_BOT_TOKEN" in text
     record = _json.loads(text)
     assert record["code"]["commit"] == "abc123def4567890" and record["settings_sha256"] == "e" * 64 and record["symbol"] == "EURUSD"
+    assert record["versions"]["pandas"] == pd.__version__ and record["versions"]["python"]
     rows = pd.read_csv(settings.live.journal_path)
     start = rows[rows.event == "start"].iloc[0]
     assert "code abc123def456" in start.note and "settings eeeeeeeeeeee" in start.note

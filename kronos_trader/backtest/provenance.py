@@ -48,6 +48,18 @@ def code_snapshot(cwd: Optional[str] = None) -> Dict[str, Any]:
     return doc
 
 
+def package_versions() -> Dict[str, Optional[str]]:
+    """Python and the installed versions of the packages the trader runs on (None when not installed)."""
+    from importlib import metadata
+    out: Dict[str, Optional[str]] = {"python": platform.python_version()}
+    for pkg in ("pandas", "numpy", "PyYAML", "requests", "MetaTrader5", "ib_async", "torch"):
+        try:
+            out[pkg] = metadata.version(pkg)
+        except Exception:
+            out[pkg] = None
+    return out
+
+
 def git_revision(cwd: Optional[str] = None) -> Dict[str, Any]:
     try:
         rev = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=cwd, check=True).stdout.strip()

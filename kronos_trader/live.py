@@ -318,9 +318,10 @@ class LiveRunner:
         try:
             path = Path(self.settings.live.journal_path).parent / "starts" / f"{self.symbol}_{pd.Timestamp(now):%Y%m%d_%H%M%S}.json"
             path.parent.mkdir(parents=True, exist_ok=True)
+            from .backtest.provenance import package_versions
             doc = {"symbol": self.symbol, "started_utc": str(now), "command": command,
                    "code": {k: code.get(k) for k in ("commit", "dirty", "local_changes", "source_sha256")},
-                   "settings_sha256": settings_sha, "settings": settings_doc}
+                   "versions": package_versions(), "settings_sha256": settings_sha, "settings": settings_doc}
             path.write_text(json.dumps(doc, indent=1, default=str), encoding="utf-8")
             return path
         except Exception as exc:
