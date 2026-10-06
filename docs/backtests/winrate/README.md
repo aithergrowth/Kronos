@@ -1116,3 +1116,17 @@ in 1.5 % units. As backtested, two BTC trades of June 2026 (+23.9R and +11.8R on
 
 Months without a trade count as zero. 2026 carries the last twelve months; on 2018-2023 the same profiles were weak
 (the challenge replay passed from 14 % of the starts), so the recent months are no promise.
+
+**On 10,000 and at other stakes** (the same months; EURUSD + gold + NAS100 + BTC at FTMO margin; the challenge
+replay with these four ledgers and the funded account at its own stake):
+
+| Challenge stake (steps) | Average month on 10k | Median | Worst | Last 12, average | Challenge funded | Median days |
+|---|---|---|---|---|---|---|
+| 1.0 % (-3:0.75, -6:0.5) | +109 | +113 | -700 | +293 | 91 % | 255 |
+| 1.5 % (-3:1.0, -6:0.5), live | +169 | +108 | -726 | +431 | 90 % | 226 |
+| 2.0 % (-3:1.0, -6:0.5) | +236 | +141 | -768 | +555 | 89 % | 222 |
+| 3.0 % (-3:1.5, -6:0.5) | +303 | -108 | -783 | +828 | 35 % | 160 |
+
+Funded account: 1 % with -3:0.5 lost within a year from 9 % of the starts and pays 0.8 % of the account a month;
+1.5 % with -3:1.0, -6:0.5 from 14 % and 1.1 %; 2 % the same as 1.5 % (the steps cut it). With BTC sized as FTMO's
+margin allows, the 1.5 % challenge passes from 90 % of the starts against 81 % with BTC at full size.
