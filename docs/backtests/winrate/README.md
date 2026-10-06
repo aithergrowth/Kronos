@@ -1048,3 +1048,33 @@ than one 19, 37 %, -4.1R (17 of the 19 on 1H zones). His "op de POI, niet er van
 The gains of 2024-2026 do not hold before: on NAS100 the switches turn +23.6R into -16.3R, on BTC -11.2R into -37.6R.
 Not taken; the switches stay in the code, off. Every variant that looks better on the recent window gets this check
 before it goes into a profile.
+
+**Entries at the zone, and the price gap as a zone** (2024-2026, then 2017-2023 / BTC 2020-2023 for what looked better):
+
+| Variant | Gold | EURUSD | NAS100 | BTC |
+|---|---|---|---|---|
+| live profiles | 84, 48 %, +26.1R, -7.2R | 31, 48 %, +11.2R, -4.0R | 45, 47 %, +21.5R, -5.0R | 142, 49 %, +53.1R, -11.9R |
+| entry at most one zone height outside (`risk.max_entry_outside 1.0`) | 80, 49 %, +28.9R, -7.2R | 29, 48 %, +11.0R, -4.0R | 41, 49 %, +22.7R, -4.0R | 140, 49 %, +50.9R, -12.3R |
+| entry inside the zone only (`entry_outside_zone false`) | 26, 38 %, +5.3R, -6.0R | 13, 23 %, -4.9R, -7.0R | 13, 31 %, -1.6R, -4.0R | 67, 42 %, +37.5R, -10.8R |
+| a gap without liquidity taken is a zone (`structure.poi_gap_zones`) | 113, 47 %, +35.7R, -11.9R | 40, 45 %, +15.3R, -5.0R | 63, 44 %, +25.0R, -6.5R | 181, 48 %, +59.3R, -13.7R |
+| 2017-2023 live profiles | 201, 37 %, +3.6R, -27.6R | 74, 30 %, -2.3R, -13.1R | 114, 36 %, +23.6R, -9.9R | 152, 41 %, -11.2R, -12.5R |
+| 2017-2023 entry cap | 194, 36 %, +0.1R, -28.3R | 70, 29 %, -5.3R, -13.5R | 112, 34 %, +17.9R, -12.2R | 146, 42 %, -8.5R, -12.5R |
+| 2017-2023 gap zones | 247, 36 %, +8.4R, -25.5R | 103, 31 %, -0.4R, -14.1R | 163, 36 %, +22.7R, -11.9R | 188, 42 %, -6.8R, -19.6R |
+
+The entry cap loses its small gain before 2024. The gap zones are the first variant that adds R in both periods (gold,
+EURUSD, BTC; NAS100 level before 2024), with 25-45 % more trades. The challenge replay (`scripts/risk_steps.py`, the
+four markets, two open, 1.5 % with the steps, 0.10R haircut) says what that does to an FTMO account:
+
+| 2024-2026 | Funded | Failed | Median days | Funded account lost within 12 months |
+|---|---|---|---|---|
+| live profiles | 81 % | 19 % | 148 | 13 % |
+| gap zones on all four | 69 % | 31 % | 128 | 32 % |
+| gap zones on gold only | 70 % | 30 % | 135 | 54 % |
+| gap zones on EURUSD and NAS100 | 81 % | 19 % | 160 | 8 % |
+| live profiles at 1 % (steps -3:0.75, -6:0.5) | 90 % | 10 % | 242 | 11 % (0.75 %) |
+| gap zones at 1 % | 71 % | 29 % | 178 | 21 % (0.75 %) |
+
+On 2018-2023 the live profiles pass from 14 % of the starts, gap zones on EURUSD and NAS100 from 13 %, on all four
+from 6 %. More trades at a slightly lower R a trade fail more challenges: the total R rises, the path to +10 % before
+-10 % gets worse. Not taken for the FTMO set; the switch stays in the code, off. Max decided on the bias switches:
+not taken.
