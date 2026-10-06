@@ -414,3 +414,25 @@ def test_zone_age_counts_candles_of_the_zones_own_timeframe():
     assert zone_age_candles(pd.Timestamp("2026-10-01 12:00"), pd.Timestamp("2026-10-01 00:00"), T.H_1) == 12
     assert 5.9 < zone_age_candles(pd.Timestamp("2026-10-01"), pd.Timestamp("2026-04-01"), T.MN_1) < 6.1
     assert zone_age_candles(pd.Timestamp("2026-10-15"), pd.Timestamp("2026-10-01"), T.W_1) == 2
+
+
+def test_poi_in_poi_needs_a_higher_zone_of_the_same_side_that_overlaps():
+    """``confirmation.poi_in_poi`` ("POI in een POI" on his trade-plan board): a zone counts only inside a zone of a higher
+    timeframe in the same direction that is not invalidated."""
+    import pandas as pd
+    from kronos_trader.config import Settings
+    from kronos_trader.core.types import POI, POIStatus
+    from kronos_trader.strategy.engine import _parent_zone
+    assert Settings.from_dict({"confirmation": {"poi_in_poi": True}}).confirmation.poi_in_poi is True
+
+    def zone(tf, side, low, high, status=POIStatus.FRESH):
+        return POI(tf, side, low, high, None, None, 0, pd.Timestamp("2026-10-01"), status=status)
+
+    h1 = zone(T.H_1, Bias.BULLISH, 1.1600, 1.1620)
+    assert _parent_zone(h1, [h1]) is None
+    daily = zone(T.D_1, Bias.BULLISH, 1.1500, 1.1610)
+    assert _parent_zone(h1, [h1, daily]) is daily
+    assert _parent_zone(h1, [zone(T.D_1, Bias.BEARISH, 1.1500, 1.1610)]) is None                    # the other side
+    assert _parent_zone(h1, [zone(T.D_1, Bias.BULLISH, 1.1630, 1.1700)]) is None                    # no overlap
+    assert _parent_zone(h1, [zone(T.D_1, Bias.BULLISH, 1.1500, 1.1610, POIStatus.INVALIDATED)]) is None
+    assert _parent_zone(daily, [daily, h1]) is None                                                 # a lower zone is no parent

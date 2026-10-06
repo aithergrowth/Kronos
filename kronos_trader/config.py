@@ -181,6 +181,9 @@ class ConfirmationParams:
                                         # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)
     max_zone_age_by_tf: Dict[Timeframe, int] = field(default_factory=dict)   # the same limit per zone timeframe, in place of
                                         # max_zone_age_candles for the timeframes it names (0 = no limit there), e.g. {1H: 24}
+    poi_in_poi: bool = False            # a zone is traded only when it lies in a zone of a higher timeframe in the same direction that
+                                        # is not invalidated: "POI in een POI = trade pas plaatsen bij een aantrekkelijke RR" (the DV-Institute
+                                        # trade plan board, between the POI and the entry step). Off = every zone of poi_timeframes
     one_trade_per_visit: bool = False   # a zone traded during a visit is not traded again in that visit: the stop sat on its P, so a stop-out means
                                         # the P was traded through (R6: 46 re-entries after a stop-out on the same zone, 9 % won, -23.7R; first
                                         # attempts 43 %). Off here so the frozen profiles reproduce; on in config/dorus_course.yaml

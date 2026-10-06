@@ -165,6 +165,16 @@ def volatility_percentile(h4: CandleSeries, bars: int = 6, window: int = 360) ->
         return None
     return float((atr <= atr[-1]).mean())
 
+def _parent_zone(poi: POI, pois: List[POI]) -> Optional[POI]:
+    """A zone of a higher timeframe in the same direction, not invalidated, whose range overlaps ``poi``: the "POI in
+    een POI" of the trade plan. None when there is none."""
+    for q in pois:
+        if (q.timeframe > poi.timeframe and q.direction is poi.direction and q.status is not POIStatus.INVALIDATED
+                and q.low <= poi.high and poi.low <= q.high):
+            return q
+    return None
+
+
 def zone_age_candles(now, created_at, timeframe: Timeframe) -> float:
     """How many candles of its own timeframe a zone is old; a month has no fixed length, so a monthly zone is aged in
     average months (dividing by the calendar offset raised a TypeError)."""
@@ -453,6 +463,9 @@ class StrategyEngine:
                 if age > max_age:
                     analysis.rejections.append(f"{label}: zone {age:.0f} {poi.timeframe.label} candles old (max {max_age})")
                     continue
+            if s.confirmation.poi_in_poi and _parent_zone(poi, pois) is None:
+                analysis.rejections.append(f"{label}: not inside a {poi.direction} zone of a higher timeframe (POI in een POI)")
+                continue
             touch_ts, visits, invalid = tracker.observe(poi, lowest, s.confirmation.max_extension_zones)
             if invalid:
                 analysis.rejections.append(f"{label}: invalidated on {lowest_tf.label}")
