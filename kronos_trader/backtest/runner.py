@@ -16,6 +16,7 @@ import pandas as pd
 
 from ..config import Settings
 from ..core.timeframe import Timeframe
+from ..core.types import Direction
 from ..data.resample import MultiTimeframeData
 from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
@@ -149,6 +150,45 @@ class Backtester:
         except Exception as exc:   # pragma: no cover - diagnostics must not stop a run
             print(f"  dossier at {now} failed: {exc}", flush=True)
 
+    def _work_limit(self, pending: Dict, broker: PaperBroker, candle, now, spec, guard: RiskGuard):
+        """One candle for a resting limit entry: filled when the ask (buy) / the bid (sell) reaches it, missed when the target
+        trades first, expired after limit_entry_minutes. A fill sizes on the smaller stop; a stop in the fill's own candle
+        counts as hit. Returns (the order still resting or None, the outcome to count or None)."""
+        s = self.settings
+        setup, limit = pending["setup"], pending["limit"]
+        long = setup.direction.sign > 0
+        ask_off = broker.fill_price(self.symbol, Direction.LONG, 0.0)
+        bid_off = broker.fill_price(self.symbol, Direction.SHORT, 0.0)
+        if long:
+            filled = candle.low + ask_off <= limit
+            target = candle.high + bid_off >= setup.take_profit
+            stopped = candle.low + bid_off <= setup.stop
+        else:
+            filled = candle.high + bid_off >= limit
+            target = candle.low + ask_off <= setup.take_profit
+            stopped = candle.high + ask_off >= setup.stop
+        if not filled:
+            if target:
+                return None, "limit entry: the target traded first"
+            if now >= pending["expires"]:
+                return None, "limit entry: expired unfilled"
+            return pending, None
+        risk_params = stepped_risk(s.risk, broker.balance(), s.account_size)
+        ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * risk_params.risk_pct / 100.0)
+        if not ok:
+            return None, reason
+        lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, broker.equity(), spec, risk_params)
+        if lots <= 0:
+            return None, "limit entry: stop too wide for the minimum lot"
+        pos = broker.place_market_order(self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount, risk_distance,
+                                        setup.breakeven_r, meta={**pending["meta"], "rr_at_fill": round(rr, 2)}, price=limit, ts=now,
+                                        price_is_fill=True)
+        reconcile_risk(pos, broker, risk_amount)
+        guard.record_trade(now)
+        if stopped:                                      # the fill's own candle also traded through the stop: taken as hit
+            broker.close_position(pos.id, "stop", setup.stop, now)
+        return None, None
+
     def run(self) -> BacktestResult:
         t0 = time.time()
         s = self.settings
@@ -164,6 +204,7 @@ class Backtester:
         first_ts = last_ts = None
         last_candle = None
 
+        pending: Optional[Dict] = None                   # a limit entry resting in the market (risk.limit_entry_fraction)
         n = len(step)
         report_every = max(1, n // 20)
         first = step.index_at_or_after(self.start) if self.start is not None else 0     # the candles before the start are skipped
@@ -181,6 +222,10 @@ class Backtester:
             broker.on_candle(self.symbol, candle)
             now = self.step_tf.close_time(ts)
             guard.update(now, broker.equity(), broker.balance())
+            if pending is not None:
+                pending, outcome = self._work_limit(pending, broker, candle, now, spec, guard)
+                if outcome:
+                    guard_reasons[outcome] = guard_reasons.get(outcome, 0) + 1
             views = self.data.as_of(now, lookback=s.structure.lookback)
             analysis = self.engine.analyze(self.symbol, views, equity=broker.equity(), now=now, **self._engine_kwargs)
             for r in analysis.rejections:
@@ -197,6 +242,10 @@ class Backtester:
                 seen.add(key)
                 signals += 1
                 self._write_dossier(now)
+                if pending is not None:
+                    rejected += 1
+                    guard_reasons["a limit entry is working"] = guard_reasons.get("a limit entry is working", 0) + 1
+                    continue
                 ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * stepped_risk(
                     s.risk, broker.balance(), s.account_size).risk_pct / 100.0)
                 if not ok:
@@ -219,10 +268,7 @@ class Backtester:
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     continue
                 fc = analysis.signal.forecast
-                pos = broker.place_market_order(
-                    self.symbol, setup.direction, lots_now, setup.stop, setup.take_profit, risk_amount_now,
-                    risk_distance_now, setup.breakeven_r,
-                    meta={
+                meta = {
                         "poi_tf": setup.poi.timeframe.label, "poi": (setup.poi.low, setup.poi.high),
                         "poi_x": setup.poi.liquidity_level, "poi_p": setup.poi.protector_extreme,
                         "poi_b": ((setup.poi.gap.low, setup.poi.gap.high) if setup.poi.gap is not None else
@@ -241,8 +287,20 @@ class Backtester:
                         "bias_combo": "+".join(tf.label for tf in (analysis.decision.matched_combo or ())),
                         "bias_aligned": "+".join(tf.label for tf in analysis.decision.aligned),
                         "bias_by_tf": " ".join(f"{tf.label}={b.bias}" for tf, b in analysis.biases.items()),
-                    },
-                    price=price_now, ts=now, price_is_fill=True,
+                }
+                frac = float(getattr(s.risk, "limit_entry_fraction", 0.0) or 0.0)
+                if frac > 0:
+                    # a limit order part-way back toward the stop instead of the market: it can fill from the next candle on
+                    limit = price_now - setup.direction.sign * frac * abs(price_now - setup.stop)
+                    pending = {"setup": setup, "limit": spec.round_price(limit), "meta": {**meta, "entry_mode": f"limit {frac:g}",
+                               "signal_price": price_now}, "expires": now + pd.Timedelta(minutes=int(s.risk.limit_entry_minutes))}
+                    mark_traded = getattr(self.engine, "mark_traded", None)
+                    if mark_traded is not None:
+                        mark_traded(self.symbol, setup.poi.key, visits_of(setup))
+                    continue
+                pos = broker.place_market_order(
+                    self.symbol, setup.direction, lots_now, setup.stop, setup.take_profit, risk_amount_now,
+                    risk_distance_now, setup.breakeven_r, meta=meta, price=price_now, ts=now, price_is_fill=True,
                 )
                 reconcile_risk(pos, broker, risk_amount_now)
                 guard.record_trade(now)

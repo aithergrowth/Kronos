@@ -95,3 +95,47 @@ def test_gold_is_sized_and_judged_on_the_ask(scenario):
     assert rr_bid > 1.5 > rr_ask                                       # the old sizing let it through
     cash_at_stop = abs(broker.pnl_for("XAUUSD", Direction.LONG, fill, 2499.0, lots))
     assert cash_at_stop <= budget                                      # never more than the 1 % budget
+
+
+def _bars(rows):
+    """(open, high, low, close) 15m candles from 09:00."""
+    series = CandleSeries.from_records(rows, T.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    return MultiTimeframeData({T.MIN_15: series})
+
+
+def _limit_settings(fraction=0.25, minutes=60):
+    s = Settings()
+    s.risk.limit_entry_fraction, s.risk.limit_entry_minutes = fraction, minutes
+    return s
+
+
+def test_a_limit_entry_fills_part_way_back_toward_the_stop_and_sizes_on_the_smaller_stop(scenario):
+    """risk.limit_entry_fraction 0.25: after the signal at the 1.1000 candle a buy limit rests a quarter of the way back
+    to the stop; it fills when the ask reaches it, the size follows the smaller stop, the target stays."""
+    setup = _setup(scenario, 1.1300)
+    rows = [(1.1000, 1.1005, 1.0995, 1.1000), (1.0990, 1.0992, 1.0960, 1.0970), (1.0970, 1.1310, 1.0965, 1.1300)]
+    result = Backtester(_limit_settings(), _bars(rows), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
+    assert len(result.trades) == 1
+    t = result.trades[0]
+    signal_ask = 1.1000 + 0.00005
+    limit = round(signal_ask - 0.25 * (signal_ask - 1.0949), 5)
+    assert t.entry == pytest.approx(limit) and t.reason == "take_profit" and t.meta["entry_mode"] == "limit 0.25"
+    assert t.r == pytest.approx((1.1300 - limit) / (limit - 1.0949), rel=1e-3)        # R on the smaller stop
+    assert t.r > (1.1300 - signal_ask) / (signal_ask - 1.0949)                          # more than the market entry's R
+
+
+def test_a_limit_entry_is_missed_when_the_target_trades_first_or_it_expires(scenario):
+    setup = _setup(scenario, 1.1200)                                                    # R:R 3.9 at the signal, over the 3.0 floor
+    first = [(1.1000, 1.1005, 1.0995, 1.1000), (1.1000, 1.1210, 1.0999, 1.1200), (1.1200, 1.1205, 1.0900, 1.0950)]
+    r1 = Backtester(_limit_settings(), _bars(first), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
+    assert r1.trades == [] and r1.guard_reasons.get("limit entry: the target traded first") == 1
+    quiet = [(1.1000, 1.1005, 1.0995, 1.1000)] + [(1.1000, 1.1004, 1.0996, 1.1000)] * 6
+    r2 = Backtester(_limit_settings(minutes=30), _bars(quiet), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
+    assert r2.trades == [] and r2.guard_reasons.get("limit entry: expired unfilled") == 1
+
+
+def test_a_limit_fill_whose_candle_also_reaches_the_stop_is_a_loss(scenario):
+    setup = _setup(scenario, 1.1300)
+    rows = [(1.1000, 1.1005, 1.0995, 1.1000), (1.0990, 1.0992, 1.0940, 1.0945), (1.0945, 1.1310, 1.0940, 1.1300)]
+    result = Backtester(_limit_settings(), _bars(rows), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
+    assert len(result.trades) == 1 and result.trades[0].reason == "stop" and result.trades[0].r == pytest.approx(-1.0, abs=0.02)

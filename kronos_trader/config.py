@@ -284,6 +284,11 @@ class RiskParams:
                                         # het andere", A 01:50:31); "fixed" = the target sits tp_fallback_rr R beyond the entry. Setups whose own
                                         # target gives min_rr do not change
     tp_fallback_rr: float = 0.0
+    limit_entry_fraction: float = 0.0   # 0 = a market entry at the signal (the live profiles); else the backtest rests a limit order this
+                                        # fraction of the way from the signal's price back toward the stop, valid limit_entry_minutes,
+                                        # cancelled when the target trades first; the size follows the smaller stop (screen, 6 October:
+                                        # 25 % for 4 hours added R on NAS100 and EURUSD in 2017-2023 and 2024-2026). Backtest only
+    limit_entry_minutes: int = 240
 
 
 @dataclass
