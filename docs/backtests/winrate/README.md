@@ -1078,3 +1078,22 @@ On 2018-2023 the live profiles pass from 14 % of the starts, gap zones on EURUSD
 from 6 %. More trades at a slightly lower R a trade fail more challenges: the total R rises, the path to +10 % before
 -10 % gets worse. Not taken for the FTMO set; the switch stays in the code, off. Max decided on the bias switches:
 not taken.
+
+**The 08:00 start and the news filter** (Dorus entered two of the three trades between 08:10 and 08:20, and one ten
+minutes after US retail sales; 2024-2026, then 2017-2023 where it looked better):
+
+| Variant | Gold | EURUSD | NAS100 | BTC |
+|---|---|---|---|---|
+| live profiles (09-11, 13-17; no entry 30 minutes either side of high-impact news) | +26.1R | +11.2R | +21.5R | +53.1R |
+| windows 08-11, 13-17 | 92, 45 %, +17.7R, -13.5R | 40, 50 %, +15.0R, -5.0R | 49, 47 %, +24.1R, -6.0R | 159, 49 %, +42.7R, -14.9R |
+| 2017-2023 windows 08-11, 13-17 | - | 86, 30 %, -3.7R (live -2.3R) | 132, 33 %, +7.9R (live +23.6R) | - |
+| news blackout 30 before, 5 after | 85, 47 %, +25.1R | 28, 46 %, +8.5R | 46, 46 %, +18.0R | 148, 50 %, +54.1R |
+| no news filter | 90, 46 %, +23.9R | 28, 46 %, +8.5R | 48, 44 %, +16.5R | 153, 50 %, +53.9R |
+
+The 08:00 hour adds R on EURUSD and NAS100 in 2024-2026 and loses it before (NAS100 +23.6R -> +7.9R). The news filter
+earns its keep on the three markets with US news; BTC does not care. Both stay as they are.
+
+**What stands after the day.** None of the readings taken from his trades and his board beat the live profiles on
+both periods and on the FTMO replay. His stop under the zone's P, the higher-timeframe bias without the 1H, POI in een
+POI, the bias switches, entries at the zone only, the 08:00 hour and a shorter news blackout were each worse on at
+least one of the three checks. The gap zones add R on both periods and fail more FTMO challenges. The profiles stay.
