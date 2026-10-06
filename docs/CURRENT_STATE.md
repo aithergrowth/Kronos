@@ -52,6 +52,12 @@ in the MT5 terminal and tokens in environment variables.
 - Every start writes a `start` row to the journal and `starts/<symbol>_<time>.json` next to it: code revision, source
   hash, package versions, resolved settings (secrets as variable names only) and their hash. Each forward trade traces to the program
   and the profile that took it; `python -m kronos_trader journal` summarises the forward record.
+- `scripts\ftmo_report.bat` (`python -m kronos_trader forward-report`, reads only) puts every position of the MT5
+  account beside the journal's plan: fill against the planned entry, exit against the stop or target (after a
+  break-even move against the moved stop), commission, swap and fee, R before and after costs, the code each trade
+  ran on, journal fills the history lacks, and positions that are not the bot's. It also reads the account against
+  the product's limits (`--product ftmo_2step` or `ftmo_1step`): what is left of the day and of the total, the open
+  risk to every stop and the worst case. Output: `journal_ftmo/report/forward_report.html` and `forward_trades.csv`.
 
 ## In the code, measured, not used
 

@@ -448,6 +448,54 @@ def cmd_live(args) -> int:
     return 0
 
 
+def cmd_forward_report(args) -> int:
+    """The forward record from the MT5 terminal (read only): every position of the account against the journal's plan,
+    slippage and costs, R before and after costs, the code each trade ran on, and the account against the product's
+    loss limits. Writes forward_trades.csv and forward_report.html."""
+    from .execution.mt5 import MT5Broker
+    from .forward import (PRODUCTS, account_from_mt5, deals_from_mt5, funding_status, read_journal, reconcile, summary,
+                          unmatched_fills, write_report)
+    settings = _load_settings(args)
+    for pair in (args.mt5_names or "").split(","):
+        if "=" in pair:
+            sym, name = (x.strip() for x in pair.split("=", 1))
+            settings.symbols[_ensure_symbol(settings, sym)].mt5_symbol = name
+    journal = read_journal(args.journal) if Path(args.journal).exists() else pd.DataFrame(columns=["time", "symbol", "event", "id", "note"])
+    if args.since:
+        since = pd.Timestamp(args.since)
+    elif len(journal) and journal["time"].notna().any():
+        since = journal["time"].min().normalize()
+    else:
+        since = pd.Timestamp.now().normalize() - pd.Timedelta(days=30)
+    if args.product not in PRODUCTS:
+        raise SystemExit(f"--product {args.product}: one of {', '.join(PRODUCTS)}")
+    broker = MT5Broker(settings)
+    try:
+        deals = deals_from_mt5(broker, since)
+        account = account_from_mt5(broker)
+    finally:
+        broker.disconnect()
+    rec = reconcile(journal, deals, magic=broker.magic)
+    summ = summary(rec)
+    initial = float(args.account_size or settings.account_size)
+    status = funding_status(account, deals, PRODUCTS[args.product], initial, pd.Timestamp.now("UTC").tz_localize(None))
+    out_dir = args.out_dir or str(Path(args.journal).parent / "report")
+    page = write_report(out_dir, rec, summ, status, unmatched_fills(journal, rec), account["positions"],
+                        title=f"Kronos forward record - {account.get('server', '')} {account.get('login', '')}")
+    print(f"account {account.get('login')} on {account.get('server')}: balance {status['balance']:,.2f} equity {status['equity']:,.2f}")
+    print(f"{status['product']}: {status['left_today']:,.2f} left today ({status['left_today_pct']:.2f} % of {initial:,.0f}), "
+          f"{status['left_total']:,.2f} to the total floor ({status['left_total_pct']:.2f} %); open risk to the stops "
+          f"{status['open_risk']:,.2f} on {status['open_positions']} position(s), {status['manual_positions']} not the bot's")
+    if status["positions_without_stop"]:
+        print(f"!! positions without a stop: {status['positions_without_stop']} - the worst case is unbounded")
+    if len(summ):
+        print(summ.to_string(index=False))
+    else:
+        print("no closed trades since", since.date())
+    print(f"report: {page}")
+    return 0
+
+
 def cmd_ibkr_test(args) -> int:
     from .execution.ibkr import IBKRBroker
     settings = _load_settings(args)
@@ -725,6 +773,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--build-only", action="store_true", help="skip the download, decode what is on disk")
     sp.add_argument("--timeframes", help="comma list to write, e.g. 5m,15m,1H,4H (default: 5m to 1M)")
     sp.set_defaults(func=cmd_dukascopy)
+
+    sp = sub.add_parser("forward-report", help="MT5 deals against the journal: fills, slippage, costs, R after costs, the "
+                        "code each trade ran on, and the account against the product's loss limits (reads only)")
+    sp.add_argument("--journal", default="journal_ftmo/trades.csv")
+    sp.add_argument("--since", help="first day to read, YYYY-MM-DD (default: the journal's first day)")
+    sp.add_argument("--product", default="ftmo_2step", help="loss limits: ftmo_2step or ftmo_1step")
+    sp.add_argument("--account-size", type=float, help="the account's initial balance (the limits are %% of it)")
+    sp.add_argument("--mt5-names", help="the server's names where they differ, e.g. NAS100=US100.cash,BTCUSD=BTCUSD")
+    sp.add_argument("--out-dir", help="where forward_trades.csv and forward_report.html go (default: report/ next to the journal)")
+    sp.set_defaults(func=cmd_forward_report)
 
     sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")
     sp.add_argument("--path", default="journal/trades.csv")
