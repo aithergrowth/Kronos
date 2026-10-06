@@ -58,6 +58,10 @@ in the MT5 terminal and tokens in environment variables.
   ran on, journal fills the history lacks, and positions that are not the bot's. It also reads the account against
   the product's limits (`--product ftmo_2step` or `ftmo_1step`): what is left of the day and of the total, the open
   risk to every stop and the worst case. Output: `journal_ftmo/report/forward_report.html` and `forward_trades.csv`.
+- Every window writes `heartbeat_<symbol>.json` next to its journal after each scan; a watchdog window (started
+  by both scripts) says on Telegram when a window has not scanned for 5 minutes, has had no good scan for 15
+  (MT5 link down, errors), or its news calendar has nothing ahead on a Monday to Thursday, and again when it is
+  over. It runs on the same computer: a computer that is off or asleep shows as a missing morning briefing.
 
 ## In the code, measured, not used
 

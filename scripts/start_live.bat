@@ -19,5 +19,6 @@ set "PY=.\.venv\Scripts\python.exe"
   start "EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute --no-approval"
   start "XAUUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5 --execute --no-approval"
   start "BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker paper --feed bitstamp --account-size 10000 --execute --no-approval"
+  start "watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog --journal journal/trades.csv"
   exit /b
 )

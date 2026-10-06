@@ -42,5 +42,6 @@ if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
   start "FTMO XAUUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD %COMMON%"
   start "FTMO NAS100" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_nas100.yaml live --symbol NAS100 --mt5-symbol %NAS_NAME% %COMMON%"
   start "FTMO BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --mt5-symbol %BTC_NAME% %COMMON%"
+  start "FTMO watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog --journal journal_ftmo/trades.csv --tag FTMO"
   exit /b
 )

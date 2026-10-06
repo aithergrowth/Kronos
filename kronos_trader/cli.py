@@ -496,6 +496,26 @@ def cmd_forward_report(args) -> int:
     return 0
 
 
+def cmd_watchdog(args) -> int:
+    """Read the windows' heartbeats next to the journal and say on Telegram when one stops, its scans fail or its news
+    calendar runs dry; once when it starts and once when it is over."""
+    from .watchdog import Watchdog
+    settings = _load_settings(args)
+    folder = Path(args.journal).parent
+    notifier = TelegramNotifier(params=settings.telegram)
+    if getattr(args, "tag", None):
+        notifier.prefix = f"[{args.tag}] "
+    dog = Watchdog(folder, notifier.send, max_age_minutes=args.max_age, down_minutes=args.down_minutes)
+    print(f"watchdog on {folder}: a window is reported after {args.max_age:g} min without a scan, after {args.down_minutes:g} "
+          f"min without a good one; telegram={'on' if notifier.configured else 'dry-run'}")
+    if args.once:
+        for text in dog.check():
+            print(text)
+        return 0
+    dog.run_forever(args.every)
+    return 0
+
+
 def cmd_ibkr_test(args) -> int:
     from .execution.ibkr import IBKRBroker
     settings = _load_settings(args)
@@ -783,6 +803,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--mt5-names", help="the server's names where they differ, e.g. NAS100=US100.cash,BTCUSD=BTCUSD")
     sp.add_argument("--out-dir", help="where forward_trades.csv and forward_report.html go (default: report/ next to the journal)")
     sp.set_defaults(func=cmd_forward_report)
+
+    sp = sub.add_parser("watchdog", help="watch the live windows' heartbeats (next to the journal) and say on Telegram when "
+                        "one stops, its scans fail or its news calendar runs dry")
+    sp.add_argument("--journal", default="journal/trades.csv", help="the windows' journal: their heartbeats sit next to it")
+    sp.add_argument("--max-age", type=float, default=5.0, help="minutes without a scan before a window is reported")
+    sp.add_argument("--down-minutes", type=float, default=15.0, help="minutes without a good scan (MT5 link down, errors)")
+    sp.add_argument("--every", type=float, default=60.0, help="seconds between checks")
+    sp.add_argument("--tag", help="put [TAG] in front of every message, e.g. FTMO")
+    sp.add_argument("--once", action="store_true", help="one check, print what it would send, stop")
+    sp.set_defaults(func=cmd_watchdog)
 
     sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")
     sp.add_argument("--path", default="journal/trades.csv")

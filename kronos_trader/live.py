@@ -232,6 +232,7 @@ class LiveRunner:
         self.seen: set = set()
         self.pending: Dict[str, PendingSetup] = {}
         self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
+        self._last_scan_ok: Optional[pd.Timestamp] = None   # for the heartbeat: the last scan that ran through
         self.known_positions: Dict[str, Position] = {}
         self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
         self.last_analysis: Optional[Analysis] = None
@@ -538,11 +539,17 @@ class LiveRunner:
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds
         while True:
+            state, detail = "ok", ""
             try:
                 if self.connection_ok():
                     self.step()
+                    self._last_scan_ok = self.clock()
+                else:
+                    state, detail = "link down", str(self._link_down or "")
             except Exception as exc:  # keep the loop alive and say what broke
+                state, detail = "error", f"{type(exc).__name__}: {exc}"
                 self.report_loop_error(exc)
+            self.write_heartbeat(state, detail)
             try:
                 if self.broker is not None:
                     self.broker.idle(poll)
@@ -551,6 +558,35 @@ class LiveRunner:
             except Exception as exc:  # an event-loop broker (IBKR) can raise while waiting: wait plainly this once
                 self.report_loop_error(exc)
                 time.sleep(poll)
+
+    def write_heartbeat(self, state: str = "ok", detail: str = "") -> Optional[Path]:
+        """``heartbeat_<symbol>.json`` next to the journal after every scan, for ``watchdog``: the time, the state (ok, link
+        down, error), the last good scan, the newest candle and how far the news calendar reaches. Never stops the loop."""
+        if not self.settings.live.journal_path:
+            return None
+        try:
+            now = self.clock()
+            last_candle = None
+            if self._views:
+                lowest = self._views[min(self._views)]
+                if len(lowest):
+                    last_candle = str(min(self._views).close_time(lowest.timestamps.iloc[-1]))
+            calendar = getattr(self.engine, "calendar", None)
+            events = getattr(calendar, "events", None) or []
+            news = self.settings.news
+            doc = {"symbol": self.symbol, "pid": os.getpid(), "time": str(now), "state": state, "detail": detail[:300],
+                   "last_scan_ok": str(self._last_scan_ok) if self._last_scan_ok is not None else None,
+                   "last_candle": last_candle, "stale": self.stale_text(),
+                   "calendar_until": str(max(e.time for e in events)) if events else None,
+                   "news": bool(news.enabled), "tag": getattr(self.notifier, "prefix", "").strip()}
+            path = Path(self.settings.live.journal_path).parent / f"heartbeat_{self.symbol}.json"
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(doc), encoding="utf-8")
+            os.replace(tmp, path)
+            return path
+        except Exception as exc:
+            print(f"[live] {self.symbol}: heartbeat not written ({exc})")
+            return None
 
     def report_loop_error(self, exc: Exception) -> None:
         """A scan error: the traceback on the console, a Telegram message for a new error, and the same error again at most
