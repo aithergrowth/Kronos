@@ -278,6 +278,12 @@ class RiskParams:
                                         # the previous 1H high as the target, H 09:14). When no nearer liquidity fits, the far target stays
     tp_cap_choice: str = "nearest"      # with tp_max_rr: nearest = the nearest liquidity that gives min_rr; farthest = the farthest liquidity
                                         # that stays within tp_max_rr ("het volledige scenario uit te spelen, van het ene stuk naar het andere", A 01:50:31)
+    tp_fallback: str = ""               # "" = off: a setup whose target gives less than min_rr (or that has no target) is refused; "liquidity" = the
+                                        # nearest resting liquidity on any timeframe above the confirmation timeframe that gives min_rr (at most
+                                        # tp_fallback_rr when that is > 0) is the target instead, the next piece of liquidity ("van het ene stuk naar
+                                        # het andere", A 01:50:31); "fixed" = the target sits tp_fallback_rr R beyond the entry. Setups whose own
+                                        # target gives min_rr do not change
+    tp_fallback_rr: float = 0.0
 
 
 @dataclass

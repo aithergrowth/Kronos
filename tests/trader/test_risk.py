@@ -194,6 +194,33 @@ def test_tp_fixed_rr_puts_the_target_k_risk_distances_beyond_the_entry(scenario)
         assert short.take_profit == pytest.approx(102.0 - 2.0 * short.risk_distance, abs=0.011)
 
 
+def test_tp_fallback_replaces_a_target_under_min_rr_and_leaves_the_others(scenario):
+    """``tp_fallback``: when the policy's target gives less than ``min_rr`` the setup is no longer refused: ``liquidity``
+    takes the nearest resting liquidity above the confirmation timeframe that gives ``min_rr`` (at most ``tp_fallback_rr``
+    when set), ``fixed`` puts the target ``tp_fallback_rr`` R out; a setup whose own target gives ``min_rr`` is unchanged."""
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_1, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 108.5, 107.0, 108.0)
+    near = {T.H_1: StubStructure(bsl=[108.3]), T.MIN_15: StubStructure(bsl=[109.5]), T.MIN_5: StubStructure(bsl=[110.2])}
+    base = dict(stop_basis="confirmation", tp_policy="liquidity_nearest", tp_floor_tf=T.H_1, min_rr=1.0)
+    off, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, near, RiskParams(**base), 100_000)
+    assert off is None and "below minimum" in reasons[0]                   # the 1H 108.3 gives 0.29
+    liq, reasons = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, near, RiskParams(**base, tp_fallback="liquidity"), 100_000)
+    assert liq is not None and reasons == [] and liq.take_profit == 109.5   # the 15m level: nearest with R:R >= 1.0
+    assert liq.rr >= 1.0 and "fallback: 1H buy-side liquidity 108.30000 (x1) at 1:0.29" in liq.tp_source
+    capped, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, near, RiskParams(**base, tp_fallback="liquidity", tp_fallback_rr=1.2), 100_000)
+    assert capped is None                                                   # nothing between 1.0 and 1.2: refused as before
+    fixed, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, near, RiskParams(**base, tp_fallback="fixed", tp_fallback_rr=2.0), 100_000)
+    assert fixed is not None and fixed.take_profit == pytest.approx(108.0 + 2.0 * fixed.risk_distance, abs=0.011)
+    assert fixed.tp_source.startswith("fixed 2R [fallback")
+    far = {T.H_1: StubStructure(bsl=[110.5]), T.MIN_15: StubStructure(bsl=[109.5])}
+    own, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, far, RiskParams(**base), 100_000)
+    same, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, far, RiskParams(**base, tp_fallback="fixed", tp_fallback_rr=3.0), 100_000)
+    assert own is not None and same is not None and same.take_profit == own.take_profit == 110.5 and same.tp_source == own.tp_source
+    nothing = {T.H_1: StubStructure()}
+    none_fixed, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, 108.0, nothing, RiskParams(**base, tp_fallback="fixed", tp_fallback_rr=2.0), 100_000)
+    assert none_fixed is not None and "fallback: no target" in none_fixed.tp_source
+
+
 def test_previous_extreme_target_is_the_lowest_low_before_the_touch(scenario):
     """``tp_policy previous_extreme``: the target is the extreme of the last ``tp_lookback_candles`` candles on the zone's
     timeframe before the touch, a buffer before it; when nothing lies beyond entry it falls back to the nearest liquidity."""

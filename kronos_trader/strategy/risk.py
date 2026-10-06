@@ -197,6 +197,35 @@ def nearer_liquidity_target(
     return fitting[-1] if params.tp_cap_choice == "farthest" else fitting[0]
 
 
+def fallback_target(
+    direction: Direction,
+    entry: float,
+    structures: Dict[Timeframe, StructureAnalysis],
+    poi_tf: Timeframe,
+    params: RiskParams,
+    confirmation_tf: Optional[Timeframe],
+    rr_distance: float,
+) -> Optional[Tuple[float, str]]:
+    """The target ``tp_fallback`` puts in place of one that gives less than ``min_rr``: ``fixed`` = ``tp_fallback_rr``
+    R beyond the entry; ``liquidity`` = the nearest resting liquidity on any timeframe above the confirmation timeframe
+    whose R:R is at least ``min_rr`` (and at most ``tp_fallback_rr`` when that is > 0); None when nothing fits."""
+    if rr_distance <= 0:
+        return None
+    if params.tp_fallback == "fixed":
+        if params.tp_fallback_rr <= 0:
+            return None
+        return entry + direction.sign * params.tp_fallback_rr * rr_distance, f"fixed {params.tp_fallback_rr:g}R"
+    if params.tp_fallback == "liquidity":
+        liquidity, _ = target_candidates(direction, entry, structures, poi_tf, replace(params, tp_policy="liquidity_nearest"),
+                                         confirmation_tf, None)
+        cap = params.tp_fallback_rr if params.tp_fallback_rr > 0 else math.inf
+        for price, source, _tf in sorted(liquidity, key=lambda c: abs(c[0] - entry)):
+            if params.min_rr <= abs(price - entry) / rr_distance <= cap:
+                return price, source
+        return None
+    raise ValueError(f"risk.tp_fallback {params.tp_fallback!r}: use '', 'liquidity' or 'fixed'")
+
+
 def stepped_risk(params: RiskParams, balance: float, initial: float) -> RiskParams:
     """``params`` with ``risk_pct`` lowered by ``drawdown_steps`` for a balance this far from the initial one: each
     (level %, risk %) step applies at or below its level and the lowest risk wins; ``params`` itself when nothing applies.
@@ -337,6 +366,12 @@ def build_setup(
     else:
         target = find_take_profit(direction, entry, structures, poi.timeframe, params, confirmation_tf=confirmation.timeframe,
                                   touch_ts=touch_ts, pip_size=spec.pip_size, poi=poi)
+        own_rr = abs(spec.round_price(target[0]) - entry) / rr_distance if target is not None and rr_distance > 0 else 0.0
+        if params.tp_fallback and (target is None or own_rr < params.min_rr):
+            other = fallback_target(direction, entry, structures, poi.timeframe, params, confirmation.timeframe, rr_distance)
+            if other is not None:
+                was = f"{target[1]} at 1:{own_rr:.2f}" if target is not None else "no target"
+                target = (other[0], f"{other[1]} [fallback: {was}, under the {params.min_rr:g} minimum]")
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons
