@@ -951,6 +951,8 @@ def test_apply_product_sets_the_guard_for_the_ftmo_one_step():
     s = Settings()
     apply_product(s, "ftmo_1step")
     assert (s.prop_firm.daily_loss_limit_pct, s.prop_firm.max_drawdown_pct, s.prop_firm.drawdown_basis) == (2.9, 9.0, "day_high")
+    apply_product(s, "ftmo_2step")
+    assert (s.prop_firm.daily_loss_limit_pct, s.prop_firm.max_drawdown_pct, s.prop_firm.drawdown_basis) == (4.0, 9.5, "initial")
     with pytest.raises(SystemExit):
         apply_product(s, "ftmo_3step")
 

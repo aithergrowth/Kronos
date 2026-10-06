@@ -1212,3 +1212,34 @@ day and total limits counted where the guard stops trading), starts February 202
 entry (in the live runner, MT5 and paper, since the evening of 6 October). The replay starts end in September 2025, so the
 12-month column of the last starts reaches into 2026: the recent market is in it, and before 2024 the same markets
 passed far less often.
+
+## 1-Step or 2-Step (6 October, evening)
+
+The same setup B ledgers (EURUSD with re-entries, gold without the veto, NAS100 with the limit entry, BTC; two open,
+0.10R a trade for costs, BTC at FTMO margin), stakes as live (a 4H zone on EURUSD, gold and NAS100 twice the base,
+BTC half, the ladder -3 % -> base 1.0, -6 % -> 0.5), the bot's guard on the worst case, the products' own rules
+(2-Step: +10 % then +5 %, at least 4 trading days, 5 % a day, 10 % static; 1-Step: +10 %, the best-day rule, 3 % a
+day, 10 % under the highest day-start balance). Share of starts funded within the time, "failed" = a product limit
+broken; the rest stalled at the guard's floor or ran out of data:
+
+| Product | Base | Bot's guard | Within 3 months | 6 | 12 | Failed | Median | 2018-2022 starts: 12 months |
+|---|---|---|---|---|---|---|---|---|
+| 1-Step | 1.0 % | -2.9 % day, -9 % from the day high | 26 % | 52 % | 59 % | 0 % | 97 days | 25 % |
+| 1-Step | 1.5 % | the same | 41 % | 61 % | 63 % | 0 % | 74 days | 13 % |
+| 2-Step | 1.0 % | -4 % day, -8 % from the start | 15 % | 43 % | 61 % | 0 % | 138 days | 20 % |
+| 2-Step | 1.0 % | -4 % day, -9.5 % | 15 % | 43 % | 68 % | 0 % | 158 days | 23 % |
+| 2-Step | 1.25 % | -4 % day, -9.5 % (live) | 25 % | 43 % | 64 % | 0 % | 129 days | 20 % |
+| 2-Step | 1.5 % | -4.9 % day, -9.5 % | 19 % | 42 % | 60 % | 0 % | 138 days | 16 % |
+| 2-Step | 2.0 % | -4.9 % day, -9.5 % | 20 % | 26 % | 38 % | 19 % | 124 days | 7 % |
+
+The 2-Step is not faster at any stake: it needs +15 % over two phases. At 1 % it is funded a little more often within
+a year, and its funded account keeps 5 % a day and a static 10 % (the 1-Step's stays at 3 % and trailing). More
+stake does not buy speed: at 2 % (4 % on a 4H zone) two losses on one day break the 5 % (19 % of the starts). The
+day limit of the guard (4.0, 4.5 or 4.9 %) made no difference at 1-1.25 %; the floor did (9.5 % against 8 %).
+
+In 14 days (the free trial, 2-Step guard, 1.25 %): a median of 4 trades (3-6), the account after 14 days at a median
+of +0.0 % in 2024-2026 (half of the windows between -1.7 % and +3.8 %, +10 % reached in 9 %) and +1.7 % in 2026 (22 %);
+below -5 % in 2 %. Trades a month by market: BTC 4.4, gold 3.1, EURUSD 1.2, NAS100 1.1.
+
+**Taken (Max, 6 October, evening: the 2-Step, "dan duurt het maar langer"):** `PRODUCT=ftmo_2step` with `RISK=1.25`;
+the 2-Step guard's floor goes from 8 % to 9.5 % from the start, its day stays at 4 %.

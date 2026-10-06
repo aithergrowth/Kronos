@@ -364,7 +364,9 @@ def _print_margin(broker, settings: Settings, symbol: str, currency: str) -> Non
 # the guard's limits per funding product, inside the product's own (FTMO 2-Step: 5 % a day, 10 % static; FTMO 1-Step: 3 % a
 # day, 10 % under the highest balance at a day's start)
 PRODUCT_GUARDS = {
-    "ftmo_2step": {"daily_loss_limit_pct": 4.0, "max_drawdown_pct": 8.0, "drawdown_basis": "initial"},
+    # 6 October, evening (Max: the 2-Step): 9.5 % from the start instead of the profiles' 8 %. Setup B, starts 2024-25, at 1 %:
+    # funded within a year 68 % against 61 % with 8 %, none failed (README "1-Step or 2-Step"); the day stays at 4 %
+    "ftmo_2step": {"daily_loss_limit_pct": 4.0, "max_drawdown_pct": 9.5, "drawdown_basis": "initial"},
     "ftmo_1step": {"daily_loss_limit_pct": 2.9, "max_drawdown_pct": 9.0, "drawdown_basis": "day_high"},
 }
 
@@ -780,7 +782,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "funded account)")
     sp.add_argument("--drawdown-steps", help="risk.drawdown_steps in place of the profile's: level %%:risk %% pairs below the "
                     "start, e.g. --drawdown-steps=-3:0.5 (the = keeps the minus sign from reading as a flag); 'none' for none")
-    sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 8 %% from the start) or "
+    sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 9.5 %% from the start) or "
                     "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)
 

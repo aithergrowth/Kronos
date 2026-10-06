@@ -9,7 +9,7 @@ Max's original rules (1:3 R:R, 1 % risk), which the profiles have since replaced
 | Script | Account | Markets | Orders |
 |---|---|---|---|
 | `scripts/start_live.bat` | MetaQuotes-Demo (MT5) | EURUSD, XAUUSD; BTCUSD on paper with Bitstamp prices | MT5 market orders with server-side stop and target, no approval |
-| `scripts/start_ftmo.bat` | FTMO MT5 terminal, 10,000 (the free trial, then the 1-Step challenge: setup B) | EURUSD, XAUUSD, NAS100 (`US100.cash`), BTCUSD | the same, NAS100 by limit order (below); journal in `journal_ftmo/` |
+| `scripts/start_ftmo.bat` | FTMO MT5 terminal, 10,000 (the free trial, then the 2-Step challenge: setup B) | EURUSD, XAUUSD, NAS100 (`US100.cash`), BTCUSD | the same, NAS100 by limit order (below); journal in `journal_ftmo/` |
 
 Each market runs in its own window and polls every 60 seconds; signals come from closed candles (5m the smallest).
 Both scripts `git pull` before they start, so a change on this branch reaches the windows at their next start and
@@ -53,14 +53,15 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 ## Risk and the account guard
 
 - Stake 1.5 % of the initial balance a trade on the demo, lowered to 1.0 % from -3 % and 0.5 % from -6 % below the
-  start. FTMO, setup B (Max, 6 October): `RISK=1.0` and `PRODUCT=ftmo_1step` in `scripts/ftmo_local.bat`; a 4H zone on
-  EURUSD, gold or NAS100 risks twice that, a BTC trade half.
+  start. FTMO, setup B on the 2-Step (Max, 6 October, evening): `RISK=1.25` and `PRODUCT=ftmo_2step` in
+  `scripts/ftmo_local.bat`; a 4H zone on EURUSD, gold or NAS100 risks twice that, a BTC trade half. (On the 1-Step:
+  `RISK=1.0`, `PRODUCT=ftmo_1step`.)
 - The guard refuses a trade when the worst case (every open trade, every resting limit and the new one stopped out)
-  would reach the day's or the total limit: with `--product ftmo_1step` -2.9 % a day and -9 % from the highest
-  day-start balance (FTMO 1-Step: 3 % and 10 % trailing), with `ftmo_2step` or none -4 % a day and -8 % from the
-  initial balance (FTMO 2-Step: 5 % and 10 %). At most 2 open trades, 1 per market, resting limits included; a
-  position may tie up at most 45 % of the equity in margin. The highest day-start balance survives a restart
-  (`guard_day_high.json` next to the journal).
+  would reach the day's or the total limit: with `--product ftmo_2step` -4 % a day and -9.5 % from the initial
+  balance (FTMO 2-Step: 5 % and 10 %), with `ftmo_1step` -2.9 % a day and -9 % from the highest day-start balance
+  (FTMO 1-Step: 3 % and 10 % trailing), without a product (the demo) the profiles' -4 % and -8 %. At most 2 open
+  trades, 1 per market, resting limits included; a position may tie up at most 45 % of the equity in margin. The
+  highest day-start balance survives a restart (`guard_day_high.json` next to the journal).
 - The open-slot and worst-case checks and the order run under one lock shared by the account's windows. A window that
   cannot get the lock defers the entry and tries again every scan until it expires; it never trades without it.
 - Every start writes a `start` row to the journal and `starts/<symbol>_<time>.json` next to it: code revision, source
@@ -99,8 +100,10 @@ data hashes and cost assumptions):
 | BTCUSD | 142, 49 %, +53.1R, -11.9R (+52.9R of it in 2026) | 152, 41 %, -11.2R, -12.5R |
 
 The edge is the recent market's: NAS100 is the only market positive in both periods by a margin, and the FTMO 2-step
-replay at 2 % passes from about half of the 2024-2026 starts but from 4-13 % of the 2018-2023 starts. Setup B (the
-1-Step at 1 %, 4H zones x2, BTC half, the changes above) was funded from 59 % of the starts February 2024 - September
-2025 within a year, 25 % within 3 months, 52 % within 6, and failed from none (README "Setup B"). The forward
+replay at 2 % passes from about half of the 2024-2026 starts but from 4-13 % of the 2018-2023 starts. Setup B (4H
+zones x2, BTC half, the changes above), starts February 2024 - September 2025: on the 2-Step at 1.25 % funded within
+3 months from 25 %, within 6 from 43 %, within a year from 64 %, median 129 days; on the 1-Step at 1 % 26 %, 52 %,
+59 %, median 97 days; neither failed (README "1-Step or 2-Step"). In 14 days (the free trial) it takes a median of
+4 trades. The forward
 record of the demo and the FTMO account is what will tell; the profiles stay frozen during a challenge unless a
 change has passed both periods and the challenge replay.

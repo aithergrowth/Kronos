@@ -10,9 +10,11 @@ rem   set "MT5_PATH=D:\FTMO MetaTrader 5\terminal64.exe"     the terminal (right
 rem   set "ACCOUNT=25000"                                     the challenge size: the guard's -4 %% day and -8 %% count from it
 rem   set "NAS_NAME=US100.cash"  /  set "BTC_NAME=BTCUSD"     the server's names
 rem   set "FUNDED=1"                                          once funded: 1.0 %% risk (0.5 %% from -3 %%) and flat by Friday 15:45 New York
-rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: the guard stops at a -2.9 %% day and 9 %% under the
-rem                                                           highest day-start balance (default ftmo_2step: -4 %% day, -8 %% static)
-rem   set "RISK=1.0"                                          risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED)
+rem   set "PRODUCT=ftmo_2step"                                the FTMO 2-Step: the guard stops at a -4 %% day and 9.5 %% under the
+rem                                                           start (without PRODUCT: the profiles' -4 %% day, -8 %%)
+rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: a -2.9 %% day and 9 %% under the highest day-start balance
+rem   set "RISK=1.25"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
+rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
 rem To list the server's names, in PowerShell in the Kronos folder:
 rem   $env:MT5_PATH="C:\Program Files\FTMO MetaTrader 5\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
 rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
