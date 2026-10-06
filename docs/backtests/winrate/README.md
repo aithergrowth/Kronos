@@ -1098,6 +1098,37 @@ both periods and on the FTMO replay. His stop under the zone's P, the higher-tim
 POI, the bias switches, entries at the zone only, the 08:00 hour and a shorter news blackout were each worse on at
 least one of the three checks. The gap zones add R on both periods and fail more FTMO challenges. The profiles stay.
 
+## Gold without the veto (6 October): into the profile
+
+The monthly and weekly veto on gold (`bias.no_trade_against [1M, 1W]`, 5 October) was chosen on the 2023-2026 candles
+before the clock correction. On the corrected candles with the current gold profile it costs trades and R on both
+periods (one trade at a time, guard off, 1 % risk; trades, win rate, R, drawdown):
+
+| Gold | With the veto (5 October) | Without |
+|---|---|---|
+| 2024-2026 | 84, 48 %, +26.1R, -7.2R | 105, 48 %, +32.3R, -9.2R |
+| 2017-2023 | 201, 37 %, +3.6R, -27.6R | 319, 39 %, +8.8R, -22.6R |
+
+Without the veto gold keeps every trade it had and adds 21 in 2024-2026 (+6.2R: 2024 +0.2, 2025 +1.3, 2026 +4.6).
+FTMO challenge replay (`fast_sim`: the four markets, two open, 0.10R a trade, BTC at FTMO margin, the guard's day and
+total limits; every day a start), share of starts:
+
+| Starts | Rules | Set | Within 28 days | Within 56 days | Passed | Failed |
+|---|---|---|---|---|---|---|
+| Feb 2024 - Mar 2026 | 2-step, 2 % | with the veto | 1 % | 4 % | 53 % | 0 % |
+| | | without | 1 % | 3 % | 53 % | 0 % |
+| | 1-step, 1.25 % | with the veto | 2 % | 6 % | 69 % | 0 % |
+| | | without | 2 % | 13 % | 69 % | 0 % |
+| Jan 2018 - Jun 2023 | 2-step, 2 % | with the veto | 0 % | 2 % | 4 % | 4 % |
+| | | without | 0 % | 4 % | 7 % | 3 % |
+| | 2-step, 1.5 % | with the veto | 0 % | 0 % | 8 % | 0 % |
+| | | without | 1 % | 3 % | 13 % | 0 % |
+
+**Taken (Max, 6 October: "Ja aanzetten maar we doen sws de 2 step verificatie"):** `no_trade_against: []` in
+`config/dorus_live_gold.yaml`; EURUSD and NAS100 keep their weekly veto (without it 5 and 6 more trades, -2.7R and
+-0.2R). The FTMO account runs the 2-step challenge. Before 2024 the same four markets pass that challenge from 4-13 %
+of the starts: the edge of 2024-2026 is the recent market's, not a constant.
+
 ## A month on 100,000 (6 October)
 
 Each calendar month from February 2024 to September 2026 starts at 100,000; the live profiles' ledgers of 2024-2026
