@@ -31,7 +31,7 @@ import pandas as pd
 from .config import Settings
 from .core.candles import CandleSeries
 from .core.timeframe import Timeframe
-from .core.types import Analysis, Bias, ForecastSummary, TradeMode, TradeSetup
+from .core.types import Analysis, Bias, Direction, ForecastSummary, TradeMode, TradeSetup
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
@@ -739,6 +739,18 @@ class LiveRunner:
         except Exception as exc:
             self.note("not_executed", now, id=sid, reason=f"no current price: {exc}")
             return f"⛔ {self.symbol}: not executed - no current price ({exc})"
+        cap = self.settings.risk.max_spread_stop_fraction
+        if cap > 0 and abs(price - setup.stop) > 0:
+            try:
+                spread = abs(self.broker.fill_price(self.symbol, Direction.LONG) - self.broker.fill_price(self.symbol, Direction.SHORT))
+            except Exception:
+                spread = None
+            if spread is not None and spread > cap * abs(price - setup.stop):
+                share = spread / abs(price - setup.stop)
+                self.note("not_executed", now, id=sid, price=float(price), spread=float(spread),
+                          reason=f"spread {share:.0%} of the stop distance (max {cap:.0%})")
+                return (f"⛔ {self.symbol}: not executed - spread {spread:.{self.spec.price_decimals}f} is {share:.0%} of the "
+                        f"stop distance (max {cap:.0%})")
         from .strategy.risk import resize_at, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)

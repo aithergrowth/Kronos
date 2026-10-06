@@ -821,3 +821,32 @@ def test_exits_run_even_when_the_analysis_fails(setup):
     with pytest.raises(RuntimeError, match="engine bug"):
         runner.step(NOW)
     assert broker.open_positions() == [] and any("closed (time)" in m for m in notifier.sent)
+
+
+def test_a_spread_wider_than_the_cap_blocks_the_entry(setup):
+    """``risk.max_spread_stop_fraction``: no entry while the spread is wider than that fraction of the stop distance
+    (live only). The setup's stop sits 51 pips under 1.1000; a 20-pip spread is 39 % of it."""
+    class WideSpreadBroker(PaperBroker):
+        def fill_price(self, symbol, direction, base=None):
+            mid = self.current_price(symbol)
+            return mid + (0.0010 if direction is Direction.LONG else -0.0010)
+
+    settings = Settings()
+    settings.risk.max_spread_stop_fraction = 0.3
+    broker = WideSpreadBroker(settings)
+    broker.set_price("EURUSD", 1.1)
+    notifier = TelegramNotifier(dry_run=True)
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 3
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
+                        dry_run=False, clock=lambda: NOW, require_approval=False)
+    runner.step(NOW)
+    assert broker.open_positions() == [] and any("spread" in m and "of the stop distance" in m for m in notifier.sent)
+
+    settings.risk.max_spread_stop_fraction = 0.0                 # off: the same spread does not block
+    broker2 = WideSpreadBroker(settings)
+    broker2.set_price("EURUSD", 1.1)
+    runner2 = LiveRunner(settings, "EURUSD", fetch, broker=broker2, notifier=TelegramNotifier(dry_run=True),
+                         engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW, require_approval=False)
+    runner2.step(NOW)
+    assert not any("of the stop distance" in m for m in runner2.notifier.sent)

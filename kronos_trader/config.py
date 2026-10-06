@@ -67,6 +67,22 @@ DEFAULT_SYMBOLS: Dict[str, SymbolSpec] = {
                          contract_size=5000.0),     # silver, 5,000 oz a lot: 50 USD a 0.01 move
     "US30": SymbolSpec("US30", 1.0, 1.0, typical_spread_pips=2.0, price_decimals=1, tradingview_symbol="OANDA:US30USD",
                        contract_size=1.0, ibkr_contract="cfd:IBUS30"),
+    # more FTMO index and oil CFDs for research (HistData JPXJPY, ETXEUR, FRXEUR, AUXAUD, HKXHKD, WTIUSD, BCOUSD); a "pip" is one
+    # index point or 0.01 of oil; P&L in the index's own currency on the broker, the backtests count in R
+    "JP225": SymbolSpec("JP225", 1.0, 1.0, typical_spread_pips=8.0, price_decimals=1, tradingview_symbol="OANDA:JP225USD",
+                        contract_size=1.0),
+    "EU50": SymbolSpec("EU50", 1.0, 1.0, typical_spread_pips=1.5, price_decimals=1, tradingview_symbol="OANDA:EU50EUR",
+                       contract_size=1.0),
+    "FRA40": SymbolSpec("FRA40", 1.0, 1.0, typical_spread_pips=1.2, price_decimals=1, tradingview_symbol="OANDA:FR40EUR",
+                        contract_size=1.0),
+    "AUS200": SymbolSpec("AUS200", 1.0, 1.0, typical_spread_pips=1.5, price_decimals=1, tradingview_symbol="OANDA:AU200AUD",
+                         contract_size=1.0),
+    "HK50": SymbolSpec("HK50", 1.0, 1.0, typical_spread_pips=8.0, price_decimals=1, tradingview_symbol="OANDA:HK33HKD",
+                       contract_size=1.0),
+    "USOIL": SymbolSpec("USOIL", 0.01, 10.0, typical_spread_pips=3.0, price_decimals=3, tradingview_symbol="OANDA:WTICOUSD",
+                        contract_size=1000.0),   # WTI, 1,000 barrels a lot: 10 USD a 0.01 move
+    "UKOIL": SymbolSpec("UKOIL", 0.01, 10.0, typical_spread_pips=3.0, price_decimals=3, tradingview_symbol="OANDA:BCOUSD",
+                        contract_size=1000.0),   # Brent, the same
     "BTCUSD": SymbolSpec("BTCUSD", 1.0, 1.0, typical_spread_pips=15.0, price_decimals=1, tradingview_symbol="BINANCE:BTCUSDT",
                          contract_size=1.0, ibkr_contract="crypto:BTC:PAXOS:USD"),
     "ETHUSD": SymbolSpec("ETHUSD", 0.1, 0.1, typical_spread_pips=10.0, price_decimals=2, tradingview_symbol="BINANCE:ETHUSDT",
@@ -249,6 +265,9 @@ class RiskParams:
                                         # readings C, D); the live replay of Aug-Sep 2026 entered 39 pips under a 61-pip 4H zone (14 Sep) and
                                         # 11 pips above a 29-pip 1H zone (3 Aug): docs/practice/2026-09/EURUSD/v3/README.md
     max_entry_outside_pips: float = 0.0 # 0 = off; else the same cap in pips, whichever of the two is hit first
+    max_spread_stop_fraction: float = 0.0   # live only, 0 = off; else no entry while the broker's spread is wider than this fraction of the
+                                        # stop distance (a market opening, a news spike): normal spreads are 3-8 % of the live profiles'
+                                        # stops (2024-2026 ledgers), so 0.3 refuses only abnormal ones; the backtests do not use it
     min_stop_zone_fraction: float = 0.0 # 0 = off; else the stop lies at least this fraction of the zone's height from the entry (a sweep-extreme
                                         # stop closer than that is widened). Loss anatomy, 4 October: on EURUSD 2023-2026 the third of the trades
                                         # with the tightest stop against the zone (0.31 of its height) won 38 % for -1.0R, the widest third (0.9)

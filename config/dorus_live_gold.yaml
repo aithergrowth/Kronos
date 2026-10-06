@@ -49,6 +49,7 @@ risk:
   stop_protection: recent_1h
   sl_offset_pips: 0.0
   min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
+  max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
   tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
