@@ -44,6 +44,8 @@ risk:
   sl_offset_pips: 0.0
   min_stop_pips: 12.0             # index points: 12 on NAS100 (the 8 pips of the currency profile, in the test `mk_nas100_full`)
   max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
+  zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
+                                  # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
   tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and

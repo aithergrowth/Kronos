@@ -23,6 +23,7 @@ class RiskGuard:
         self.params = params or PropFirmParams()
         self.account_size = float(account_size)
         self.peak_equity = float(account_size)
+        self.day_high = float(account_size)  # the highest balance at a day's start (drawdown_basis day_high, the FTMO 1-step)
         self.day: Optional[pd.Timestamp] = None
         self.day_start_balance = float(account_size)
         self.day_known = True               # False while the broker's history could not give the day's start balance
@@ -90,6 +91,8 @@ class RiskGuard:
             # watched (the laptop asleep) counts against the new day, as at FTMO; asked again every update until known
             self.day = day
             self.day_start_balance, self.day_known = self._baseline(day)
+            if self.day_known:
+                self.day_high = max(self.day_high, self.day_start_balance)
         month = day.to_period("M")
         if self.month is None or month != self.month or not self.month_known:
             self.month = month
@@ -117,9 +120,14 @@ class RiskGuard:
     def daily_loss_pct(self, equity: float) -> float:
         return (self.day_start_balance - equity) / self.account_size * 100.0
 
+    def drawdown_base(self) -> float:
+        """What the total limit counts from: the highest equity (peak), the highest day-start balance (day_high), else the
+        initial balance."""
+        basis = self.params.drawdown_basis
+        return self.peak_equity if basis == "peak" else self.day_high if basis == "day_high" else self.account_size
+
     def drawdown_pct(self, equity: float) -> float:
-        base = self.peak_equity if self.params.drawdown_basis == "peak" else self.account_size
-        return (base - equity) / self.account_size * 100.0
+        return (self.drawdown_base() - equity) / self.account_size * 100.0
 
     def in_blackout(self, ts: pd.Timestamp) -> Optional[str]:
         ts = pd.Timestamp(ts)
@@ -176,8 +184,7 @@ class RiskGuard:
         if worst_day >= p.daily_loss_limit_pct:
             return False, (f"daily loss would reach {worst_day:.2f}% if the open trades and this one were stopped out "
                            f"(limit {p.daily_loss_limit_pct}%)")
-        base = self.peak_equity if p.drawdown_basis == "peak" else self.account_size
-        worst_total = (base - worst) / self.account_size * 100.0
+        worst_total = (self.drawdown_base() - worst) / self.account_size * 100.0
         if worst_total >= p.max_drawdown_pct:
             return False, (f"drawdown would reach {worst_total:.2f}% if the open trades and this one were stopped out "
                            f"(limit {p.max_drawdown_pct}%)")

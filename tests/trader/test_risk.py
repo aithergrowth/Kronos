@@ -300,3 +300,14 @@ def test_live_risk_flags_parse_and_refuse_typos():
             _parse_steps(bad)
     assert _valid_clock("16:45") and _valid_clock("9:30")
     assert not _valid_clock("16.45") and not _valid_clock("25:00") and not _valid_clock("16:75")
+
+
+def test_setup_risk_applies_the_stake_and_the_zone_multiplier():
+    """Setup B: a 4H zone at twice the stake, BTC's profile at half; other zones and plain profiles keep risk_pct."""
+    from kronos_trader.strategy.risk import setup_risk
+    base = RiskParams(risk_pct=1.0, zone_risk_multiplier={"4H": 2.0})
+    assert setup_risk(base, T.H_4).risk_pct == 2.0 and setup_risk(base, T.H_1).risk_pct == 1.0 and setup_risk(base, None).risk_pct == 1.0
+    half = RiskParams(risk_pct=1.0, stake_multiplier=0.5)
+    assert setup_risk(half, T.H_4).risk_pct == 0.5
+    plain = RiskParams(risk_pct=1.5)
+    assert setup_risk(plain, T.H_4) is plain

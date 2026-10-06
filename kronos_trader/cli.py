@@ -361,6 +361,22 @@ def _print_margin(broker, settings: Settings, symbol: str, currency: str) -> Non
              else "no margin cap (prop_firm.max_margin_pct 0)"))
 
 
+# the guard's limits per funding product, inside the product's own (FTMO 2-Step: 5 % a day, 10 % static; FTMO 1-Step: 3 % a
+# day, 10 % under the highest balance at a day's start)
+PRODUCT_GUARDS = {
+    "ftmo_2step": {"daily_loss_limit_pct": 4.0, "max_drawdown_pct": 8.0, "drawdown_basis": "initial"},
+    "ftmo_1step": {"daily_loss_limit_pct": 2.9, "max_drawdown_pct": 9.0, "drawdown_basis": "day_high"},
+}
+
+
+def apply_product(settings: Settings, product: str) -> None:
+    """Set the guard's day and total limits and the total's basis for a funding product (PRODUCT_GUARDS)."""
+    if product not in PRODUCT_GUARDS:
+        raise SystemExit(f"--product {product}: one of {', '.join(PRODUCT_GUARDS)}")
+    for key, value in PRODUCT_GUARDS[product].items():
+        setattr(settings.prop_firm, key, value)
+
+
 def cmd_live(args) -> int:
     from .live import LiveRunner, build_fetch
     settings = _load_settings(args)
@@ -378,6 +394,8 @@ def cmd_live(args) -> int:
         settings.risk.risk_pct = float(args.risk_pct)
     if getattr(args, "drawdown_steps", None):
         settings.risk.drawdown_steps = _parse_steps(args.drawdown_steps)
+    if getattr(args, "product", None):
+        apply_product(settings, args.product)
     if getattr(args, "journal", None):
         settings.live.journal_path = args.journal
         settings.live.charts_dir = str(Path(args.journal).parent / "charts")
@@ -429,7 +447,7 @@ def cmd_live(args) -> int:
     month = f", a month of -{pf.monthly_loss_limit_pct}%" if pf.monthly_loss_limit_pct else ""
     steps = "".join(f", {float(r):g}% from {float(lvl):g}%" for lvl, r in settings.risk.drawdown_steps)
     print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade{steps}, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
-          f"or -{pf.max_drawdown_pct}% from the {'start' if pf.drawdown_basis == 'initial' else 'peak'}, max {pf.max_open_trades} open "
+          f"or -{pf.max_drawdown_pct}% from the {dict(initial='start', peak='peak', day_high='highest day-start balance').get(pf.drawdown_basis, pf.drawdown_basis)}, max {pf.max_open_trades} open "
           f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else ""))
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
@@ -762,6 +780,8 @@ def build_parser() -> argparse.ArgumentParser:
                     "funded account)")
     sp.add_argument("--drawdown-steps", help="risk.drawdown_steps in place of the profile's: level %%:risk %% pairs below the "
                     "start, e.g. --drawdown-steps=-3:0.5 (the = keeps the minus sign from reading as a flag); 'none' for none")
+    sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 8 %% from the start) or "
+                    "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)
 
     sp = sub.add_parser("ibkr-test", help="connect to TWS / IB Gateway and print account, contract, price and bars")

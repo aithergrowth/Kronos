@@ -224,6 +224,11 @@ class LiveRunner:
         self.guard = guard or RiskGuard(settings.prop_firm, settings.account_size)
         if broker is not None and callable(getattr(broker, "realized_pnl_since", None)) and self.guard.realized_since is None:
             self.guard.realized_since = broker.realized_pnl_since     # a restart keeps the day's and the month's losses
+        # the highest day-start balance (drawdown_basis day_high, the FTMO 1-step's trailing limit) survives a restart and is
+        # shared by the account's windows: a file next to the journal, the highest value wins
+        self.day_high_path: Optional[Path] = (Path(settings.live.journal_path).parent / "guard_day_high.json"
+                                              if settings.live.journal_path else None)
+        self._saved_day_high = self.load_day_high()
         self.dry_run = dry_run
         self.require_approval = settings.live.require_approval if require_approval is None else require_approval
         self.approval_timeout_minutes = approval_timeout_minutes if approval_timeout_minutes is not None else settings.live.approval_timeout_minutes
@@ -280,6 +285,7 @@ class LiveRunner:
         if self.broker is not None:
             try:
                 self.guard.update(now, equity, self.broker.balance())
+                self.save_day_high()
             except Exception as exc:     # a feed hiccup must not stop the loop; the guard re-checks before any order
                 print(f"[live] {self.symbol}: guard update failed ({exc})")
         # exits first and on their own: a failing analysis (an engine error on one day's data) must not keep a trade past
@@ -410,6 +416,36 @@ class LiveRunner:
                 mine[(str(tf), int(direction), str(created))] = int(visit)
         except Exception as exc:     # a damaged file must not stop the loop
             print(f"[live] {self.symbol}: could not read {self.traded_path} ({exc})")
+
+    def load_day_high(self) -> float:
+        """The highest day-start balance on record for this account size (0 when none); raises the guard's to it."""
+        if self.day_high_path is None or not self.day_high_path.exists():
+            return 0.0
+        try:
+            doc = json.loads(self.day_high_path.read_text(encoding="utf-8"))
+            if float(doc.get("account_size", -1)) != float(self.settings.account_size):
+                return 0.0                               # another account size: a new challenge, not this one's record
+            value = float(doc["day_high"])
+            self.guard.day_high = max(self.guard.day_high, value)
+            return value
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not read {self.day_high_path} ({exc})")
+            return 0.0
+
+    def save_day_high(self) -> None:
+        """Write the guard's highest day-start balance when it rose (another window may have written a higher one: kept)."""
+        if self.day_high_path is None or self.guard.day_high <= self._saved_day_high:
+            return
+        try:
+            on_file = self.load_day_high()
+            value = max(self.guard.day_high, on_file)
+            self.day_high_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.day_high_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"account_size": float(self.settings.account_size), "day_high": value}), encoding="utf-8")
+            os.replace(tmp, self.day_high_path)
+            self._saved_day_high = value
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.day_high_path} ({exc})")
 
     def save_traded(self) -> None:
         traded = getattr(self.engine, "traded", None)
@@ -743,7 +779,7 @@ class LiveRunner:
             if self.broker is not None:
                 self.notifier.send(f"{self.symbol}: dry-run, order not sent")
             return
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
+        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk(setup))
         if not ok:
             self.notifier.send_setup(setup, forecast, self.spec)
             self.notifier.send(f"⛔ {self.symbol}: setup NOT executable - {reason}")
@@ -787,11 +823,13 @@ class LiveRunner:
         room = max(0.0, room)
         return room / per_lot, room
 
-    def planned_risk(self) -> float:
-        """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps."""
-        from .strategy.risk import stepped_risk
+    def planned_risk(self, setup: Optional[TradeSetup] = None) -> float:
+        """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps, times
+        the profile's stake and the setup's zone multiplier (setup B)."""
+        from .strategy.risk import setup_risk, stepped_risk
         try:
             params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+            params = setup_risk(params, setup.poi.timeframe if setup is not None else None)
             return float(self.broker.equity()) * params.risk_pct / 100.0
         except Exception:
             return 0.0
@@ -800,7 +838,7 @@ class LiveRunner:
         """The checks and the order, inside the account lock: the message to send on a refusal, else
         ``(position, setup id, risk amount, risk params, resize note, margin note)``."""
         sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk())
+        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk(setup))
         if not ok:
             self.note("not_executed", now, id=sid, reason=reason)
             return f"⛔ {self.symbol}: not executed - {reason}"
@@ -821,9 +859,10 @@ class LiveRunner:
                           reason=f"spread {share:.0%} of the stop distance (max {cap:.0%})")
                 return (f"⛔ {self.symbol}: not executed - spread {spread:.{self.spec.price_decimals}f} is {share:.0%} of the "
                         f"stop distance (max {cap:.0%})")
-        from .strategy.risk import resize_at, stepped_risk
+        from .strategy.risk import resize_at, setup_risk, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
-        risk_params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+        risk_params = setup_risk(stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size),
+                                 setup.poi.timeframe)
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
                                                                 self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:
@@ -835,7 +874,7 @@ class LiveRunner:
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
         if risk_params.risk_pct != self.settings.risk.risk_pct:
-            resized += f"; risk {risk_params.risk_pct:g} % (balance below the start, risk.drawdown_steps)"
+            resized += f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)"
         margin_note = ""
         room = self.margin_room(setup.direction, price)
         if room is not None and lots > room[0] + 1e-9:

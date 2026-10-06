@@ -284,6 +284,10 @@ class RiskParams:
                                         # het andere", A 01:50:31); "fixed" = the target sits tp_fallback_rr R beyond the entry. Setups whose own
                                         # target gives min_rr do not change
     tp_fallback_rr: float = 0.0
+    zone_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"4H": 2.0}: a zone of that timeframe risks
+                                        # that multiple of risk_pct (after the drawdown steps). 6 October: 4H zones on EURUSD, gold
+                                        # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026)
+    stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
     limit_entry_fraction: float = 0.0   # 0 = a market entry at the signal (the live profiles); else the backtest rests a limit order this
                                         # fraction of the way from the signal's price back toward the stop, valid limit_entry_minutes,
                                         # cancelled when the target trades first; the size follows the smaller stop (screen, 6 October:
@@ -326,7 +330,8 @@ class PropFirmParams:
     daily_loss_limit_pct: float = 4.0   # stay inside the typical 5 % rule with margin
     monthly_loss_limit_pct: float = 0.0 # 0 = off; else no new trade once the month's closed loss reaches this much of the account
     max_drawdown_pct: float = 8.0       # stay inside the typical 10 % rule with margin
-    drawdown_basis: str = "peak"        # peak: from the highest equity seen (stricter); initial: static floor below the starting balance (FTMO)
+    drawdown_basis: str = "peak"        # peak: from the highest equity seen (stricter); initial: static floor below the starting balance
+                                        # (FTMO 2-step); day_high: from the highest balance at a day's start (FTMO 1-step, trailing)
     day_timezone: str = "Europe/Prague" # the day for the daily-loss rule starts at midnight here (FTMO: CE(S)T)
     record_daily_loss_pct: float = 5.0  # the published limits the first breach is recorded against (FTMO 2-step: 5 % daily,
     record_max_loss_pct: float = 10.0   # 10 % static below the initial balance), whatever the halting limits above are set to

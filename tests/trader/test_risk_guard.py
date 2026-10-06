@@ -168,3 +168,16 @@ def test_an_unknown_day_start_balance_blocks_new_trades_until_the_history_answer
     assert not ok and "would reach 5.00%" in reason                 # -3.5 % closed plus 1.5 % at risk: over the 4 %
     small = guard.can_open(broker, pd.Timestamp("2026-10-06 12:03"), new_risk=40.0)
     assert small[0]                                                 # 3.9 %: inside the limit
+
+
+def test_drawdown_basis_day_high_trails_the_highest_day_start_balance_not_the_intraday_peak():
+    """drawdown_basis day_high (the FTMO 1-Step): the total limit counts from the highest balance at a day's start; an
+    intraday equity high that closed lower does not move it, a new day starting higher does."""
+    guard = RiskGuard(PropFirmParams(drawdown_basis="day_high", max_drawdown_pct=9.0), 10_000)
+    guard.update(pd.Timestamp("2024-01-02 10:00"), 10_600, 10_000)              # a trade floats +6 % ...
+    guard.update(pd.Timestamp("2024-01-02 15:00"), 10_300, 10_300)              # ... and closes at +3 %
+    assert guard.day_high == 10_000 and guard.drawdown_pct(9_100) == pytest.approx(9.0)
+    guard.update(pd.Timestamp("2024-01-03 09:00"), 10_300, 10_300)              # the next day starts at 10,300
+    assert guard.day_high == 10_300 and guard.drawdown_pct(9_400) == pytest.approx(9.0)
+    guard.update(pd.Timestamp("2024-01-04 09:00"), 9_900, 9_900)                # a lower day start: the high stays
+    assert guard.day_high == 10_300

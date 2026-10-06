@@ -920,3 +920,36 @@ def test_a_spread_wider_than_the_cap_blocks_the_entry(setup):
                          engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW, require_approval=False)
     runner2.step(NOW)
     assert not any("of the stop distance" in m for m in runner2.notifier.sent)
+
+
+def test_the_highest_day_start_balance_survives_a_restart_and_the_zone_multiplier_sizes_the_risk(setup, tmp_path):
+    """The guard's day high (the FTMO 1-Step's trailing basis) is written next to the journal and read back by a new window
+    of the same account size; planned_risk carries the setup's zone multiplier."""
+    settings = Settings()
+    settings.account_size = 10_000.0
+    settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    settings.prop_firm.drawdown_basis = "day_high"
+    broker = PaperBroker(settings)
+    runner = LiveRunner(settings, "EURUSD", lambda: {}, broker=broker, notifier=TelegramNotifier(dry_run=True),
+                        engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW)
+    runner.guard.day_high = 10_450.0
+    runner.save_day_high()
+    again = LiveRunner(settings, "EURUSD", lambda: {}, broker=PaperBroker(settings), notifier=TelegramNotifier(dry_run=True),
+                       engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW)
+    assert again.guard.day_high == 10_450.0
+    other = Settings(); other.account_size = 25_000.0; other.live.journal_path = settings.live.journal_path
+    fresh = LiveRunner(other, "EURUSD", lambda: {}, broker=PaperBroker(other), notifier=TelegramNotifier(dry_run=True),
+                       engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW)
+    assert fresh.guard.day_high == 25_000.0                                     # another account size: not this record
+    settings.risk.risk_pct = 1.0
+    settings.risk.zone_risk_multiplier = {setup.poi.timeframe.label: 2.0}
+    assert again.planned_risk(setup) == pytest.approx(2 * again.planned_risk(None))
+
+
+def test_apply_product_sets_the_guard_for_the_ftmo_one_step():
+    from kronos_trader.cli import apply_product
+    s = Settings()
+    apply_product(s, "ftmo_1step")
+    assert (s.prop_firm.daily_loss_limit_pct, s.prop_firm.max_drawdown_pct, s.prop_firm.drawdown_basis) == (2.9, 9.0, "day_high")
+    with pytest.raises(SystemExit):
+        apply_product(s, "ftmo_3step")

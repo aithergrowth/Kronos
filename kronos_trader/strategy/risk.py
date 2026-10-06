@@ -226,6 +226,15 @@ def fallback_target(
     raise ValueError(f"risk.tp_fallback {params.tp_fallback!r}: use '', 'liquidity' or 'fixed'")
 
 
+def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe]) -> RiskParams:
+    """``params`` with ``risk_pct`` times ``stake_multiplier`` and the zone timeframe's ``zone_risk_multiplier`` (setup B: a
+    4H zone at twice the stake, BTC at half); ``params`` itself when both are 1."""
+    mult = float(params.stake_multiplier or 1.0)
+    if zone_tf is not None and params.zone_risk_multiplier:
+        mult *= float(params.zone_risk_multiplier.get(zone_tf.label, 1.0))
+    return params if mult == 1.0 else replace(params, risk_pct=params.risk_pct * mult)
+
+
 def stepped_risk(params: RiskParams, balance: float, initial: float) -> RiskParams:
     """``params`` with ``risk_pct`` lowered by ``drawdown_steps`` for a balance this far from the initial one: each
     (level %, risk %) step applies at or below its level and the lowest risk wins; ``params`` itself when nothing applies.
