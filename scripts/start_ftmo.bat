@@ -23,6 +23,7 @@ rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
 rem Out since 5 October (docs/backtests/winrate/README.md): GBPUSD (-25.3R over 2017-2026 on the corrected clock). BTCUSD
 rem stays (Max, 5 October); FTMO's crypto leverage makes the margin cap trade it smaller.
 rem The pull and the windows sit in one block that ends with exit /b (see start_live.bat).
+rem The windows start 8 seconds apart: five attaching to the terminal at once timed out ("IPC timeout", 6 October).
 cd /d "%~dp0.."
 set "MT5_PATH=C:\Program Files\FTMO MetaTrader 5\terminal64.exe"
 rem FTMO's own installer puts the terminal here (6 October, Max's laptop)
@@ -53,9 +54,13 @@ if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
 (
   git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
   start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%"
+  ping -n 9 127.0.0.1 >nul
   start "FTMO XAUUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD %COMMON%"
+  ping -n 9 127.0.0.1 >nul
   start "FTMO NAS100" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_nas100.yaml live --symbol NAS100 --mt5-symbol %NAS_NAME% %COMMON%"
+  ping -n 9 127.0.0.1 >nul
   start "FTMO BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --mt5-symbol %BTC_NAME% %COMMON%"
+  ping -n 9 127.0.0.1 >nul
   start "FTMO watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog --journal journal_ftmo/trades.csv --tag FTMO"
   exit /b
 )

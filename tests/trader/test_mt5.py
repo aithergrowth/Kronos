@@ -861,3 +861,38 @@ def test_a_terminal_answering_not_found_means_nothing_open():
     with pytest.raises(RuntimeError, match="did not list the open positions"):
         broker.open_positions("XAUUSD")
     assert broker.realized_pnl_since(NOW - pd.Timedelta(days=30)) is not None      # deals exist: read as before
+
+
+def test_a_busy_terminal_is_asked_again_before_the_window_gives_up(monkeypatch):
+    """Five windows attaching at once to a terminal that is loading history: "IPC timeout" (-10005) is a busy terminal, not
+    a wrong path or account: the connection is tried again after a pause; another error fails at once."""
+    for key in ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("MT5_PATH", r"C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe")
+
+    class Busy(FakeMT5):
+        def __init__(self, fails, error=(-10005, "IPC timeout")):
+            super().__init__()
+            self.fails, self.error, self.calls = fails, error, 0
+
+        def initialize(self, **kwargs):
+            self.calls += 1
+            return self.calls > self.fails
+
+        def last_error(self):
+            return self.error
+    waits = []
+    broker = MT5Broker(Settings(), api=Busy(fails=2), clock=lambda: NOW, connect=False)
+    broker._sleep = waits.append
+    broker.connect()
+    assert broker.mt5.calls == 3 and waits == [10, 20] and broker.account_login == 11112222
+    never = MT5Broker(Settings(), api=Busy(fails=99), clock=lambda: NOW, connect=False)
+    never._sleep = lambda s: None
+    with pytest.raises(RuntimeError, match="IPC timeout"):
+        never.connect()
+    assert never.mt5.calls == 5
+    wrong = MT5Broker(Settings(), api=Busy(fails=99, error=(-6, "Terminal: Authorization failed")), clock=lambda: NOW, connect=False)
+    wrong._sleep = lambda s: None
+    with pytest.raises(RuntimeError, match="Authorization failed"):
+        wrong.connect()
+    assert wrong.mt5.calls == 1

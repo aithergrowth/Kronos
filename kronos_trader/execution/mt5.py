@@ -95,6 +95,7 @@ class MT5Broker(Broker):
         self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
         self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
         self.account_login: Optional[int] = None
+        self._sleep = time.sleep                  # the pause between connection attempts (tests replace it)
         if connect:
             self.connect()
 
@@ -121,17 +122,31 @@ class MT5Broker(Broker):
                                    f"terminal64.exe of the one for login {login}")
             attempts = [None] + found
         errors = []
-        for candidate in attempts:
-            kwargs: Dict[str, Any] = dict(creds)
-            if candidate:
-                kwargs["path"] = candidate
-            if self.mt5.initialize(**kwargs):
-                self.terminal_path = candidate
-                info = self.mt5.account_info()
-                self.account_login = int(getattr(info, "login", 0) or 0) if info is not None else None
+        connected = False
+        # a terminal that is busy (several windows attaching at once, loading history, updating itself) answers with an
+        # IPC error (-10000 to -10005, e.g. "IPC timeout"): wait and try again, up to four times, before giving up
+        for wait in (0, 10, 20, 40, 60):
+            if wait:
+                print(f"[mt5] the terminal did not answer ({errors[-1]}); trying again in {wait} s")
+                self._sleep(wait)
+            ipc_only = True
+            for candidate in attempts:
+                kwargs: Dict[str, Any] = dict(creds)
+                if candidate:
+                    kwargs["path"] = candidate
+                if self.mt5.initialize(**kwargs):
+                    self.terminal_path = candidate
+                    info = self.mt5.account_info()
+                    self.account_login = int(getattr(info, "login", 0) or 0) if info is not None else None
+                    connected = True
+                    break
+                err = self.mt5.last_error()
+                code = err[0] if isinstance(err, (tuple, list)) and err else err
+                ipc_only = ipc_only and isinstance(code, int) and -10010 <= code <= -10000
+                errors.append(f"{candidate or 'running terminal'}: {err}")
+            if connected or not ipc_only:
                 break
-            errors.append(f"{candidate or 'running terminal'}: {self.mt5.last_error()}")
-        else:
+        if not connected:
             account = f" for login {login} on {server}" if creds else " on the terminal's current account"
             raise RuntimeError("MT5 initialize failed" + account + ": " + "; ".join(errors) + ". Start the terminal "
                                "and log in (Journal tab shows why a login fails), run PowerShell and the terminal as "
