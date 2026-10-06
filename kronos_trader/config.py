@@ -90,6 +90,8 @@ class StructureParams:
     gap_median_window: int = 100        # ... of the candles before it (as-of, so later candles never reclassify an old gap)
     poi_mode: str = "liquidity_to_protection"   # D 12:21 / F 03:00: zone = liquidity taken by the displacement (X) -> gap -> P; legacy: sweep_to_gap
     poi_break_window: int = 3           # the displacement must close through X between P and this many candles after candle 3
+    poi_gap_zones: bool = False         # also a gap whose displacement took no liquidity maps a zone, from its P to the gap's far edge (his
+                                        # "price gap" trades: gold 12 Aug 2025, bought at the top of the daily gap the NFP candle of 1 Aug left)
     max_bars_sweep_to_balance: int = 40 # legacy mode: the balance level must form within this many candles after the sweep
     poi_requires_break: bool = False    # legacy mode: also require a structure break
     poi_far_edge: str = "gap_bottom"    # legacy mode: gap_bottom | gap_top | protector

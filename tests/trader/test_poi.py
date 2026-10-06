@@ -95,3 +95,29 @@ def test_visit_tracker_remembers_a_first_visit_outside_the_window():
     # stateless and stateful agree when the whole history is visible
     fresh = VisitTracker()
     assert fresh.observe(poi, series, 1.5)[1:] == (2, False)
+
+
+def test_a_gap_without_liquidity_taken_is_a_zone_only_when_asked():
+    """``structure.poi_gap_zones``: a gap whose displacement closed through no high (no X) maps a zone from its P to the
+    gap's far edge (his "price gap" trades). Off by default: no liquidity taken, no zone."""
+    rows = [
+        (104, 105, 103, 104.5),
+        (104.5, 105.5, 104, 105),
+        (105, 106, 104.5, 105.5),      # 2: swing high 106, never closed through
+        (105.5, 105.6, 102, 102.5),
+        (102.5, 103, 100, 100.5),
+        (100.5, 101, 99, 100),
+        (100, 100.8, 99.5, 100.5),
+        (100.5, 104, 100.4, 103.8),    # 7: the displacement (P)
+        (103.8, 105, 102.5, 104.6),    # 8: low 102.5 above candle 6's high 100.8 -> bullish gap 100.8-102.5
+    ]
+    st = analyze_structure(CandleSeries.from_records(rows, Timeframe.H_1))
+    gap = [g for g in st.gaps if g.direction is Bias.BULLISH][-1]
+    assert (gap.low, gap.high, gap.index) == (100.8, 102.5, 8)
+    assert not [b for b in st.breaks if b.direction is Bias.BULLISH]
+    assert not [p for p in map_pois(st) if p.direction is Bias.BULLISH]
+    zones = [p for p in map_pois(st, StructureParams(poi_gap_zones=True)) if p.direction is Bias.BULLISH]
+    assert len(zones) == 1
+    zone = zones[0]
+    assert (zone.low, zone.high) == (100.4, 102.5) and zone.liquidity_break is None and zone.liquidity_level == 102.5
+    assert zone.created_index == 8 and zone.protector_extreme == 100.4

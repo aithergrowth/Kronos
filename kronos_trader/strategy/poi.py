@@ -34,29 +34,31 @@ def _far_edge(gap: Gap, direction: Bias, mode: str) -> float:
 
 def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams) -> List[POI]:
     ts_list = st.series.ts_list
-    by_break: Dict[int, POI] = {}
+    by_break: Dict[object, POI] = {}
     for gap in st.gaps:
         d = gap.direction
         brk = next((b for b in st.breaks if b.direction is d
                     and gap.protector_index <= b.index <= gap.index + params.poi_break_window), None)
         if brk is None:
-            continue                                   # no liquidity taken by this displacement: no X, no POI
-        x = brk.broken_level
+            if not params.poi_gap_zones:
+                continue                               # no liquidity taken by this displacement: no X, no POI
+            x, key, created = (gap.high if d is Bias.BULLISH else gap.low), ("gap", gap.index), gap.index   # the price gap alone
+        else:
+            x, key, created = brk.broken_level, brk.index, max(gap.index, brk.index)
         if d is Bias.BULLISH:
             low, high = gap.protector_low, max(x, gap.high)
         else:
             low, high = min(x, gap.low), gap.protector_high
         if high <= low:
             continue
-        if brk.index in by_break:                      # several gaps in one impulse: keep the first (deepest P)
+        if key in by_break:                            # several gaps in one impulse: keep the first (deepest P)
             continue
         sweep = next((s for s in reversed(st.sweeps) if s.implied_bias is d and s.index < gap.protector_index
                       and gap.protector_index - s.index <= params.max_bars_sweep_to_balance), None)
-        created = max(gap.index, brk.index)
-        by_break[brk.index] = POI(
+        by_break[key] = POI(
             timeframe=st.series.timeframe, direction=d, low=float(low), high=float(high), sweep=sweep,
-            balance=st.block_for_break(brk), created_index=created, created_at=ts_list[created], gap=gap,
-            liquidity_level=float(x), liquidity_break=brk,
+            balance=st.block_for_break(brk) if brk is not None else None, created_index=created, created_at=ts_list[created],
+            gap=gap, liquidity_level=float(x), liquidity_break=brk,
         )
     return sorted(by_break.values(), key=lambda p: p.created_index)
 
