@@ -311,3 +311,20 @@ def test_setup_risk_applies_the_stake_and_the_zone_multiplier():
     assert setup_risk(half, T.H_4).risk_pct == 0.5
     plain = RiskParams(risk_pct=1.5)
     assert setup_risk(plain, T.H_4) is plain
+
+
+def test_the_stake_halves_near_the_phase_target():
+    """risk.target_pct with risk.target_protect_pct: within that many % of the phase's target a trade risks at most half of
+    risk_pct; the drawdown steps still apply below the start; the zone and stake multipliers come on top (setup_risk)."""
+    from kronos_trader.strategy.risk import setup_risk, stepped_risk
+    p = RiskParams(risk_pct=1.25, drawdown_steps=((-3, 1.0), (-6, 0.5)), zone_risk_multiplier={"4H": 2.0},
+                   target_pct=10.0, target_protect_pct=4.0)
+    assert stepped_risk(p, 10_000, 10_000) is p and stepped_risk(p, 10_590, 10_000) is p           # below +6 %: the full stake
+    assert stepped_risk(p, 10_600, 10_000).risk_pct == pytest.approx(0.625)                         # from +6 %: half
+    assert setup_risk(stepped_risk(p, 10_800, 10_000), T.H_4).risk_pct == pytest.approx(1.25)       # a 4H zone: twice the half
+    assert stepped_risk(p, 9_650, 10_000).risk_pct == 1.0 and stepped_risk(p, 9_350, 10_000).risk_pct == 0.5
+    verification = RiskParams(risk_pct=1.25, target_pct=5.0, target_protect_pct=4.0)                 # no steps: protection alone
+    assert stepped_risk(verification, 10_050, 10_000) is verification
+    assert stepped_risk(verification, 10_100, 10_000).risk_pct == pytest.approx(0.625)
+    off = RiskParams(risk_pct=1.25, target_pct=10.0)                                                 # a target without a window
+    assert stepped_risk(off, 10_900, 10_000) is off

@@ -484,7 +484,7 @@ def test_drawdown_steps_lower_the_live_stake(setup):
         assert len(broker.open_positions()) == 1
         lots[steps] = broker.open_positions()[0].lots
         if steps:
-            assert any("1 %: balance below the start" in m for m in notifier.sent)
+            assert any("1 % on this trade: balance below the start" in m for m in notifier.sent)
     assert lots[((-3, 1.0),)] == pytest.approx(lots[()] / 1.5, rel=0.02)
 
 
@@ -1074,3 +1074,20 @@ def test_a_paper_limit_filled_and_stopped_in_one_candle_is_one_losing_trade(setu
     assert broker.open_positions() == [] and runner.limits == {}
     assert any("closed again before this scan" in m for m in notifier.sent)
     assert any("closed (stop)" in m and "-1.00R" in m for m in notifier.sent)
+
+
+def test_the_fill_message_says_why_the_stake_differs(setup):
+    """A 4H zone at twice the stake, near the phase's target at half: the fill message names the cause, not "below the
+    start" (it did for every 4H trade of setup B)."""
+    from kronos_trader.config import RiskParams
+    broker = PaperBroker(Settings())
+    runner, _ = _runner(setup, broker, require_approval=False)
+    runner.settings.account_size = 100_000.0
+    runner.settings.risk.risk_pct = 1.0
+    r = runner.settings.risk
+    assert runner.stake_note(RiskParams(risk_pct=1.0)) == ""
+    assert runner.stake_note(RiskParams(risk_pct=2.0)) == " (2 % on this trade: x2 for its zone or the profile's stake)"
+    r.target_pct, r.target_protect_pct = 10.0, 4.0
+    broker._balance = 107_000.0
+    assert runner.stake_note(RiskParams(risk_pct=0.5)) == " (0.5 % on this trade: near the target)"
+    assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone or the profile's stake)"

@@ -238,14 +238,19 @@ def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe]) -> RiskParams:
 def stepped_risk(params: RiskParams, balance: float, initial: float) -> RiskParams:
     """``params`` with ``risk_pct`` lowered by ``drawdown_steps`` for a balance this far from the initial one: each
     (level %, risk %) step applies at or below its level and the lowest risk wins; ``params`` itself when nothing applies.
-    FTMO challenge, 790 starts 2024-2026 at 1.5 %: funded 85 % flat, 92 % with ((-3, 1.0), (-6, 0.5))."""
-    if not params.drawdown_steps or initial <= 0:
+    FTMO challenge, 790 starts 2024-2026 at 1.5 %: funded 85 % flat, 92 % with ((-3, 1.0), (-6, 0.5)). With
+    ``target_pct`` and ``target_protect_pct`` the risk is at most half of ``risk_pct`` once the balance is within
+    ``target_protect_pct`` of the phase's target."""
+    protect = float(getattr(params, "target_pct", 0.0) or 0.0) > 0 and float(getattr(params, "target_protect_pct", 0.0) or 0.0) > 0
+    if (not params.drawdown_steps and not protect) or initial <= 0:
         return params
     from_start = (float(balance) - float(initial)) / float(initial) * 100.0
     risk = params.risk_pct
     for level, step_risk in params.drawdown_steps:
         if from_start <= float(level):
             risk = min(risk, float(step_risk))
+    if protect and from_start >= float(params.target_pct) - float(params.target_protect_pct):
+        risk = min(risk, 0.5 * params.risk_pct)        # near the phase's target: half the stake (risk.target_protect_pct)
     return params if risk == params.risk_pct else replace(params, risk_pct=risk)
 
 

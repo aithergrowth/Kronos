@@ -840,6 +840,25 @@ class LiveRunner:
         except Exception:
             return 0.0
 
+    def stake_note(self, risk_params) -> str:
+        """Why a trade risks other than the profile's risk_pct, for the fill message: the balance under the start (drawdown
+        steps), near the phase's target (target protection), the zone's or the profile's multiplier."""
+        from .strategy.risk import stepped_risk
+        base = self.settings.risk
+        if abs(risk_params.risk_pct - base.risk_pct) < 1e-12:
+            return ""
+        parts = []
+        try:
+            balance = float(self.broker.balance())
+            stepped = stepped_risk(base, balance, self.settings.account_size).risk_pct
+        except Exception:
+            balance, stepped = None, base.risk_pct
+        if stepped < base.risk_pct:
+            parts.append("near the target" if balance is not None and balance >= self.settings.account_size else "balance below the start")
+        if stepped > 0 and abs(risk_params.risk_pct / stepped - 1.0) > 1e-9:
+            parts.append(f"x{risk_params.risk_pct / stepped:g} for its zone or the profile's stake")
+        return f" ({risk_params.risk_pct:g} % on this trade: {', '.join(parts) or 'adjusted'})"
+
     def _open_locked(self, setup: TradeSetup, now: pd.Timestamp):
         """The checks and the order, inside the account lock: the message to send on a refusal, else
         ``(position, setup id, risk amount, risk params, resize note, margin note)``."""
@@ -1128,7 +1147,7 @@ class LiveRunner:
                   stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
                   note=f"setup {sid}{resized}")
         if filled:
-            stepped = f" ({risk_params.risk_pct:g} %: balance below the start)" if risk_params.risk_pct != self.settings.risk.risk_pct else ""
+            stepped = self.stake_note(risk_params)
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
                                f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}{stepped}{margin_note}  "
                                f"(id {pos.id})")

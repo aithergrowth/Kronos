@@ -1243,3 +1243,32 @@ below -5 % in 2 %. Trades a month by market: BTC 4.4, gold 3.1, EURUSD 1.2, NAS1
 
 **Taken (Max, 6 October, evening: the 2-Step, "dan duurt het maar langer"):** `PRODUCT=ftmo_2step` with `RISK=1.25`;
 the 2-Step guard's floor goes from 8 % to 9.5 % from the start, its day stays at 4 %.
+
+## Stake near the target, EURUSD limit, a true swing layer (6 October, evening)
+
+Setup B on the 2-Step (base 1.25 %, a 4H zone on EURUSD, gold and NAS100 twice, BTC half), the same replay as above;
+starts every 3 days February 2024 - September 2025 and every 6 days 2018-2022. "Half near the target" =
+`risk.target_protect_pct`: within that many % of the phase's target (`risk.target_pct`: 10, then 5) a trade risks
+half of the base (the multipliers on top); "late steps" = -5 % -> 0.75, -7 % -> 0.5 instead of -3 % -> 1.0, -6 % -> 0.5.
+
+| Plan | Within 3 months | 6 | 12 | Failed | Median | 2018-2022 starts: 12 months |
+|---|---|---|---|---|---|---|
+| Rules now | 26 % | 43 % | 63 % | 0 % | 126 days | 20 % |
+| Late steps, half in the last 2 % | 20 % | 51 % | 64 % | 0 % | 116 days | 23 % |
+| Half in the last 4 % | 15 % | 41 % | 74 % | 0 % | 159 days | 22 % |
+| 1.0 %, late steps, half in the last 3 % | 13 % | 37 % | 76 % | 0 % | 192 days | 23 % |
+| Without BTC: early steps, half in the last 3 % | 12 % | 40 % | 88 % | 0 % | 218 days | 17 % |
+
+Three open trades instead of two changed nothing. A lower stake near the target passes more challenges on both
+periods and slower: a losing run close to +10 % no longer undoes the phase.
+
+**EURUSD with re-entries and the limit 25 % back toward the stop:** 2024-2026 31 trades, 45 %, +24.6R, -5.0R (re-entries
+alone: 38, 50 %, +15.8R, -5.0R); 2017-2023 85 trades, 26 %, +7.3R, -15.0R (90, 34 %, +5.3R, -15.7R). More R on both, a
+lower win rate on both; in the replay (rules now) funded within a year 72 % against 63 % on the recent starts but
+14 % against 20 % on 2018-2022. Not taken: the challenge needs the win rate more than the R. (The limit alone on the
+old profile: 2017-2023 68 trades, 22 %, -1.3R against 74, 30 %, -2.3R.)
+
+**A true swing layer** (only 1M, 1W and 1D zones, `scalp_poi_timeframes: []`): NAS100 2024-2026 3 trades, -1.0R;
+EURUSD 2 trades, -1.0R. Too few trades to matter. The first swing runs (earlier this evening) set only
+`poi_timeframes`, so in scalp mode they traded 1H and 4H zones with the swing targets (a median hold of 3 hours): not a
+swing layer, and not used.

@@ -288,6 +288,12 @@ class RiskParams:
                                         # that multiple of risk_pct (after the drawdown steps). 6 October: 4H zones on EURUSD, gold
                                         # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026)
     stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
+    target_pct: float = 0.0             # the challenge phase's profit target in % of the initial balance (FTMO 2-Step: 10, then 5 in
+                                        # the verification); 0 = none known. With target_protect_pct: within that many % of the target
+    target_protect_pct: float = 0.0     # every trade risks at most half of risk_pct (multipliers on top), so a losing run near the
+                                        # target does not undo the phase. 6 October, 2-Step at 1.25 %, starts Feb 2024 - Sep 2025:
+                                        # 4 % -> funded within a year 74 % against 63 %, 2018-2022 starts 22 % against 20 %; slower
+                                        # (median 159 against 126 days). 0 = off
     limit_entry_fraction: float = 0.0   # 0 = a market entry at the signal; else a limit order rests this fraction of the way from the
                                         # signal's price back toward the stop, valid limit_entry_minutes, cancelled when the target
                                         # trades first; the size follows the smaller stop and the order holds its slot and its risk in

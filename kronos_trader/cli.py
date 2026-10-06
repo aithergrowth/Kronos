@@ -396,6 +396,12 @@ def cmd_live(args) -> int:
         settings.risk.risk_pct = float(args.risk_pct)
     if getattr(args, "drawdown_steps", None):
         settings.risk.drawdown_steps = _parse_steps(args.drawdown_steps)
+    if getattr(args, "target_pct", None) is not None:
+        settings.risk.target_pct = float(args.target_pct)
+    if getattr(args, "protect_pct", None) is not None:
+        settings.risk.target_protect_pct = float(args.protect_pct)
+    if settings.risk.target_protect_pct and not settings.risk.target_pct:
+        raise SystemExit("--protect-pct needs the phase's target: --target-pct 10 (2-Step phase 1) or 5 (the verification)")
     if getattr(args, "product", None):
         apply_product(settings, args.product)
     if getattr(args, "journal", None):
@@ -448,6 +454,8 @@ def cmd_live(args) -> int:
     pf = settings.prop_firm
     month = f", a month of -{pf.monthly_loss_limit_pct}%" if pf.monthly_loss_limit_pct else ""
     steps = "".join(f", {float(r):g}% from {float(lvl):g}%" for lvl, r in settings.risk.drawdown_steps)
+    if settings.risk.target_pct and settings.risk.target_protect_pct:
+        steps += (f", half from +{settings.risk.target_pct - settings.risk.target_protect_pct:g}% (target +{settings.risk.target_pct:g}%)")
     print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade{steps}, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
           f"or -{pf.max_drawdown_pct}% from the {dict(initial='start', peak='peak', day_high='highest day-start balance').get(pf.drawdown_basis, pf.drawdown_basis)}, max {pf.max_open_trades} open "
           f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else ""))
@@ -782,6 +790,10 @@ def build_parser() -> argparse.ArgumentParser:
                     "funded account)")
     sp.add_argument("--drawdown-steps", help="risk.drawdown_steps in place of the profile's: level %%:risk %% pairs below the "
                     "start, e.g. --drawdown-steps=-3:0.5 (the = keeps the minus sign from reading as a flag); 'none' for none")
+    sp.add_argument("--target-pct", type=float, help="the challenge phase's profit target in %% of the initial balance (FTMO 2-Step: "
+                    "10, then 5 in the verification); used by --protect-pct")
+    sp.add_argument("--protect-pct", type=float, help="within this many %% of --target-pct every trade risks half of the stake "
+                    "(risk.target_protect_pct), e.g. 4")
     sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 9.5 %% from the start) or "
                     "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)

@@ -15,6 +15,8 @@ rem                                                           start (without PRO
 rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: a -2.9 %% day and 9 %% under the highest day-start balance
 rem   set "RISK=1.25"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
 rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
+rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
+rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
 rem To list the server's names, in PowerShell in the Kronos folder:
 rem   $env:MT5_PATH="C:\Program Files\FTMO MetaTrader 5\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
 rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
@@ -30,6 +32,8 @@ set "FUNDED="
 set "RISK="
 set "WEEKEND_CLOSE="
 set "PRODUCT="
+set "TARGET="
+set "PROTECT="
 if exist "%~dp0ftmo_local.bat" call "%~dp0ftmo_local.bat"
 set MT5_LOGIN=
 set MT5_PASSWORD=
@@ -42,6 +46,8 @@ if defined FUNDED set "COMMON=%COMMON% --risk-pct 1.0 --drawdown-steps=-3:0.5 --
 if not defined FUNDED if defined WEEKEND_CLOSE set "COMMON=%COMMON% --weekend-close %WEEKEND_CLOSE%"
 if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
 if defined PRODUCT set "COMMON=%COMMON% --product %PRODUCT%"
+if defined TARGET set "COMMON=%COMMON% --target-pct %TARGET%"
+if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
 (
   git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
   start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%"
