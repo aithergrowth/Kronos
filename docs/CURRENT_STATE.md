@@ -81,6 +81,9 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   The scripts pass it their markets (`--expect`): a market whose window never started is named 5 minutes after the
   watchdog's start (6 October, evening: start_ftmo.bat opened every window but NAS100's and nothing said so); the
   last session's heartbeats wait those 5 minutes too, so a restart no longer sends "no scan since" for every market.
+- A window says on Telegram that MT5 lost its trade server once the link has been down 5 minutes, and again when it
+  is back; a shorter outage stays on the console (FTMO's server restarts every night at 23:00 Amsterdam: on 6
+  October each market sent a down message at 23:01 and a back message at 23:02).
 - One window per market and journal: `window_<symbol>.lock` next to the journal, held by the operating system while
   the window runs and let go however it ends. A second window for the market (the script run again, a market started
   by hand beside it) says which process runs it and stops before it touches the terminal; the scripts close that

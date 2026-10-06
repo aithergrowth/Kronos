@@ -348,6 +348,10 @@ class LiveRunner:
         self._algo_checked: Optional[pd.Timestamp] = None   # last look at the terminal's Algo Trading button
         self._algo_on: Optional[bool] = None
         self._link_down: Optional[str] = None               # why the broker link is down, while it is
+        self._link_down_since: Optional[pd.Timestamp] = None
+        self._link_told = False                             # the down message went out (so the back message goes too)
+        self.link_quiet_minutes: float = 5.0                # a shorter outage stays off Telegram: FTMO's server restarts
+                                                            # every night at 23:00 Amsterdam for about a minute
         self._feed_down: bool = False                       # the lowest timeframe went quiet during the session
         self.journal: Optional[Journal] = Journal(settings.live.journal_path, clock=self.clock) if settings.live.journal_path else None
         # the zones traded per visit survive a restart: without them a restart right after a stop-out could re-enter the same
@@ -805,8 +809,9 @@ class LiveRunner:
             self.notifier.send(f"✅ {self.symbol}: de koersdata loopt weer.")
 
     def connection_ok(self) -> bool:
-        """The broker's link (MT5: re-initialised after a terminal restart): one message when it goes down and one when it
-        is back; while down the scan is skipped."""
+        """The broker's link (MT5: re-initialised after a terminal restart); while down the scan is skipped. One message
+        once it has been down ``link_quiet_minutes`` and one when it is back; a shorter outage only on the console (6
+        October: FTMO's nightly server restart sent a down and a back message for every market at 23:01 and 23:02)."""
         check = getattr(self.broker, "connection_ok", None)
         if not callable(check):
             return True
@@ -814,12 +819,23 @@ class LiveRunner:
             ok, reason = check()
         except Exception as exc:
             ok, reason = False, str(exc)
-        if not ok and self._link_down is None:
-            self._link_down = reason
-            self.notifier.send(f"⚠️ {self.symbol}: {reason} - de bot wacht en probeert het elke minuut opnieuw.")
-        elif ok and self._link_down is not None:
-            self._link_down = None
-            self.notifier.send(f"✅ {self.symbol}: weer verbonden met MT5.")
+        now = self.clock()
+        if not ok:
+            if self._link_down is None:
+                self._link_down, self._link_down_since = reason, now
+                print(f"[live] {self.symbol}: {reason}; waiting, trying again every scan")
+            minutes = (now - self._link_down_since) / pd.Timedelta(minutes=1)
+            if not self._link_told and minutes >= self.link_quiet_minutes:
+                self._link_told = True
+                self.notifier.send(f"⚠️ {self.symbol}: {reason}, al {minutes:.0f} min - de bot wacht en probeert het elke "
+                                   f"minuut opnieuw.")
+        elif self._link_down is not None:
+            minutes = (now - self._link_down_since) / pd.Timedelta(minutes=1)
+            if self._link_told:
+                self.notifier.send(f"✅ {self.symbol}: weer verbonden met MT5.")
+            else:
+                print(f"[live] {self.symbol}: connected again after {minutes:.0f} min")
+            self._link_down, self._link_down_since, self._link_told = None, None, False
         return ok
 
     def stale_text(self) -> str:

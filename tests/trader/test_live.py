@@ -528,15 +528,27 @@ def test_closes_of_other_windows_are_not_reported_here(setup):
 
 def test_link_and_feed_alerts_once_down_and_once_back(setup):
     """The broker's link and the lowest timeframe's candles: one message when they fail during the session, one when they
-    are back, nothing in between; outside the session a quiet feed says nothing."""
+    are back, nothing in between; a link back within 5 minutes (FTMO's nightly restart) and a quiet feed outside the
+    session say nothing."""
     broker = PaperBroker(Settings())
     runner, notifier = _runner(setup, broker)
+    clock = {"now": NOW}
+    runner.clock = lambda: clock["now"]
     state = {"ok": False}
     broker.connection_ok = lambda: (state["ok"], "MT5 not reachable (terminal closed or restarting)")
-    assert runner.connection_ok() is False and runner.connection_ok() is False
+    assert runner.connection_ok() is False
+    clock["now"] = NOW + pd.Timedelta(minutes=1)
+    assert runner.connection_ok() is False
+    state["ok"] = True
+    assert runner.connection_ok() is True and notifier.sent == []                # the nightly minute: not on Telegram
+    state["ok"] = False
+    for minute in (2, 3, 7, 8):                                               # down from minute 2: told at minute 7
+        clock["now"] = NOW + pd.Timedelta(minutes=minute)
+        assert runner.connection_ok() is False
     state["ok"] = True
     assert runner.connection_ok() is True
     assert sum("not reachable" in m for m in notifier.sent) == 1 and sum("weer verbonden" in m for m in notifier.sent) == 1
+    assert "al 5 min" in notifier.sent[0]
 
     runner.settings.session.enabled = True
     runner.settings.session.windows = [["09:00", "17:00"]]
