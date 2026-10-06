@@ -942,3 +942,30 @@ the opposing gap. Each idea below was measured on both 2017-2022 and 2023-2026:
 So the profiles stand. What can still add R is the limit entry on NAS100, once pending orders exist in the backtest.
 Measured first as a real backtest on both periods, then on MT5. More trades with an edge do not come from wider
 hours, second visits or more markets: those were all tried on the corrected candles.
+
+## The recent window: timeframes, R:R and more coins (6 October)
+
+Max: judge on the recent years ("we zitten niet op jaren te traden"), and look at 1, 5 and 15 minutes and 1 and 4
+hours. All runs are on the corrected candles from January 2024 (BTC and the coins from February 2024), one trade at
+a time:
+
+| Variant | EURUSD | Gold | NAS100 |
+|---|---|---|---|
+| Profiles (zones 1D/4H/1H, shifts on 1H/15m/5m), R:R 1.5 | 20 trades, 40 %, +8.8R | 41, 32 %, +18.5R | 31, 45 %, +20.5R |
+| + 15m zones (5m shifts) | 23, 43 %, +15.6R | 66, 27 %, +11.1R | 42, 40 %, +18.6R |
+| The book's table (1H zone -> 1m, 4H -> 5m, 1D -> 15m), 1m steps | 50, 24 %, -4.8R | 125, 22 %, -15.4R | 90, 31 %, +14.6R |
+| R:R 1.0 | **31, 48 %, +11.2R** | 58, 38 %, +22.1R | **45, 47 %, +21.5R** |
+| R:R 0.5 | 45, 47 %, +4.5R | **84, 48 %, +26.1R** | 67, 54 %, +19.8R |
+
+Lower timeframes add trades, but worse ones: 1m shifts double or treble the trades and lose. On the recent years a
+lower R:R floor gives more trades, a higher win rate and as much or more R. The BTC profile on other Bitstamp coins
+(February 2024 to October 2026) loses on all of them: SOL -12.0R, XRP -3.5R, LTC -41.8R, DOGE -4.3R (BTC +63.2R).
+
+Challenge replay on February 2024 to September 2026 (EURUSD, gold and NAS100 plus BTC, two open, 0.10R a trade):
+the profiles at 1.5 are funded from 78 % of the starts. EURUSD at 1.0, gold at 0.5 and NAS100 at 1.0 are funded
+from 91 %, median 166 days, on 295 trades against 233. A third open slot changes nothing. The 14-day trial (BTC cut
+to FTMO's margin) passes in 3 % of the starts at 1.5 % risk and 11 % at 3 % (10 % fail), with a median of 4 trades.
+
+Taken (Max: the recent years decide): `min_rr` 1.0 in `config/dorus_live.yaml` (EURUSD), 0.5 in
+`config/dorus_live_gold.yaml`, 1.0 in `config/dorus_live_nas100.yaml`. Over 2017-2026 the floor of 1.5 did better
+before 2023. That is the trade-off of judging on the recent years only.
