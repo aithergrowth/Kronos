@@ -904,3 +904,41 @@ kind at R:R 1.5 (the EURUSD profile for the pairs, gold's for silver, NAS100's f
 None is taken. The edge sits in gold and NAS100, and a little in EURUSD. Out of a dozen markets tried, a few
 positive ones could also be luck, so the live results stay the judge. `scripts/start_ftmo.bat` gets a `RISK`
 line for `scripts/ftmo_local.bat`, for a calmer challenge (1.0 %) or a deliberate trial gamble (see the 14-day table).
+
+## More opportunities, a higher win rate? (6 October)
+
+Max: "er is zoveel liquiditeit en fair value gaps in alle 3 de markten ... kijk of je de winrate kan verbeteren of
+meer opportuniteiten kan pakken". Where the profiles stand on the corrected candles (R:R 1.5; BTC on its profile):
+
+| Market | Trades a year | Win | Average win / loss | R a trade | Longest losing run |
+|---|---|---|---|---|---|
+| NAS100 | 12 | 38 % (2023-2026: 47 %) | +2.76R / -0.99R | +0.45R | 10 |
+| Gold | 15 | 27 % (34 %) | +3.52R / -1.00R | +0.23R | 9 |
+| EURUSD | 7 | 31 % (41 %) | +2.92R / -1.04R | +0.21R | 9 |
+| BTC | 47 | 46 % | +1.53R / -1.00R | +0.18R | 6 |
+
+The engine already trades the liquidity and the gaps. A zone runs from the liquidity taken (X) through the gap (b)
+to the protector (P). The bias per timeframe reads the last sweep against the last gap. The shift is a close beyond
+the opposing gap. Each idea below was measured on both 2017-2022 and 2023-2026:
+
+- **The session windows**, never tested on the right clock before: 08:00-20:00 Amsterdam gives EURUSD 109 trades and
+  -5.2R (against 67 and +14.4R), gold 260 trades and +17.0R (144 and +33.0R), and NAS100 175 trades and +51.6R (114
+  and +51.2R; better in 2023-2026, worse before). The US session 14:00-21:00 gives NAS100 98 trades and +28.7R. The
+  windows of the profiles (09-11, 13-17) stay. The extra hours add trades without edge.
+- **A liquidity sweep before the shift** (the 24 h low or high taken between the touch and the confirmation) is rare.
+  On NAS100 and BTC those trades did worse (NAS100 2023-2026: +0.05R a trade against +0.83R). A zone price runs that
+  deep through is often broken. Not a filter.
+- **A strong shift candle** (body over the 14-candle average range, top half) is better in five of eight market-
+  periods and worse in two, and it halves the trades. Not taken.
+- **A limit entry back into the zone** (25 % or 50 % of the way to the stop, valid 1 or 4 hours; missed when the
+  target comes first) gives NAS100 more in both periods in all four variants (25 % / 4 h: +24.4R / +45.4R against
+  +12.8R / +29.5R). EURUSD gains a little, gold loses in all of them (its winners leave without coming back), and BTC
+  is mixed. It needs pending orders in the backtest and on MT5. It is a candidate for NAS100 only, with fewer trades
+  (74-87 % filled).
+- **Second visits** (`confirmation.allow_retest`): five to seven more trades in nine years per market. EURUSD 72
+  trades +18.7R (drawdown -14.0R against -10.0R), gold 150 and +33.7R, NAS100 121 and +43.2R (against +51.2R). Not
+  taken.
+
+So the profiles stand. What can still add R is the limit entry on NAS100, once pending orders exist in the backtest.
+Measured first as a real backtest on both periods, then on MT5. More trades with an edge do not come from wider
+hours, second visits or more markets: those were all tried on the corrected candles.
