@@ -78,6 +78,14 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   by both scripts) says on Telegram when a window has not scanned for 5 minutes, has had no good scan for 15
   (MT5 link down, errors), or its news calendar has nothing ahead on a Monday to Thursday, and again when it is
   over. It runs on the same computer: a computer that is off or asleep shows as a missing morning briefing.
+  The scripts pass it their markets (`--expect`): a market whose window never started is named 5 minutes after the
+  watchdog's start (6 October, evening: start_ftmo.bat opened every window but NAS100's and nothing said so); the
+  last session's heartbeats wait those 5 minutes too, so a restart no longer sends "no scan since" for every market.
+- One window per market and journal: `window_<symbol>.lock` next to the journal, held by the operating system while
+  the window runs and let go however it ends. A second window for the market (the script run again, a market started
+  by hand beside it) says which process runs it and stops before it touches the terminal; the scripts close that
+  window after 5 seconds, so running a script again starts exactly the missing windows. A window on code from before
+  the lock is recognised by its heartbeat (written in the last 10 minutes by a process that still runs).
 
 ## In the code, measured, not used
 

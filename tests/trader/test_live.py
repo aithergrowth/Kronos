@@ -1,5 +1,8 @@
 """Live loop: approve / skip / expire flow, execution through the paper broker, close reports, composite fetch."""
+import os
+from pathlib import Path
 from types import SimpleNamespace
+
 import pandas as pd
 import pytest
 
@@ -1091,3 +1094,44 @@ def test_the_fill_message_says_why_the_stake_differs(setup):
     broker._balance = 107_000.0
     assert runner.stake_note(RiskParams(risk_pct=0.5)) == " (0.5 % on this trade: near the target)"
     assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone or the profile's stake)"
+
+
+def test_a_second_window_for_a_market_stops_at_the_start(tmp_path):
+    from kronos_trader.live import WindowLock
+    first = WindowLock(tmp_path, "NAS100")
+    assert first.acquire() is None
+    second = WindowLock(tmp_path, "NAS100")
+    assert second.acquire() == f"process {os.getpid()}"                      # the pid the first window wrote
+    assert WindowLock(tmp_path, "EURUSD").acquire() is None                   # another market: its own lock
+    first.release()
+    assert second.acquire() is None                                           # closed, crashed or killed: free again
+
+
+def test_a_window_on_code_from_before_the_lock_is_seen_by_its_heartbeat(tmp_path):
+    import json
+    from kronos_trader.live import WindowLock
+    now = pd.Timestamp("2026-10-06 20:00")
+    beat = tmp_path / "heartbeat_NAS100.json"
+    beat.write_text(json.dumps({"symbol": "NAS100", "pid": os.getppid(), "time": str(now - pd.Timedelta(minutes=2))}),
+                    encoding="utf-8")
+    lock = WindowLock(tmp_path, "NAS100", clock=lambda: now)
+    assert lock.acquire() == f"process {os.getppid()}, last scan 19:58 UTC"
+    lock = WindowLock(tmp_path, "NAS100", clock=lambda: now + pd.Timedelta(minutes=30))
+    assert lock.acquire() is None                                             # heartbeat too old: that window is gone
+    lock.release()
+    beat.write_text(json.dumps({"symbol": "NAS100", "pid": 2 ** 22 + 12345, "time": str(now)}), encoding="utf-8")
+    assert WindowLock(tmp_path, "NAS100", clock=lambda: now).acquire() is None   # fresh, but that process ended
+
+
+def test_the_live_command_stops_when_the_market_runs_already(tmp_path, capsys):
+    from kronos_trader import cli
+    from kronos_trader.live import WINDOW_TAKEN, WindowLock
+    journal = tmp_path / "journal_ftmo" / "trades.csv"
+    held = WindowLock(journal.parent, "EURUSD")
+    assert held.acquire() is None
+    profile = Path(__file__).resolve().parents[2] / "config" / "dorus_live.yaml"
+    code = cli.main(["--config", str(profile), "live", "--symbol", "EURUSD", "--broker", "paper",
+                     "--journal", str(journal), "--once"])
+    assert code == WINDOW_TAKEN
+    assert "EURUSD runs already in another window" in capsys.readouterr().out
+    held.release()

@@ -71,6 +71,17 @@ each, so an update never clashes with them; `set "FUNDED=1"` there once the acco
 -3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). With two terminals installed, every manual MT5 command needs the terminal first:
 `$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window.
 
+**One window per market.** A market runs in one window per journal: a second one (the script run again, a market
+started by hand) says `NAS100 runs already in another window ... (process 1234)` and stops before it touches the
+terminal; the scripts close it after 5 seconds. So when a window is missing, run the script again: it starts only
+that one. To restart a market, close its window first. The watchdog names a market without a window on Telegram 5
+minutes after it starts. Which windows run, one line each (every window is two `python.exe` processes, the venv's
+starter and Python itself, so this lists the starters):
+
+```powershell
+$p = Get-CimInstance Win32_Process -Filter "Name='python.exe'"; $p | Where-Object { $_.CommandLine -like '*--tag FTMO*' -and $p.ProcessId -notcontains $_.ParentProcessId } | Select-Object ProcessId, @{n='Window';e={ if ($_.CommandLine -match 'live --symbol (\S+)') { $Matches[1] } else { 'watchdog' } }} | Sort-Object Window
+```
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop

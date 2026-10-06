@@ -197,6 +197,100 @@ class AccountLock:
         return False
 
 
+WINDOW_TAKEN = 3                            # the exit code of a window whose market runs already: the start scripts close it
+
+
+def pid_alive(pid: int) -> bool:
+    """Whether process ``pid`` runs. Windows asks the process table: ``os.kill(pid, 0)`` would end the process there."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.OpenProcess.argtypes = (ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong)
+        kernel32.GetExitCodeProcess.argtypes = (ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong))
+        kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+        handle = kernel32.OpenProcess(0x1000, False, pid)            # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259   # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except PermissionError:                 # runs, under another user
+        return True
+    except OSError:
+        return False
+    return True
+
+
+class WindowLock:
+    """One window per market and journal folder: ``window_<name>.lock`` next to the journal, locked by the operating
+    system while the window runs and let go however it ends (closed, crashed, killed), so it is never left behind. A
+    second window for the market finds it taken and stops at the start: start_ftmo.bat run again, or a market started by
+    hand beside the script's, would otherwise run it twice, sharing the limit file and the heartbeat and sending every
+    message twice. A window on code from before the lock (6 October) holds no lock; its heartbeat, written in the last
+    ``fresh_minutes`` by a process that still runs, counts as taken too."""
+
+    LOCK_AT = 4096                          # Windows locks this byte, past the pid at the start, so the pid stays readable
+
+    def __init__(self, folder, name: str, fresh_minutes: float = 10.0,
+                 clock: Optional[Callable[[], pd.Timestamp]] = None):
+        self.path = Path(folder) / f"window_{name}.lock"
+        self.heartbeat = Path(folder) / f"heartbeat_{name}.json"
+        self.fresh_minutes, self.clock = fresh_minutes, clock or utc_now
+        self.fd: Optional[int] = None
+
+    def acquire(self) -> Optional[str]:
+        """Take the market: None when this window may run it, else which process runs it already."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(self.path), os.O_RDWR | os.O_CREAT | getattr(os, "O_BINARY", 0), 0o644)
+        try:
+            if os.name == "nt":
+                import msvcrt
+                os.lseek(fd, self.LOCK_AT, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            return f"process {self._pid_in_file() or '?'}"
+        older = self._older_window()
+        if older:
+            os.close(fd)
+            return older
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.write(fd, f"{os.getpid():<12}".encode())
+        self.fd = fd
+        return None
+
+    def release(self) -> None:
+        if self.fd is not None:
+            os.close(self.fd)
+            self.fd = None
+
+    def _pid_in_file(self) -> Optional[int]:
+        try:
+            return int(self.path.read_bytes()[:12].strip() or 0) or None
+        except (OSError, ValueError):
+            return None
+
+    def _older_window(self) -> Optional[str]:
+        try:
+            beat = json.loads(self.heartbeat.read_text(encoding="utf-8"))
+            pid, seen = int(beat.get("pid") or 0), pd.Timestamp(beat["time"])
+        except Exception:                   # no heartbeat yet, or one being replaced: nothing to go on
+            return None
+        if pid == os.getpid() or self.clock() - seen > pd.Timedelta(minutes=self.fresh_minutes) or not pid_alive(pid):
+            return None
+        return f"process {pid}, last scan {seen:%H:%M} UTC"
+
+
 class LiveRunner:
     def __init__(
         self,

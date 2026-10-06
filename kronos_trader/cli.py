@@ -380,7 +380,7 @@ def apply_product(settings: Settings, product: str) -> None:
 
 
 def cmd_live(args) -> int:
-    from .live import LiveRunner, build_fetch
+    from .live import WINDOW_TAKEN, LiveRunner, WindowLock, build_fetch
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     _apply_mt5_symbol(args, settings, symbol)
@@ -407,6 +407,14 @@ def cmd_live(args) -> int:
     if getattr(args, "journal", None):
         settings.live.journal_path = args.journal
         settings.live.charts_dir = str(Path(args.journal).parent / "charts")
+    if settings.live.journal_path:          # one window per market and journal, before the terminal is asked anything
+        folder = Path(settings.live.journal_path).parent
+        window = WindowLock(folder, symbol)
+        taken = window.acquire()
+        if taken:
+            print(f"{symbol} runs already in another window on {folder} ({taken}): this window stops. To restart "
+                  f"{symbol}, close that window first.")
+            return WINDOW_TAKEN
     broker = _broker(args, settings)
     sizing_note = None
     if broker is not None and args.broker == "mt5":
@@ -527,16 +535,26 @@ def cmd_forward_report(args) -> int:
 def cmd_watchdog(args) -> int:
     """Read the windows' heartbeats next to the journal and say on Telegram when one stops, its scans fail or its news
     calendar runs dry; once when it starts and once when it is over."""
+    from .live import WINDOW_TAKEN, WindowLock
     from .watchdog import Watchdog
     settings = _load_settings(args)
     folder = Path(args.journal).parent
+    if not args.once:
+        window = WindowLock(folder, "watchdog")
+        taken = window.acquire()
+        if taken:
+            print(f"a watchdog runs already on {folder} ({taken}): this one stops.")
+            return WINDOW_TAKEN
     notifier = TelegramNotifier(params=settings.telegram)
     if getattr(args, "tag", None):
         notifier.prefix = f"[{args.tag}] "
-    dog = Watchdog(folder, notifier.send, max_age_minutes=args.max_age, down_minutes=args.down_minutes)
+    expect = [s.strip() for s in (args.expect or "").split(",") if s.strip()]
+    dog = Watchdog(folder, notifier.send, max_age_minutes=args.max_age, down_minutes=args.down_minutes, expect=expect)
     print(f"watchdog on {folder}: a window is reported after {args.max_age:g} min without a scan, after {args.down_minutes:g} "
-          f"min without a good one; telegram={'on' if notifier.configured else 'dry-run'}")
+          f"min without a good one" + (f"; expects {', '.join(expect)}" if expect else "") +
+          f"; telegram={'on' if notifier.configured else 'dry-run'}")
     if args.once:
+        dog.started = None                  # one look: a market without any heartbeat is missing now
         for text in dog.check():
             print(text)
         return 0
@@ -913,6 +931,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--down-minutes", type=float, default=15.0, help="minutes without a good scan (MT5 link down, errors)")
     sp.add_argument("--every", type=float, default=60.0, help="seconds between checks")
     sp.add_argument("--tag", help="put [TAG] in front of every message, e.g. FTMO")
+    sp.add_argument("--expect", help="the markets whose windows should run, e.g. EURUSD,XAUUSD,NAS100,BTCUSD: one without "
+                    "a heartbeat --max-age minutes after the watchdog started is reported (its window never started)")
     sp.add_argument("--once", action="store_true", help="one check, print what it would send, stop")
     sp.set_defaults(func=cmd_watchdog)
 

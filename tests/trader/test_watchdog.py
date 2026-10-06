@@ -29,8 +29,9 @@ def test_problems_name_a_silent_window_a_failing_one_and_an_empty_calendar(tmp_p
 
 
 def test_the_watchdog_says_it_once_and_says_when_it_is_over(tmp_path):
-    sent, clock = [], {"now": NOW}
+    sent, clock = [], {"now": NOW - pd.Timedelta(minutes=30)}
     dog = Watchdog(tmp_path, sent.append, clock=lambda: clock["now"])
+    clock["now"] = NOW
     _beat(tmp_path, "EURUSD", time=str(NOW - pd.Timedelta(minutes=9)))
     assert len(dog.check()) == 1 and "EURUSD" in sent[0]
     assert dog.check() == []                                                                          # not again
@@ -56,3 +57,28 @@ def test_a_live_window_writes_its_heartbeat_after_every_scan(tmp_path):
     assert beat["symbol"] == "EURUSD" and beat["state"] == "link down" and beat["detail"] == "terminal closed"
     assert beat["last_candle"] == "2026-10-07 09:45:00" and beat["last_scan_ok"] == str(NOW)
     assert read_heartbeats(tmp_path / "journal")["EURUSD"]["time"] == str(NOW)
+
+
+def test_a_market_whose_window_never_started_is_named_after_the_start_minutes(tmp_path):
+    sent, clock = [], {"now": NOW}
+    dog = Watchdog(tmp_path, sent.append, clock=lambda: clock["now"], expect=["EURUSD", "NAS100"])
+    _beat(tmp_path, "EURUSD", time=str(NOW - pd.Timedelta(hours=20)), last_scan_ok=str(NOW - pd.Timedelta(hours=20)),
+          state="error")                                                     # yesterday's: its window is still starting
+    assert dog.check() == []
+    clock["now"] = NOW + pd.Timedelta(minutes=2)
+    _beat(tmp_path, "EURUSD", time=str(clock["now"]), last_scan_ok=str(clock["now"]))
+    assert dog.check() == []                                                  # NAS100: the windows may still be starting
+    clock["now"] = NOW + pd.Timedelta(minutes=6)
+    _beat(tmp_path, "EURUSD", time=str(clock["now"]), last_scan_ok=str(clock["now"]))
+    sent_now = dog.check()
+    assert len(sent_now) == 1 and sent_now[0].startswith("🚨 NAS100: no window has scanned it since the watchdog started")
+    assert "start_ftmo.bat" in sent_now[0]
+    assert dog.check() == []
+    _beat(tmp_path, "NAS100", time=str(clock["now"]), last_scan_ok=str(clock["now"]))
+    assert dog.check() == ["✅ NAS100: its window runs and scans."]
+
+
+def test_a_single_look_names_a_missing_market_at_once(tmp_path):
+    _beat(tmp_path, "EURUSD")
+    found = problems(read_heartbeats(tmp_path), NOW, expect=["EURUSD", "BTCUSD"], started=None)
+    assert set(found) == {("BTCUSD", "missing")} and "watchdog started" not in found[("BTCUSD", "missing")]
