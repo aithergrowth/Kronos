@@ -123,6 +123,11 @@ class BiasParams:
     required_aligned: Tuple[Timeframe, ...] = ()   # timeframes that must be among the aligned ones for any match (data, 2 October: with the
                                                    # 1H aligned the whole-period version-2 trades gave EURUSD +6.8R against -4.5R without it,
                                                    # gold +14.8R against -7.0R; not a rule of his in words, kept as an option)
+    reclaim_candles: int = 0            # 0 = off; else a break whose broken level a close takes back within this many candles reads as a sweep
+                                        # of that level in the liquidity view. His gold long of 18 Sep 2025: the 1H closed under the FOMC low at
+                                        # 06:00 UTC and back above it at 07:00; he traded the sweep, the code read the break and kept the 1H bearish
+    shift_flips_balance: bool = False   # the balance view turns when a close goes beyond the far edge of the last gap (the balance shift the
+                                        # confirmation trades, bs_threshold gap_edge), not only when its P is closed through
     mirror_symbol: Optional[str] = None     # read the bias of these timeframes from another market and invert it: his EURUSD short of
                                             # 11 Nov 2025 was read from the dollar index ("waarom zit ik in EURUSD shorts? ... laten we beginnen
                                             # met de DXY", A 00:56:25-00:57:25); DXY = EURUSD mirrored. None = the pair's own levels

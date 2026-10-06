@@ -111,3 +111,35 @@ def test_scalp_enabled_false_drops_the_scalp_combination():
     d = combine_biases(votes, BiasParams(scalp_enabled=False))
     assert d.mode is TradeMode.NONE and "not a valid combination" in d.reason
 
+
+
+def test_a_break_taken_back_by_the_next_close_reads_as_a_sweep(scenario_rows):
+    """``bias.reclaim_candles``: a break whose level a close takes back within that many candles is a sweep of the level
+    in the liquidity view (his gold long of 18 Sep 2025: the 1H closed under the FOMC low and the next hour back above
+    it). Off by default: the break decides."""
+    rows = list(scenario_rows[:14]) + [(110.8, 111, 109, 109.5)]    # 14: closes back under 110, broken up at 13
+    st = analyze_structure(CandleSeries.from_records(rows, T.H_1))
+    assert st.last_break.index == 13 and st.last_break.direction is Bias.BULLISH
+    assert timeframe_bias(st).liquidity_view is Bias.BULLISH
+    taken = timeframe_bias(st, BiasParams(reclaim_candles=1))
+    assert taken.liquidity_view is Bias.BEARISH and "taken back" in taken.notes[0]
+
+    later = list(scenario_rows[:14]) + [(110.8, 112, 110.2, 111.5), (111.5, 111.8, 109, 109.4)]   # back under 110 at 15
+    st = analyze_structure(CandleSeries.from_records(later, T.H_1))
+    assert timeframe_bias(st, BiasParams(reclaim_candles=1)).liquidity_view is Bias.BULLISH
+    assert timeframe_bias(st, BiasParams(reclaim_candles=2)).liquidity_view is Bias.BEARISH
+
+
+def test_a_close_beyond_the_last_gap_flips_the_balance_view_when_asked(scenario_rows):
+    """``bias.shift_flips_balance``: a close beyond the far edge of the last gap (the balance shift the confirmation
+    trades) turns the balance view before its P breaks. Off by default: the gap holds until P is closed through."""
+    rows = list(scenario_rows) + [
+        (112.5, 112.8, 108, 108.5),   # 16
+        (108.5, 111.5, 105.5, 105.8),  # 17 closes under 106 (the low of the gap 106-110) but above 105 (the low of its P)
+    ]
+    st = analyze_structure(CandleSeries.from_records(rows, T.H_1))
+    gap = st.last_gap
+    assert (gap.low, gap.high, gap.index) == (106, 110, 14) and not gap.is_violated
+    assert timeframe_bias(st).balance_view is Bias.BULLISH
+    shifted = timeframe_bias(st, BiasParams(shift_flips_balance=True))
+    assert shifted.balance_view is Bias.BEARISH and "balance shift" in shifted.notes[1]

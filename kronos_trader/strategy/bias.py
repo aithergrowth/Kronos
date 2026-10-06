@@ -38,6 +38,7 @@ def timeframe_bias(
     # liquidity view -----------------------------------------------------------
     liquidity = Bias.NEUTRAL
     events = st.events_in_order()
+    event_index = events[-1].index if events else None
     if events:
         last = events[-1]
         age = n - 1 - last.index
@@ -46,8 +47,15 @@ def timeframe_bias(
                 liquidity = last.implied_bias
                 notes.append(f"liquidity: {last.level.side.value} swept @ {last.level.price:.5f} ({age} candles ago) -> {liquidity}")
             else:
-                liquidity = last.direction
-                notes.append(f"liquidity: {last.kind.value} closed through {last.broken_level:.5f} ({age} candles ago) -> {liquidity}")
+                reclaimed = _reclaim_index(st, last, params.reclaim_candles)
+                if reclaimed is not None:
+                    liquidity = last.direction.opposite
+                    event_index = reclaimed
+                    notes.append(f"liquidity: {last.kind.value} through {last.broken_level:.5f} ({age} candles ago) taken back by the "
+                                 f"close {n - 1 - reclaimed} candles ago -> a sweep -> {liquidity}")
+                else:
+                    liquidity = last.direction
+                    notes.append(f"liquidity: {last.kind.value} closed through {last.broken_level:.5f} ({age} candles ago) -> {liquidity}")
         else:
             notes.append(f"liquidity: last event {age} candles ago is older than lookback {params.liquidity_lookback} -> 50/50")
     else:
@@ -61,6 +69,7 @@ def timeframe_bias(
         gap = tested[-1] if tested else None
         if gap is None:
             notes.append("balance: no balance level tested yet")
+    shifted = _shift_index(st, gap) if (params.shift_flips_balance and gap is not None and not gap.is_violated) else None
     if gap is not None:
         if gap.is_violated:
             if params.balance_violation == "flip":
@@ -69,6 +78,10 @@ def timeframe_bias(
                              f"{gap.violated_index} -> continuation {balance}")
             else:
                 notes.append(f"balance: {gap.direction} P broken at candle {gap.violated_index} -> 50/50")
+        elif shifted is not None:
+            balance = gap.direction.opposite
+            notes.append(f"balance: {gap.direction} gap {gap.low:.5f}-{gap.high:.5f} closed through at candle {shifted} "
+                         f"(a balance shift) -> {balance}")
         else:
             balance = gap.direction
             where = "unmitigated" if not gap.is_mitigated else "mitigated"
@@ -86,8 +99,9 @@ def timeframe_bias(
         notes.append(f"aligned -> {bias}")
     elif (params.conflict_rule == "recent" and liquidity is not Bias.NEUTRAL and balance is not Bias.NEUTRAL
           and events and gap is not None):
-        event_index = events[-1].index
         gap_index = gap.mitigated_index if (params.balance_view == "last_tested" and gap.mitigated_index is not None) else gap.index
+        if shifted is not None:
+            gap_index = shifted
         bias = liquidity if event_index > gap_index else balance
         notes.append(f"conflicting: the {'liquidity event' if bias is liquidity else 'balance level'} is the more recent "
                      f"(candle {max(event_index, gap_index)} vs {min(event_index, gap_index)}) -> {bias}")
@@ -95,6 +109,29 @@ def timeframe_bias(
         bias = Bias.NEUTRAL
         notes.append("conflicting / incomplete -> 50/50")
     return TimeframeBias(timeframe=st.series.timeframe, bias=bias, liquidity_view=liquidity, balance_view=balance, notes=notes)
+
+
+def _reclaim_index(st: StructureAnalysis, brk: StructureBreak, within: int) -> Optional[int]:
+    """The first candle, at most ``within`` candles after ``brk``, whose close is back on the near side of the broken
+    level (a break down closed back above it, a break up back below it); None when off or not taken back."""
+    if within <= 0:
+        return None
+    closes = st.series.close
+    for k in range(brk.index + 1, min(st.n, brk.index + 1 + within)):
+        if (brk.direction is Bias.BEARISH and closes[k] > brk.broken_level) or \
+                (brk.direction is Bias.BULLISH and closes[k] < brk.broken_level):
+            return k
+    return None
+
+
+def _shift_index(st: StructureAnalysis, gap) -> Optional[int]:
+    """The first candle after ``gap`` formed whose close lies beyond its far edge (above a bearish gap, below a bullish
+    one): the balance shift of the confirmation with ``bs_threshold`` gap_edge."""
+    closes = st.series.close
+    for k in range(gap.index + 1, st.n):
+        if (gap.direction is Bias.BEARISH and closes[k] > gap.high) or (gap.direction is Bias.BULLISH and closes[k] < gap.low):
+            return k
+    return None
 
 
 def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] = None) -> BiasDecision:
