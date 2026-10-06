@@ -404,3 +404,13 @@ def test_telegram_test_reports_a_rejected_chat():
     n._call = rejected
     with pytest.raises(TelegramError, match="chat not found"):
         n.test()
+
+
+def test_zone_age_counts_candles_of_the_zones_own_timeframe():
+    """The age limit counts candles of the zone's timeframe; a monthly zone is aged in average months (the calendar
+    offset of a month raised a TypeError in the diagnostic walk, which looks at every zone timeframe)."""
+    import pandas as pd
+    from kronos_trader.strategy.engine import zone_age_candles
+    assert zone_age_candles(pd.Timestamp("2026-10-01 12:00"), pd.Timestamp("2026-10-01 00:00"), T.H_1) == 12
+    assert 5.9 < zone_age_candles(pd.Timestamp("2026-10-01"), pd.Timestamp("2026-04-01"), T.MN_1) < 6.1
+    assert zone_age_candles(pd.Timestamp("2026-10-15"), pd.Timestamp("2026-10-01"), T.W_1) == 2

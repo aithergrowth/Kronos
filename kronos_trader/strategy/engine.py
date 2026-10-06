@@ -165,6 +165,15 @@ def volatility_percentile(h4: CandleSeries, bars: int = 6, window: int = 360) ->
         return None
     return float((atr <= atr[-1]).mean())
 
+def zone_age_candles(now, created_at, timeframe: Timeframe) -> float:
+    """How many candles of its own timeframe a zone is old; a month has no fixed length, so a monthly zone is aged in
+    average months (dividing by the calendar offset raised a TypeError)."""
+    one = timeframe.delta()
+    if not isinstance(one, pd.Timedelta):
+        one = pd.Timedelta(days=30.44)
+    return (pd.Timestamp(now) - pd.Timestamp(created_at)) / one
+
+
 class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
@@ -440,7 +449,7 @@ class StrategyEngine:
             label = poi.describe()
             max_age = s.confirmation.max_zone_age_by_tf.get(poi.timeframe, s.confirmation.max_zone_age_candles)
             if max_age > 0:
-                age = (pd.Timestamp(now) - pd.Timestamp(poi.created_at)) / poi.timeframe.delta()
+                age = zone_age_candles(now, poi.created_at, poi.timeframe)
                 if age > max_age:
                     analysis.rejections.append(f"{label}: zone {age:.0f} {poi.timeframe.label} candles old (max {max_age})")
                     continue
