@@ -969,3 +969,70 @@ to FTMO's margin) passes in 3 % of the starts at 1.5 % risk and 11 % at 3 % (10 
 Taken (Max: the recent years decide): `min_rr` 1.0 in `config/dorus_live.yaml` (EURUSD), 0.5 in
 `config/dorus_live_gold.yaml`, 1.0 in `config/dorus_live_nas100.yaml`. Over 2017-2026 the floor of 1.5 did better
 before 2023. That is the trade-off of judging on the recent years only.
+
+## Dorus's own trades against the bot, and his trade plan (6 October)
+
+Max sent screenshots of three of Dorus's trades and of his trade-plan board. The screenshots stay out of the repository;
+the prices below come from FOREX.com's feed (TradingView) and our corrected candles.
+
+**Gold long, 18 September 2025.** Entry about 3655.7 at 10:10 Amsterdam, after the London open swept the FOMC low
+(3645.8) to 3633.5. His stop, about 3626.8, sits on the low of 15 September (3626.69 on FOREX.com), the daily candle
+that made the zone, about $7 under that morning's sweep. Target 3706.6, just under the FOMC high (3707.65). R:R 1.76.
+The bot saw the same long at 10:00 (1D zone 3626-3674, 1H balance shift; entry 3658.78, stop 3633.49 on the sweep
+low, target 3685.34, R:R 1.05) and refused it: gold needs the 1H aligned, and the 1H read the 06:00 UTC close under
+the FOMC low as a break down. The dip to 3627.47 at 15:43 would have stopped the bot's version; his stop held by
+about $1 and his target filled on 22 September.
+
+**Gold long, 12 August 2025.** Price sat at the top of the daily gap 3314.7-3344.75 that the NFP candle of 1 August
+left. The session lows were swept to about 3336 at 13:35 Amsterdam; he bought about 3345.7 at 13:41, stop $8.04
+lower (at the tip of the sweep wick), target $13.10 higher (R:R 1.63). The CPI spike at 14:30 reached it; his
+positions closed at 3357.85 and 3355.71. The bot had no trade: the gap is no zone for the code (the NFP candle closed
+through no daily high, so there is no X), the 4H zone of that move was 64 candles old, and only the monthly and
+weekly were bullish (daily 50/50, 4H bearish, 1H 50/50).
+
+**EURUSD long, 17 July 2025.** The US retail sales candle at 14:30 Amsterdam swept the 16 July low (1.1562, the
+origin of the Powell spike) to 1.1557 and closed back up. Entry about 1.1586, stop 29.7 pips (0.3 pip under that
+wick), target 17.9 pips (under the morning high), R:R 0.6; the target filled at 00:30. The bot: monthly, weekly
+and daily bullish, 4H and 1H 50/50, so the 1H rule refused it; the news blackout (30 minutes either side) and the
+1H shift its daily zone waits for would have kept it out as well, and 0.6 is under EURUSD's minimum R:R of 1.0.
+
+**His trade-plan board** (DV-Institute): bias, then only POIs in the bias direction, then "POI in een POI = trade
+pas plaatsen bij een aantrekkelijke RR", then the entry (monthly POI at least a 4H shift, weekly 1H, daily 15m, 4H
+5m, 1H 1m), then the exit (intraday and scalp, daily/4H/1H zones: break-even only after 4R, no partials; swing,
+monthly/weekly: break-even after 2R, no partials), then TP / BE / SL and the journal. The code follows all of it
+except the POI-in-a-POI step; its entry timeframes sit one step above the minimum the board names. The 1H rule
+of the bias gate is data, not his words.
+
+**Measured on 2024-2026** (the recent window; one trade at a time, guard off, 1 % risk; trades, win rate, R,
+drawdown). New switches, all off in the profiles: `risk.stop_basis protector` with `stop_protection poi` (the
+stop on the zone's P, his stop of 18 September), `bias.reclaim_candles` (a break taken back by the next close is a
+sweep), `bias.shift_flips_balance` (a close beyond the far edge of the last gap turns the balance view),
+`confirmation.poi_in_poi` (a zone counts only inside a zone of a higher timeframe on the same side):
+
+| Variant | Gold | EURUSD | NAS100 | BTC |
+|---|---|---|---|---|
+| live profiles (`now`) | 84, 48 %, +26.1R, -7.2R | 31, 48 %, +11.2R, -4.0R | 45, 47 %, +21.5R, -5.0R | 142, 49 %, +53.1R, -11.9R |
+| stop on the zone's P (`zp`) | 49, 49 %, +5.1R, -6.4R | 13, 46 %, +1.4R, -3.7R | 22, 50 %, +6.0R, -4.0R | 109, 60 %, +22.3R, -7.1R |
+| a break taken back = sweep (`reclaim1`) | 63, 44 %, +14.7R, -10.5R | 25, 40 %, +3.8R, -5.0R | 39, 51 %, +23.0R, -4.0R | 108, 49 %, +33.7R, -9.0R |
+| a balance shift turns the balance view (`shift`) | 71, 52 %, +24.6R, -6.2R | 27, 41 %, +5.0R, -6.2R | 41, 46 %, +20.6R, -6.0R | 136, 52 %, +61.7R, -10.3R |
+| both (`bias2`) | 58, 47 %, +10.8R, -6.3R | 25, 60 %, +19.8R, -3.0R | 32, 56 %, +25.6R, -3.0R | 103, 49 %, +28.4R, -9.9R |
+| both + stop on the zone's P (`bias2_zp`) | 36, 44 %, -0.8R, -6.1R | 11, 73 %, +11.5R, -1.0R | 18, 61 %, +10.1R, -2.0R | 78, 64 %, +23.6R, -5.0R |
+| bias M+W+D only (`htf`) | 72, 46 %, +20.1R, -9.5R | 16, 44 %, +4.6R, -6.9R | 55, 33 %, -4.8R, -12.3R | 79, 44 %, +34.7R, -11.6R |
+| bias 3 of 5, book combos, no 1H rule (`book`) | 88, 47 %, +20.1R, -10.8R | 41, 34 %, +1.2R, -8.1R | 69, 35 %, +2.3R, -13.3R | 110, 47 %, +41.4R, -13.0R |
+| POI in een POI (`pip`) | 49, 53 %, +19.2R, -6.0R | 21, 38 %, +3.8R, -4.0R | 17, 41 %, +2.2R, -5.5R | 95, 46 %, +25.7R, -7.4R |
+| M+W+D + POI in een POI (`htf_pip`) | 30, 53 %, +12.4R, -4.0R | 13, 46 %, +3.3R, -4.9R | 24, 29 %, -6.1R, -8.8R | 53, 43 %, +26.3R, -7.6R |
+
+- His stop on the zone's P saved the trade of 18 September, and loses as a rule on all four markets: the wider stop
+  lowers the R:R, fewer setups pass the minimum, and the winners pay less. On the same trades a stop 1.25 times as
+  wide costs EURUSD 12.8R -> 9.0R and NAS100 19.4R -> 12.9R (`scripts/trade_paths.py`).
+- A bias read on the higher timeframes alone (the A+ month+week+day, or the book's 3 of 5 without the 1H rule) is
+  worse on all four. The 1H rule is the check that the lower timeframe has turned his way; without it the entries
+  come while the 1H still runs against them (NAS100 33 % won).
+- POI in een POI removes more good trades than bad ones; on gold it raises the win rate (53 %) and the R per trade,
+  not the total.
+- The bias switches help EURUSD and NAS100 together (`bias2`) and BTC alone (`shift`), hurt gold, and on EURUSD each
+  switch alone is worse than none. That pattern can be noise; the 2017-2023 check (BTC 2020-2023) decides.
+
+Entries far from the zone, on the four live ledgers of 2024-2026 (302 trades; how far the entry lies outside the zone,
+in zone heights): inside 82 trades, 43 %, +38.4R; up to half 154, 50 %, +52.9R; half to one 47, 57 %, +24.7R; more
+than one 19, 37 %, -4.1R (17 of the 19 on 1H zones). His "op de POI, niet er vanaf" holds for the far ones only.
