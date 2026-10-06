@@ -1036,3 +1036,15 @@ sweep), `bias.shift_flips_balance` (a close beyond the far edge of the last gap 
 Entries far from the zone, on the four live ledgers of 2024-2026 (302 trades; how far the entry lies outside the zone,
 in zone heights): inside 82 trades, 43 %, +38.4R; up to half 154, 50 %, +52.9R; half to one 47, 57 %, +24.7R; more
 than one 19, 37 %, -4.1R (17 of the 19 on 1H zones). His "op de POI, niet er vanaf" holds for the far ones only.
+
+**The 2017-2023 check (BTC 2020-2023) of the bias switches:**
+
+| Market | Live profile | With the switches |
+|---|---|---|
+| EURUSD 2017-06 to 2023 | 74 trades, 30 %, -2.3R, drawdown -13.1R | both: 45, 31 %, -5.8R, -8.9R |
+| NAS100 2017-03 to 2023 | 114, 36 %, +23.6R, -9.9R | both: 68, 28 %, -16.3R, -20.4R |
+| BTC 2020-06 to 2024-01 | 152, 41 %, -11.2R, -12.5R | shift: 178, 35 %, -37.6R, -38.0R |
+
+The gains of 2024-2026 do not hold before: on NAS100 the switches turn +23.6R into -16.3R, on BTC -11.2R into -37.6R.
+Not taken; the switches stay in the code, off. Every variant that looks better on the recent window gets this check
+before it goes into a profile.
