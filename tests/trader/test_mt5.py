@@ -805,3 +805,24 @@ def test_resting_limits_hold_their_risk_and_their_slot_in_the_guard():
     guard.update(NOW, broker.equity(), broker.balance())
     ok, reason = guard.can_open(broker, NOW, "EURUSD", new_risk=100.0)
     assert not ok and "resting limit entries count" in reason
+
+
+def test_the_spread_report_compares_the_live_spread_with_the_backtest_and_the_cap():
+    """mt5-spreads: median / 90 % / max in the profile's pips against typical_spread_pips, and the stop under which the
+    live spread cap (30 %) refuses an entry; a market without prices says so."""
+    from kronos_trader.cli import spread_report
+    api = FakeMT5(bid=1.1000, ask=1.1001)
+    broker = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    settings = Settings()
+    settings.risk.max_spread_stop_fraction = 0.3
+    t = [0.0]
+    asks = iter([1.1001, 1.1002, 1.1001])
+    def sleep(seconds):
+        t[0] += seconds
+        api.ask = next(asks, 1.1001)
+    lines = spread_report(broker, settings, ["EURUSD"], minutes=10 / 60, every=5, sleep=sleep, clock=lambda: t[0])
+    assert len(lines) == 1 and lines[0].startswith("EURUSD (EURUSD): 3 samples")
+    assert "median 1.0 pips" in lines[0] and "max 2.0" in lines[0] and "assumed 1" in lines[0]
+    assert "cap refuses stops under 3.3 pips" in lines[0]
+    api.bid = api.ask = 0.0
+    assert "no prices" in spread_report(broker, settings, ["EURUSD"], minutes=0, sleep=lambda s: None, clock=lambda: 0.0)[0]

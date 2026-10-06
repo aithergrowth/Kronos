@@ -590,6 +590,68 @@ def cmd_mt5_symbols(args) -> int:
     return 0
 
 
+def spread_report(broker, settings: Settings, symbols, minutes: float = 10.0, every: float = 5.0,
+                  sleep=None, clock=None) -> list:
+    """The server's live spread per market, sampled every ``every`` seconds for ``minutes``: median, 90th percentile and
+    maximum in the profile's pips, against the spread the backtest assumed (typical_spread_pips), and the stop below which
+    the live spread cap (risk.max_spread_stop_fraction) refuses an entry at the median spread. One line per market."""
+    import time as _time
+    sleep, clock = sleep or _time.sleep, clock or _time.time
+    samples = {s: [] for s in symbols}
+    for s in symbols:
+        try:
+            broker.mt5.symbol_select(broker.mt5_symbol(s), True)
+        except Exception:
+            pass
+    end = clock() + max(0.0, float(minutes)) * 60.0
+    while True:
+        for s in symbols:
+            try:
+                tick = broker.mt5.symbol_info_tick(broker.mt5_symbol(s))
+            except Exception:
+                tick = None
+            if tick is not None and getattr(tick, "ask", 0) and getattr(tick, "bid", 0):
+                samples[s].append(float(tick.ask) - float(tick.bid))
+        if clock() >= end:
+            break
+        sleep(max(0.5, float(every)))
+    cap = float(settings.risk.max_spread_stop_fraction or 0.0)
+    lines = []
+    for s in symbols:
+        spec, v = settings.symbol(s), sorted(samples[s])
+        if not v:
+            lines.append(f"{s} ({broker.mt5_symbol(s)}): no prices (market closed, or the symbol is missing from Market Watch)")
+            continue
+        pip = spec.pip_size
+        med, p90 = v[len(v) // 2], v[int(0.9 * (len(v) - 1))]
+        line = (f"{s} ({broker.mt5_symbol(s)}): {len(v)} samples, spread median {med / pip:.1f} pips ({med:.{spec.price_decimals}f}), "
+                f"90 % {p90 / pip:.1f}, max {v[-1] / pip:.1f}; the backtest assumed {spec.typical_spread_pips:g}")
+        if cap:
+            line += f"; the {cap:.0%} cap refuses stops under {med / cap / pip:.1f} pips at the median"
+        lines.append(line)
+    return lines
+
+
+def cmd_mt5_spreads(args) -> int:
+    from .execution.mt5 import MT5Broker
+    settings = _load_settings(args)
+    symbols = []
+    for item in str(args.symbols).split(","):
+        name, _, server = item.partition("=")
+        if not name.strip():
+            continue
+        key = _ensure_symbol(settings, name.strip())
+        if server.strip():
+            settings.symbols[key].mt5_symbol = server.strip()
+        symbols.append(key)
+    broker = MT5Broker(settings)
+    print(f"sampling {', '.join(symbols)} every {args.every:g} s for {args.minutes:g} min ...")
+    for line in spread_report(broker, settings, symbols, args.minutes, args.every):
+        print(line)
+    broker.disconnect()
+    return 0
+
+
 def cmd_mt5_test(args) -> int:
     from .execution.mt5 import MT5Broker
     settings = _load_settings(args)
@@ -810,6 +872,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("mt5-symbols", help="list the MT5 server's symbols that contain a text (e.g. BTC) with contract size and lot limits")
     sp.add_argument("--search", required=True)
     sp.set_defaults(func=cmd_mt5_symbols)
+    sp = sub.add_parser("mt5-spreads", help="the server's live spreads per market against the backtest's and the live spread cap")
+    sp.add_argument("--symbols", default="EURUSD,XAUUSD,NAS100=US100.cash,BTCUSD",
+                    help="markets, with the server's name where it differs: NAS100=US100.cash")
+    sp.add_argument("--minutes", type=float, default=10.0, help="how long to sample")
+    sp.add_argument("--every", type=float, default=5.0, help="seconds between samples")
+    sp.set_defaults(func=cmd_mt5_spreads)
     sp = sub.add_parser("mt5-test", help="connect to the MetaTrader 5 terminal and print account, server time offset and bars")
     sp.add_argument("--symbol", default="EURUSD")
     sp.add_argument("--mt5-symbol", help="the broker's name for the symbol when it differs (see mt5-symbols)")
