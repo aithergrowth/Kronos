@@ -150,8 +150,10 @@ def build_fetch(
 
 
 class AccountLock:
-    """A lock file next to the journal, shared by the windows of one account. It waits up to ``timeout`` seconds and then
-    goes on without the lock, so a stuck file never stops trading; a file older than ``stale`` seconds is removed."""
+    """A lock file next to the journal, shared by the windows of one account. It waits up to ``timeout`` seconds; when it
+    could not take the lock, ``held`` stays False and the caller defers the entry (``LiveRunner.execute``): trading on
+    without it would let two windows pass the account's risk checks at once. A file older than ``stale`` seconds (left by
+    a killed window) is removed, so a stuck file costs at most a minute of deferral, never the trading itself."""
 
     def __init__(self, path: Optional[Path], timeout: float = 10.0, stale: float = 60.0):
         self.path, self.timeout, self.stale, self.held = path, timeout, stale, False
@@ -175,11 +177,15 @@ class AccountLock:
                         continue
                 except FileNotFoundError:
                     continue
+                except OSError:             # being deleted by its holder (Windows: delete pending), or a scanner has it
+                    pass
                 if time.time() >= deadline:
                     return self
                 time.sleep(0.05)
-            except OSError:
-                return self
+            except OSError:                 # Windows: PermissionError while the holder deletes the file; try until the deadline
+                if time.time() >= deadline:
+                    return self
+                time.sleep(0.05)
 
     def __exit__(self, *exc) -> bool:
         if self.held:
@@ -225,6 +231,7 @@ class LiveRunner:
         self.clock = clock or utc_now
         self.seen: set = set()
         self.pending: Dict[str, PendingSetup] = {}
+        self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
         self.known_positions: Dict[str, Position] = {}
         self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
         self.last_analysis: Optional[Analysis] = None
@@ -244,6 +251,7 @@ class LiveRunner:
         self.traded_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"traded_{self.symbol}.json"
                                             if settings.live.journal_path else None)
         self.lock_path: Optional[Path] = Path(settings.live.journal_path).parent / "account.lock" if settings.live.journal_path else None
+        self.lock_timeout: float = 10.0                  # seconds a window waits for the account lock before it defers the entry
         # a paper account (BTC on Bitstamp prices) keeps its balance and open trades across a restart
         self.paper_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"paper_{self.symbol}.json"
                                            if keep_paper_account and settings.live.journal_path
@@ -283,6 +291,8 @@ class LiveRunner:
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
         self.process_decisions(now)
+        if self.deferred and self.broker is not None and not self.dry_run:
+            self.retry_deferred(now)
         self.report_closes()
         self.morning_briefing(analysis, now)
         self.evening_summary(now)
@@ -792,12 +802,42 @@ class LiveRunner:
             return f"⛔ {self.symbol}: order failed - {exc}"
         return pos, sid, risk_amount, risk_params, resized, margin_note
 
+    def defer(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> None:
+        """The account lock stayed busy: keep the entry for the next scans, up to ``max(5, confirmation minutes)`` after the
+        first try (the approval timeout's rule); one message when it is deferred and one if it expires."""
+        key = (setup.poi.key, str(setup.confirmation.timestamp))
+        sid = short_id_for(key)
+        held = self.deferred.get(sid)
+        if held is None:
+            wait = max(5, setup.confirmation.timeframe.minutes)
+            held = PendingSetup(sid, key, setup, forecast, now, now + pd.Timedelta(int(wait), unit="min"))
+            self.deferred[sid] = held
+            self.notifier.send(f"⏳ {self.symbol}: setup {sid} deferred - another window holds the account lock; "
+                               f"trying again every scan until {held.expires_at:%H:%M} UTC")
+        self.note("deferred", now, id=sid, reason="account lock busy", note=f"expires {held.expires_at:%H:%M} UTC")
+
+    def retry_deferred(self, now: pd.Timestamp) -> None:
+        for sid, held in list(self.deferred.items()):
+            if now >= held.expires_at:
+                self.deferred.pop(sid)
+                self.note("expired", now, id=sid, note="deferred: the account lock stayed busy")
+                self.notifier.send(f"⌛ {self.symbol}: setup {sid} expired, the account lock stayed busy until "
+                                   f"{held.expires_at:%H:%M} UTC; not executed")
+                continue
+            self.execute(held.setup, held.forecast, now)
+
     def execute(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> Optional[Position]:
         # the cap check and the order under one lock shared by the windows of the account: two markets signalling in
-        # the same second could otherwise both take the last open slot. Telegram waits until the lock is released: a
-        # slow send inside it held the other windows for 15 s, after 10 s they go on without it
-        with AccountLock(self.lock_path):
-            opened = self._open_locked(setup, now)
+        # the same second could otherwise both take the last open slot. Telegram waits until the lock is released (a
+        # slow send inside it held the other windows for 15 s). A window that cannot get the lock within 10 s does not
+        # trade without it: the entry is deferred and tried again every scan, with every check, until it expires
+        lock = AccountLock(self.lock_path, timeout=self.lock_timeout)
+        with lock:
+            opened = self._open_locked(setup, now) if lock.held or self.lock_path is None else None
+        if opened is None:
+            self.defer(setup, forecast, now)
+            return None
+        self.deferred.pop(short_id_for((setup.poi.key, str(setup.confirmation.timestamp))), None)
         if isinstance(opened, str):
             self.notifier.send(opened)
             return None

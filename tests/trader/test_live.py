@@ -552,12 +552,12 @@ def test_link_and_feed_alerts_once_down_and_once_back(setup):
     assert sum("geen nieuwe 15m-candles" in m for m in notifier.sent) == 1
 
 
-def test_account_lock_serialises_and_never_blocks_for_good(tmp_path):
+def test_account_lock_serialises_and_a_stale_file_never_blocks_for_good(tmp_path):
     from kronos_trader.live import AccountLock
     path = tmp_path / "journal" / "account.lock"
     with AccountLock(path) as first:
         assert first.held and path.exists()
-        second = AccountLock(path, timeout=0.2).__enter__()                 # another window waits, then goes on without it
+        second = AccountLock(path, timeout=0.2).__enter__()                 # another window waits, then gives up: not held
         assert not second.held
     assert not path.exists()
     path.write_text("123")
@@ -566,6 +566,52 @@ def test_account_lock_serialises_and_never_blocks_for_good(tmp_path):
     os.utime(path, (old, old))                                              # left behind by a killed window
     with AccountLock(path, timeout=0.2) as third:
         assert third.held
+
+
+def _locked_runner(setup, tmp_path):
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup), dry_run=False,
+                        require_approval=False, clock=lambda: NOW)
+    runner.lock_timeout = 0.1
+    runner.lock_path.parent.mkdir(parents=True, exist_ok=True)
+    runner.lock_path.write_text("4242")                                     # another window holds the account lock
+    return runner, broker, notifier
+
+
+def test_a_busy_account_lock_defers_the_entry_until_it_is_free(setup, tmp_path):
+    """A window that cannot get the account lock does not trade without it (two windows could then pass the account's
+    risk checks together): the entry is deferred, tried again every scan with every check, and sent once the lock is free."""
+    runner, broker, notifier = _locked_runner(setup, tmp_path)
+    runner.step(NOW)
+    assert broker.open_positions() == [] and len(runner.deferred) == 1
+    assert sum("deferred" in m for m in notifier.sent) == 1
+    runner.step(NOW + pd.Timedelta(minutes=1))                              # still busy: still waiting, no second message
+    assert broker.open_positions() == [] and len(runner.deferred) == 1 and sum("deferred" in m for m in notifier.sent) == 1
+    runner.lock_path.unlink()                                               # the other window is done
+    runner.step(NOW + pd.Timedelta(minutes=2))
+    assert len(broker.open_positions()) == 1 and runner.deferred == {}
+    assert any("filled" in m for m in notifier.sent) and not runner.lock_path.exists()
+
+
+def test_a_deferred_entry_expires_when_the_lock_stays_busy(setup, tmp_path):
+    """The deferral lasts as long as an approval would (at least 5 minutes, the confirmation's timeframe for a coarser
+    one: 15 minutes here); then the setup expires unexecuted."""
+    runner, broker, notifier = _locked_runner(setup, tmp_path)
+    runner.step(NOW)
+    assert len(runner.deferred) == 1
+    import os, time as _t
+    runner.step(NOW + pd.Timedelta(minutes=14))
+    assert len(runner.deferred) == 1
+    now_ts = _t.time()
+    os.utime(runner.lock_path, (now_ts, now_ts))                            # still held, freshly (not a stale file)
+    runner.step(NOW + pd.Timedelta(minutes=16))
+    assert broker.open_positions() == [] and runner.deferred == {}
+    assert any("expired, the account lock stayed busy" in m for m in notifier.sent)
 
 
 def test_a_paper_window_keeps_its_account_across_a_restart(setup):
