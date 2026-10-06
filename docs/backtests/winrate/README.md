@@ -1161,3 +1161,54 @@ replay with these four ledgers and the funded account at its own stake):
 Funded account: 1 % with -3:0.5 lost within a year from 9 % of the starts and pays 0.8 % of the account a month;
 1.5 % with -3:1.0, -6:0.5 from 14 % and 1.1 %; 2 % the same as 1.5 % (the steps cut it). With BTC sized as FTMO's
 margin allows, the 1.5 % challenge passes from 90 % of the starts against 81 % with BTC at full size.
+
+## Setup B for the FTMO 1-Step (6 October)
+
+Nearly all of the R comes from a few large trades: of 317 trades on the four live profiles in 2024-2026, the 19 of
+3R or more made +117R of the +118.9R. A challenge is passed by catching one or two of them without hitting a loss
+limit first, so setup B weights the stake by the quality of the zone and keeps the trades that make the big ones.
+Every change below was measured on 2024-2026 and on 2017-2023 (BTC June 2020 - January 2024); one trade at a time,
+guard off, 1 % units; trades, win rate, R, largest drawdown.
+
+| Change | Market | 2024-2026 | 2017-2023 | Taken |
+|---|---|---|---|---|
+| Re-entry after a stop in the same visit, and a second visit (`one_trade_per_visit: false`, `allow_retest: true`) | EURUSD | 38, 50 %, +15.8R, -5.0R (was 31, 48 %, +11.2R, -4.0R) | 90, 34 %, +5.3R, -15.7R (was 74, 30 %, -2.3R, -13.1R) | yes |
+| | gold | 95, 45 %, +20.9R (was 105, 48 %, +32.3R) | | no |
+| | NAS100 | 52, 44 %, +19.8R (was 45, 47 %, +21.5R) | | no |
+| | BTC | 228, 46 %, +47.2R, -17.1R (was 142, 49 %, +53.1R, -11.9R) | | no |
+| Limit 25 % of the way back toward the stop, 4 hours (`limit_entry_fraction: 0.25`) | NAS100 | 36, 42 %, +27.9R, -5.0R (was 45, 47 %, +21.5R, -5.0R) | 96, 28 %, +33.6R, -10.6R (was 114, 36 %, +23.6R, -9.9R) | yes |
+| | NAS100, 50 % | 29, 28 %, +23.1R, -6.0R | | no |
+| | EURUSD | 26, 46 %, +19.9R, -4.0R | running | not yet |
+| Break-even at 2R instead of 4R | NAS100 | 45, 44 %, +20.6R | 114, 36 %, +27.6R | no (mixed) |
+| | EURUSD | 31, 48 %, +12.2R | running | not yet |
+| | gold | 105, 48 %, +34.3R, -8.2R | running | not yet |
+| Swing trades on 1W/1D zones (a separate layer) | NAS100 | 13, 31 %, +7.6R, -2.0R | running | not yet |
+| | gold | 7, 29 %, -2.6R | 20, 25 %, +3.4R, -9.0R | no |
+| A second trade on a market already in a trade (`open2b`) | NAS100 | 47, 45 %, +19.5R | | no |
+| | gold | 90, 47 %, +24.2R | | no |
+| Without the 2R cap on BTC's target | BTC | 130, 34 %, +48.3R, -16.8R | 146, 32 %, -6.0R, -19.4R | no |
+
+The quality of the zone: a 4H zone on EURUSD, gold or NAS100 won 47 % at +0.49R a trade in 2017-2023 and 64 % at
++1.04R in 2024-2026, well above the markets' other zones on both periods. It risks twice the stake
+(`zone_risk_multiplier: {4H: 2.0}`). BTC made its R in a few trades of 2026 (2024 +2.9R, 2025 -2.8R, 2026 +52.9R;
+2020-2023 -11.2R) and trades at half the stake (`stake_multiplier: 0.5`): it keeps its large trades in the account
+at a cost a challenge can carry. The target fallbacks of 6 October (a target in place of one under the minimum R:R)
+added R on 2024-2026 and lost it on 2017-2023 for NAS100, gold and EURUSD; they stay off.
+
+FTMO challenge replay of the combined ledgers (two open, 0.10R a trade for costs, BTC at FTMO margin, the guard's
+day and total limits counted where the guard stops trading), starts February 2024 - September 2025:
+
+| Setup | Within 3 months | Within 6 | Within 12 | Failed | Median |
+|---|---|---|---|---|---|
+| 2-Step, 1 %, 4H x2, without BTC | 2 % | 38 % | 81 % | 0 % | 190 days |
+| 2-Step, 1 %, 4H x2, BTC half | 7 % | 39 % | 73 % | 0 % | 173 days |
+| **1-Step, 1 %, 4H x2, BTC half (setup B)** | **25 %** | **52 %** | **59 %** | **0 %** | **103 days** |
+| 1-Step, 2 %, BTC full | 31 % | 44 % | 47 % | 0 % | 62 days |
+| 2-Step, 2 %, BTC full (the FTMO set before) | 25 % | 38 % | 42 % | 0 % | 84 days |
+
+**Taken (Max, 6 October: "oke top doen we dat go"):** setup B. `RISK=1.0` and `PRODUCT=ftmo_1step` in
+`scripts/ftmo_local.bat`: the guard stops at a -2.9 % day and 9 % under the highest day-start balance (FTMO 1-Step:
+3 % and 10 % trailing); 4H zones x2 on EURUSD, gold and NAS100; BTC at half; EURUSD re-entries; the NAS100 limit
+entry (in the live runner, MT5 and paper, since the evening of 6 October). The replay starts end in September 2025, so the
+12-month column of the last starts reaches into 2026: the recent market is in it, and before 2024 the same markets
+passed far less often.

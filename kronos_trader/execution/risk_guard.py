@@ -154,6 +154,9 @@ class RiskGuard:
             if loss is None or loss <= 0:
                 loss = float(getattr(pos, "risk_amount", 0.0) or 0.0)
             total += max(0.0, loss)
+        limits = getattr(broker, "limit_orders", None)
+        if callable(limits):                             # a resting limit entry carries its whole risk until it is gone
+            total += sum(max(0.0, float(o.risk_amount or 0.0)) for o in limits())
         return total
 
     def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None,
@@ -168,10 +171,11 @@ class RiskGuard:
         p = self.params
         if not self.day_known or (p.monthly_loss_limit_pct and not self.month_known):
             return False, "the day's start balance is unknown (the terminal's trade history did not answer); asking again every scan"
-        if len(broker.open_positions()) >= p.max_open_trades:
-            return False, f"max {p.max_open_trades} open trade(s) per account"
-        if symbol and len(broker.open_positions(symbol)) >= max(1, p.max_open_per_symbol):
-            return False, f"max {max(1, p.max_open_per_symbol)} open trade(s) in {symbol}"
+        limits = broker.limit_orders if callable(getattr(broker, "limit_orders", None)) else (lambda symbol=None: [])
+        if len(broker.open_positions()) + len(limits()) >= p.max_open_trades:
+            return False, f"max {p.max_open_trades} open trade(s) per account (resting limit entries count)"
+        if symbol and len(broker.open_positions(symbol)) + len(limits(symbol)) >= max(1, p.max_open_per_symbol):
+            return False, f"max {max(1, p.max_open_per_symbol)} open trade(s) in {symbol} (resting limit entries count)"
         if self.daily_loss_pct(equity) >= p.daily_loss_limit_pct:
             return False, f"daily loss {self.daily_loss_pct(equity):.2f}% reached the {p.daily_loss_limit_pct}% limit"
         if p.monthly_loss_limit_pct and self.monthly_loss_pct() >= p.monthly_loss_limit_pct:

@@ -24,7 +24,7 @@ import os
 import time
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
@@ -229,6 +229,8 @@ class LiveRunner:
         self.day_high_path: Optional[Path] = (Path(settings.live.journal_path).parent / "guard_day_high.json"
                                               if settings.live.journal_path else None)
         self._saved_day_high = self.load_day_high()
+        self.limits_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"limits_{self.symbol}.json"
+                                            if settings.live.journal_path else None)
         self.dry_run = dry_run
         self.require_approval = settings.live.require_approval if require_approval is None else require_approval
         self.approval_timeout_minutes = approval_timeout_minutes if approval_timeout_minutes is not None else settings.live.approval_timeout_minutes
@@ -238,6 +240,8 @@ class LiveRunner:
         self.pending: Dict[str, PendingSetup] = {}
         self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
         self._last_scan_ok: Optional[pd.Timestamp] = None   # for the heartbeat: the last scan that ran through
+        self.limits: Dict[str, Dict[str, Any]] = {}      # resting limit entries: order id -> what is needed to watch them
+        self._limits_checked = False                     # the first scan cancels resting limits this window has no record of
         self.known_positions: Dict[str, Position] = {}
         self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
         self.last_analysis: Optional[Analysis] = None
@@ -264,6 +268,7 @@ class LiveRunner:
                                            and callable(getattr(broker, "restore", None)) else None)
         self.load_paper()
         self.load_traded()
+        self.load_limits()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
@@ -292,6 +297,7 @@ class LiveRunner:
         # its time limit, its weekend close or its break-even
         try:
             self.manage_positions(views)
+            self.manage_limits(now)
             self.report_closes()
         except Exception as exc:
             self.report_loop_error(exc)
@@ -872,6 +878,9 @@ class LiveRunner:
         if lots <= 0:
             self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
+        frac = float(getattr(self.settings.risk, "limit_entry_fraction", 0.0) or 0.0)
+        if frac > 0:                                     # the same checks at the market price first, as the backtest makes them
+            return self._place_limit(setup, now, sid, price, frac, risk_params)
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
         if risk_params.risk_pct != self.settings.risk.risk_pct:
             resized += f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)"
@@ -900,6 +909,165 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, reason=f"order failed: {exc}")
             return f"⛔ {self.symbol}: order failed - {exc}"
         return pos, sid, risk_amount, risk_params, resized, margin_note
+
+    # ------------------------------------------------------------ limit entries (risk.limit_entry_fraction)
+    def _place_limit(self, setup: TradeSetup, now: pd.Timestamp, sid: str, price: float, frac: float, risk_params):
+        """Inside the account lock: a limit ``frac`` of the way from the executable price back toward the stop, sized on the
+        smaller stop, the margin checked; returns ("limit", order, sid) or the refusal to send."""
+        from .strategy.risk import resize_at
+        d = self.spec.price_decimals
+        limit = self.spec.round_price(price - setup.direction.sign * frac * abs(price - setup.stop))
+        lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, self.broker.equity(),
+                                                            self.spec, risk_params)
+        if rr < self.settings.risk.min_rr:
+            self.note("not_executed", now, id=sid, price=float(limit), rr=float(rr), reason="limit: R:R below minimum")
+            return f"⛔ {self.symbol}: not executed - R:R at the limit {limit:.{d}f} is 1:{rr:.1f} (min {self.settings.risk.min_rr:g})"
+        if lots <= 0:
+            self.note("not_executed", now, id=sid, price=float(limit), reason="limit: stop too wide for the minimum lot")
+            return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at the limit {limit:.{d}f}"
+        room = self.margin_room(setup.direction, limit)
+        if room is not None and lots > room[0] + 1e-9:
+            fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
+            if fit < self.spec.min_lot:
+                self.note("not_executed", now, id=sid, price=float(limit), reason=f"limit: margin {room[1]:,.0f} available")
+                return f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot ({room[1]:,.0f} available)"
+            risk_amount *= fit / lots
+            lots = fit
+        expires = pd.Timestamp(now) + pd.Timedelta(minutes=int(self.settings.risk.limit_entry_minutes))
+        try:
+            order = self.broker.place_limit_order(
+                self.symbol, setup.direction, lots, limit, setup.stop, setup.take_profit, risk_amount, risk_distance,
+                setup.breakeven_r, expires, ts=self.fill_stamp(now),
+                meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value} L",
+                      "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value})
+        except Exception as exc:
+            self.note("not_executed", now, id=sid, reason=f"limit order failed: {exc}")
+            return f"⛔ {self.symbol}: limit order failed - {exc}"
+        return "limit", order, sid
+
+    def _limit_placed(self, setup: TradeSetup, order, sid: str, now: pd.Timestamp) -> None:
+        self.guard.record_trade(now)
+        mark_traded = getattr(self.engine, "mark_traded", None)
+        if mark_traded is not None:                      # the zone's visit is used, filled or not (as the backtest counts it)
+            mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
+            self.save_traded()
+        self.limits[order.id] = {"sid": sid, "direction": order.direction.name, "price": float(order.price),
+                                 "stop": float(order.stop), "take_profit": float(order.take_profit), "lots": float(order.lots),
+                                 "risk_amount": float(order.risk_amount), "placed_at": pd.Timestamp(now),
+                                 "expires_at": pd.Timestamp(order.expires_at)}
+        self.save_limits()
+        d = self.spec.price_decimals
+        side = "BUY" if order.direction is Direction.LONG else "SELL"
+        frac = float(self.settings.risk.limit_entry_fraction)
+        self.note("limit_placed", now, id=order.id, direction=order.direction.name, entry=float(order.price), stop=float(order.stop),
+                  take_profit=float(order.take_profit), lots=float(order.lots), risk=float(order.risk_amount),
+                  note=f"setup {sid}; valid until {order.expires_at:%H:%M} UTC")
+        self.notifier.send(f"📌 {self.symbol} {side} LIMIT {order.lots:.2f} lots @ {order.price:.{d}f} ({frac:.0%} back toward the "
+                           f"stop)  SL {order.stop:.{d}f}  TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until "
+                           f"{order.expires_at:%H:%M} UTC (id {order.id})")
+
+    def load_limits(self) -> None:
+        if self.limits_path is None or not self.limits_path.exists():
+            return
+        try:
+            for row in json.loads(self.limits_path.read_text(encoding="utf-8")):
+                row = dict(row)
+                row["placed_at"], row["expires_at"] = pd.Timestamp(row["placed_at"]), pd.Timestamp(row["expires_at"])
+                self.limits[str(row.pop("id"))] = row
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not read {self.limits_path} ({exc})")
+
+    def save_limits(self) -> None:
+        if self.limits_path is None:
+            return
+        try:
+            rows = [{"id": oid, **{k: (str(v) if isinstance(v, pd.Timestamp) else v) for k, v in info.items()}}
+                    for oid, info in self.limits.items()]
+            self.limits_path.parent.mkdir(parents=True, exist_ok=True)
+            self.limits_path.write_text(json.dumps(rows), encoding="utf-8")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.limits_path} ({exc})")
+
+    def _target_traded(self, info: Dict) -> bool:
+        """Did price reach the target since the limit was placed? The lowest timeframe's candles that close after the
+        placement, the forming one included (its extreme has traded): the backtest's candles from the placement on."""
+        if not self._views:
+            return False
+        tf = min(self._views)
+        lowest = self._views[tf]
+        k0 = lowest.index_after(pd.Timestamp(info["placed_at"]) - tf.delta())
+        if k0 >= len(lowest):
+            return False
+        if info["direction"] == "LONG":
+            return bool(float(lowest.high[k0:].max()) >= float(info["take_profit"]))
+        return bool(float(lowest.low[k0:].min()) <= float(info["take_profit"]))
+
+    def manage_limits(self, now: pd.Timestamp) -> None:
+        """Every scan: a filled limit becomes a trade like a market fill; one past its time or whose target traded first is
+        cancelled; one the server dropped is reported. At the first scan, a resting limit of this market the window has no
+        record of (left from before a restart without its file) is cancelled."""
+        if self.broker is None or self.dry_run:
+            return
+        if not self._limits_checked:
+            self._limits_checked = True
+            try:
+                for order in self.broker.limit_orders(self.symbol):
+                    if order.id not in self.limits:
+                        self.broker.cancel_limit(order.id)
+                        self.note("limit_cancelled", now, id=order.id, reason="no record of it at the start")
+                        self.notifier.send(f"🚫 {self.symbol}: limit {order.id} cancelled at the start - this window has no record of it")
+            except Exception as exc:
+                print(f"[live] {self.symbol}: could not check the resting limit orders ({exc})")
+        changed = False
+        for oid, info in list(self.limits.items()):
+            try:
+                state, pos = self.broker.limit_state(oid)
+            except Exception as exc:
+                print(f"[live] {self.symbol}: limit {oid} state unknown ({exc}); asking again next scan")
+                continue
+            if state == "pending":
+                reason = "expired" if now >= info["expires_at"] else "the target traded first" if self._target_traded(info) else None
+                if reason is None:
+                    continue
+                try:
+                    self.broker.cancel_limit(oid)
+                    state, pos = self.broker.limit_state(oid)       # it may have filled while it was being cancelled
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: cancel of limit {oid} failed ({exc}); trying again next scan")
+                    continue
+                if state != "filled":
+                    self.limits.pop(oid); changed = True
+                    self.note("limit_cancelled", now, id=oid, reason=reason)
+                    self.notifier.send(f"🚫 {self.symbol}: limit {oid} cancelled - {reason}")
+                    continue
+            if state == "filled":
+                self.limits.pop(oid); changed = True
+                self._limit_filled(oid, info, pos, now)
+            elif state == "gone":
+                self.limits.pop(oid); changed = True
+                self.note("limit_gone", now, id=oid, reason="no longer on the server, not filled")
+                self.notifier.send(f"⌛ {self.symbol}: limit {oid} is no longer on the server (removed or expired there), not filled")
+        if changed:
+            self.save_limits()
+
+    def _limit_filled(self, oid: str, info: Dict, pos: Optional[Position], now: pd.Timestamp) -> None:
+        d = self.spec.price_decimals
+        side = "BUY" if info["direction"] == "LONG" else "SELL"
+        if pos is None:                                  # filled and closed again between two scans: its close follows
+            self.note("filled", now, id=oid, direction=info["direction"], entry=float(info["price"]), stop=float(info["stop"]),
+                      take_profit=float(info["take_profit"]), lots=float(info["lots"]), risk=float(info["risk_amount"]),
+                      note=f"setup {info['sid']}; limit {oid}; closed again before this scan")
+            self.notifier.send(f"💸 {self.symbol} {side} limit {oid} filled @ {info['price']:.{d}f} and closed again before this scan")
+            return
+        from .strategy.risk import reconcile_risk
+        if getattr(pos, "status", "filled") == "filled" and hasattr(self.broker, "pnl_for"):
+            reconcile_risk(pos, self.broker, float(info["risk_amount"]))
+        self.known_positions[pos.id] = pos
+        self.note("filled", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry), stop=float(pos.stop),
+                  take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
+                  note=f"setup {info['sid']}; limit {oid}")
+        self.notifier.send(f"💸 {self.symbol} {side} filled (limit) {pos.lots:.2f} lots @ {pos.entry:.{d}f}  SL {pos.stop:.{d}f}  "
+                           f"TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}  (id {pos.id})")
 
     def defer(self, setup: TradeSetup, forecast: Optional[ForecastSummary], now: pd.Timestamp) -> None:
         """The account lock stayed busy: keep the entry for the next scans, up to ``max(5, confirmation minutes)`` after the
@@ -939,6 +1107,9 @@ class LiveRunner:
         self.deferred.pop(short_id_for((setup.poi.key, str(setup.confirmation.timestamp))), None)
         if isinstance(opened, str):
             self.notifier.send(opened)
+            return None
+        if opened[0] == "limit":
+            self._limit_placed(setup, opened[1], opened[2], now)
             return None
         pos, sid, risk_amount, risk_params, resized, margin_note = opened
         from .strategy.risk import reconcile_risk

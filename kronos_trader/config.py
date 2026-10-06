@@ -288,10 +288,11 @@ class RiskParams:
                                         # that multiple of risk_pct (after the drawdown steps). 6 October: 4H zones on EURUSD, gold
                                         # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026)
     stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
-    limit_entry_fraction: float = 0.0   # 0 = a market entry at the signal (the live profiles); else the backtest rests a limit order this
-                                        # fraction of the way from the signal's price back toward the stop, valid limit_entry_minutes,
-                                        # cancelled when the target trades first; the size follows the smaller stop (screen, 6 October:
-                                        # 25 % for 4 hours added R on NAS100 and EURUSD in 2017-2023 and 2024-2026). Backtest only
+    limit_entry_fraction: float = 0.0   # 0 = a market entry at the signal; else a limit order rests this fraction of the way from the
+                                        # signal's price back toward the stop, valid limit_entry_minutes, cancelled when the target
+                                        # trades first; the size follows the smaller stop and the order holds its slot and its risk in
+                                        # the guard while it rests (6 October: 25 % for 4 hours added R on NAS100 in 2017-2023 and
+                                        # 2024-2026; the backtest and the live runner, paper and MT5)
     limit_entry_minutes: int = 240
 
 

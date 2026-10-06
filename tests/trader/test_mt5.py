@@ -661,3 +661,147 @@ def test_another_windows_market_keeps_the_servers_spelling():
     assert other.symbol == "US100.cash" and eu.mt5_symbol("US100.cash") == "US100.cash"
     assert other.risk_amount == pytest.approx((1.1001 - 1.0) * 2.0 * 0.86, rel=1e-6)
     assert RiskGuard.open_risk(eu) == pytest.approx(other.risk_amount)
+
+
+class LimitMT5(EuroAccountMT5):
+    """Pending orders: placed (TRADE_ACTION_PENDING), listed (orders_get), removed (TRADE_ACTION_REMOVE), filled by the server
+    (fill), with their history (history_orders_get) as MT5 keeps it."""
+    TRADE_ACTION_PENDING, TRADE_ACTION_REMOVE = 5, 8
+    ORDER_TYPE_BUY_LIMIT, ORDER_TYPE_SELL_LIMIT = 2, 3
+    ORDER_FILLING_RETURN, ORDER_TIME_SPECIFIED = 2, 2
+    ORDER_STATE_CANCELED, ORDER_STATE_FILLED, ORDER_STATE_EXPIRED = 2, 4, 6
+
+    def __init__(self, expiration_mode=0, refuse_expiry=False):
+        super().__init__()
+        self.orders, self.history = [], []
+        self.expiration_mode, self.refuse_expiry = expiration_mode, refuse_expiry
+
+    def symbol_info(self, name):
+        info = super().symbol_info(name)
+        if info is not None:
+            info.expiration_mode = self.expiration_mode
+        return info
+
+    def order_send(self, request):
+        if request["action"] == self.TRADE_ACTION_PENDING:
+            self.requests.append(request)
+            if self.refuse_expiry and request["type_time"] == self.ORDER_TIME_SPECIFIED:
+                return SimpleNamespace(retcode=10022, order=0, deal=0, price=0.0, comment="Invalid expiration")
+            self._ticket += 1
+            self.orders.append(SimpleNamespace(ticket=self._ticket, symbol=request["symbol"], type=request["type"],
+                                               volume_initial=request["volume"], volume_current=request["volume"],
+                                               price_open=request["price"], sl=request["sl"], tp=request["tp"],
+                                               magic=request["magic"], comment=request["comment"], time_setup=server_seconds(NOW)))
+            return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=self._ticket, deal=0, price=0.0, comment="")
+        if request["action"] == self.TRADE_ACTION_REMOVE:
+            self.requests.append(request)
+            order = next((o for o in self.orders if o.ticket == request["order"]), None)
+            if order is None:
+                return SimpleNamespace(retcode=10013, order=0, deal=0, price=0.0, comment="Invalid request")
+            self._drop(order, self.ORDER_STATE_CANCELED)
+            return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE, order=order.ticket, deal=0, price=0.0, comment="")
+        return super().order_send(request)
+
+    def _drop(self, order, state):
+        self.orders.remove(order)
+        self.history.append(SimpleNamespace(ticket=order.ticket, position_id=order.ticket if state == self.ORDER_STATE_FILLED else 0,
+                                            state=state, sl=order.sl, time_setup=order.time_setup, time_setup_msc=0))
+
+    def orders_get(self, symbol=None):
+        return [o for o in self.orders if symbol is None or o.symbol == symbol]
+
+    def history_orders_get(self, ticket=None, position=None):
+        return [h for h in self.history if (ticket is not None and h.ticket == ticket) or
+                (position is not None and h.position_id == position)]
+
+    def fill(self, ticket, price=None):
+        """The server fills the limit: a position with the order's ticket, its entry deal."""
+        order = next(o for o in self.orders if o.ticket == ticket)
+        self._drop(order, self.ORDER_STATE_FILLED)
+        price = order.price_open if price is None else price
+        self.positions.append(SimpleNamespace(ticket=ticket, identifier=ticket, symbol=order.symbol,
+                                              type=self.POSITION_TYPE_BUY if order.type == self.ORDER_TYPE_BUY_LIMIT else self.POSITION_TYPE_SELL,
+                                              volume=order.volume_current, price_open=price, sl=order.sl, tp=order.tp,
+                                              time=server_seconds(NOW + pd.Timedelta(minutes=30)), magic=order.magic,
+                                              comment=order.comment, profit=0.0))
+        self._deal(ticket, self.DEAL_ENTRY_IN, self.DEAL_REASON_CLIENT, price, 0.0, NOW + pd.Timedelta(minutes=30))
+
+
+def _limit_broker(**kw):
+    return MT5Broker(Settings(), api=LimitMT5(**kw), clock=lambda: NOW)
+
+
+def test_a_limit_entry_rests_fills_and_keeps_its_planned_risk():
+    broker = _limit_broker()
+    order = broker.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0,
+                                     NOW + pd.Timedelta(hours=4), meta={"comment": "4HPOI balance_shift L"}, ts=NOW)
+    req = broker.mt5.requests[-1]
+    assert (req["action"], req["type"], req["price"], req["sl"], req["tp"]) == (5, 2, 1.0990, 1.0950, 1.12)
+    assert req["type_time"] == FakeMT5.ORDER_TIME_GTC and req["type_filling"] == 2 and req["magic"] == broker.magic
+    assert [o.id for o in broker.limit_orders("EURUSD")] == [order.id] and broker.limit_orders("XAUUSD") == []
+    assert broker.limit_state(order.id) == ("pending", None)
+    broker.mt5.fill(int(order.id))
+    state, pos = broker.limit_state(order.id)
+    assert state == "filled" and pos.id == order.id and pos.entry == pytest.approx(1.0990) and pos.meta["limit_id"] == order.id
+    assert pos.risk_amount == pytest.approx(344.0) and pos.breakeven_r == 4.0 and "restored" not in pos.meta
+    assert broker.limit_orders() == [] and broker.open_positions()[0] is pos
+    from kronos_trader.strategy.risk import reconcile_risk
+    reconcile_risk(pos, broker, 344.0)                                  # as the live runner does with every fill
+    broker.mt5.server_closes(int(pos.id), "sl")
+    closes = broker.recent_closes()
+    assert len(closes) == 1 and closes[0].reason == "stop" and closes[0].r == pytest.approx(-1.0)
+
+
+def test_a_cancelled_or_server_expired_limit_is_gone_and_a_late_cancel_does_not_raise():
+    broker = _limit_broker()
+    order = broker.place_limit_order("EURUSD", Direction.SHORT, 1.0, 1.1010, 1.1050, 1.0800, 344.0, 0.0041, 4.0,
+                                     NOW + pd.Timedelta(hours=4), ts=NOW)
+    assert broker.mt5.requests[-1]["type"] == 3
+    broker.cancel_limit(order.id)
+    assert broker.mt5.requests[-1] == {"action": 8, "order": int(order.id)}
+    assert broker.limit_state(order.id) == ("gone", None) and broker.limit_orders() == []
+    broker.cancel_limit(order.id)                                       # gone already: nothing to cancel, no error
+    other = broker.place_limit_order("EURUSD", Direction.SHORT, 1.0, 1.1010, 1.1050, 1.0800, 344.0, 0.0041, 4.0,
+                                     NOW + pd.Timedelta(hours=4), ts=NOW)
+    broker.mt5._drop(broker.mt5.orders[0], LimitMT5.ORDER_STATE_EXPIRED)   # the server let it expire
+    assert broker.limit_state(other.id) == ("gone", None)
+
+
+def test_a_limit_filled_and_stopped_between_two_scans_still_reports_its_close():
+    """Filled and closed again before the window looked: the history says it filled, and the close is reported with the
+    order's risk (a -1R stop), not lost because no scan ever saw the position."""
+    broker = _limit_broker()
+    order = broker.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0,
+                                     NOW + pd.Timedelta(hours=4), ts=NOW)
+    broker.mt5.fill(int(order.id))
+    broker.mt5.server_closes(int(order.id), "sl")
+    assert broker.limit_state(order.id) == ("filled", None)
+    closes = broker.recent_closes()
+    assert len(closes) == 1 and closes[0].id == order.id and closes[0].reason == "stop"
+    assert closes[0].r == pytest.approx(-1.0) and closes[0].risk_amount == pytest.approx((1.0990 - 1.0950) * 86_000, rel=1e-6)
+
+
+def test_a_limit_takes_a_server_expiry_where_the_symbol_allows_one():
+    expires = NOW + pd.Timedelta(hours=4)
+    broker = _limit_broker(expiration_mode=1 | 4)                      # GTC and SPECIFIED
+    broker.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0, expires, ts=NOW)
+    req = broker.mt5.requests[-1]
+    assert req["type_time"] == LimitMT5.ORDER_TIME_SPECIFIED
+    assert req["expiration"] == server_seconds(expires + pd.Timedelta(minutes=10))     # 10 minutes after the window's own cancel
+    refusing = _limit_broker(expiration_mode=1 | 4, refuse_expiry=True)
+    order = refusing.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0, expires, ts=NOW)
+    assert refusing.mt5.requests[-1]["type_time"] == FakeMT5.ORDER_TIME_GTC and refusing.limit_state(order.id)[0] == "pending"
+
+
+def test_resting_limits_hold_their_risk_and_their_slot_in_the_guard():
+    from kronos_trader.execution import RiskGuard
+    broker = _limit_broker()
+    broker.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0,
+                             NOW + pd.Timedelta(hours=4), ts=NOW)
+    assert RiskGuard.open_risk(broker) == pytest.approx(344.0)
+    other = MT5Broker(Settings(), api=broker.mt5, clock=lambda: NOW)    # another window: the loss at the order's stop
+    assert RiskGuard.open_risk(other) == pytest.approx((1.0990 - 1.0950) * 86_000, rel=1e-6)
+    guard = RiskGuard(Settings().prop_firm, 50_000.0)
+    guard.update(NOW, broker.equity(), broker.balance())
+    ok, reason = guard.can_open(broker, NOW, "EURUSD", new_risk=100.0)
+    assert not ok and "resting limit entries count" in reason

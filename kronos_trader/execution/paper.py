@@ -13,7 +13,7 @@ from ..config import Settings
 from ..core.candles import Candle
 from ..core.types import Direction
 from ..strategy.exits import breakeven_reached, weekend_cutoff_after
-from .base import Broker, ClosedTrade, Position
+from .base import Broker, ClosedTrade, LimitOrder, Position
 
 
 class PaperBroker(Broker):
@@ -34,6 +34,8 @@ class PaperBroker(Broker):
         self._last_id = 0
         self._close_cursor = 0
         self._restored_realized: List[Tuple[pd.Timestamp, float]] = []   # closes before a restart (day/month baselines)
+        self.limits: Dict[str, LimitOrder] = {}          # resting limit entries
+        self._limit_fills: Dict[str, Optional[Position]] = {}   # limit id -> its position (None once it closed again)
 
     def recent_closes(self) -> List[ClosedTrade]:
         out = self.closed[self._close_cursor:]
@@ -112,8 +114,13 @@ class PaperBroker(Broker):
                               "risk_amount": p.risk_amount, "risk_distance": p.risk_distance, "breakeven_r": p.breakeven_r,
                               "initial_stop": p.initial_stop, "breakeven_done": p.breakeven_done, "status": p.status,
                               "meta": {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v)) for k, v in p.meta.items()}})
+        limits = [{"id": o.id, "symbol": o.symbol, "direction": o.direction.name, "lots": o.lots, "price": o.price, "stop": o.stop,
+                   "take_profit": o.take_profit, "risk_amount": o.risk_amount, "risk_distance": o.risk_distance,
+                   "breakeven_r": o.breakeven_r, "placed_at": str(o.placed_at), "expires_at": str(o.expires_at),
+                   "meta": {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v)) for k, v in o.meta.items()}}
+                  for o in self.limits.values()]
         return {"balance": self._balance, "initial_balance": self.initial_balance, "next_id": self._last_id + 1,
-                "positions": positions, "realized": realized}
+                "positions": positions, "realized": realized, "limits": limits}
 
     def restore(self, state: Dict[str, Any]) -> None:
         self._balance = float(state.get("balance", self._balance))
@@ -127,6 +134,14 @@ class PaperBroker(Broker):
                            initial_stop=float(d["initial_stop"]), breakeven_done=bool(d.get("breakeven_done", False)),
                            meta=dict(d.get("meta") or {}), status=str(d.get("status", "filled")))
             self.positions[pos.id] = pos
+        self.limits = {}
+        for d in state.get("limits", []):
+            order = LimitOrder(id=str(d["id"]), symbol=str(d["symbol"]), direction=Direction[d["direction"]], lots=float(d["lots"]),
+                               price=float(d["price"]), stop=float(d["stop"]), take_profit=float(d["take_profit"]),
+                               risk_amount=float(d["risk_amount"]), risk_distance=float(d["risk_distance"]),
+                               breakeven_r=float(d["breakeven_r"]), placed_at=pd.Timestamp(d["placed_at"]),
+                               expires_at=pd.Timestamp(d["expires_at"]), meta=dict(d.get("meta") or {}))
+            self.limits[order.id] = order
         self._last_id = int(state.get("next_id", 1)) - 1
         self._restored_realized = [(pd.Timestamp(at), float(p)) for at, p in state.get("realized", [])]
 
@@ -161,6 +176,59 @@ class PaperBroker(Broker):
         self.positions[pos.id] = pos
         self._last_price[symbol] = mid
         return pos
+
+    # ------------------------------------------------------------ limit entries
+    def place_limit_order(self, symbol, direction, lots, price, stop, take_profit, risk_amount, risk_distance, breakeven_r,
+                          expires_at, meta=None, ts=None) -> LimitOrder:
+        order = LimitOrder(id=f"L{self._next_id()}", symbol=symbol.upper(), direction=direction, lots=float(lots),
+                           price=float(price), stop=float(stop), take_profit=float(take_profit), risk_amount=float(risk_amount),
+                           risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
+                           placed_at=pd.Timestamp(ts) if ts is not None else pd.Timestamp.now("UTC").tz_localize(None),
+                           expires_at=pd.Timestamp(expires_at), meta=dict(meta or {}))
+        self.limits[order.id] = order
+        return order
+
+    def limit_orders(self, symbol: Optional[str] = None) -> List[LimitOrder]:
+        return [o for o in self.limits.values() if symbol is None or o.symbol == symbol.upper()]
+
+    def cancel_limit(self, order_id: str) -> None:
+        self.limits.pop(str(order_id), None)
+
+    def limit_state(self, order_id: str):
+        order_id = str(order_id)
+        if order_id in self.limits:
+            return "pending", None
+        if order_id in self._limit_fills:
+            pos = self._limit_fills[order_id]
+            return "filled", (pos if pos is not None and pos.id in self.positions else None)
+        return "gone", None
+
+    def _work_limits(self, symbol: str, candle: Candle, bid_off: float, ask_off: float) -> List[ClosedTrade]:
+        """Limit entries of ``symbol`` that this candle reaches become positions at their price (the ask for a buy, the bid
+        for a sell); a stop in the fill's own candle closes it there. Expiry and the target trading first are the live
+        runner's (it cancels the order)."""
+        closed: List[ClosedTrade] = []
+        for order in [o for o in self.limits.values() if o.symbol == symbol]:
+            if pd.Timestamp(candle.timestamp) < order.placed_at:
+                continue                                 # placed_at: the start of the candle it was placed in (fill_stamp)
+            long = order.direction is Direction.LONG
+            filled = (candle.low + ask_off <= order.price) if long else (candle.high + bid_off >= order.price)
+            if not filled:
+                continue
+            self.limits.pop(order.id)
+            pos = Position(id=f"P{self._next_id()}", symbol=symbol, direction=order.direction, lots=order.lots, entry=order.price,
+                           stop=order.stop, take_profit=order.take_profit,
+                           opened_at=pd.Timestamp(candle.timestamp) + pd.Timedelta(microseconds=1),   # checked from the next candle
+                           risk_amount=order.risk_amount, risk_distance=order.risk_distance, breakeven_r=order.breakeven_r,
+                           initial_stop=order.stop, meta={**order.meta, "limit_id": order.id})
+            from ..strategy.risk import reconcile_risk
+            reconcile_risk(pos, self, order.risk_amount)  # the risk on the fill, as the backtest measures a limit fill
+            self.positions[pos.id] = pos
+            self._limit_fills[order.id] = pos
+            stopped = (candle.low + bid_off <= order.stop) if long else (candle.high + ask_off >= order.stop)
+            if stopped:                                  # the fill's own candle traded through the stop too: taken as hit
+                closed.append(self.close_position(pos.id, "stop", order.stop, candle.timestamp))
+        return closed
 
     def _next_id(self) -> int:
         self._last_id += 1
@@ -200,7 +268,7 @@ class PaperBroker(Broker):
         """Process a just-closed candle: stops first (conservative), then targets, then break-even."""
         symbol = symbol.upper()
         bid_off, ask_off = self._offsets(symbol)
-        closed: List[ClosedTrade] = []
+        closed: List[ClosedTrade] = self._work_limits(symbol, candle, bid_off, ask_off) if self.limits else []
         close_ts = candle.timestamp
         for pos in list(self.open_positions(symbol)):
             if pos.opened_at is not None and pd.Timestamp(candle.timestamp) < pos.opened_at:

@@ -61,6 +61,25 @@ class ClosedTrade:
     meta: Dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class LimitOrder:
+    """A resting limit entry (risk.limit_entry_fraction): it becomes a Position when price reaches ``price``; the live runner
+    cancels it at ``expires_at`` or when the target trades first."""
+    id: str
+    symbol: str
+    direction: Direction
+    lots: float
+    price: float
+    stop: float
+    take_profit: float
+    risk_amount: float
+    risk_distance: float
+    breakeven_r: float
+    placed_at: pd.Timestamp
+    expires_at: pd.Timestamp
+    meta: Dict[str, Any] = field(default_factory=dict)
+
+
 class Broker(ABC):
     @abstractmethod
     def equity(self) -> float: ...
@@ -76,6 +95,23 @@ class Broker(ABC):
                            risk_amount: float, risk_distance: float, breakeven_r: float,
                            meta: Optional[Dict[str, Any]] = None, price: Optional[float] = None,
                            ts: Optional[pd.Timestamp] = None, price_is_fill: bool = False) -> Position: ...
+
+    # limit entries (brokers without them refuse; the live runner only places one when risk.limit_entry_fraction > 0)
+    def place_limit_order(self, symbol: str, direction: Direction, lots: float, price: float, stop: float, take_profit: float,
+                          risk_amount: float, risk_distance: float, breakeven_r: float, expires_at: pd.Timestamp,
+                          meta: Optional[Dict[str, Any]] = None, ts: Optional[pd.Timestamp] = None) -> "LimitOrder":
+        raise NotImplementedError(f"{type(self).__name__} places no limit orders")
+
+    def limit_orders(self, symbol: Optional[str] = None) -> List["LimitOrder"]:
+        return []
+
+    def cancel_limit(self, order_id: str) -> None:
+        raise NotImplementedError(f"{type(self).__name__} places no limit orders")
+
+    def limit_state(self, order_id: str):
+        """``("pending" | "filled" | "gone", Position or None)``: still resting, filled (the position, None when it closed
+        already), or no longer on the server (cancelled or expired there)."""
+        return "gone", None
 
     def fill_price(self, symbol: str, direction: Direction, base: Optional[float] = None) -> float:
         """The executable price for a market order now: the ask for a long, the bid for a short.

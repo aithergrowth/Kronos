@@ -26,7 +26,7 @@ from ..config import MT5Params, Settings
 from ..core.candles import CandleSeries
 from ..core.timeframe import Timeframe
 from ..core.types import Direction
-from .base import Broker, ClosedTrade, Position
+from .base import Broker, ClosedTrade, LimitOrder, Position
 
 MT5_TIMEFRAMES = {
     Timeframe.MIN_1: "TIMEFRAME_M1", Timeframe.MIN_5: "TIMEFRAME_M5", Timeframe.MIN_15: "TIMEFRAME_M15",
@@ -41,6 +41,7 @@ def utc_now() -> pd.Timestamp:
 
 HOUR = pd.Timedelta(1, unit="h")
 INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
+INVALID_EXPIRATION = 10022  # TRADE_RETCODE_INVALID_EXPIRATION: the server does not take this order expiry
 NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
 WEEK_CLOSE_BARS = 3 * 7 * 48  # three weeks of M30 bars: at least two weekend gaps to read the close from
 
@@ -83,6 +84,7 @@ class MT5Broker(Broker):
         self.deviation = self.params.deviation_points
         self.clock = clock or utc_now
         self._positions: Dict[str, Position] = {}
+        self._limits: Dict[str, LimitOrder] = {}          # limit entries this window placed (what the server cannot tell back)
         self._closed: List[ClosedTrade] = []
         self._close_cursor = 0
         self._offset: Optional[pd.Timedelta] = None
@@ -649,6 +651,143 @@ class MT5Broker(Broker):
                     self._filling[name] = mode
                 return result
         return result
+
+    # ------------------------------------------------------------ limit entries
+    def place_limit_order(self, symbol, direction, lots, price, stop, take_profit, risk_amount, risk_distance, breakeven_r,
+                          expires_at, meta=None, ts=None) -> LimitOrder:
+        """A buy limit (long) or sell limit (short) at ``price`` with the stop and target attached. The live runner cancels
+        it at ``expires_at`` or when the target trades first; where the symbol takes an expiry time the server also lets it
+        expire 10 minutes later, so a window that is down (a computer asleep) leaves no order resting for days."""
+        mt5 = self.mt5
+        name = self.mt5_symbol(symbol)
+        mt5.symbol_select(name, True)
+        long = direction is Direction.LONG
+        request = {
+            "action": mt5.TRADE_ACTION_PENDING, "symbol": name, "volume": float(lots),
+            "type": mt5.ORDER_TYPE_BUY_LIMIT if long else mt5.ORDER_TYPE_SELL_LIMIT,
+            "price": float(price), "sl": float(stop), "tp": float(take_profit), "deviation": self.deviation, "magic": self.magic,
+            "comment": str((meta or {}).get("comment", "kronos_trader limit"))[:31], "type_time": mt5.ORDER_TIME_GTC,
+        }
+        timed = None
+        try:
+            info = mt5.symbol_info(name)
+            if info is not None and int(getattr(info, "expiration_mode", 0) or 0) & 4:     # SYMBOL_EXPIRATION_SPECIFIED
+                server_end = pd.Timestamp(expires_at) + pd.Timedelta(minutes=10) + self.server_offset(symbol)
+                timed = {**request, "type_time": mt5.ORDER_TIME_SPECIFIED, "expiration": int(server_end.timestamp())}
+        except Exception:
+            timed = None
+        result = None
+        modes = [getattr(mt5, "ORDER_FILLING_RETURN", 2)] + self.filling_modes(name)
+        for base in ([timed] if timed is not None else []) + [request]:
+            for mode in dict.fromkeys(modes):            # pending orders take RETURN on most servers; the others as fallback
+                result = mt5.order_send({**base, "type_filling": mode})
+                if result is None or result.retcode != INVALID_FILL:
+                    break
+            if result is not None and result.retcode != INVALID_EXPIRATION:
+                break                                    # a refused expiry time: good till cancelled, the window cancels it
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not getattr(result, "order", 0):
+            raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')} {mt5.last_error()}")
+        order = LimitOrder(id=str(result.order), symbol=symbol.upper(), direction=direction, lots=float(lots), price=float(price),
+                           stop=float(stop), take_profit=float(take_profit), risk_amount=float(risk_amount),
+                           risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
+                           placed_at=pd.Timestamp(ts) if ts is not None else self.clock(), expires_at=pd.Timestamp(expires_at),
+                           meta=dict(meta or {}))
+        self._limits[order.id] = order
+        return order
+
+    def _server_limits(self, symbol: Optional[str] = None) -> list:
+        get = getattr(self.mt5, "orders_get", None)
+        if get is None:
+            return []
+        raw = get(symbol=self.mt5_symbol(symbol)) if symbol else get()
+        if raw is None:
+            raise RuntimeError(f"MT5 did not list the pending orders: {self.mt5.last_error()}")
+        kinds = {getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2), getattr(self.mt5, "ORDER_TYPE_SELL_LIMIT", 3)}
+        return [o for o in raw if int(getattr(o, "magic", 0)) == int(self.magic) and int(getattr(o, "type", -1)) in kinds]
+
+    def limit_orders(self, symbol: Optional[str] = None) -> List[LimitOrder]:
+        """This account's resting limit entries (this program's magic number), with the risk this window recorded or, for
+        one another window placed, the loss at its stop."""
+        out: List[LimitOrder] = []
+        for o in self._server_limits(symbol):
+            known = self._limits.get(str(o.ticket))
+            if known is not None:
+                out.append(known); continue
+            sym = self.our_symbol(str(o.symbol))
+            direction = Direction.LONG if int(o.type) == getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2) else Direction.SHORT
+            price, sl, volume = float(o.price_open), float(o.sl or 0.0), float(getattr(o, "volume_current", 0.0) or getattr(o, "volume_initial", 0.0))
+            risk = 0.0
+            if sl:
+                try:
+                    risk = abs(self.pnl_for(sym, direction, price, sl, volume))
+                except Exception:
+                    risk = 0.0
+            out.append(LimitOrder(id=str(o.ticket), symbol=sym, direction=direction, lots=volume, price=price, stop=sl,
+                                  take_profit=float(o.tp or 0.0), risk_amount=risk, risk_distance=abs(price - sl) if sl else 0.0,
+                                  breakeven_r=self.settings.exits.breakeven_r_intraday, placed_at=self.to_utc(o.time_setup),
+                                  expires_at=pd.Timestamp.max, meta={"comment": str(getattr(o, "comment", ""))}))
+        return out
+
+    def cancel_limit(self, order_id: str) -> None:
+        mt5 = self.mt5
+        result = mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": int(order_id)})
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED):
+            if not any(str(o.ticket) == str(order_id) for o in self._server_limits()):
+                return                                   # gone already (filled or removed meanwhile): limit_state tells which
+            raise RuntimeError(f"cancel of limit {order_id} failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        self._limits.pop(str(order_id), None)
+
+    def limit_state(self, order_id: str):
+        """pending while the server lists it; filled when a position carries its ticket (MT5 gives the position the
+        ticket of the order that opened it), or the history says it filled (the position may be closed again); else gone."""
+        oid = str(order_id)
+        if any(str(o.ticket) == oid for o in self._server_limits()):
+            return "pending", None
+        for p in self.mt5.positions_get() or []:
+            if str(p.ticket) == oid or str(getattr(p, "identifier", "")) == oid:
+                pos = self._positions.get(str(p.ticket)) or self._position_from_mt5(p)
+                known = self._limits.pop(oid, None)
+                if known is not None and known.risk_amount:
+                    pos.risk_amount, pos.risk_distance = known.risk_amount, known.risk_distance
+                    pos.initial_stop = known.stop
+                    pos.meta.pop("restored", None)       # this window's own order, not a position found after a restart
+                pos.meta.update({"limit_id": oid})
+                self._positions[str(p.ticket)] = pos
+                return "filled", pos
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is not None:
+            try:
+                hist = list(get(ticket=int(oid)) or [])
+            except Exception:
+                hist = []
+            if hist and int(getattr(hist[-1], "state", -1)) == getattr(self.mt5, "ORDER_STATE_FILLED", 4):
+                # filled and closed again between two scans: tracked from its order so that recent_closes reports the close
+                known = self._limits.pop(oid, None)
+                pid = str(int(getattr(hist[-1], "position_id", 0) or 0) or oid)
+                if known is not None and pid not in self._positions:
+                    entry, opened = known.price, known.placed_at
+                    try:
+                        ins = [d for d in (self.mt5.history_deals_get(position=int(pid)) or [])
+                               if d.entry != self.mt5.DEAL_ENTRY_OUT]
+                        if ins:
+                            entry, opened = float(ins[0].price), self.to_utc(ins[0].time)
+                    except Exception:
+                        pass
+                    pos = Position(id=pid, symbol=known.symbol, direction=known.direction, lots=known.lots, entry=entry,
+                                   stop=known.stop, take_profit=known.take_profit, opened_at=opened, risk_amount=known.risk_amount,
+                                   risk_distance=known.risk_distance, breakeven_r=known.breakeven_r, initial_stop=known.stop,
+                                   meta={**known.meta, "limit_id": oid})
+                    try:                                 # the risk on the actual fill, as a filled market order gets it
+                        from ..strategy.risk import reconcile_risk
+                        reconcile_risk(pos, self, known.risk_amount)
+                    except Exception:
+                        pass
+                    self._positions[pid] = pos
+                return "filled", None
+        self._limits.pop(oid, None)
+        return "gone", None
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         mt5 = self.mt5

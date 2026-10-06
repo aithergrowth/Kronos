@@ -1,4 +1,4 @@
-from .base import Broker, Position, ClosedTrade
+from .base import Broker, ClosedTrade, LimitOrder, Position
 from .paper import PaperBroker
 from .risk_guard import RiskGuard
 

@@ -953,3 +953,122 @@ def test_apply_product_sets_the_guard_for_the_ftmo_one_step():
     assert (s.prop_firm.daily_loss_limit_pct, s.prop_firm.max_drawdown_pct, s.prop_firm.drawdown_basis) == (2.9, 9.0, "day_high")
     with pytest.raises(SystemExit):
         apply_product(s, "ftmo_3step")
+
+
+def _limit_runner(setup, tmp_path=None, broker=None, **kw):
+    """A runner whose profile rests a limit 25 % of the way back toward the stop (setup B's NAS100 entry), valid 4 hours."""
+    settings = Settings()
+    settings.risk.limit_entry_fraction, settings.risk.limit_entry_minutes = 0.25, 240
+    if tmp_path is not None:
+        settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    broker = broker or PaperBroker(Settings())
+    notifier = TelegramNotifier(dry_run=True)
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 3
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup), dry_run=False,
+                        require_approval=False, clock=lambda: NOW, **kw)
+    return runner, broker, notifier
+
+
+def test_a_limit_entry_rests_part_way_back_and_fills_as_a_trade(setup, tmp_path):
+    """No market order: a buy limit 25 % of the way from the ask back toward the stop, sized on the smaller stop; the
+    zone's visit is used. When price comes back to it, it is a trade like any other (filled row, R from the fill)."""
+    runner, broker, notifier = _limit_runner(setup, tmp_path)
+    runner.step(NOW)
+    assert broker.open_positions() == [] and len(broker.limit_orders()) == 1
+    order = broker.limit_orders()[0]
+    ask = 1.10005
+    assert order.price == pytest.approx(round(ask - 0.25 * (ask - 1.0949), 5)) and order.stop == 1.0949 and order.take_profit == 1.12
+    assert order.risk_amount == pytest.approx(1000.0, rel=0.02) and order.lots > 1.92      # 1 % over the smaller stop
+    assert order.expires_at == NOW + pd.Timedelta(hours=4) and order.placed_at == NOW
+    assert any("LIMIT" in m and "25% back toward the stop" in m for m in notifier.sent)
+    assert not any("filled" in m for m in notifier.sent)
+    assert runner.limits[order.id]["sid"] == short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
+    broker.on_candle("EURUSD", Candle(0, NOW, 1.1, 1.1002, 1.0985, 1.0990))                 # back down through the limit
+    runner.step(NOW + pd.Timedelta(minutes=16))
+    pos = broker.open_positions()[0]
+    assert pos.entry == order.price and pos.meta["limit_id"] == order.id and runner.limits == {}
+    assert pos.risk_distance == pytest.approx(order.price - 1.0949)                         # reconciled on the fill
+    assert any("filled (limit)" in m for m in notifier.sent)
+    broker.on_candle("EURUSD", Candle(0, NOW + pd.Timedelta(minutes=15), 1.099, 1.125, 1.0985, 1.124))
+    runner.step(NOW + pd.Timedelta(minutes=31))
+    assert broker.open_positions() == [] and any("take_profit" in m for m in notifier.sent)
+    rows = pd.read_csv(runner.settings.live.journal_path)
+    assert list(rows.event[rows.event.isin(["limit_placed", "filled", "closed"])]) == ["limit_placed", "filled", "closed"]
+    assert "limit " + order.id in rows[rows.event == "filled"].iloc[0].note
+
+
+def test_a_limit_entry_is_cancelled_at_its_expiry(setup, tmp_path):
+    runner, broker, notifier = _limit_runner(setup, tmp_path)
+    runner.step(NOW)
+    oid = broker.limit_orders()[0].id
+    runner.step(NOW + pd.Timedelta(minutes=239))
+    assert len(broker.limit_orders()) == 1
+    runner.step(NOW + pd.Timedelta(minutes=240))
+    assert broker.limit_orders() == [] and runner.limits == {} and broker.open_positions() == []
+    assert any(f"limit {oid} cancelled - expired" in m for m in notifier.sent)
+    rows = pd.read_csv(runner.settings.live.journal_path)
+    assert rows[rows.event == "limit_cancelled"].iloc[0].reason == "expired"
+
+
+def test_a_limit_entry_is_cancelled_when_the_target_trades_first(setup):
+    runner, broker, notifier = _limit_runner(setup)
+    runner.step(NOW)
+    oid = broker.limit_orders()[0].id
+    later = [(1.1, 1.101, 1.099, 1.1)] * 3 + [(1.1, 1.1205, 1.0995, 1.12)]                  # up to the target, the limit untouched
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(later, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner.step(NOW + pd.Timedelta(minutes=16))
+    assert broker.limit_orders() == [] and broker.open_positions() == [] and runner.limits == {}
+    assert any(f"limit {oid} cancelled - the target traded first" in m for m in notifier.sent)
+
+
+def test_no_limit_when_the_market_price_fails_the_checks(setup):
+    """The same checks at the market price as for a market order come first (as the backtest makes them): a price that
+    ran away to an R:R below the minimum places no limit either."""
+    runner, broker, notifier = _limit_runner(setup)
+    runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.1155, 1.099, 1.1150)],
+                                                                T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    runner.step(NOW)
+    assert broker.limit_orders() == [] and broker.open_positions() == [] and any("R:R now" in m for m in notifier.sent)
+
+
+def test_a_resting_limit_takes_the_markets_slot(setup):
+    """While a limit rests, the market's one slot is taken: a second setup there is refused, as the backtest refuses one
+    while its limit works."""
+    from kronos_trader.execution import RiskGuard
+    runner, broker, notifier = _limit_runner(setup)
+    runner.step(NOW)
+    order = broker.limit_orders()[0]
+    assert RiskGuard.open_risk(broker) == pytest.approx(order.risk_amount)
+    ok, reason = runner.guard.can_open(broker, NOW, "EURUSD", new_risk=100.0)
+    assert not ok and "resting limit entries count" in reason
+
+
+def test_resting_limits_survive_a_restart_and_unknown_ones_are_cancelled(setup, tmp_path):
+    """The window's resting limits are kept next to the journal: after a restart they are still watched (expiry, fill).
+    A resting limit of this market the window has no record of is cancelled at its first scan."""
+    runner, broker, _ = _limit_runner(setup, tmp_path)
+    runner.step(NOW)
+    known = broker.limit_orders()[0]
+    assert (tmp_path / "journal" / "limits_EURUSD.json").exists()
+    stray = broker.place_limit_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.0900, 1.1100, 250.0, 0.005, 4.0,
+                                     NOW + pd.Timedelta(hours=1), ts=NOW)
+    again, _, notifier = _limit_runner(setup, tmp_path, broker=broker)
+    assert set(again.limits) == {known.id} and again.limits[known.id]["expires_at"] == NOW + pd.Timedelta(hours=4)
+    again.engine.calls = 1                                                       # no new signal on the restart
+    again.step(NOW + pd.Timedelta(minutes=5))
+    assert [o.id for o in broker.limit_orders()] == [known.id]
+    assert any(f"limit {stray.id} cancelled at the start" in m for m in notifier.sent)
+    again.step(NOW + pd.Timedelta(minutes=241))
+    assert broker.limit_orders() == [] and again.limits == {}
+    assert (tmp_path / "journal" / "limits_EURUSD.json").read_text(encoding="utf-8") == "[]"
+
+
+def test_a_paper_limit_filled_and_stopped_in_one_candle_is_one_losing_trade(setup):
+    runner, broker, notifier = _limit_runner(setup)
+    runner.step(NOW)
+    broker.on_candle("EURUSD", Candle(0, NOW, 1.1, 1.1002, 1.0940, 1.0945))                 # through the limit and the stop
+    runner.step(NOW + pd.Timedelta(minutes=16))
+    assert broker.open_positions() == [] and runner.limits == {}
+    assert any("closed again before this scan" in m for m in notifier.sent)
+    assert any("closed (stop)" in m and "-1.00R" in m for m in notifier.sent)
