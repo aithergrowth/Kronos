@@ -1097,3 +1097,22 @@ earns its keep on the three markets with US news; BTC does not care. Both stay a
 both periods and on the FTMO replay. His stop under the zone's P, the higher-timeframe bias without the 1H, POI in een
 POI, the bias switches, entries at the zone only, the 08:00 hour and a shorter news blackout were each worse on at
 least one of the three checks. The gap zones add R on both periods and fail more FTMO challenges. The profiles stay.
+
+## A month on 100,000 (6 October)
+
+Each calendar month from February 2024 to September 2026 starts at 100,000; the live profiles' ledgers of 2024-2026
+are combined under two open trades (`scripts/portfolio.py`); the stake is 1.5 % of the balance, 1.0 % from -3 % and
+0.5 % from -6 % under the month's start; a -4 % day stops the day and -8 % the month; every trade pays 0.10R for
+costs and slippage. BTC is sized as an FTMO account allows it (crypto 1:2, margin at most 45 % of equity, so a
+notional of at most 0.9 times the balance): 129 of its 142 trades get a smaller stake and its +53.1R becomes +9.6R
+in 1.5 % units. As backtested, two BTC trades of June 2026 (+23.9R and +11.8R on stops of 0.2 %) made that month
++80 % - not a size a live account could hold.
+
+| Account | Average month | Median | Best | Worst | Positive months | Last 12 months, average |
+|---|---|---|---|---|---|---|
+| EURUSD + gold (the demo) | +1,160 | +747 | +18,002 | -6,430 | 18 of 32 | +2,864 |
+| EURUSD + gold + NAS100 | +1,912 | +998 | +16,055 | -6,982 | 19 of 32 | +4,111 |
+| EURUSD + gold + NAS100 + BTC at FTMO margin | +1,691 | +1,085 | +15,652 | -7,258 | 19 of 32 | +4,314 |
+
+Months without a trade count as zero. 2026 carries the last twelve months; on 2018-2023 the same profiles were weak
+(the challenge replay passed from 14 % of the starts), so the recent months are no promise.
