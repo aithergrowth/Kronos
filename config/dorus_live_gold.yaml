@@ -62,6 +62,9 @@ risk:
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
   tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
+  tp_fallback: fixed              # 6 October, evening (Max: decide on the last 3 years): where no target reaches min_rr, a fixed 2R target
+  tp_fallback_rr: 2.0             # instead of no trade. Gold 2024-2026: 138 trades, 51 %, +63.1R (2024 +27.0, 2025 +25.8, 2026 +10.4)
+                                  # against 100, 48 %, +32.1R (+9.3 / +7.6 / +15.1); README "The last three years"
   spread_buffer_pips: 1.0
 session:
   enabled: true

@@ -47,6 +47,9 @@ risk:
   max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
   zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
                                   # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
+  limit_entry_fraction: 0.25      # 6 October, evening (Max: decide on the last 3 years): a limit 25 % of the way back toward the stop,
+  limit_entry_minutes: 240        # valid 4 hours, as NAS100. EURUSD 2024-2026: 31 trades, 45 %, +24.6R (2024 +1.7, 2025 +16.7, 2026 +6.2)
+                                  # against 38, 50 %, +15.8R (-1.4 / +9.9 / +7.3); README "The last three years"
   tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and

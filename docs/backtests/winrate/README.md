@@ -1272,3 +1272,36 @@ old profile: 2017-2023 68 trades, 22 %, -1.3R against 74, 30 %, -2.3R.)
 EURUSD 2 trades, -1.0R. Too few trades to matter. The first swing runs (earlier this evening) set only
 `poi_timeframes`, so in scalp mode they traded 1H and 4H zones with the swing targets (a median hold of 3 hours): not a
 swing layer, and not used.
+
+## The last three years (6 October, evening): into the profiles
+
+**Max's rule from here:** intraday changes are judged on 2024-2026 only ("echt niet voor scalp" on the older years).
+Every 2024-2026 variant that differs from a live profile in a few settings was screened (about 160 ledgers): its R in
+2024, 2025 and 2026, and the 2-Step replay (1.25 %, 4H zones x2, BTC half, no half stake near the target) with its
+ledger in place of the live one. The winners combined (two open, 0.10R a trade for costs, BTC at FTMO margin):
+
+| Set | Trades a month | R a trade after costs | Average month | Median month | 2026 starts: within 6 weeks / 2 months / 3 months | 2024-25 starts: within 3 months / 12 months / lost |
+|---|---|---|---|---|---|---|
+| Live before | 9.8 | +0.28R | +3.4 % | +2.3 % | 27 % / 43 % / 65 % | 26 % / 63 % / 29 % |
+| **EURUSD limit 25 %, gold 2R fallback target, BTC shift** | 10.6 | +0.40R | +5.0 % | +4.2 % | **34 % / 53 % / 70 %** | **43 % / 92 % / 8 %** |
+| the same, BTC at a $45 FTMO spread | | | | | 26 % / 44 % / 62 % | 43 % / 94 % / 6 % |
+| plus NAS100 08:00-20:00 | 11.1 | | +4.9 % | | 39 % / 55 % / 70 % | 38 % / 87 % / 13 % |
+
+"Lost" = an FTMO limit broken or the guard's floor reached (the challenge stalls). Per market, 2024-2026 (2024 / 2025 /
+2026), against the profile before:
+
+| Change | Trades, won, R | Per year | Before |
+|---|---|---|---|
+| EURUSD: limit 25 % back toward the stop, 4 hours (`limit_entry_fraction: 0.25`) | 31, 45 %, +24.6R | +1.7 / +16.7 / +6.2 | 38, 50 %, +15.8R (-1.4 / +9.9 / +7.3) |
+| Gold: a 2R target where none reaches the minimum R:R (`tp_fallback: fixed`, `tp_fallback_rr: 2.0`) | 138, 51 %, +63.1R | +27.0 / +25.8 / +10.4 | 100, 48 %, +32.1R (+9.3 / +7.6 / +15.1) |
+| BTC: the balance turns on a close beyond the last gap's far edge (`shift_flips_balance: true`) | 136, 52 %, +61.7R | +3.7 / +8.0 / +50.1 | 142, 49 %, +53.1R (+2.9 / -2.8 / +52.9) |
+
+For the record, the same three on the older years: EURUSD 2017-2023 +7.3R against +5.3R; gold 382 trades, +3.4R,
+-32.5R drawdown against 319, +8.8R, -22.6R; BTC 2020-2023 178 trades, -37.6R, -38.0R drawdown against 152, -11.2R,
+-12.5R. Measured and not taken on 2024-2026: wider hours (08:00-20:00) on gold (164 trades, +16.9R against +32.3R),
+EURUSD (64, +12.4R against +15.8R) and BTC (206, +48.5R against +53.1R); NAS100 08:00-20:00 (51 trades, +32.6R
+against +28.9R, better in each year) left out because with it more 2024-25 challenges stalled (13 % against 8 %);
+BMS/BOS entries on EURUSD (73 trades, +13.3R, -11.8R drawdown) and NAS100 (73, +31.5R, more lost challenges).
+
+**Taken (Max, 6 October, evening: "pak echt de laatste 3 jaar alleen en wat daar goed werkt en erbij kan ... en zorg
+dat de kans hoog blijft dat we de challenge halen"):** the three changes above.

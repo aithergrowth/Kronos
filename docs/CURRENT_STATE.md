@@ -33,18 +33,18 @@ in the MT5 terminal and tokens in environment variables.
 
 | | EURUSD (`dorus_live.yaml`) | XAUUSD (`dorus_live_gold.yaml`) | NAS100 (`dorus_live_nas100.yaml`) | BTCUSD (`dorus_live_btc.yaml`) |
 |---|---|---|---|---|
-| Bias gate | 3 of 5 timeframes aligned, the 1H among them | 2 aligned with the 1H among them (1D+1H, 4H+1H, or the book's combos) | as EURUSD | 3 of 5, no 1H rule |
+| Bias gate | 3 of 5 timeframes aligned, the 1H among them | 2 aligned with the 1H among them (1D+1H, 4H+1H, or the book's combos) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`) |
 | Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Minimum R:R | 1.0 | 0.5 | 1.0 | 0.5 |
-| Target | origin of the move that made the zone | as EURUSD | as EURUSD | the previous extreme, capped at 2R (nearest liquidity) |
+| Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 2R (nearest liquidity) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
 | Time limit | none | none | 48 hours | none |
 | Re-entry | after a stop in the same visit, and a second visit | no | no | no |
-| Entry order | market | market | limit 25 % of the way back toward the stop, valid 4 hours | market (paper on the demo) |
+| Entry order | limit 25 % of the way back toward the stop, valid 4 hours | market | limit, as EURUSD | market (paper on the demo) |
 | Stake (setup B) | a 4H zone twice | a 4H zone twice | a 4H zone twice | half |
 
-The NAS100 limit is sized on its smaller stop and cancelled at its expiry or when the target trades first; while it
+The EURUSD and NAS100 limit is sized on its smaller stop and cancelled at its expiry or when the target trades first; while it
 rests it holds the market's slot and its risk in the guard. Where the symbol takes an expiry time, the server also
 lets it expire 10 minutes after the window's own cancel, so a window that is down leaves no order resting for days.
 The window keeps its resting limits in `limits_<symbol>.json` next to the journal (a restart goes on watching them)
@@ -81,9 +81,7 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 
 ## In the code, measured, not used
 
-`risk.tp_fallback` (a target in place of one under the minimum R:R: failed on 2017-2023 for NAS100, gold and
-EURUSD), `bias.reclaim_candles` and `bias.shift_flips_balance` (the bias switches: failed on 2017-2023),
-`structure.poi_gap_zones` (more R, more failed challenges), `confirmation.poi_in_poi`, `risk.tp_fixed_rr`,
+`bias.reclaim_candles` (failed on 2017-2023), `structure.poi_gap_zones` (more R, more failed challenges), `confirmation.poi_in_poi`, `risk.tp_fixed_rr`,
 `prop_firm.weekend_close` (for a funded Standard account). Each is off by default; `docs/backtests/winrate/README.md`
 has the measurements.
 
@@ -95,11 +93,12 @@ data hashes and cost assumptions):
 
 | Market | 2024 - Sep 2026 | 2017 - 2023 (BTC Jun 2020 - Jan 2024) |
 |---|---|---|
-| EURUSD (with re-entries) | 38, 50 %, +15.8R, -5.0R | 90, 34 %, +5.3R, -15.7R |
-| XAUUSD | 105, 48 %, +32.3R, -9.2R | 319, 39 %, +8.8R, -22.6R |
+| EURUSD (re-entries, limit) | 31, 45 %, +24.6R, -5.0R | 85, 26 %, +7.3R, -15.0R |
+| XAUUSD (2R fallback target) | 145, 50 %, +61.3R, -8.8R | 382, 37 %, +3.4R, -32.5R |
 | NAS100 (limit entry) | 36, 42 %, +27.9R, -5.0R | 96, 28 %, +33.6R, -10.6R |
-| BTCUSD | 142, 49 %, +53.1R, -11.9R (+52.9R of it in 2026) | 152, 41 %, -11.2R, -12.5R |
+| BTCUSD (balance shift) | 136, 52 %, +61.7R, -10.3R (+50.1R of it in 2026) | 178, 35 %, -37.6R, -38.0R |
 
+Since 6 October (evening) the profiles are chosen on 2024-2026 only (Max): the older column is kept for the record.
 The edge is the recent market's: NAS100 is the only market positive in both periods by a margin, and the FTMO 2-step
 replay at 2 % passes from about half of the 2024-2026 starts but from 4-13 % of the 2018-2023 starts. Setup B (4H
 zones x2, BTC half, the changes above), starts February 2024 - September 2025: on the 2-Step at 1.25 % funded within

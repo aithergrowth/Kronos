@@ -19,6 +19,9 @@ bias:
                                               # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
   required_aligned: []            # BTC: no timeframe required (the header: with the 1H required +30.8R, without +40.6R over 2024-2026);
                                   # EURUSD, GBPUSD and gold keep the 1H required
+  shift_flips_balance: true       # 6 October, evening (Max: decide on the last 3 years): the balance view turns when a close goes beyond
+                                  # the far edge of the last gap. BTC 2024-2026: 136 trades, 52 %, +61.7R (2024 +3.7, 2025 +8.0, 2026 +50.1)
+                                  # against 142, 49 %, +53.1R (+2.9 / -2.8 / +52.9); README "The last three years"
 confirmation:
   allow_first_candle: false
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
