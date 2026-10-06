@@ -414,6 +414,14 @@ def cmd_live(args) -> int:
                         engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan, keep_paper_account=args.broker == "paper")
+    import hashlib
+    from .backtest.provenance import code_snapshot, settings_dict
+    code = code_snapshot()
+    resolved = settings_dict(settings)
+    settings_sha = hashlib.sha256(json.dumps(resolved, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    print(f"code: {code.get('commit')} source {code['source_sha256'][:12]}{' (uncommitted changes)' if code.get('dirty') else ''}, "
+          f"settings {settings_sha[:12]}")
+    runner.record_start(code, resolved, settings_sha, " ".join(sys.argv))
     mode = "EXECUTE" if args.execute else "dry-run"
     print(f"live {symbol}: broker={args.broker} feed={kind} mode={mode} approval={'off' if args.no_approval else 'on'} "
           f"telegram={'on' if notifier.configured else 'dry-run'} poll={args.poll}s")

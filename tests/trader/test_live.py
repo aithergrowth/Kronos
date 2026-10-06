@@ -614,6 +614,29 @@ def test_a_deferred_entry_expires_when_the_lock_stays_busy(setup, tmp_path):
     assert any("expired, the account lock stayed busy" in m for m in notifier.sent)
 
 
+def test_a_live_start_records_the_code_and_the_settings_without_secrets(setup, tmp_path, monkeypatch):
+    """Every start writes a ``start`` row (code, source and settings hashes) and ``starts/<symbol>_<time>.json`` next to the
+    journal, so each forward trade traces to the program and profile that took it; secrets stay names of env variables."""
+    import json as _json
+    from kronos_trader.backtest.provenance import settings_dict
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:never-in-a-file")
+    monkeypatch.setenv("MT5_PASSWORD", "hunter2-never-in-a-file")
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    broker = PaperBroker(Settings())
+    runner = LiveRunner(settings, "EURUSD", lambda: {}, broker=broker, notifier=TelegramNotifier(dry_run=True),
+                        engine=FakeEngine(setup), dry_run=False, clock=lambda: NOW)
+    doc = settings_dict(settings)
+    path = runner.record_start({"commit": "abc123def4567890", "dirty": False, "source_sha256": "f" * 64}, doc, "e" * 64, "kronos_trader live")
+    text = path.read_text(encoding="utf-8")
+    assert "never-in-a-file" not in text and "TELEGRAM_BOT_TOKEN" in text
+    record = _json.loads(text)
+    assert record["code"]["commit"] == "abc123def4567890" and record["settings_sha256"] == "e" * 64 and record["symbol"] == "EURUSD"
+    rows = pd.read_csv(settings.live.journal_path)
+    start = rows[rows.event == "start"].iloc[0]
+    assert "code abc123def456" in start.note and "settings eeeeeeeeeeee" in start.note
+
+
 def test_a_paper_window_keeps_its_account_across_a_restart(setup):
     """With keep_paper_account (the CLI sets it for --broker paper, the BTC window) the balance, the open trades and the
     recent closed P&L come back after a restart; the position ids go on where they stopped."""

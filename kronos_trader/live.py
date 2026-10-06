@@ -304,6 +304,29 @@ class LiveRunner:
         self.save_paper()
         return analysis
 
+    def record_start(self, code: Dict, settings_doc: Dict, settings_sha: str, command: str) -> Optional[Path]:
+        """What this window runs, recorded at its start: a ``start`` row in the journal (code revision, source hash, settings
+        hash) and, next to the journal, ``starts/<symbol>_<time>.json`` with the resolved settings (secrets appear as the
+        names of their environment variables only) and the command. Every forward trade can then be traced to the program
+        and the profile that took it. Never stops the start."""
+        now = self.clock()
+        commit = code.get("commit") or "?"
+        self.note("start", now, note=f"code {commit[:12]}{' + local changes' if code.get('dirty') else ''} source "
+                                     f"{str(code.get('source_sha256') or '')[:12]} settings {settings_sha[:12]}")
+        if not self.settings.live.journal_path:
+            return None
+        try:
+            path = Path(self.settings.live.journal_path).parent / "starts" / f"{self.symbol}_{pd.Timestamp(now):%Y%m%d_%H%M%S}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            doc = {"symbol": self.symbol, "started_utc": str(now), "command": command,
+                   "code": {k: code.get(k) for k in ("commit", "dirty", "local_changes", "source_sha256")},
+                   "settings_sha256": settings_sha, "settings": settings_doc}
+            path.write_text(json.dumps(doc, indent=1, default=str), encoding="utf-8")
+            return path
+        except Exception as exc:
+            print(f"[live] {self.symbol}: start record not written ({exc})")
+            return None
+
     def note(self, event: str, now: Optional[pd.Timestamp] = None, **fields) -> None:
         if self.journal is not None:
             try:

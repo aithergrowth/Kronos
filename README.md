@@ -309,10 +309,11 @@ The script will output a detailed performance analysis in your console and gener
 
 ## 🤖 Kronos Trader - a rules-based trading system on top of Kronos
 
-`kronos_trader/` turns the Dorus Wanders methodology into code and uses Kronos as an extra indicator:
-multi-timeframe bias (3/5 rule), POI mapping, wick-only sweeps, body-close BOS/BMS confirmations,
-1:3 R:R, 1 % risk sizing, break-even management, a prop-firm risk guard, TradingView data via the
-official MCP server, Telegram alerts, a paper broker, a MetaTrader 5 adapter and a walk-forward backtester.
+`kronos_trader/` turns the Dorus Wanders methodology into code: a multi-timeframe bias gate, zones (POIs) with
+balance-shift entries, liquidity targets, a prop-firm account guard, MetaTrader 5 / paper / IBKR brokers, Telegram
+alerts and a walk-forward backtester that records what each run used. The Kronos model can run as an extra indicator;
+the live profiles have it off. **What runs now, with which settings and evidence: [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**
+(per-market minimum R:R 0.5-1.0 and 1.5-2 % risk; the 1:3 R:R and 1 % of the first version are history).
 
 ```shell
 pip install -r kronos_trader/requirements.txt

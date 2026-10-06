@@ -1,5 +1,8 @@
 # Dorus Wanders strategy - rule set and implementation spec
 
+> The live values (minimum R:R per market, risk, bias gates, guard) are in [`CURRENT_STATE.md`](CURRENT_STATE.md);
+> this page keeps the rules as they were given and audited, including the original 1:3 R:R and 1 % risk.
+
 This document is the contract between the trader's rules and the code in
 `kronos_trader/`. Section 1 is the rule set as Max gave it. Section 2 is what
 Astra's source audit (`docs/ASTRA_TASKS.md`, 2026-09-30) established in Dorus's
