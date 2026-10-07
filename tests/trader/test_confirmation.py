@@ -67,6 +67,26 @@ def test_a_balance_shift_can_wait_for_the_structure_break(scenario):
                              max_age=9) is None
 
 
+def test_a_balance_shift_can_require_liquidity_taken_first(scenario):
+    """``bs_requires_sweep``: the shift counts only after the entry timeframe swept sell-side liquidity (for a long) since the
+    touch; a sweep after the shift, or none, leaves no confirmation."""
+    from types import SimpleNamespace
+    from kronos_trader.core import Bias
+    poi = _poi(scenario)
+    ltf = _ltf()
+    touch = ltf.timestamps.iloc[5]
+    st = analyze_structure(ltf)
+    only_bs = dict(allow_first_candle=False, allow_bms=False, accept_bos=False, bs_requires_sweep=True)
+    st.sweeps = []
+    assert find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs), max_age=9, structure=st) is None
+    st.sweeps = [SimpleNamespace(index=6, implied_bias=Bias.BULLISH)]            # swept at candle 6, shift at 7
+    assert find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs), max_age=9, structure=st).index == 7
+    st.sweeps = [SimpleNamespace(index=8, implied_bias=Bias.BULLISH)]            # after the shift: too late
+    assert find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs), max_age=9, structure=st) is None
+    st.sweeps = [SimpleNamespace(index=6, implied_bias=Bias.BEARISH)]            # buy-side taken: the wrong side
+    assert find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs), max_age=9, structure=st) is None
+
+
 def test_balance_shift_protector_threshold(scenario):
     poi = _poi(scenario)
     ltf = _ltf()

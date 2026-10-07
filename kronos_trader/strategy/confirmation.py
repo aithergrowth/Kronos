@@ -106,6 +106,10 @@ def find_confirmation(
                         candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.ts_list[k],   # or was not taken,
                                                        poi.direction, level, invalidation, close))                     # does not block the next
 
+    if params.bs_requires_sweep:          # liquidity taken on the entry timeframe, since the touch and before the shift
+        swept = [w.index for w in st.sweeps if w.implied_bias is poi.direction and w.index >= touch_index]
+        candidates = [c for c in candidates if any(i <= c.index for i in swept)]
+
     if params.bs_requires_structure:      # the shift and a break of the entry timeframe's structure, both since the touch
         ups = [b for b in st.breaks if b.direction is poi.direction and b.index >= touch_index]
         joined: List[Confirmation] = []

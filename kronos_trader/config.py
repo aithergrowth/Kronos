@@ -188,6 +188,9 @@ class ConfirmationParams:
                                         # bs_structure_window candles after the shift moves the entry to that candle (Max, 7 October: he
                                         # "stapt pas in als de liquiditeit [en het] balance level in de 5m candle doorbreekt")
     bs_structure_window: int = 12
+    bs_requires_sweep: bool = False     # True: a balance shift counts only when the entry timeframe swept liquidity in the trade's favour
+                                        # since the touch (a wick through a swing low for a long, the body closing back above it): the
+                                        # liquidity is taken, then price shifts (Max, 7 October: "marktstructuur en liquiditeit")
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     search_from_reentry: bool = True    # the confirmation search starts at price's latest entry into the zone within the open visit, not at the
                                         # visit's first touch: a zone can be left and re-entered while the visit stays open, and the shift and the
