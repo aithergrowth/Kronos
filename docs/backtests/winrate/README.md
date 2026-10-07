@@ -1500,6 +1500,37 @@ trade, 77 of 77). Not more trades either: BTC with a second position at once (no
 overlap), BTC re-entries after a stop (107 trades, -7.5R), a plain break of structure as BTC's confirmation
 (107 trades, -15.0R), BTC's reclaim within 3 candles (58 trades, -32.8R), the sweep before the shift (52, -20.9R).
 
+### Breaks of structure, other markets (7 October, afternoon)
+
+Max: "kijk wat we wel kunnen doen ... meer trades zou beter zijn met hoge winrate". On tonight's set, FTMO's costs:
+
+**A plain break of structure as an entry beside the balance shift** (`confirmation.accept_bos`, the continuation break;
+`allow_bms`, the reversal break; both off as in his reading, "the plain break is a liquidity sweep"):
+
+| Market | Trades | R (change) | Halves (change) | June 2017 (BTC 2020) - 2023 |
+|---|---|---|---|---|
+| EURUSD, both breaks (on the base without the daily-plus-hourly pair) | 28 -> 51 | +31.2R -> +52.2R | +14.8 / +6.1R | the breaks' trades lose: -8.7R raw on the old base, -27.4R with the pair |
+| EURUSD with the pair, the continuation break at half the stake | 54 -> 81 | +31.4R -> +32.9R (at its stakes) | +3.3 / -1.9R | its 99 continuation trades 22 %, -16.5R |
+| BTC, the continuation break | 88 -> 110 | +64.7R -> +87.9R | +24.0 / -0.7R | its 49 trades 33 %, -12.3R, every year at or below 0 |
+| NAS100, both | 38 -> 78 | -5.4R | -1.9 / -3.6R | |
+| Gold, the continuation break | 132 -> 164 | -17.1R | +1.9 / -18.9R | |
+
+BTC's gain is three trades: of the 38 continuation trades, the three best made +17.6R, +8.6R and +4.4R (four in the
+first quarter of 2024, BTC's run toward the ETF and the halving, +25.2R); without the three the 35 others make -0.3R,
+and they keep 16 balance-shift trades (+7.1R) out. Max: "break of structure is een zwakke indicatie": not taken.
+The stake per confirmation type (`risk.confirmation_risk_multiplier`, new, off) stays in the code.
+
+**Other markets with tonight's rules** (EURUSD's profile on the other pairs, gold's on silver, NAS100's on the indices),
+February 2024 - September 2026, raw: GBPUSD 48 trades -10.3R, USDJPY 54 -10.9R, AUDUSD 35 -8.8R, USDCAD 51 -9.7R,
+USDCHF 35 -2.1R, NZDUSD 29 -5.2R, silver 146 -41.1R, US500 29 -1.0R, ETHUSD (BTC's) 81 -13.8R. GER40: 34 trades,
+38 %, +15.1R, every year positive, no outlier (the best +3.8R); as a fifth market the challenge replay loses 7 % of
+the 2024-25 starts (1 % without it), at half its stake 2 %, the month +7.4 % against +7.2 %: more trades, not better.
+
+**Gold, more trades:** until 20:00 163 trades, 45 %, -12.0R; 08:00-18:00 172, 41 %, -22.9R; zones visited up to 48
+hours after forming -5.6R; a second gold position at once changes no trade. **EURUSD's 15m zones on 2017-2023:** 71
+trades, 17 %, -22.8R (Max kept them out tonight). **BTC:** 15m zones (5m entries) 149 trades, -24.6R; the limit
+25 % back -5.3 / +6.8R by half, drawdown -10.2R; zones up to 48 hours -5.5R; entry after the shift no change.
+
 ### The set of the 7 October restart
 
 The four markets together, two open, 1.25 %, 4H zones x2, BTC half, FTMO's costs and 0.10R a trade for slippage,
