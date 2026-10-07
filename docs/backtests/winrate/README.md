@@ -1531,6 +1531,46 @@ hours after forming -5.6R; a second gold position at once changes no trade. **EU
 trades, 17 %, -22.8R (Max kept them out tonight). **BTC:** 15m zones (5m entries) 149 trades, -24.6R; the limit
 25 % back -5.3 / +6.8R by half, drawdown -10.2R; zones up to 48 hours -5.5R; entry after the shift no change.
 
+### The big moves, and a reversal trigger (7 October, evening)
+
+Max: "kijk naar alle grote trades ... hoeveel kunnen wij herkennen ... het is allemaal een spelletje van liquiditeit en
+balance levels". `big_moves.py`: a big move is a zigzag leg on the 1H candles of at least K daily ATRs (ATR14), February
+2024 - September 2026; it counts as taken when tonight's set opened a trade in its direction during it (early: the entry
+in its first half). K = 3 (legs of about five ATRs, two to three weeks):
+
+| Market | Big moves | Taken (early / late) | Against | Missed | R in them, tonight / the set before today |
+|---|---|---|---|---|---|
+| Gold | 32 | 69 % (47 / 22) | 6 % | 25 % | +79.0R / +59.5R |
+| BTC | 57 | 44 % (18 / 26) | 12 % | 44 % | +70.0R / +50.2R |
+| EURUSD | 33 | 39 % (21 / 18) | 21 % | 39 % | +41.4R / +25.6R |
+| NAS100 | 35 | 26 % (9 / 17) | 14 % | 60 % | +36.5R / +28.1R |
+
+Why the 204 big moves of K = 2 were missed (`why_missed.py`: the engine at each hour of a move's early part, walked in
+its direction past every gate; `why_classify.py`): a zone of the traded timeframes was touched but no balance shift came
+on the 5m 27 %; the setup came outside the entry windows 27 %; the zone was weeks old (1D median 22 days, 4H 17 days:
+the 24 h rule) 22 %; no zone of ours at the origin 14 %; the bias against while the setup was there 7 %. In 55-80 % of
+them the higher-timeframe bias still pointed the other way at the start. The zones themselves are mostly right; the
+trigger and the timing are what miss. Allowing the old 1D and 4H zones again is no cure: the trades the 24 h rule took
+out there were 23, -7.0R, and the set before the rule took no more big moves.
+
+**A reversal trigger** (`confirmation.reversal_poi_timeframes`, new, off): a visited 1D or 4H zone traded against the
+bias or without one, after a liquidity sweep, on its own shift timeframe, labelled REV. The REV trades on their own:
+
+| Variant | EURUSD | Gold | NAS100 | BTC | Challenge replay, REV at half the stake |
+|---|---|---|---|---|---|
+| A: 1D and 4H, sweep, shift on the 1H | 54 tr, 33 %, +2.4R | 31, 16 %, -18.7R | 31, 16 %, -13.9R | 64, 42 %, -7.4R | lost 10 % (1 %) |
+| B: 1D only, sweep, shift on the 4H | 11, 27 %, +6.5R (two trades) | 6, 0 %, -6.0R | 6, 17 %, -4.5R | 7, 57 %, +2.0R | lost 0 %, 2024-25 within 3 mo 47 % (50 %) |
+| C: as A, the 4H zones shifting on the 15m | 138, 28 %, +5.3R | 90, 29 %, -16.0R | 88, 17 %, -18.7R | 140, 39 %, -10.1R | lost 50 % |
+| D: as A without the sweep | 90, 29 %, +2.1R | 55, 24 %, -17.4R | 51, 24 %, +2.4R | 97, 34 %, -24.2R | lost 14 % |
+
+Against the big bias the trend mostly runs on: not taken. The sweep removes many bad reversals, not enough of them.
+
+**A stake by quality.** The trades the monthly agrees with (1M+...) earn more a trade in all four markets (EURUSD +2.2R
+against +0.43R, gold +0.71R against +0.59R, NAS100 +1.0R against +0.88R, BTC +0.94R against +0.17R), but not in both
+halves of each market (gold's second half, BTC's first half the other way). In the replay those trades at 1.5x: the
+2024-25 starts within 3 months 66 % (50 %), lost 5 % (1 %), the worst month -6.1 %; everything at 1.26x (the same extra
+risk) 60 %, 5 %, -6.3 %. The selection adds little to plain extra risk: the stake stays 1.25 % with the multipliers it has.
+
 ### The set of the 7 October restart
 
 The four markets together, two open, 1.25 %, 4H zones x2, BTC half, FTMO's costs and 0.10R a trade for slippage,
