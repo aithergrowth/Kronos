@@ -21,6 +21,15 @@ def test_poi_runs_from_liquidity_to_protection(scenario):
     assert map_pois(analyze_structure(scenario), current_price=112.5)[0].status is POIStatus.TESTED   # candle 14 touched 110
 
 
+def test_the_last_gap_of_an_impulse_gives_the_tighter_zone(scenario):
+    """``structure.poi_gap_choice``: the scenario's impulse left two gaps before its break; first keeps the deepest P (100.6),
+    last the gap nearest the break, so the zone starts higher and still runs to X."""
+    first = map_pois(analyze_structure(scenario), current_price=105.0)[0]
+    last = map_pois(analyze_structure(scenario), StructureParams(poi_gap_choice="last"), current_price=105.0)[0]
+    assert first.low == 100.6 and last.low > first.low and last.high == first.high == 110.0
+    assert last.gap.index > first.gap.index
+
+
 def test_the_zone_reaches_to_x_to_the_gap_or_covers_p_alone(scenario):
     """``structure.poi_extent``: liquidity = P to the level the impulse took (X, the default); gap = P to the balance
     level's near edge; protector = P's own range, never past X."""

@@ -59,7 +59,7 @@ def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams)
                 low = max(low, gap.protector_low)
         if high <= low:
             continue
-        if key in by_break:                            # several gaps in one impulse: keep the first (deepest P)
+        if key in by_break and params.poi_gap_choice != "last":   # several gaps in one impulse: keep the first (deepest P)
             continue
         sweep = next((s for s in reversed(st.sweeps) if s.implied_bias is d and s.index < gap.protector_index
                       and gap.protector_index - s.index <= params.max_bars_sweep_to_balance), None)
