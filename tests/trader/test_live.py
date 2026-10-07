@@ -975,6 +975,9 @@ def test_the_highest_day_start_balance_survives_a_restart_and_the_zone_multiplie
     settings.risk.risk_pct = 1.0
     settings.risk.zone_risk_multiplier = {setup.poi.timeframe.label: 2.0}
     assert again.planned_risk(setup) == pytest.approx(2 * again.planned_risk(None))
+    setup.bias_combo = "1D+1H"
+    settings.risk.combo_risk_multiplier = {"1D+1H": 0.75}
+    assert again.planned_risk(setup) == pytest.approx(1.5 * again.planned_risk(None))      # the zone's x2 and the combination's x0.75
 
 
 def test_apply_product_sets_the_guard_for_the_ftmo_one_step():
@@ -1117,11 +1120,11 @@ def test_the_fill_message_says_why_the_stake_differs(setup):
     runner.settings.risk.risk_pct = 1.0
     r = runner.settings.risk
     assert runner.stake_note(RiskParams(risk_pct=1.0)) == ""
-    assert runner.stake_note(RiskParams(risk_pct=2.0)) == " (2 % on this trade: x2 for its zone or the profile's stake)"
+    assert runner.stake_note(RiskParams(risk_pct=2.0)) == " (2 % on this trade: x2 for its zone, its bias combination or the profile's stake)"
     r.target_pct, r.target_protect_pct = 10.0, 4.0
     broker._balance = 107_000.0
     assert runner.stake_note(RiskParams(risk_pct=0.5)) == " (0.5 % on this trade: near the target)"
-    assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone or the profile's stake)"
+    assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone, its bias combination or the profile's stake)"
 
 
 def test_a_second_window_for_a_market_stops_at_the_start(tmp_path):

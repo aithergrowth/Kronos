@@ -237,6 +237,25 @@ def test_max_touch_age_hours_refuses_a_zone_touched_long_after_it_formed(hk_data
                                 / pd.Timedelta(hours=1) <= limit for t in fresh.trades)
 
 
+def test_combo_risk_multiplier_stakes_the_trades_of_that_bias_combination(hk_data):
+    """``risk.combo_risk_multiplier``: the trades the bias allowed through the named combination risk that multiple, the
+    others the profile's stake; which trades are taken does not change."""
+    def run(mult):
+        s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+        s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+        s.risk.combo_risk_multiplier = mult
+        return Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    base = run({})
+    combos = [t.meta["bias_combo"] for t in base.trades]
+    assert base.trades and all(combos)
+    named = max(set(combos), key=combos.count)
+    half = run({named: 0.5})
+    assert [pd.Timestamp(t.opened_at) for t in half.trades] == [pd.Timestamp(t.opened_at) for t in base.trades]
+    for b, h in zip(base.trades, half.trades):
+        ratio = h.meta["risk_budget"] / b.meta["risk_budget"]
+        assert ratio == pytest.approx(0.5 if b.meta["bias_combo"] == named else 1.0, rel=0.02)
+
+
 def test_max_zone_age_by_tf_limits_only_the_named_timeframes(hk_data):
     """``confirmation.max_zone_age_by_tf`` ({1H: 24} in YAML) limits the age of the zones of the timeframes it names; the zones
     of the other timeframes keep ``max_zone_age_candles`` (here off)."""

@@ -265,13 +265,21 @@ def fallback_target(
     raise ValueError(f"risk.tp_fallback {params.tp_fallback!r}: use '', 'liquidity' or 'fixed'")
 
 
-def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe]) -> RiskParams:
-    """``params`` with ``risk_pct`` times ``stake_multiplier`` and the zone timeframe's ``zone_risk_multiplier`` (setup B: a
-    4H zone at twice the stake, BTC at half); ``params`` itself when both are 1."""
+def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None) -> RiskParams:
+    """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
+    4H zone at twice the stake, BTC at half) and the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
+    timeframes joined by +, as ``TradeSetup.bias_combo``); ``params`` itself when all are 1."""
     mult = float(params.stake_multiplier or 1.0)
     if zone_tf is not None and params.zone_risk_multiplier:
         mult *= float(params.zone_risk_multiplier.get(zone_tf.label, 1.0))
+    if combo and getattr(params, "combo_risk_multiplier", None):
+        mult *= float(params.combo_risk_multiplier.get(combo, 1.0))
     return params if mult == 1.0 else replace(params, risk_pct=params.risk_pct * mult)
+
+
+def combo_label(decision) -> str:
+    """The bias combination that allowed a trade, e.g. "1D+1H" ("" when none matched)."""
+    return "+".join(tf.label for tf in (getattr(decision, "matched_combo", None) or ()))
 
 
 def stepped_risk(params: RiskParams, balance: float, initial: float) -> RiskParams:

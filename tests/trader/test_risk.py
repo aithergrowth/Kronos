@@ -333,6 +333,19 @@ def test_setup_risk_applies_the_stake_and_the_zone_multiplier():
     assert setup_risk(plain, T.H_4) is plain
 
 
+def test_setup_risk_applies_the_bias_combination_multiplier():
+    """``combo_risk_multiplier`` (7 October, EURUSD: the 1D+1H combination at three quarters) on top of the zone multiplier;
+    another combination, none, or a profile without the setting keep the stake."""
+    from types import SimpleNamespace as NS
+    from kronos_trader.strategy.risk import combo_label, setup_risk
+    p = RiskParams(risk_pct=1.0, zone_risk_multiplier={"4H": 2.0}, combo_risk_multiplier={"1D+1H": 0.75})
+    assert setup_risk(p, T.H_1, "1D+1H").risk_pct == 0.75 and setup_risk(p, T.H_4, "1D+1H").risk_pct == 1.5
+    assert setup_risk(p, T.H_1, "1M+1W+1D").risk_pct == 1.0 and setup_risk(p, T.H_1, "").risk_pct == 1.0
+    assert setup_risk(p, T.H_1).risk_pct == 1.0
+    assert setup_risk(RiskParams(risk_pct=1.0), T.H_1, "1D+1H").risk_pct == 1.0
+    assert combo_label(NS(matched_combo=(T.D_1, T.H_1))) == "1D+1H" and combo_label(NS(matched_combo=None)) == ""
+
+
 def test_the_stake_halves_near_the_phase_target():
     """risk.target_pct with risk.target_protect_pct: within that many % of the phase's target a trade risks at most half of
     risk_pct; the drawdown steps still apply below the start; the zone and stake multipliers come on top (setup_risk)."""
