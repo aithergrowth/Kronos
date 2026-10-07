@@ -246,6 +246,26 @@ def test_previous_extreme_target_is_the_lowest_low_before_the_touch(scenario):
     assert fallback is not None and fallback.take_profit == pytest.approx(expected_high + 50.0)   # nothing beyond entry: the nearest liquidity
 
 
+def test_pullback_origin_target_is_the_high_price_came_back_from(scenario):
+    """``tp_policy pullback_origin``: the target is the extreme on the zone's timeframe from the zone's P candle to the touch,
+    the previous high the pullback into the zone started from; None when it does not lie beyond entry."""
+    from kronos_trader.strategy.risk import pullback_origin_target
+    st = analyze_structure(scenario)
+    poi = map_pois(st, current_price=101.0)[0]                      # bullish 100.6-110.0 on the 1H, P = candle 12
+    series = st.series
+    touch = series.ts_list[-1]
+    idx = series.index_at_or_after(touch)
+    expected = float(series.high[poi.gap.protector_index:idx].max())
+    params = RiskParams(tp_policy="pullback_origin")
+    level = pullback_origin_target(Direction.LONG, expected - 1.0, {T.H_1: st}, poi, touch, params)
+    assert level is not None and level[0] == pytest.approx(expected) and "pullback high" in level[1]
+    assert pullback_origin_target(Direction.LONG, expected + 1.0, {T.H_1: st}, poi, touch, params) is None
+    conf = Confirmation(ConfirmationType.BOS, T.MIN_15, 9, pd.Timestamp("2024-01-01 16:15"), Bias.BULLISH, 104.0, 100.0, 102.0)
+    setup, _ = build_setup("TEST", TEST, Direction.LONG, poi, conf, expected - 1.0, {T.H_1: st},
+                           RiskParams(tp_policy="pullback_origin", stop_basis="confirmation", min_rr=0.05), 100_000, touch_ts=touch)
+    assert setup is not None and setup.take_profit == pytest.approx(expected, abs=0.01) and "pullback high" in setup.tp_source
+
+
 def test_min_stop_pips_moves_a_tight_stop_out(scenario):
     """A stop nearer than ``min_stop_pips`` is moved out to that distance; a wider one is left alone."""
     poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
