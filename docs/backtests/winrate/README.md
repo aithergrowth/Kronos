@@ -1471,6 +1471,7 @@ before it, FTMO's costs, halves split in September 2020 (BTC: June 2020 - 2023, 
 | NAS100 | the smaller gap | 82, +37.4R, -11.4R (+2.8 / +34.6R) | 82, +30.3R, -9.0R (-5.5 / +35.8R) |
 | Gold | three of five, R:R floor 0.8, break-even at +2R | 375, -38.8R, -65.1R | 291, -41.6R, -62.9R |
 | BTC | a broken P reads 50/50 | 157, -40.9R, -41.4R (-18.1 / -22.7R) | 136, -29.8R, -35.4R (-17.5 / -12.3R) |
+| BTC | the cap at 3R (was 2R), on the neutral P | 136, -29.8R, -35.4R | 134, -29.9R, -40.3R (-24.7 / -5.2R) |
 
 The smaller gap loses in these years on both markets that took it (EURUSD -12.3R, NAS100 -7.1R) and wins on
 2024-2026 (+4.2R, +4.4R); the daily-plus-hourly pair wins in both periods on either gap. Gold has no edge in these

@@ -119,7 +119,7 @@ data hashes and cost assumptions):
 | EURUSD (re-entries, limit; the 1D+1H pair at half) | 54, 39 %, +30.0R, -5.5R | 136, 21 %, -0.6R, -22.4R |
 | XAUUSD (three of five, 2R fallback target) | 132, 51 %, +88.3R, -4.2R | 309, 28 %, -30.9R, -54.8R |
 | NAS100 (limit entry) | 38, 47 %, +37.3R, -4.0R | 82, 26 %, +30.3R, -9.0R |
-| BTCUSD (balance shift, target capped at 3R) | 89, 61 %, +82.9R, -3.5R (+48.0R of it in 2026) | 157, 32 %, -38.9R, -39.3R (the morning's profile: the flip on a broken P, 2R cap) |
+| BTCUSD (balance shift, target capped at 3R) | 89, 61 %, +82.9R, -3.5R (+48.0R of it in 2026) | 134, 33 %, -28.3R, -38.9R |
 
 Both columns are the profiles of the 7 October restart: the zone visited within 24 hours of forming, the smaller gaps
 on EURUSD and NAS100, gold's three of five, BTC's neutral broken P and 3R cap, EURUSD's daily-plus-hourly pair at half
