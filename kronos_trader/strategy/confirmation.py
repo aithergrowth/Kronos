@@ -106,6 +106,21 @@ def find_confirmation(
                         candidates.append(Confirmation(ConfirmationType.BS, ltf.timeframe, k, ltf.ts_list[k],   # or was not taken,
                                                        poi.direction, level, invalidation, close))                     # does not block the next
 
+    if params.bs_requires_structure:      # the shift and a break of the entry timeframe's structure, both since the touch
+        ups = [b for b in st.breaks if b.direction is poi.direction and b.index >= touch_index]
+        joined: List[Confirmation] = []
+        for c in candidates:
+            brk = next((b for b in ups if b.index <= c.index + params.bs_structure_window), None)
+            if brk is None:
+                continue
+            if brk.index <= c.index:
+                joined.append(c)
+            elif within_zone_reach(brk.close):
+                invalidation = float(ltf.low[touch_index:brk.index + 1].min()) if bullish else float(ltf.high[touch_index:brk.index + 1].max())
+                joined.append(Confirmation(ConfirmationType.BS, ltf.timeframe, brk.index, brk.timestamp, poi.direction,
+                                           c.break_level, invalidation, brk.close))
+        candidates = joined
+
     # structure breaks --------------------------------------------------------------------
     for brk in st.breaks:
         if brk.index < touch_index or brk.direction is not poi.direction:

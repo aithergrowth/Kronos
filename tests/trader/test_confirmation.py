@@ -50,6 +50,23 @@ def test_balance_shift_is_the_first_confirmation(scenario):
     assert conf.index == 7 and conf.break_level == 102.5 and conf.invalidation_price == 100.0 and conf.close == 102.8
 
 
+def test_a_balance_shift_can_wait_for_the_structure_break(scenario):
+    """``bs_requires_structure``: the shift at candle 7 broke no swing yet; the close above the 105.8 high at candle 9 breaks
+    the structure, so the entry moves there (shift level and the low since the touch kept); without a break in reach, none."""
+    poi = _poi(scenario)
+    ltf = _ltf()
+    touch = ltf.timestamps.iloc[5]
+    only_bs = dict(allow_first_candle=False, allow_bms=False, accept_bos=False)          # the profiles' set: the shift alone
+    assert find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs), max_age=9).index == 7
+    conf = find_confirmation(ltf, poi, touch, ConfirmationParams(**only_bs, bs_requires_structure=True), max_age=9)
+    assert conf is not None and conf.type is ConfirmationType.BS and conf.index == 9
+    assert conf.break_level == 102.5 and conf.invalidation_price == 100.0 and conf.close == 106.0
+    short = ConfirmationParams(**only_bs, bs_requires_structure=True, bs_structure_window=1)
+    assert find_confirmation(ltf, poi, touch, short, max_age=9) is None
+    assert find_confirmation(_ltf(LTF_ROWS[:9]), poi, touch, ConfirmationParams(**only_bs, bs_requires_structure=True),
+                             max_age=9) is None
+
+
 def test_balance_shift_protector_threshold(scenario):
     poi = _poi(scenario)
     ltf = _ltf()

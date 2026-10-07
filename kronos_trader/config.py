@@ -181,6 +181,11 @@ class ConfirmationParams:
                                         # first candle closing in the trade direction at or after the shift candle, not the shift close itself
     entry_after_shift_max_candles: int = 3   # give up when no such candle closes within this many candles after the shift
     bs_threshold: str = "gap_edge"      # gap_edge: close beyond the opposing gap (A 02:25:40); protector: beyond the candle that caused it (A 01:07:49)
+    bs_requires_structure: bool = False # True: a balance shift counts once the entry timeframe's structure has also broken in the trade's
+                                        # direction since the touch (a close through its last swing: the liquidity); a break up to
+                                        # bs_structure_window candles after the shift moves the entry to that candle (Max, 7 October: he
+                                        # "stapt pas in als de liquiditeit [en het] balance level in de 5m candle doorbreekt")
+    bs_structure_window: int = 12
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     search_from_reentry: bool = True    # the confirmation search starts at price's latest entry into the zone within the open visit, not at the
                                         # visit's first touch: a zone can be left and re-entered while the visit stays open, and the shift and the
