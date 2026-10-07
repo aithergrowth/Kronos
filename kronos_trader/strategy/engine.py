@@ -473,6 +473,12 @@ class StrategyEngine:
             if touch_ts is None:
                 analysis.rejections.append(f"{label}: no active visit on {lowest_tf.label}")
                 continue
+            limit_h = s.confirmation.max_touch_age_hours
+            if limit_h > 0 and poi.created_at is not None:
+                waited = (pd.Timestamp(touch_ts) - pd.Timestamp(poi.created_at)) / pd.Timedelta(hours=1)
+                if waited > limit_h:
+                    analysis.rejections.append(f"{label}: touched {waited:.0f} h after it formed (max {limit_h:g} h): a spent zone")
+                    continue
             if visits > 1 and not s.confirmation.allow_retest:
                 analysis.rejections.append(f"{label}: visit #{visits} - only the first return is traded")
                 continue

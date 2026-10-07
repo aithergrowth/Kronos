@@ -221,6 +221,22 @@ def test_max_zone_age_candles_refuses_stale_zones(hk_data):
         assert (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["poi_formed"])) / tf.delta() <= 2 + 1   # the scan step adds at most one candle
 
 
+def test_max_touch_age_hours_refuses_a_zone_touched_long_after_it_formed(hk_data):
+    """``confirmation.max_touch_age_hours``: a visit that began more than that many hours after the zone formed is not
+    traded, whatever the zone's timeframe (7 October: zones touched after a day lost in every market). Off by default."""
+    s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    waited = [(pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"])) / pd.Timedelta(hours=1) for t in base.trades]
+    limit = min(waited) + 1.0                                # the freshest visit stays, the later ones go
+    assert max(waited) > limit
+    s.confirmation.max_touch_age_hours = limit
+    fresh = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert any("after it formed" in r and "a spent zone" in r for r in fresh.rejection_reasons)
+    assert fresh.trades and all((pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"]))
+                                / pd.Timedelta(hours=1) <= limit for t in fresh.trades)
+
+
 def test_max_zone_age_by_tf_limits_only_the_named_timeframes(hk_data):
     """``confirmation.max_zone_age_by_tf`` ({1H: 24} in YAML) limits the age of the zones of the timeframes it names; the zones
     of the other timeframes keep ``max_zone_age_candles`` (here off)."""

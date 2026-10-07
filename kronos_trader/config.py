@@ -197,6 +197,10 @@ class ConfirmationParams:
                                         # 2024-2026 the 44 trades from zones older than a day -19R, the 89 from fresh zones +72R)
     max_zone_age_by_tf: Dict[Timeframe, int] = field(default_factory=dict)   # the same limit per zone timeframe, in place of
                                         # max_zone_age_candles for the timeframes it names (0 = no limit there), e.g. {1H: 24}
+    max_touch_age_hours: float = 0.0    # 0 = off; else a visit that began more than this many hours after the zone formed is not
+                                        # traded, whatever the zone's timeframe (7 October, the set that runs, 2024-02 to 2026-09
+                                        # with FTMO's costs: touched within a day 299 trades, 53 %, +140.7R; later 39 trades, 28 %,
+                                        # -25.0R, losing in both halves and in every market)
     poi_in_poi: bool = False            # a zone is traded only when it lies in a zone of a higher timeframe in the same direction that
                                         # is not invalidated: "POI in een POI = trade pas plaatsen bij een aantrekkelijke RR" (the DV-Institute
                                         # trade plan board, between the POI and the entry step). Off = every zone of poi_timeframes
