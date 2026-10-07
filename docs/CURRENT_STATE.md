@@ -33,7 +33,7 @@ in the MT5 terminal and tokens in environment variables.
 
 | | EURUSD (`dorus_live.yaml`) | XAUUSD (`dorus_live_gold.yaml`) | NAS100 (`dorus_live_nas100.yaml`) | BTCUSD (`dorus_live_btc.yaml`) |
 |---|---|---|---|---|
-| Bias gate | 3 of 5 timeframes aligned, the 1H among them; or the 1D and the 1H alone at three quarters of the stake (7 October) | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
+| Bias gate | 3 of 5 timeframes aligned, the 1H among them; or the 1D and the 1H alone at half the stake (7 October) | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
 | Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |

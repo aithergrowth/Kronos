@@ -1403,12 +1403,21 @@ One combination holds: **the daily and the hourly agreeing** ([1D, 1H] as a matc
 earned in every period (2024-02..2025-05 14 trades +3.3R, 2025-06..2026-03 5 trades +1.6R, 2026-04..09 7 trades
 +4.8R), where the 4H+1H ones lost (-3.5R, +2.5R, -1.0R). With it EURUSD trades 54 times (1.7 a month), 39 %, +40.9R
 against 28, 46 %, +31.2R; halves +3.3 / +6.4R; April-September 2026 10 trades +5.6R against 3, +0.8R. At full stake
-6 % of the 2024-25 challenge starts fail (1 % before), so those trades risk three quarters
-(`risk.combo_risk_multiplier: {1D+1H: 0.75}`, new). The account replay: 2026 starts funded within two months 88 %
-(85 %), 2024-25 starts within three months 50 % (51 %), lost 1 % (1 %), worst month unchanged. **Taken.**
+6 % of the 2024-25 challenge starts fail (1 % before), so those trades risk half
+(`risk.combo_risk_multiplier: {1D+1H: 0.5}`, new). The account replay by that stake (EURUSD's trades only):
+
+| Stake of the 1D+1H trades | 2026 starts within 6 weeks / 2 months | 2024-25 starts within 2 / 3 months | Lost |
+|---|---|---|---|
+| (without the combination) | 38 % / 85 % | 24 % / 51 % | 1 % |
+| **0.5** | **41 % / 90 %** | **25 % / 50 %** | **1 %** |
+| 0.75 | 41 % / 90 % | 27 % / 50 % | 3 % |
+| 1.0 | 47 % / 89 % | 30 % / 45 % | 6 % |
+
+The worst month is -5.0 % at each. **Taken at 0.5.** (A first replay put the three quarters on gold's 1D+1H trades as
+well and read 1 % lost at 0.75; on EURUSD alone it is 3 %.)
 
 On top of it, the 15m zones: 77 trades (2.4 a month), +47.1R, both halves better, but the 2024-25 starts slow to 40 %
-within three months (worst month -6.9 %). Kept for later, as are 15m zones with two positions (49 trades, +35.8R,
+within three months (worst month -6.8 %, lost 2 % at a 0.6 or 0.75 stake); two positions on top: lost 3 %. Kept for later, as are 15m zones with two positions (49 trades, +35.8R,
 the challenge unchanged) and two of five on NAS100 (+9 trades, +1.6R, April-September 2026 -2.0R).
 
 Chance: of the ten variants best on February 2024 - March 2026, two to five were also better on April - September
