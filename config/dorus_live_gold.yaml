@@ -8,7 +8,11 @@
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
   full_combos: [[1M, 1W, 1D], [1M, 1D, 1H], [1D, 1H], [4H, 1H]]   # gold, 4 October: two of 1D/4H/1H with the 1H is a match
-  min_matching_timeframes: 2      # (the book's 3 of 5 for EURUSD/GBPUSD; see the header)
+  min_matching_timeframes: 3      # 7 October (Max: all improvements in): three of five, as the book; the two-timeframe combinations
+                                  # above count only when a third timeframe agrees as well (the count is checked first). With R:R 0.8
+                                  # and break-even at 2R below, 2024-02 to 2026-09 with FTMO's costs:
+                                  # 132 trades, 51 %, +84.2R, drawdown -4.5R against 135, 52 %, +66.9R, -6.6R (halves +1.6 / +15.6R);
+                                  # three of five alone +75.5R (-4.3 / +12.9R). Was 2 since 4 October (see the header)
   required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
                                   # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
   no_trade_against: []            # 6 October (Max: aan): no veto for gold. On the corrected candles with this profile, 2024-2026: 105 trades,
@@ -45,9 +49,10 @@ risk:
                                   # it 0.5 %; only the stake changes, never the trades. FTMO challenge, five markets, two open,
                                   # 790 starts 2024-2026: funded 85 % flat -> 92 %. On the funded account plan 1.0 % with
                                   # [[-3, 0.5]]: lost within a year 11 % flat -> 2 % (with every trade 0.15R worse live: 21 % -> 11 %)
-  min_rr: 0.5                     # 6 October, Max: judged on the recent years (the bot trades now, not 2017): gold since 2024 at 0.5 / 1.0 / 1.5: 84 / 58 / 41 trades, 48 / 38 / 32 % won, +26.1 / +22.1 / +18.5R,
-                                  # drawdown -7.2 / -10.1 / -9.1R.
-                                  # Over 2017-2026 the 1.5 of 5 October did better in 2017-2022 (docs/backtests/winrate/README.md)
+  min_rr: 0.8                     # 7 October, FTMO's costs, 2024-02 to 2026-09, with three of five and break-even at 2R: 0.8 +84.2R,
+                                  # 1.2 +81.4R (drawdown -6.4R), 1.5 +74.8R; with three of five and break-even at 4R: 0.5 +75.5R,
+                                  # 0.8 +82.2R. 6 October, Max: judged on the recent years (0.5 / 1.0 / 1.5 since 2024: +26.1 /
+                                  # +22.1 / +18.5R); over 2017-2026 the 1.5 of 5 October did better in 2017-2022
   max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
   stop_protection: recent_1h
@@ -76,7 +81,9 @@ session:
 news:
   enabled: true                   # no entry right before high-impact news (A 02:00:28, G 11:13)
 exits:
-  breakeven_r_intraday: 4.0       # the written plan: break-even after 4R intraday, 2R swing, no partials
+  breakeven_r_intraday: 2.0       # 7 October (Max: all improvements in): gold to break-even at +2R, not 4R (the written plan's swing
+                                  # value): +2.0R with three of five and R:R 0.8, drawdown -5.5R -> -4.5R, both halves +1.0R.
+                                  # The other markets keep 4R: an earlier break-even cost them more winners than it saved
   breakeven_r_swing: 2.0
   partials: false
 prop_firm:

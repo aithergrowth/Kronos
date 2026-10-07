@@ -22,6 +22,10 @@ bias:
   shift_flips_balance: true       # 6 October, evening (Max: decide on the last 3 years): the balance view turns when a close goes beyond
                                   # the far edge of the last gap. BTC 2024-2026: 136 trades, 52 %, +61.7R (2024 +3.7, 2025 +8.0, 2026 +50.1)
                                   # against 142, 49 %, +53.1R (+2.9 / -2.8 / +52.9); README "The last three years"
+  balance_violation: neutral      # 7 October (Max: all improvements in): when a zone's P breaks, that timeframe's balance view
+                                  # reads 50/50 until a new gap forms, not a flip to the break's direction. BTC 2024-02 to 2026-09
+                                  # with FTMO's costs: 89 trades, 62 %, +60.8R, drawdown -4.0R against 112, 54 %, +48.3R, -7.9R
+                                  # (halves +6.0 / +6.6R). EURUSD, NAS100 and gold lose with it and keep the flip
 confirmation:
   allow_first_candle: false
   max_touch_age_hours: 24         # 7 October: no trade in a zone first visited more than a day after it formed (2024-02 to

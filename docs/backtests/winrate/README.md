@@ -1347,3 +1347,33 @@ BMS/BOS entries on EURUSD (73 trades, +13.3R, -11.8R drawdown) and NAS100 (73, +
 
 **Taken (Max, 6 October, evening: "pak echt de laatste 3 jaar alleen en wat daar goed werkt en erbij kan ... en zorg
 dat de kans hoog blijft dat we de challenge halen"):** the three changes above.
+
+## Into the profiles (7 October)
+
+Max, 7 October: "We kunnen vanavond alle verbeterpunten erbij doen ... focus vooral op de tests en ons systeem en dat
+we wel genoeg doen op een dag". Everything below: February 2024 to September 2026 (BTC to 4 October), the 24 h touch
+rule in place, FTMO's measured costs (6 October spreads, the commission per market), per market one open trade,
+halves H1 = February 2024 - May 2025 and H2 = June 2025 - September 2026.
+
+### The changes taken
+
+| Market | Change | Trades | R after costs | Drawdown | Halves (change) | Before |
+|---|---|---|---|---|---|---|
+| EURUSD | a gap counts from a tenth of the median candle range (`structure.min_gap_fraction: 0.1`, was 0.2) | 28 | +31.2R | -2.9R | +0.0 / +4.2R | 30, +27.0R, -4.7R |
+| NAS100 | the same | 38 | +37.3R | -4.0R | +0.8 / +3.7R | 31, +32.9R, -3.0R |
+| Gold | three of five (was two), R:R floor 0.8 (was 0.5), break-even at +2R (was 4R) | 132 | +84.2R | -4.5R | +1.6 / +15.6R | 135, +66.9R, -6.6R |
+| BTC | a broken P reads 50/50 until a new gap forms (`bias.balance_violation: neutral`, was the flip) | 89 | +60.8R | -4.0R | +6.0 / +6.6R | 112, +48.3R, -7.9R |
+
+Each change was measured on all four markets; the markets not in a row lose with it (gaps: gold -24.7R, BTC -37.1R;
+neutral: EURUSD -3.6R, NAS100 -14.8R, gold -9.2R).
+
+Together (two open, 1.25 %, 4H zones x2, BTC half, 0.10R a trade for slippage on top of the costs):
+
+| Set | Trades a month | R a trade | Month average | Losing months | Worst month | 2026 starts funded within 6 wk / 2 mo / 3 mo | 2024-25 starts within 2 mo / 3 mo / lost |
+|---|---|---|---|---|---|---|---|
+| The 24 h set (runs until the restart of 7 October) | 9.6 | +0.47 | +5.7 % | 10 of 32 | -6.7 % | 40 / 59 / 77 % | 15 / 41 / 0 % |
+| **With the four changes** | 9.0 | **+0.64** | **+6.6 %** | **9** | **-5.4 %** | 38 / **85** / **100 %** | **24 / 51** / 1 % |
+
+Not taken on top (same replay): a third open slot (no change: three open at once almost never happens), GER40 as a
+fifth market (2024-25 starts lost 7 % against 1 %), US500 (2024-25 faster, 2026 slower: 72 % against 85 % within two
+months), BTC at a full stake (3-4 points faster in both periods, inside the noise; it stays at half).

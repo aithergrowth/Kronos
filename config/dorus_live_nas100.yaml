@@ -33,6 +33,11 @@ confirmation:
   one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
   poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
                                   # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
+structure:
+  min_gap_fraction: 0.1           # 7 October (Max: all improvements in): a gap counts from a tenth of the median candle range (the
+                                  # default a fifth). 2024-02 to 2026-09 with FTMO's costs: EURUSD 28 trades, +31.2R against 30,
+                                  # +27.0R (halves +0.0 / +4.2R); NAS100 38 trades, +37.3R against 31, +32.9R (+0.8 / +3.7R).
+                                  # Gold (-24.7R) and BTC (-37.1R) lose with it and keep the default. README "Into the profiles"
 risk:
   risk_pct: 1.5                   # 5 October, Max: 1.5 % (challenge sim, EURUSD + gold + BTC, 790 starts 2024-2026: funded 82 % vs 91 % at 1 %, phase 1 median 61 vs 116 days)
   drawdown_steps: [[-3, 1.0], [-6, 0.5]]   # 5 October: with the balance 3 % under the start a trade risks 1.0 %, from 6 % under

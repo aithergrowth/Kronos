@@ -1,4 +1,4 @@
-# Kronos Trader: the current state (6 October 2026)
+# Kronos Trader: the current state (7 October 2026)
 
 What runs, with which settings, and what the evidence says. The profile files are the source of truth: every setting
 there carries its reason and date. Older pages describe how the rules came about: `docs/STRATEGY.md` starts from
@@ -23,7 +23,7 @@ in the MT5 terminal and tokens in environment variables.
 - The entry may lie at most half the zone deep; one trade per zone visit and no second visit to a zone (EURUSD excepted,
   below).
 - Stop beyond the sweep extreme since price re-entered the zone (`stop_basis: confirmation`), with a minimum distance
-  per market; break-even after 4R (intraday zones), no partial exits.
+  per market; break-even after 4R (intraday zones; gold 2R since 7 October), no partial exits.
 - Entries only 09:00-11:00 and 13:00-17:00 Amsterdam, and not within 30 minutes either side of high-impact news for
   the market's currencies (ForexFactory calendar).
 - No entry while the spread exceeds 30 % of the stop distance.
@@ -33,11 +33,13 @@ in the MT5 terminal and tokens in environment variables.
 
 | | EURUSD (`dorus_live.yaml`) | XAUUSD (`dorus_live_gold.yaml`) | NAS100 (`dorus_live_nas100.yaml`) | BTCUSD (`dorus_live_btc.yaml`) |
 |---|---|---|---|---|
-| Bias gate | 3 of 5 timeframes aligned, the 1H among them | 2 aligned with the 1H among them (1D+1H, 4H+1H, or the book's combos) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`) |
+| Bias gate | 3 of 5 timeframes aligned, the 1H among them | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
 | Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |
-| Minimum R:R | 1.0 | 0.5 | 1.0 | 0.5 |
+| Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
+| Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |
+| Break-even | after 4R | after 2R (7 October) | after 4R | after 4R |
 | Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 2R (nearest liquidity) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
 | Time limit | none | none | 48 hours | none |
