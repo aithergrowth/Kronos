@@ -1367,6 +1367,9 @@ halves H1 = February 2024 - May 2025 and H2 = June 2025 - September 2026.
 Each change was measured on all four markets; the markets not in a row lose with it (gaps: gold -24.7R, BTC -37.1R;
 neutral: EURUSD -3.6R, NAS100 -14.8R, gold -9.2R).
 
+The edited profile files themselves, run with the guard's limits off and one open trade, give the research ledgers
+trade for trade: EURUSD 28 of 28, NAS100 38 of 38, gold 132 of 132, BTC 90 of 90, every R the same.
+
 Together (two open, 1.25 %, 4H zones x2, BTC half, 0.10R a trade for slippage on top of the costs):
 
 | Set | Trades a month | R a trade | Month average | Losing months | Worst month | 2026 starts funded within 6 wk / 2 mo / 3 mo | 2024-25 starts within 2 mo / 3 mo / lost |
