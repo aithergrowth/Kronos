@@ -947,11 +947,12 @@ class LiveRunner:
     def planned_risk(self, setup: Optional[TradeSetup] = None) -> float:
         """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps, times
         the profile's stake and the setup's zone multiplier (setup B)."""
-        from .strategy.risk import setup_risk, stepped_risk
+        from .strategy.risk import confirmation_label, setup_risk, stepped_risk
         try:
             params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
             params = setup_risk(params, setup.poi.timeframe if setup is not None else None,
-                                setup.bias_combo if setup is not None else None)
+                                setup.bias_combo if setup is not None else None,
+                                confirmation_label(setup.confirmation) if setup is not None else None)
             return float(self.broker.equity()) * params.risk_pct / 100.0
         except Exception:
             return 0.0
@@ -972,7 +973,7 @@ class LiveRunner:
         if stepped < base.risk_pct:
             parts.append("near the target" if balance is not None and balance >= self.settings.account_size else "balance below the start")
         if stepped > 0 and abs(risk_params.risk_pct / stepped - 1.0) > 1e-9:
-            parts.append(f"x{risk_params.risk_pct / stepped:g} for its zone, its bias combination or the profile's stake")
+            parts.append(f"x{risk_params.risk_pct / stepped:g} for its zone, its bias combination, its confirmation or the profile's stake")
         return f" ({risk_params.risk_pct:g} % on this trade: {', '.join(parts) or 'adjusted'})"
 
     def _open_locked(self, setup: TradeSetup, now: pd.Timestamp):
@@ -1000,10 +1001,10 @@ class LiveRunner:
                           reason=f"spread {share:.0%} of the stop distance (max {cap:.0%})")
                 return (f"⛔ {self.symbol}: not executed - spread {spread:.{self.spec.price_decimals}f} is {share:.0%} of the "
                         f"stop distance (max {cap:.0%})")
-        from .strategy.risk import resize_at, setup_risk, stepped_risk
+        from .strategy.risk import confirmation_label, resize_at, setup_risk, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         risk_params = setup_risk(stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size),
-                                 setup.poi.timeframe, setup.bias_combo)
+                                 setup.poi.timeframe, setup.bias_combo, confirmation_label(setup.confirmation))
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
                                                                 self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:

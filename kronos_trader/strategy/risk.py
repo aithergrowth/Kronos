@@ -265,16 +265,26 @@ def fallback_target(
     raise ValueError(f"risk.tp_fallback {params.tp_fallback!r}: use '', 'liquidity' or 'fixed'")
 
 
-def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None) -> RiskParams:
+def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None,
+               confirmation: Optional[str] = None) -> RiskParams:
     """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
-    4H zone at twice the stake, BTC at half) and the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
-    timeframes joined by +, as ``TradeSetup.bias_combo``); ``params`` itself when all are 1."""
+    4H zone at twice the stake, BTC at half), the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
+    timeframes joined by +, as ``TradeSetup.bias_combo``) and the confirmation type's ``confirmation_risk_multiplier``
+    (``confirmation``: BS, BMS, BOS or first_candle, as ``confirmation_label``); ``params`` itself when all are 1."""
     mult = float(params.stake_multiplier or 1.0)
     if zone_tf is not None and params.zone_risk_multiplier:
         mult *= float(params.zone_risk_multiplier.get(zone_tf.label, 1.0))
     if combo and getattr(params, "combo_risk_multiplier", None):
         mult *= float(params.combo_risk_multiplier.get(combo, 1.0))
+    if confirmation and getattr(params, "confirmation_risk_multiplier", None):
+        mult *= float(params.confirmation_risk_multiplier.get(confirmation, 1.0))
     return params if mult == 1.0 else replace(params, risk_pct=params.risk_pct * mult)
+
+
+def confirmation_label(confirmation) -> str:
+    """The confirmation type a setup entered on: "BS", "BMS", "BOS" or "first_candle" ("" when unknown)."""
+    kind = getattr(confirmation, "type", None)
+    return str(getattr(kind, "value", "") or "")
 
 
 def combo_label(decision) -> str:

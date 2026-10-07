@@ -346,6 +346,21 @@ def test_setup_risk_applies_the_bias_combination_multiplier():
     assert combo_label(NS(matched_combo=(T.D_1, T.H_1))) == "1D+1H" and combo_label(NS(matched_combo=None)) == ""
 
 
+def test_setup_risk_applies_the_confirmation_type_multiplier():
+    """``confirmation_risk_multiplier`` (e.g. a continuation break at half) on top of the zone and combination multipliers;
+    another type, none, or a profile without the setting keep the stake."""
+    from types import SimpleNamespace as NS
+    from kronos_trader.core.types import ConfirmationType
+    from kronos_trader.strategy.risk import confirmation_label, setup_risk
+    p = RiskParams(risk_pct=1.0, zone_risk_multiplier={"4H": 2.0}, combo_risk_multiplier={"1D+1H": 0.5},
+                   confirmation_risk_multiplier={"BOS": 0.5})
+    assert setup_risk(p, T.H_1, "", "BOS").risk_pct == 0.5 and setup_risk(p, T.H_4, "1D+1H", "BOS").risk_pct == 0.5
+    assert setup_risk(p, T.H_1, "", "BS").risk_pct == 1.0 and setup_risk(p, T.H_1, "", "").risk_pct == 1.0
+    assert setup_risk(p, T.H_1, "").risk_pct == 1.0
+    assert setup_risk(RiskParams(risk_pct=1.0), T.H_1, "", "BOS").risk_pct == 1.0
+    assert confirmation_label(NS(type=ConfirmationType.BOS)) == "BOS" and confirmation_label(None) == ""
+
+
 def test_the_stake_halves_near_the_phase_target():
     """risk.target_pct with risk.target_protect_pct: within that many % of the phase's target a trade risks at most half of
     risk_pct; the drawdown steps still apply below the start; the zone and stake multipliers come on top (setup_risk)."""

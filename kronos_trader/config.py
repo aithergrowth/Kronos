@@ -308,6 +308,8 @@ class RiskParams:
                                         # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026)
     combo_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"1D+1H": 0.75}: a trade the bias allowed
                                         # through that combination (the matched timeframes joined by +) risks that multiple as well
+    confirmation_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"BOS": 0.5}: a trade entered on that
+                                        # confirmation type (BS, BMS, BOS, first_candle) risks that multiple as well
     stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
     target_pct: float = 0.0             # the challenge phase's profit target in % of the initial balance (FTMO 2-Step: 10, then 5 in
                                         # the verification); 0 = none known. With target_protect_pct: within that many % of the target
