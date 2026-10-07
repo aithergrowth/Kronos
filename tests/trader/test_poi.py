@@ -21,6 +21,18 @@ def test_poi_runs_from_liquidity_to_protection(scenario):
     assert map_pois(analyze_structure(scenario), current_price=112.5)[0].status is POIStatus.TESTED   # candle 14 touched 110
 
 
+def test_the_zone_reaches_to_x_to_the_gap_or_covers_p_alone(scenario):
+    """``structure.poi_extent``: liquidity = P to the level the impulse took (X, the default); gap = P to the balance
+    level's near edge; protector = P's own range, never past X."""
+    full = map_pois(analyze_structure(scenario), current_price=105.0)[0]
+    gap = map_pois(analyze_structure(scenario), StructureParams(poi_extent="gap"), current_price=105.0)[0]
+    p_only = map_pois(analyze_structure(scenario), StructureParams(poi_extent="protector"), current_price=105.0)[0]
+    assert (full.low, full.high) == (100.6, 110.0)
+    assert gap.low == 100.6 and gap.high == gap.gap.high < full.high
+    assert p_only.low == 100.6 and p_only.high == min(full.high, p_only.gap.protector_high)
+    assert full.liquidity_level == gap.liquidity_level == p_only.liquidity_level == 110.0
+
+
 def test_poi_invalidates_below_p(scenario_rows):
     rows = list(scenario_rows) + [(111.5, 112, 101, 108), (108, 108.5, 100, 100.3)]   # closes below P low 100.6
     poi = map_pois(analyze_structure(CandleSeries.from_records(rows, Timeframe.H_1)), current_price=100.3)[0]

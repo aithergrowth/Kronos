@@ -47,8 +47,16 @@ def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams)
             x, key, created = brk.broken_level, brk.index, max(gap.index, brk.index)
         if d is Bias.BULLISH:
             low, high = gap.protector_low, max(x, gap.high)
+            if params.poi_extent == "gap":
+                high = gap.high
+            elif params.poi_extent == "protector":
+                high = min(high, gap.protector_high)   # P's range, never past X
         else:
             low, high = min(x, gap.low), gap.protector_high
+            if params.poi_extent == "gap":
+                low = gap.low
+            elif params.poi_extent == "protector":
+                low = max(low, gap.protector_low)
         if high <= low:
             continue
         if key in by_break:                            # several gaps in one impulse: keep the first (deepest P)
