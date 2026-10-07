@@ -1380,3 +1380,37 @@ Together (two open, 1.25 %, 4H zones x2, BTC half, 0.10R a trade for slippage on
 Not taken on top (same replay): a third open slot (no change: three open at once almost never happens), GER40 as a
 fifth market (2024-25 starts lost 7 % against 1 %), US500 (2024-25 faster, 2026 slower: 72 % against 85 % within two
 months), BTC at a full stake (3-4 points faster in both periods, inside the noise; it stays at half).
+
+### EURUSD: more trades (7 October, afternoon)
+
+Max: EURUSD trades too seldom (the set above: 0.9 a month, 3 trades in April-September 2026). 91 EURUSD variants on
+the set above (FTMO's costs, February 2024 to September 2026), each through the account replay. The lesson of most of
+them: more EURUSD trades from a looser gate win 28-35 % of the time; the sum barely moves, the dips deepen and more
+challenges fail. Not taken:
+
+| Variant | Trades a month | R | 2024-25 challenge starts lost |
+|---|---|---|---|
+| Two of five with gold's 1D+1H and 4H+1H combinations | 2.7 | +39.0 | 3 % |
+| No 1H requirement, two positions | 2.0 | +41.1 | 16 % |
+| No weekly veto, two of five | 3.6 | +30.4 | 21 % |
+| The previous high as the target, capped at 2R (BTC's rule) | 1.6 | +18.0 | |
+| Wider hours (08-11, 08-18, 07-20, 13-20) | 1.1-1.7 | +16.8 to +25.5 | |
+| 15m zones with 1-minute entries; 5m zones with 1-minute entries | 2.4; 3.4 | +15.0; +11.8 | |
+| Fixed 1.5R / 2R / 3R targets | 1.6-1.8 | +13.8 / +6.4 / +1.4 | |
+| A 4H zone confirmed on the 5m; a 1H zone on the 15m; any timeframe | 1.0; 0.4; 1.0 | +14.6; +8.8; +27.3 | |
+
+One combination holds: **the daily and the hourly agreeing** ([1D, 1H] as a match, two of five). Its extra trades
+earned in every period (2024-02..2025-05 14 trades +3.3R, 2025-06..2026-03 5 trades +1.6R, 2026-04..09 7 trades
++4.8R), where the 4H+1H ones lost (-3.5R, +2.5R, -1.0R). With it EURUSD trades 54 times (1.7 a month), 39 %, +40.9R
+against 28, 46 %, +31.2R; halves +3.3 / +6.4R; April-September 2026 10 trades +5.6R against 3, +0.8R. At full stake
+6 % of the 2024-25 challenge starts fail (1 % before), so those trades risk three quarters
+(`risk.combo_risk_multiplier: {1D+1H: 0.75}`, new). The account replay: 2026 starts funded within two months 88 %
+(85 %), 2024-25 starts within three months 50 % (51 %), lost 1 % (1 %), worst month unchanged. **Taken.**
+
+On top of it, the 15m zones: 77 trades (2.4 a month), +47.1R, both halves better, but the 2024-25 starts slow to 40 %
+within three months (worst month -6.9 %). Kept for later, as are 15m zones with two positions (49 trades, +35.8R,
+the challenge unchanged) and two of five on NAS100 (+9 trades, +1.6R, April-September 2026 -2.0R).
+
+Chance: of the ten variants best on February 2024 - March 2026, two to five were also better on April - September
+2026 (`holdout.py`), so a single winner on the whole period means little; the daily-plus-hourly combination was
+better on both.

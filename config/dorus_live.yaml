@@ -4,8 +4,15 @@
 # gold, whose target rule is still open. Every line names its source; the prop-firm guard keeps the FTMO margins.
 bias:
   extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
-  full_combos: [[1M, 1W, 1D], [1M, 1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out: it lost in every run on
-                                              # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
+  full_combos: [[1M, 1W, 1D], [1M, 1D, 1H], [1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out:
+                                              # it lost in every run on both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R,
+                                              # gold 21 trades -10.1R). 7 October (Max: EURUSD trades too seldom, 3 in April-September
+                                              # 2026): the daily and the hourly agreeing is a match too, at three quarters of the stake
+                                              # (risk.combo_risk_multiplier). 2024-02 to 2026-09, FTMO's costs: 54 trades, 39 %, +40.9R
+                                              # against 28, 46 %, +31.2R; halves +3.3 / +6.4R; April-September 2026 10 trades +5.6R
+                                              # against 3, +0.8R. 4H+1H stays out: its extra trades lost (-3.5R in 2024-25). The account
+                                              # replay: 2026 starts funded within 2 months 88 % (85 %), 2024-25 starts lost 1 % (1 %)
+  min_matching_timeframes: 2      # 7 October: with [1D, 1H] above (the three-timeframe combinations still need their three)
   required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
                                   # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
   no_trade_against: [1W]          # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
@@ -55,6 +62,8 @@ risk:
   max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
   zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
                                   # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
+  combo_risk_multiplier: {1D+1H: 0.75}   # 7 October: the daily-plus-hourly trades at three quarters; at full stake 6 % of the
+                                  # 2024-25 challenge starts failed (1 % now), at a half the 2026 starts slowed (63 % within 2 months)
   limit_entry_fraction: 0.25      # 6 October, evening (Max: decide on the last 3 years): a limit 25 % of the way back toward the stop,
   limit_entry_minutes: 240        # valid 4 hours, as NAS100. EURUSD 2024-2026: 31 trades, 45 %, +24.6R (2024 +1.7, 2025 +16.7, 2026 +6.2)
                                   # against 38, 50 %, +15.8R (-1.4 / +9.9 / +7.3); README "The last three years"
