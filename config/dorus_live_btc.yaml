@@ -73,7 +73,9 @@ risk:
   tp_max_rr: 3.0                  # 7 October: the previous high stays the target; only when it lies more than 3R away (was 2R)
                                   # the nearest liquidity within 3R. BTC 2024-02 to 2026-10 with tonight's rules and FTMO's costs:
                                   # 3R 88 trades, 60 %, +64.7R, drawdown -4.0R; 2R 89, 62 %, +60.8R, -4.0R; uncapped 86, 47 %,
-                                  # +60.6R, -11.7R. Halves against 2R +2.6 / +1.3R
+                                  # +60.6R, -11.7R. Halves against 2R +2.6 / +1.3R. 2.5R +59.2R and 4R +67.6R (-4.1R, the account
+                                  # replay slower in 2024-25): between 2R and 4R the sum moves within the noise; the cap is what
+                                  # keeps the drawdown at -4R. 3R sends more trades to the previous high, his target
   tp_cap_choice: nearest
   spread_buffer_pips: 1.0
 session:

@@ -1438,13 +1438,18 @@ it, the far high when nothing nearer fits. On the BTC line of the table above (t
 | Cap | Trades | Won | R after costs | Drawdown | Halves |
 |---|---|---|---|---|---|
 | 2R (until the restart) | 89 | 62 % | +60.8R | -4.0R | +19.0 / +41.8R |
+| 2.5R | 88 | 61 % | +59.2R | -4.0R | +21.1 / +38.1R |
 | **3R** | 88 | 60 % | **+64.7R** | -4.0R | +21.6 / +43.1R |
+| 4R | 88 | 57 % | +67.6R | -4.1R | +26.1 / +41.5R |
 | none (always the previous high) | 86 | 47 % | +60.6R | -11.7R | +17.8 / +42.8R |
 
 **Taken: 3R** (`risk.tp_max_rr: 3.0` in `config/dorus_live_btc.yaml`). The account replay of the set
 (EURUSD's pair at half): an average month +7.2 % (+7.1 %), 2026 starts funded within 6 weeks 37 % (41 %), within
 2 months 93 % (90 %), within 3 months 100 %; the 2024-25 starts unchanged (25 % / 50 %, 1 % lost); the worst month
--5.0 % at both.
+-5.0 % at both. Between 2R and 4R the sum moves within the noise (2.5R lies below 2R); what the cap does is keep the
+drawdown at -4R against -11.7R. 4R in the replay: the 2024-25 starts within 3 months 46 % against 50 %, the worst
+month -5.5 %. 3R is the one with both halves above 2R, and it sends more trades to the previous high, his target.
+The edited profile, run with the guard's limits off, gives the 3R ledger trade for trade (89 of 89, every R the same).
 
 The other BTC variants on the same line, none taken (R against +60.8R): break-even at +2R or +1.5R (-2.5R, -1.5R),
 a 24 h holding limit (-2.2R), stops of at least 150 USD (-6.2R), no scalp combination (-2.8R, drawdown -6.5R), gaps
@@ -1465,10 +1470,34 @@ before it, FTMO's costs, halves split in September 2020 (BTC: June 2020 - 2023, 
 | EURUSD | the pair without the smaller gap | 71, +3.9R | 120, +6.3R, -19.7R |
 | NAS100 | the smaller gap | 82, +37.4R, -11.4R (+2.8 / +34.6R) | 82, +30.3R, -9.0R (-5.5 / +35.8R) |
 | Gold | three of five, R:R floor 0.8, break-even at +2R | 375, -38.8R, -65.1R | 291, -41.6R, -62.9R |
+| BTC | a broken P reads 50/50 | 157, -40.9R, -41.4R (-18.1 / -22.7R) | 136, -29.8R, -35.4R (-17.5 / -12.3R) |
 
 The smaller gap loses in these years on both markets that took it (EURUSD -12.3R, NAS100 -7.1R) and wins on
 2024-2026 (+4.2R, +4.4R); the daily-plus-hourly pair wins in both periods on either gap. Gold has no edge in these
-years with or without its changes.
+years with or without its changes, BTC none either (its commission scaled to the price of those years); the neutral
+broken P helps there too.
+
+### More trades, not more profit (7 October, afternoon)
+
+Max: "kijk nog verder voor btc en eurusd ... nog meer verbeteren en meer trades doen". On tonight's set (FTMO's costs,
+the account replay as above):
+
+| Variant | Trades a month (market) | R after costs | Drawdown | Halves (change) | Replay: 2026 within 2 mo; 2024-25 within 3 mo; lost; worst month |
+|---|---|---|---|---|---|
+| (tonight's set) | | | | | 93 %; 50 %; 1 %; -5.0 % |
+| EURUSD 15m zones (5m entries) at half the stake | 1.7 -> 2.4 | +31.4R -> +32.9R (at its stakes) | -5.2R -> -4.7R | +1.5 / +0.0R | 93 %; 49 %; 1 %; -5.7 % |
+| BTC until 20:00 (09-11, 13-20) | 2.8 -> 3.6 | +64.7R -> +67.2R | -4.0R -> -5.2R | +0.3 / +2.2R | 90 %; 54 %; 1 %; -5.1 % |
+| BTC until 22:00 | 2.8 -> 4.1 | +63.9R | -6.0R | -0.7 / -0.2R | 90 %; 58 %; 1 %; -5.0 % |
+| BTC 08:00-22:00 | 2.8 -> 4.5 | +59.8R | -9.7R | | |
+| Both the EURUSD 15m zones and BTC until 20:00 | 9.8 -> 11.3 (the set) | | | | 90 %; 46 %; 1 %; -5.7 % |
+| NAS100 09-11, 13-20 | 1.2 -> 1.5 | +37.3R -> +38.4R | -4.0R -> -5.0R | +0.1 / +1.0R | 89 %; 58 %; 2 %; -5.1 % |
+| NAS100 08:00-18:00 | 1.2 -> 1.7 | +26.8R | -9.3R | -4.6 / -6.0R | |
+
+The extra trades earn next to nothing after costs, and the challenge replay is no faster with them. **Max: nothing extra
+tonight.** The EURUSD 15m profile is ready (run with the guard's limits off it gives its research ledger trade for
+trade, 77 of 77). Not more trades either: BTC with a second position at once (no trade changes: two BTC trades never
+overlap), BTC re-entries after a stop (107 trades, -7.5R), a plain break of structure as BTC's confirmation
+(107 trades, -15.0R), BTC's reclaim within 3 candles (58 trades, -32.8R), the sweep before the shift (52, -20.9R).
 
 ### The set of the 7 October restart
 
