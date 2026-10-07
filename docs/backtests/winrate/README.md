@@ -314,6 +314,42 @@ EURUSD on `config/dorus_live.yaml` (the book), XAUUSD on `config/dorus_live_gold
 account-wide. 2026 on the three together at 1 %: EURUSD +5.9R, gold +10.3R, BTC +26.6R (origin) or +48.1R
 (previous high); the pace of a challenge is set by BTC's few far targets and by gold's steady 4 trades a month.
 
+## Spent zones: the losing months on the set that runs (7 October)
+
+Max: "ongeveer 1 op de 3 maanden is negatief ... kunnen we hier nog onderzoek naar doen". The four profiles as they run
+(EURUSD re-entries and limit, gold 2R fallback, NAS100 limit, BTC balance shift), February 2024 to September 2026,
+with FTMO's measured costs (the 6 October evening spreads; commission: forex $2.50 a lot a side, metals 0.0007 % a
+side, crypto 0.0325 % a side, indices none), 0.10R haircut, two open, 1.25 % with 4H zones x2 and BTC half.
+
+- 12 of 32 months lost, -37.2 % together; eight of them -3.1 % or less, four deep (March 2024 -5.5 %, April 2024
+  -8.4 %, July 2025 -7.5 %, March 2026 -4.2 %). In those months BTC lost -17.4R, gold -9.1R, EURUSD -7.5R, NAS100 -3.0R.
+- The one cut that loses in both halves (February 2024 - May 2025, June 2025 - September 2026) and in every market:
+  the time from the zone forming to the first touch of the visit. Touched within a day: 299 trades, 53 %, +140.7R,
+  +177 % on the account; one to three days: 25 trades, 24 %, -17.0R; later: 14 trades, 36 %, -8.0R. BTC 25 trades
+  -14.2R, gold 9 -5.4R, NAS100 4 -4.4R, EURUSD 1 -1.0R. The 4 October anatomy found the same on the older profiles;
+  the course calls a used zone spent. `max_zone_age_candles` counts candles of the zone's own timeframe, so a 4H zone
+  could wait four days and a 1D zone 24: the new `confirmation.max_touch_age_hours` counts hours for every timeframe.
+- Ledger replay of the limit: 12 h 8 losing months, 18 h 8, 24 h 9, 36 h 10, 48 h 10 (now 12): every limit helps, so
+  the gain does not hang on the hour.
+- Engine runs with 24 h (`*_ta24`): EURUSD 30 trades +25.6R (was 31, +24.6R), gold 142 +69.3R (138, +63.1R on the
+  same window), NAS100 32 +31.9R, drawdown -3.0R (35, +28.9R, -5.0R), BTC 113 +69.6R, drawdown -6.0R (136, +61.7R,
+  -10.3R). With FTMO's costs, combined:
+
+| | Trades a month | R a trade | Month average / median | Losing months | Worst month | 2-Step from 2026 starts within 6 wk / 2 mo / 3 mo | 2024-25 starts within a year / failed | 14-day trial +5 % |
+|---|---|---|---|---|---|---|---|---|
+| As it ran | 10.6 | +0.34 | +4.6 % / +3.8 % | 12 | -8.4 % | 30 / 48 / 65 % | 84 / 15 % | 45 % |
+| **Zone touched within 24 h** | 9.6 | **+0.47** | **+5.7 % / +4.6 %** | **10** | **-6.7 %** | **40 / 59 / 77 %** | **100 / 0 %** | 45 % |
+
+- Taken into all four profiles (`max_touch_age_hours: 24`).
+- Not taken, on top of it (ledger replay): half the stake after three losses in a row on the account (average +5.4 %,
+  worst -6.9 %, losing months unchanged), no trade for three days after four (worse), a market's stop-out ending its
+  day (10 losing months), two losses in a row pausing a market three days (11). As on 5 October: a stop does not
+  remove losing months, the entries do.
+- What is left is mostly chance: drawing months of 9.4 trades from this set's own trades gives 23 % losing months
+  (9 % under -3 %); two months together 13 %, three 8 %.
+- BTC's R rests on three shorts in June 2026 (+23.4R, +11.6R, +5.8R): without them its 135 trades of the run before
+  the limit were -15.6R after FTMO's costs, its longs +3.3R over 73 trades. EURUSD, gold and NAS100 earn on both sides.
+
 ## Loss anatomy: what the losers did before the stop, and what separates them (4 October 2026, night)
 
 Max: "winrate moet wel wat omhoog ... analyseer de trades en zie of er wat mist of fout gaat". `scripts/loss_anatomy.py`

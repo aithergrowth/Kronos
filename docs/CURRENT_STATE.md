@@ -36,6 +36,7 @@ in the MT5 terminal and tokens in environment variables.
 | Bias gate | 3 of 5 timeframes aligned, the 1H among them | 2 aligned with the 1H among them (1D+1H, 4H+1H, or the book's combos) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`) |
 | Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
+| Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |
 | Minimum R:R | 1.0 | 0.5 | 1.0 | 0.5 |
 | Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 2R (nearest liquidity) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
@@ -106,10 +107,15 @@ data hashes and cost assumptions):
 
 | Market | 2024 - Sep 2026 | 2017 - 2023 (BTC Jun 2020 - Jan 2024) |
 |---|---|---|
-| EURUSD (re-entries, limit) | 31, 45 %, +24.6R, -5.0R | 85, 26 %, +7.3R, -15.0R |
-| XAUUSD (2R fallback target) | 145, 50 %, +61.3R, -8.8R | 382, 37 %, +3.4R, -32.5R |
-| NAS100 (limit entry) | 36, 42 %, +27.9R, -5.0R | 96, 28 %, +33.6R, -10.6R |
-| BTCUSD (balance shift) | 136, 52 %, +61.7R, -10.3R (+50.1R of it in 2026) | 178, 35 %, -37.6R, -38.0R |
+| EURUSD (re-entries, limit) | 30, 47 %, +25.6R, -5.0R | 85, 26 %, +7.3R, -15.0R |
+| XAUUSD (2R fallback target) | 142, 51 %, +69.3R, -8.8R | 382, 37 %, +3.4R, -32.5R |
+| NAS100 (limit entry) | 32, 47 %, +31.9R, -3.0R | 96, 28 %, +33.6R, -10.6R |
+| BTCUSD (balance shift) | 113, 55 %, +69.6R, -6.0R (+49.8R of it in 2026) | 178, 35 %, -37.6R, -38.0R |
+
+The 2024 - 2026 column is with the zone visited within 24 hours of forming (7 October); the 2017 - 2023 column is
+from before it. With FTMO's measured costs (spread and commission) the four together, two open, 1.25 %: +0.47R a
+trade, an average month +5.7 % (median +4.6 %), 10 of 32 months losing, the worst -6.7 %; the 2-Step from the 2026
+starts within 6 weeks 40 %, 2 months 59 %, 3 months 77 %; from the 2024-25 starts within a year 100 %, none failed.
 
 Since 6 October (evening) the profiles are chosen on 2024-2026 only (Max): the older column is kept for the record.
 The edge is the recent market's: NAS100 is the only market positive in both periods by a margin, and the FTMO 2-step
