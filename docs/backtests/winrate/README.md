@@ -1540,7 +1540,7 @@ in its first half). K = 3 (legs of about five ATRs, two to three weeks):
 
 | Market | Big moves | Taken (early / late) | Against | Missed | R in them, tonight / the set before today |
 |---|---|---|---|---|---|
-| Gold | 32 | 69 % (47 / 22) | 6 % | 25 % | +79.0R / +59.5R |
+| Gold | 32 | 69 % (47 / 22) | 6 % | 25 % | +82.5R / +60.1R |
 | BTC | 57 | 44 % (18 / 26) | 12 % | 44 % | +70.0R / +50.2R |
 | EURUSD | 33 | 39 % (21 / 18) | 21 % | 39 % | +41.4R / +25.6R |
 | NAS100 | 35 | 26 % (9 / 17) | 14 % | 60 % | +36.5R / +28.1R |
