@@ -17,6 +17,8 @@ rem   set "RISK=1.25"                                         risk a trade in %%
 rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
 rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
 rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
+rem   set "WATCHDOG_PING_URL=https://hc-ping.com/..."         the healthchecks.io check that says when the computer stops
+rem                                                           (docs/LIVE_SETUP.md "When the whole computer stops")
 rem To list the server's names, in PowerShell in the Kronos folder:
 rem   $env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
 rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
@@ -28,6 +30,10 @@ rem One window per market: a window whose market runs already (journal_ftmo\wind
 rem of a running window on older code) says so and closes itself after 5 seconds. Run this again while windows run and
 rem it starts exactly the missing ones; to restart a market, close its window first. The watchdog names on Telegram a
 rem market without a window 5 minutes after it started (--expect; 6 October: NAS100 did not open and nothing said so).
+rem At 22:05 the watchdog sends the account's day (balance, the day's trades with R after costs, open risk, the room under
+rem FTMO's floors, the target). With WATCHDOG_PING_URL set (docs/LIVE_SETUP.md "When the whole computer stops") it calls
+rem that address every 5 minutes, and healthchecks.io alerts when the calls stop: the computer is off, asleep or offline.
+rem To start a new watchdog after an update: close its window, run this again.
 cd /d "%~dp0.."
 set "MT5_PATH=C:\Program Files\FTMO MetaTrader 5\terminal64.exe"
 rem FTMO's own installer puts the terminal here (6 October, Max's laptop)
@@ -55,6 +61,10 @@ if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
 if defined PRODUCT set "COMMON=%COMMON% --product %PRODUCT%"
 if defined TARGET set "COMMON=%COMMON% --target-pct %TARGET%"
 if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
+set "WATCH=--journal journal_ftmo/trades.csv --tag FTMO --expect EURUSD,XAUUSD,NAS100,BTCUSD --report-at 22:05 --account-size %ACCOUNT% --mt5-names NAS100=%NAS_NAME%,BTCUSD=%BTC_NAME%"
+if defined PRODUCT set "WATCH=%WATCH% --product %PRODUCT%"
+if defined TARGET set "WATCH=%WATCH% --target-pct %TARGET%"
+if not defined TARGET if not defined FUNDED set "WATCH=%WATCH% --target-pct 10"
 (
   git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
   start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
@@ -65,6 +75,6 @@ if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
   ping -n 9 127.0.0.1 >nul
   start "FTMO BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --mt5-symbol %BTC_NAME% %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
   ping -n 9 127.0.0.1 >nul
-  start "FTMO watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog --journal journal_ftmo/trades.csv --tag FTMO --expect EURUSD,XAUUSD,NAS100,BTCUSD; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  start "FTMO watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog %WATCH%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
   exit /b
 )

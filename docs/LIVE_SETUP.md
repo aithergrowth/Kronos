@@ -92,6 +92,30 @@ starter and Python itself, so this lists the starters):
 $p = Get-CimInstance Win32_Process -Filter "Name='python.exe'"; $p | Where-Object { $_.CommandLine -like '*--tag FTMO*' -and $p.ProcessId -notcontains $_.ParentProcessId } | Select-Object ProcessId, @{n='Window';e={ if ($_.CommandLine -match 'live --symbol (\S+)') { $Matches[1] } else { 'watchdog' } }} | Sort-Object Window
 ```
 
+**The account's day at 22:05.** The FTMO watchdog reads the account from the terminal once a day (`--report-at
+22:05`, the same reading as `ftmo_report.bat`) and sends one message: balance and equity against the start, the day's
+trades with R after costs and how far each fill was off the plan, what is open and its risk to the stops, what is left
+of the day and of the total under FTMO's floors, the distance to the target (10 %, or `TARGET` in `ftmo_local.bat`)
+and the trading days. The 22:00 messages of the windows stay: they are per market and from the journal. By hand, with
+the same text: `.\.venv\Scripts\python.exe -m kronos_trader forward-report --journal journal_ftmo/trades.csv
+--account-size 10000 --mt5-names NAS100=US100.cash --telegram --tag FTMO --target-pct 10` (MT5_PATH set first, see above).
+
+**When the whole computer stops.** The watchdog cannot say that its own computer is off, asleep or offline. A free
+check at healthchecks.io can: the watchdog calls its address every 5 minutes, and when the calls stop it sends a
+message to Telegram. Once:
+
+1. Make an account at healthchecks.io. In the project, *Add Check*; *Change Schedule*: period 5 minutes, grace
+   10 minutes.
+2. *Integrations* → *Telegram* → *Add Integration*: it opens a chat with its bot; send `/start` there and confirm.
+3. Copy the check's ping address (`https://hc-ping.com/...`) and add one line to `scripts\ftmo_local.bat`:
+   `set "WATCHDOG_PING_URL=https://hc-ping.com/..."`. It is not a password, but whoever has it can hide an outage, so
+   it stays out of git (`ftmo_local.bat` is not in git).
+4. Close the watchdog window and run `scripts\start_ftmo.bat` again: it starts only the watchdog, which prints
+   `ping: hc-ping.com every 300 s`. The check turns green within 5 minutes.
+
+From then on: the laptop sleeps, loses power or internet, or the watchdog window is closed, and within 15 minutes
+Telegram says the check is down; it says so again when the calls come back.
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop

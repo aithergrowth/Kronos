@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Optional
@@ -484,39 +485,63 @@ def cmd_live(args) -> int:
     return 0
 
 
-def cmd_forward_report(args) -> int:
-    """The forward record from the MT5 terminal (read only): every position of the account against the journal's plan,
-    slippage and costs, R before and after costs, the code each trade ran on, and the account against the product's
-    loss limits. Writes forward_trades.csv and forward_report.html."""
-    from .execution.mt5 import MT5Broker
-    from .forward import (PRODUCTS, account_from_mt5, deals_from_mt5, funding_status, read_journal, reconcile, summary,
-                          unmatched_fills, write_report)
-    settings = _load_settings(args)
-    for pair in (args.mt5_names or "").split(","):
+def _mt5_names(settings: Settings, text: Optional[str]) -> None:
+    """``NAS100=US100.cash,BTCUSD=BTCUSD``: the server's names where they differ from ours."""
+    for pair in (text or "").split(","):
         if "=" in pair:
             sym, name = (x.strip() for x in pair.split("=", 1))
             settings.symbols[_ensure_symbol(settings, sym)].mt5_symbol = name
-    journal = read_journal(args.journal) if Path(args.journal).exists() else pd.DataFrame(columns=["time", "symbol", "event", "id", "note"])
-    if args.since:
-        since = pd.Timestamp(args.since)
+
+
+def _forward_record(settings: Settings, journal_path, since=None, product: str = "ftmo_2step", account_size=None,
+                    connect=None, now: Optional[pd.Timestamp] = None) -> dict:
+    """The journal against the terminal's deals and account (read only; disconnected after): the trades, their summary
+    and the account against ``product``'s limits. ``since``: the first day to read (default: the journal's first day,
+    else 30 days back); ``connect``: makes the connected broker (default: MT5Broker with its usual retries)."""
+    from .forward import PRODUCTS, account_from_mt5, deals_from_mt5, funding_status, read_journal, reconcile, summary
+    if product not in PRODUCTS:
+        raise SystemExit(f"--product {product}: one of {', '.join(PRODUCTS)}")
+    journal = read_journal(journal_path) if Path(journal_path).exists() else pd.DataFrame(columns=["time", "symbol", "event", "id", "note"])
+    if since:
+        since = pd.Timestamp(since)
     elif len(journal) and journal["time"].notna().any():
         since = journal["time"].min().normalize()
     else:
         since = pd.Timestamp.now().normalize() - pd.Timedelta(days=30)
-    if args.product not in PRODUCTS:
-        raise SystemExit(f"--product {args.product}: one of {', '.join(PRODUCTS)}")
-    broker = MT5Broker(settings)
+    if connect is None:
+        from .execution.mt5 import MT5Broker
+        connect = lambda: MT5Broker(settings)
+    broker = connect()
     try:
         deals = deals_from_mt5(broker, since)
         account = account_from_mt5(broker)
     finally:
         broker.disconnect()
     rec = reconcile(journal, deals, magic=broker.magic)
-    summ = summary(rec)
-    initial = float(args.account_size or settings.account_size)
-    status = funding_status(account, deals, PRODUCTS[args.product], initial, pd.Timestamp.now("UTC").tz_localize(None))
+    initial = float(account_size or settings.account_size)
+    now = now if now is not None else pd.Timestamp.now("UTC").tz_localize(None)
+    return {"journal": journal, "since": since, "deals": deals, "account": account, "rec": rec, "summary": summary(rec),
+            "status": funding_status(account, deals, PRODUCTS[product], initial, now), "initial": initial,
+            "product": PRODUCTS[product], "now": now}
+
+
+def _day_message(record: dict, target_pct: float = 0.0) -> str:
+    from .forward import day_message
+    return day_message(record["rec"], record["status"], record["account"]["positions"], record["now"], record["initial"],
+                       tz=record["product"].day_timezone, target_pct=target_pct)
+
+
+def cmd_forward_report(args) -> int:
+    """The forward record from the MT5 terminal (read only): every position of the account against the journal's plan,
+    slippage and costs, R before and after costs, the code each trade ran on, and the account against the product's
+    loss limits. Writes forward_trades.csv and forward_report.html; with --telegram the day's message as well."""
+    from .forward import unmatched_fills, write_report
+    settings = _load_settings(args)
+    _mt5_names(settings, args.mt5_names)
+    record = _forward_record(settings, args.journal, args.since, args.product, args.account_size)
+    rec, summ, status, account, initial = (record[k] for k in ("rec", "summary", "status", "account", "initial"))
     out_dir = args.out_dir or str(Path(args.journal).parent / "report")
-    page = write_report(out_dir, rec, summ, status, unmatched_fills(journal, rec), account["positions"],
+    page = write_report(out_dir, rec, summ, status, unmatched_fills(record["journal"], rec), account["positions"],
                         title=f"Kronos forward record - {account.get('server', '')} {account.get('login', '')}")
     print(f"account {account.get('login')} on {account.get('server')}: balance {status['balance']:,.2f} equity {status['equity']:,.2f}")
     print(f"{status['product']}: {status['left_today']:,.2f} left today ({status['left_today_pct']:.2f} % of {initial:,.0f}), "
@@ -527,18 +552,30 @@ def cmd_forward_report(args) -> int:
     if len(summ):
         print(summ.to_string(index=False))
     else:
-        print("no closed trades since", since.date())
+        print("no closed trades since", record["since"].date())
     print(f"report: {page}")
+    if args.telegram:
+        notifier = TelegramNotifier(params=settings.telegram)
+        if args.tag:
+            notifier.prefix = f"[{args.tag}] "
+        text = _day_message(record, args.target_pct or 0.0)
+        print(text)
+        notifier.send(text)
     return 0
 
 
 def cmd_watchdog(args) -> int:
     """Read the windows' heartbeats next to the journal and say on Telegram when one stops, its scans fail or its news
     calendar runs dry; once when it starts and once when it is over."""
+    from .forward import PRODUCTS
     from .live import WINDOW_TAKEN, WindowLock
-    from .watchdog import Watchdog
+    from .watchdog import DailyJob, Pinger, Watchdog
     settings = _load_settings(args)
     folder = Path(args.journal).parent
+    if args.report_at and not _valid_clock(args.report_at):
+        raise SystemExit(f"--report-at {args.report_at}: HH:MM")
+    if args.report_at and args.product not in PRODUCTS:    # here, not at 22:05 inside the loop
+        raise SystemExit(f"--product {args.product}: one of {', '.join(PRODUCTS)}")
     if not args.once:
         window = WindowLock(folder, "watchdog")
         taken = window.acquire()
@@ -558,7 +595,31 @@ def cmd_watchdog(args) -> int:
         for text in dog.check():
             print(text)
         return 0
-    dog.run_forever(args.every)
+    also = []
+    ping_url = args.ping_url or os.environ.get("WATCHDOG_PING_URL", "").strip()
+    if ping_url:
+        from urllib.parse import urlparse
+        also.append(Pinger(ping_url, args.ping_every))
+        print(f"ping: {urlparse(ping_url).netloc} every {args.ping_every:g} s (it alerts when the pings stop)")
+    if args.report_at:
+        _mt5_names(settings, args.mt5_names)
+
+        def connect():
+            from .execution.mt5 import MT5Broker
+            broker = MT5Broker(settings, connect=False)
+            broker._sleep = lambda seconds: None        # one quick try per round: a busy terminal gets the next round
+            broker.connect()
+            return broker
+
+        def day_report(now: pd.Timestamp) -> None:
+            record = _forward_record(settings, args.journal, None, args.product, args.account_size, connect=connect, now=now)
+            notifier.send(_day_message(record, args.target_pct or 0.0))
+
+        tz = settings.session.timezone
+        also.append(DailyJob(args.report_at, tz, day_report, state_path=folder / "day_report.json",
+                             on_fail=lambda err: notifier.send(f"📒 The day report could not read the account from MT5 ({err}).")))
+        print(f"day report: every day at {args.report_at} {tz} ({args.product}, account {args.account_size or settings.account_size:,.0f})")
+    dog.run_forever(args.every, also=also)
     return 0
 
 
@@ -953,6 +1014,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--account-size", type=float, help="the account's initial balance (the limits are %% of it)")
     sp.add_argument("--mt5-names", help="the server's names where they differ, e.g. NAS100=US100.cash,BTCUSD=BTCUSD")
     sp.add_argument("--out-dir", help="where forward_trades.csv and forward_report.html go (default: report/ next to the journal)")
+    sp.add_argument("--telegram", action="store_true", help="send the day's account message (the watchdog's day report) as well")
+    sp.add_argument("--tag", help="with --telegram: [TAG] in front of the message, e.g. FTMO")
+    sp.add_argument("--target-pct", type=float, help="with --telegram: the phase's profit target in %%, e.g. 10")
     sp.set_defaults(func=cmd_forward_report)
 
     sp = sub.add_parser("watchdog", help="watch the live windows' heartbeats (next to the journal) and say on Telegram when "
@@ -965,6 +1029,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--expect", help="the markets whose windows should run, e.g. EURUSD,XAUUSD,NAS100,BTCUSD: one without "
                     "a heartbeat --max-age minutes after the watchdog started is reported (its window never started)")
     sp.add_argument("--once", action="store_true", help="one check, print what it would send, stop")
+    sp.add_argument("--report-at", help="HH:MM in the session timezone: the account's day on Telegram once a day (read from the "
+                    "MT5 terminal: balance, the day's trades with R after costs, open risk, the room under the floors)")
+    sp.add_argument("--product", default="ftmo_2step", help="with --report-at: the floors, ftmo_2step or ftmo_1step")
+    sp.add_argument("--account-size", type=float, help="with --report-at: the account's initial balance")
+    sp.add_argument("--target-pct", type=float, help="with --report-at: the phase's profit target in %%, e.g. 10")
+    sp.add_argument("--mt5-names", help="with --report-at: the server's names, e.g. NAS100=US100.cash,BTCUSD=BTCUSD")
+    sp.add_argument("--ping-url", help="a dead-man's-switch address to call every --ping-every seconds (healthchecks.io): "
+                    "it alerts when the calls stop, i.e. the computer is off or asleep (default: env WATCHDOG_PING_URL)")
+    sp.add_argument("--ping-every", type=float, default=300.0, help="seconds between pings")
     sp.set_defaults(func=cmd_watchdog)
 
     sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")

@@ -78,7 +78,14 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 - Every window writes `heartbeat_<symbol>.json` next to its journal after each scan; a watchdog window (started
   by both scripts) says on Telegram when a window has not scanned for 5 minutes, has had no good scan for 15
   (MT5 link down, errors), or its news calendar has nothing ahead on a Monday to Thursday, and again when it is
-  over. It runs on the same computer: a computer that is off or asleep shows as a missing morning briefing.
+  over. It runs on the same computer, so for a computer that is off, asleep or offline it calls a healthchecks.io
+  check every 5 minutes (`WATCHDOG_PING_URL`, `docs/LIVE_SETUP.md` "When the whole computer stops"): when the calls
+  stop, that service sends the alert.
+- The FTMO watchdog sends the account's day at 22:05 Amsterdam (`--report-at`, read from the terminal like
+  `ftmo_report.bat`): balance and equity against the start, the day's trades with R after costs and their entry
+  slippage, what is open and its risk to the stops, the room under FTMO's floors, the distance to the target and the
+  trading days. Once a day, also after a restart (`journal_ftmo/day_report.json`); a computer that was off at 22:05
+  sends it when it is back that evening. `ftmo_report.bat` with `--telegram` sends the same message by hand.
   The scripts pass it their markets (`--expect`): a market whose window never started is named 5 minutes after the
   watchdog's start (6 October, evening: start_ftmo.bat opened every window but NAS100's and nothing said so); the
   last session's heartbeats wait those 5 minutes too, so a restart no longer sends "no scan since" for every market.

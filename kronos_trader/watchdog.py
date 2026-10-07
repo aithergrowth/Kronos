@@ -9,8 +9,9 @@ says on Telegram what a window cannot say itself.
   from Friday the next week's file is often not out yet, so an empty week end is normal).
 
 One message when a problem starts and one when it is over. It runs on the same computer, so it cannot report that the
-computer itself is off or asleep: that is visible in the morning briefing that does not come, and outside help (a
-service the heartbeat pings) is the only cover for it.
+computer itself is off or asleep: ``Pinger`` covers that from outside. It calls a dead-man's-switch address (a
+healthchecks.io check) every few minutes, and when the calls stop (the computer is off, asleep or offline, or the watchdog
+died) that service sends the alert. ``DailyJob`` runs a job once a day at a set local time: the account's day report.
 """
 from __future__ import annotations
 
@@ -103,10 +104,86 @@ class Watchdog:
             self.send(text)
         return sent
 
-    def run_forever(self, every_seconds: float = 60.0) -> None:
+    def run_forever(self, every_seconds: float = 60.0, also: Sequence[Callable[[], object]] = ()) -> None:
+        """``check`` every ``every_seconds``, and after it each of ``also`` (the ping, the day report)."""
         while True:
-            try:
-                self.check()
-            except Exception as exc:                   # a bad file or a Telegram hiccup: say it on the console, go on
-                print(f"[watchdog] {type(exc).__name__}: {exc}")
+            for step in (self.check, *also):
+                try:
+                    step()
+                except Exception as exc:               # a bad file or a Telegram hiccup: say it on the console, go on
+                    print(f"[watchdog] {type(exc).__name__}: {exc}")
             time.sleep(every_seconds)
+
+
+def _http_get(url: str) -> None:
+    import urllib.request
+    with urllib.request.urlopen(url, timeout=10) as resp:
+        resp.read()
+
+
+class Pinger:
+    """Calls ``url`` at most every ``every_seconds``; a failed call is printed and the next one waits its turn."""
+
+    def __init__(self, url: str, every_seconds: float = 300.0, get: Optional[Callable[[str], object]] = None,
+                 clock: Callable[[], float] = time.monotonic):
+        self.url, self.every = url, float(every_seconds)
+        self.get = get or _http_get
+        self.clock = clock
+        self.last: Optional[float] = None
+
+    def __call__(self) -> bool:
+        now = self.clock()
+        if self.last is not None and now - self.last < self.every:
+            return False
+        self.last = now
+        try:
+            self.get(self.url)
+            return True
+        except Exception as exc:                       # no internet for a moment: the service alerts only after its grace
+            print(f"[watchdog] ping failed ({type(exc).__name__}: {exc})")
+            return False
+
+
+class DailyJob:
+    """``job(now)`` once a day at ``at`` (HH:MM, ``tz`` local time), or at the first round after it when the computer was
+    off then. The day it ran sits in ``state_path``, so a restart after that time does not run it again. A job that
+    raises runs again the next round; after ``tries`` failures that day ``on_fail`` gets the error and the day is over."""
+
+    def __init__(self, at: str, tz: str, job: Callable[[pd.Timestamp], object], state_path=None,
+                 clock: Optional[Callable[[], pd.Timestamp]] = None, tries: int = 3,
+                 on_fail: Optional[Callable[[str], object]] = None):
+        hour, minute = (int(x) for x in str(at).split(":"))
+        self.at, self.tz, self.job = (hour, minute), tz, job
+        self.state_path = Path(state_path) if state_path else None
+        self.clock = clock or (lambda: pd.Timestamp.now("UTC").tz_localize(None))
+        self.tries, self.on_fail = max(1, int(tries)), on_fail
+        self.failed = 0
+        self.done_on = None
+        if self.state_path is not None and self.state_path.exists():
+            try:
+                self.done_on = pd.Timestamp(json.loads(self.state_path.read_text(encoding="utf-8"))["date"]).date()
+            except Exception:
+                self.done_on = None
+
+    def __call__(self) -> bool:
+        now = self.clock()
+        local = now.tz_localize("UTC").tz_convert(self.tz)
+        if (local.hour, local.minute) < self.at or self.done_on == local.date():
+            return False
+        try:
+            self.job(now)
+        except Exception as exc:
+            self.failed += 1
+            if self.failed < self.tries:
+                print(f"[watchdog] {local:%H:%M} job failed ({type(exc).__name__}: {exc}); again next round")
+                return False
+            if self.on_fail is not None:
+                self.on_fail(f"{type(exc).__name__}: {exc}")
+        self.failed = 0
+        self.done_on = local.date()
+        if self.state_path is not None:
+            try:
+                self.state_path.write_text(json.dumps({"date": str(self.done_on)}), encoding="utf-8")
+            except Exception as exc:
+                print(f"[watchdog] could not write {self.state_path} ({exc})")
+        return True

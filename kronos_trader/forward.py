@@ -261,6 +261,59 @@ def funding_status(account: Dict[str, Any], deals: pd.DataFrame, product: Produc
             "margin": account.get("margin"), "margin_free": account.get("margin_free")}
 
 
+# ------------------------------------------------------------------ the day's message
+
+def day_message(rec: pd.DataFrame, status: Dict[str, Any], positions: List[Dict[str, Any]], now: pd.Timestamp,
+                initial: float, tz: str = "Europe/Prague", target_pct: float = 0.0) -> str:
+    """The account's day for Telegram: balance and equity against the start, the trades closed today (``tz``'s day,
+    FTMO's) with R after costs, what is open and its risk to the stops, the room left under the product's floors, the
+    distance to the target and the trading days, and the bot's record since the start. ``now`` is naive UTC."""
+    to_local = lambda ts: pd.Timestamp(ts).tz_localize("UTC").tz_convert(tz)
+    local = to_local(now)
+    balance, equity = float(status["balance"]), float(status["equity"])
+    lines = [f"📒 Account {local:%a %d %b %H:%M}: balance {balance:,.2f} ({(balance - initial) / initial * 100:+.2f} % since "
+             f"the start), equity {equity:,.2f}"]
+    closed = rec[rec["status"] == "closed"] if len(rec) else rec
+    today = closed[closed["exit_time"].map(lambda t: pd.notna(t) and to_local(t).date() == local.date())] if len(closed) else closed
+    if len(today):
+        bot = today[today["source"] == "bot"]
+        costs = float(today[["commission", "swap", "fee"]].sum().sum())
+        r_line = f", {float(bot['r_net'].sum()):+.2f}R after costs" if bot["r_net"].notna().any() else ""
+        lines.append(f"Today: {len(today)} closed, {int((today['net'] > 0).sum())} won{r_line}, net {float(today['net'].sum()):+,.2f} "
+                     f"(costs {costs:+,.2f})")
+        for _, t in today.sort_values("exit_time").iterrows():
+            r = f"{t['r_net']:+.2f}R" if pd.notna(t["r_net"]) else "not the bot's"
+            slip = f", entry {t['entry_slip_r']:+.2f}R off the plan" if pd.notna(t.get("entry_slip_r")) else ""
+            lines.append(f"• {t['symbol']} {t['direction']} {r} ({t['exit_reason'] or 'closed'}, {float(t['net']):+,.2f}{slip})")
+    else:
+        lines.append(f"Today: no trade closed (day result {float(status.get('closed_today', 0.0)):+,.2f})")
+    if positions:
+        held = ", ".join(f"{p['symbol']} {p['direction']} {float(p.get('profit', 0.0)):+,.2f}" +
+                         ("" if p.get("source", "bot") == "bot" else " (not the bot's)") for p in positions)
+        lines.append(f"Open: {held}; risk to the stops {float(status['open_risk']):,.2f} "
+                     f"({float(status['open_risk']) / initial * 100:.2f} %)")
+    else:
+        lines.append("Open: nothing")
+    lines.append(f"{status['product']}: {float(status['left_today']):,.2f} left today ({float(status['left_today_pct']):.2f} %), "
+                 f"{float(status['left_total']):,.2f} to the total floor ({float(status['left_total_pct']):.2f} %)")
+    if status.get("positions_without_stop"):
+        lines.append(f"🚨 without a stop: position(s) {', '.join(str(p) for p in status['positions_without_stop'])}: the worst "
+                     f"case has no bound")
+    elif status.get("worst_case_breaks"):
+        lines.append(f"⚠️ if every stop is hit the equity ({float(status['worst_case_equity']):,.2f}) is under a floor")
+    days = len({to_local(t).date() for t in rec["fill_time"] if pd.notna(t)}) if len(rec) else 0
+    goal = ""
+    if target_pct:
+        left = target_pct / 100.0 * initial - (balance - initial)
+        goal = f"target +{target_pct:g} %: " + (f"{left:,.2f} to go" if left > 0 else "reached") + "; "
+    lines.append(f"{goal}{days} trading day(s)")
+    mine = closed[closed["source"] == "bot"] if len(closed) else closed
+    if len(mine):
+        lines.append(f"Since the start: {len(mine)} trade(s), {100.0 * float((mine['net'] > 0).mean()):.0f} % won, "
+                     f"{float(mine['r_net'].sum()):+.2f}R after costs, net {float(mine['net'].sum()):+,.2f}")
+    return "\n".join(lines)
+
+
 # ------------------------------------------------------------------ the report
 
 def write_report(out_dir, rec: pd.DataFrame, summ: pd.DataFrame, status: Optional[Dict[str, Any]],

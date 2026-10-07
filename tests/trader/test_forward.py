@@ -136,3 +136,57 @@ def test_deals_and_account_are_read_from_the_terminal_only(monkeypatch):
     bot, manual = acc["positions"]
     assert bot["symbol"] == "NAS100" and bot["loss_at_stop"] == pytest.approx(50.0) and bot["source"] == "bot"
     assert manual["source"] == "other" and manual["loss_at_stop"] is None and acc["equity"] == 9990.0
+
+
+def test_the_day_message_names_the_day_the_open_risk_the_floors_and_the_target(record):
+    from kronos_trader.forward import day_message
+    journal, deals = record
+    rec = reconcile(journal, deals, magic=20260930)
+    positions = [{"position_id": 9100, "symbol": "BTCUSD", "direction": "LONG", "profit": 12.5, "source": "bot", "sl": 60000.0,
+                  "loss_at_stop": 125.0}]
+    account = {"balance": 10_332.0, "equity": 10_344.5, "positions": positions}
+    evening = pd.Timestamp("2026-10-07 20:05")                                                   # 22:05 in Prague
+    status = funding_status(account, deals, PRODUCTS["ftmo_2step"], 10_000.0, evening)
+    text = day_message(rec, status, positions, evening, 10_000.0, target_pct=10.0)
+    lines = text.splitlines()
+    assert lines[0] == "📒 Account Wed 07 Oct 22:05: balance 10,332.00 (+3.32 % since the start), equity 10,344.50"
+    assert lines[1] == "Today: 2 closed, 1 won, +1.87R after costs, net +332.00 (costs -12.00)"
+    assert lines[2] == "• XAUUSD SHORT not the bot's (stop, -50.00)"                               # by hand: no R, first out
+    assert lines[3] == "• EURUSD LONG +1.87R (take_profit, +382.00, entry +0.02R off the plan)"
+    assert lines[4] == "Open: BTCUSD LONG +12.50; risk to the stops 125.00 (1.25 %)"
+    assert lines[5] == "FTMO 2-Step: 844.50 left today (8.45 %), 1,344.50 to the total floor (13.44 %)"
+    assert lines[6] == "target +10 %: 668.00 to go; 1 trading day(s)"
+    assert lines[7] == "Since the start: 1 trade(s), 100 % won, +1.87R after costs, net +382.00"
+    next_day = pd.Timestamp("2026-10-08 20:05")
+    quiet = day_message(rec, funding_status(dict(account, positions=[]), deals, PRODUCTS["ftmo_2step"], 10_000.0, next_day), [],
+                        next_day, 10_000.0)
+    assert "Today: no trade closed (day result +0.00)" in quiet and "Open: nothing" in quiet and "target" not in quiet
+    empty = day_message(pd.DataFrame(), status, [], evening, 10_000.0)
+    assert "Today: no trade closed" in empty and "0 trading day(s)" in empty and "Since the start" not in empty
+
+
+def test_forward_report_sends_the_day_message_with_telegram(record, tmp_path, monkeypatch):
+    from kronos_trader import cli
+    journal, deals = record
+    rec = reconcile(journal, deals, magic=20260930)
+    evening = pd.Timestamp("2026-10-07 20:05")
+    account = {"balance": 10_332.0, "equity": 10_332.0, "positions": [], "server": "FTMO-Demo", "login": 1}
+    status = funding_status(account, deals, PRODUCTS["ftmo_2step"], 10_000.0, evening)
+    got = {}
+
+    def fake_record(settings, journal_path, since, product, account_size, **kw):
+        got.update(journal=journal_path, product=product, size=account_size)
+        return {"journal": journal, "since": pd.Timestamp("2026-10-06"), "deals": deals, "account": account, "rec": rec,
+                "summary": summary(rec), "status": status, "initial": 10_000.0, "product": PRODUCTS[product], "now": evening}
+
+    sent = []
+    monkeypatch.setattr(cli, "_forward_record", fake_record)
+    monkeypatch.setattr(cli.TelegramNotifier, "send", lambda self, text, reply_markup=None: sent.append(self.prefix + text))
+    assert cli.main(["forward-report", "--journal", "journal_ftmo/trades.csv", "--account-size", "10000", "--out-dir",
+                     str(tmp_path / "rep"), "--telegram", "--tag", "FTMO", "--target-pct", "10"]) == 0
+    assert got == {"journal": "journal_ftmo/trades.csv", "product": "ftmo_2step", "size": 10_000.0}
+    assert len(sent) == 1 and sent[0].startswith("[FTMO] 📒 Account Wed 07 Oct 22:05") and "668.00 to go" in sent[0]
+    assert (tmp_path / "rep" / "forward_report.html").exists()
+    sent.clear()
+    assert cli.main(["forward-report", "--journal", "journal_ftmo/trades.csv", "--out-dir", str(tmp_path / "rep")]) == 0
+    assert sent == []                                                                   # without --telegram: the files only
