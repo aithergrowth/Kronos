@@ -272,6 +272,26 @@ def test_poi_touch_is_announced_once(setup):
     assert len(touches) == 1 and "waiting for a confirmation" in touches[0]
 
 
+def test_the_poi_touch_carries_the_latest_headlines_when_there_are_any(setup):
+    from kronos_trader.notify.headlines import Headlines
+
+    class Client:
+        def get_news(self, symbol, limit=25):
+            return [{"published": int(NOW.timestamp()) - 600, "title": "Euro firms before ECB minutes",
+                     "provider": {"name": "Reuters"}}]
+
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)
+    runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+    runner.headlines = Headlines(client_factory=lambda: Client())
+    runner.step(NOW)
+    touch = next(m for m in notifier.sent if "inside the" in m and "POI" in m)
+    assert touch.endswith("waiting for a confirmation\n📰 10:50 Reuters: Euro firms before ECB minutes")
+    off = Settings(); off.live.news_headlines = 0
+    assert LiveRunner(off, "EURUSD", fetch, notifier=TelegramNotifier(dry_run=True), engine=engine, clock=lambda: NOW).headlines is None
+
+
 def test_setup_comes_with_a_chart(setup, tmp_path):
     broker = PaperBroker(Settings())
     broker.set_price("EURUSD", 1.1)

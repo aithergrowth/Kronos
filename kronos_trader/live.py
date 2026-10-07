@@ -330,6 +330,9 @@ class LiveRunner:
         self.approval_timeout_minutes = approval_timeout_minutes if approval_timeout_minutes is not None else settings.live.approval_timeout_minutes
         self.notify_every_scan = settings.live.notify_every_scan if notify_every_scan is None else notify_every_scan
         self.clock = clock or utc_now
+        from .notify.headlines import Headlines
+        self.headlines = Headlines(settings.live.news_headlines, settings.live.news_headlines_hours) \
+            if settings.live.news_headlines else None
         self.seen: set = set()
         self.pending: Dict[str, PendingSetup] = {}
         self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
@@ -677,8 +680,10 @@ class LiveRunner:
             self.note("poi_touch", analysis.timestamp, poi_tf=poi.timeframe.label, direction=poi.direction.name,
                       price=float(analysis.price), note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
             arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
+            news = self.news_lines(now)
             self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
-                               f"({analysis.decision.reason}); waiting for a confirmation")
+                               f"({analysis.decision.reason}); waiting for a confirmation"
+                               + "".join(f"\n📰 {line}" for line in news))
             self.send_chart(analysis, "touch", timeframe=poi.timeframe)
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
@@ -914,6 +919,16 @@ class LiveRunner:
             self.send_chart(analysis, "setup", setup=setup, forecast=forecast)
             return
         self.execute(setup, forecast, now)
+        news = self.news_lines(now)
+        if news:
+            self.notifier.send(f"📰 {self.symbol}, the latest news (TradingView):" + "".join(f"\n• {line}" for line in news))
+
+    def news_lines(self, now: Optional[pd.Timestamp] = None) -> List[str]:
+        """The latest TradingView headlines of this market (live.news_headlines): context for the trader, never an input
+        to a trade; none without TRADINGVIEW_MCP_TOKEN, when off, or when the read fails."""
+        if self.headlines is None:
+            return []
+        return self.headlines.lines(self.spec.tradingview_symbol or self.symbol, now if now is not None else self.clock())
 
     def fill_stamp(self, now: pd.Timestamp) -> pd.Timestamp:
         """The fill time a simulated broker records: the start of the lowest timeframe's candle the fill falls in, so the
