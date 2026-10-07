@@ -330,6 +330,22 @@ def test_evening_summary_once_per_weekday_from_the_journal(setup, tmp_path):
     assert sum("📊" in m for m in notifier.sent) == 1
 
 
+def test_a_touch_outside_the_entry_windows_waits_for_the_window(setup):
+    """No entry can follow a touch at night: nothing is said then; a zone price is still in when a window opens is said
+    at that moment."""
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    settings = Settings()
+    settings.session.windows = (("09:00", "11:00"), ("13:00", "17:00"))
+    notifier = TelegramNotifier(dry_run=True)
+    engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)
+    runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+    runner.step(pd.Timestamp("2026-10-01 01:30"))                            # 03:30 Amsterdam
+    runner.step(pd.Timestamp("2026-10-01 02:06"))
+    assert not any("inside the" in m for m in notifier.sent)
+    runner.step(pd.Timestamp("2026-10-01 07:01"))                            # 09:01: the window opens, price still in it
+    assert sum("inside the" in m for m in notifier.sent) == 1
+
+
 def test_touch_only_on_the_zone_timeframes_the_profile_trades(setup):
     fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
     settings = Settings()

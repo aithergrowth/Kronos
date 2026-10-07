@@ -407,7 +407,7 @@ class LiveRunner:
         self.report_closes()
         self.morning_briefing(analysis, now)
         self.evening_summary(now)
-        self.announce_poi_touch(analysis)
+        self.announce_poi_touch(analysis, now)
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
@@ -654,10 +654,15 @@ class LiveRunner:
             zones.append(setup.poi)
         return zones
 
-    def announce_poi_touch(self, analysis: Analysis) -> None:
+    def announce_poi_touch(self, analysis: Analysis, now: Optional[pd.Timestamp] = None) -> None:
         """Say once when price enters a POI that the bias allows, so the trader can watch the confirmation form.
-        Only zones on the timeframes the profile trades: a touch of a monthly zone on a 1D/4H/1H profile is not a setup."""
+        Only zones on the timeframes the profile trades: a touch of a monthly zone on a 1D/4H/1H profile is not a setup.
+        Only inside the entry windows: outside them no entry can follow (7 October: six BTC touches between 03:30 and
+        04:06 read as trades about to happen); a zone price is still in when a window opens is said then."""
         if not self.settings.live.notify_poi_touch or not analysis.decision.tradable:
+            return
+        session = self.settings.session
+        if session.enabled and not in_session(pd.Timestamp(now) if now is not None else self.clock(), session)[0]:
             return
         d = self.spec.price_decimals
         allowed = self.tradable_timeframes(analysis)

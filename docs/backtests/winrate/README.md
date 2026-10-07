@@ -248,6 +248,12 @@ max dd -11.4 % and a -5.0 % day in August, the challenge lost. So 1 % per trade,
   `config/dorus_live_btc.yaml`: stop minimum 60 USD, no 1H requirement). The guard reads the account's equity in every
   process, so the FTMO margins hold account-wide.
 - Not taken: wider sessions, retests, the "recent" bias rule, an entry cap, 15m zones, BTC around the clock, a target cap.
+  BTC around the clock by the hour (7 October, the run on 1 February 2024 to 25 September 2026 without sessions): in the
+  entry windows 96 trades, 43 % won, +23.9R; at night (23:00-07:00 Amsterdam) 130 trades, 39 % won, +8.8R, +0.07R a
+  trade, less than FTMO's crypto commission takes (about 0.13R at the median 431 USD stop); 02:00-05:00 alone 63
+  trades, -21.5R; the other day hours 150 trades, -1.7R. The night of 6 to 7 October (six bullish 1H touches between
+  03:30 and 04:06: the price fell through the upper zones to 83,562 inside the lowest, then rose to about 84,200) is one
+  such night.
 - The pace in 2026 for the three markets together, 1 % risk: about +3R a month (EURUSD +7.1R, GBPUSD +3.1R,
   BTC +26.6R over nine months); without BTC's two best trades about +1.4R a month. At 1 % that is +10 % in 3 to 7 months,
   at 2 % in 2 to 4 months with a deepest 2026 dip of about -8 % on the three together; 1.5 % keeps the dip near -6 %.

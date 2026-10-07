@@ -81,6 +81,8 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   The scripts pass it their markets (`--expect`): a market whose window never started is named 5 minutes after the
   watchdog's start (6 October, evening: start_ftmo.bat opened every window but NAS100's and nothing said so); the
   last session's heartbeats wait those 5 minutes too, so a restart no longer sends "no scan since" for every market.
+- A zone touch ("👀 ... waiting for a confirmation") is said only inside the entry windows; a zone price is still in
+  when a window opens is said then (7 October: six BTC touches at night read as trades about to happen).
 - A window says on Telegram that MT5 lost its trade server once the link has been down 5 minutes, and again when it
   is back; a shorter outage stays on the console (FTMO's server restarts every night at 23:00 Amsterdam: on 6
   October each market sent a down message at 23:01 and a back message at 23:02).
