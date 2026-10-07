@@ -634,19 +634,40 @@ def spread_report(broker, settings: Settings, symbols, minutes: float = 10.0, ev
             break
         sleep(max(0.5, float(every)))
     cap = float(settings.risk.max_spread_stop_fraction or 0.0)
+    return [_spread_line(broker, settings, s, samples[s], cap) for s in symbols]
+
+
+def _spread_line(broker, settings: Settings, symbol: str, values, cap: float, note: str = "") -> str:
+    spec, v = settings.symbol(symbol), sorted(values)
+    if not v:
+        return f"{symbol} ({broker.mt5_symbol(symbol)}): no prices (market closed, or the symbol is missing from Market Watch)"
+    pip = spec.pip_size
+    med, p90 = v[len(v) // 2], v[int(0.9 * (len(v) - 1))]
+    line = (f"{symbol} ({broker.mt5_symbol(symbol)}): {len(v)} samples{note}, spread median {med / pip:.1f} pips "
+            f"({med:.{spec.price_decimals}f}), 90 % {p90 / pip:.1f}, max {v[-1] / pip:.1f}; the backtest assumed "
+            f"{spec.typical_spread_pips:g}")
+    if cap:
+        line += f"; the {cap:.0%} cap refuses stops under {med / cap / pip:.1f} pips at the median"
+    return line
+
+
+def spread_history_report(broker, settings: Settings, symbols, day, every: float = 5.0) -> list:
+    """The spread over ``day``'s session windows (the profile's, 09-11 and 13-17 Amsterdam) from the terminal's tick
+    history: the live sample's figures per market, with the median of each window. For a day nobody sat at the terminal
+    (7 October: Max at the office during both windows)."""
+    session = settings.session
+    tz = session.timezone or "UTC"
+    windows = session.windows if session.enabled and session.windows else [["00:00", "23:59"]]
+    cap = float(settings.risk.max_spread_stop_fraction or 0.0)
     lines = []
     for s in symbols:
-        spec, v = settings.symbol(s), sorted(samples[s])
-        if not v:
-            lines.append(f"{s} ({broker.mt5_symbol(s)}): no prices (market closed, or the symbol is missing from Market Watch)")
-            continue
-        pip = spec.pip_size
-        med, p90 = v[len(v) // 2], v[int(0.9 * (len(v) - 1))]
-        line = (f"{s} ({broker.mt5_symbol(s)}): {len(v)} samples, spread median {med / pip:.1f} pips ({med:.{spec.price_decimals}f}), "
-                f"90 % {p90 / pip:.1f}, max {v[-1] / pip:.1f}; the backtest assumed {spec.typical_spread_pips:g}")
-        if cap:
-            line += f"; the {cap:.0%} cap refuses stops under {med / cap / pip:.1f} pips at the median"
-        lines.append(line)
+        values, parts, pip = [], [], settings.symbol(s).pip_size
+        for a, b in windows:
+            start, end = (pd.Timestamp(f"{day} {t}").tz_localize(tz).tz_convert("UTC").tz_localize(None) for t in (a, b))
+            got = sorted(broker.spread_history(s, start, end, every))
+            values += got
+            parts.append(f"{a}-{b} {got[len(got) // 2] / pip:.1f}" if got else f"{a}-{b} -")
+        lines.append(_spread_line(broker, settings, s, values, cap, note=f" ({day} {tz}, median {', '.join(parts)})"))
     return lines
 
 
@@ -663,8 +684,16 @@ def cmd_mt5_spreads(args) -> int:
             settings.symbols[key].mt5_symbol = server.strip()
         symbols.append(key)
     broker = MT5Broker(settings)
-    print(f"sampling {', '.join(symbols)} every {args.every:g} s for {args.minutes:g} min ...")
-    for line in spread_report(broker, settings, symbols, args.minutes, args.every):
+    if args.day:
+        day = pd.Timestamp(args.day).date()
+        windows = " and ".join(f"{a}-{b}" for a, b in settings.session.windows) if settings.session.enabled else "the whole day"
+        print(f"reading {', '.join(symbols)} on {day} ({windows} {settings.session.timezone}) from the terminal's tick "
+              f"history, a sample every {args.every:g} s ...")
+        lines = spread_history_report(broker, settings, symbols, day, args.every)
+    else:
+        print(f"sampling {', '.join(symbols)} every {args.every:g} s for {args.minutes:g} min ...")
+        lines = spread_report(broker, settings, symbols, args.minutes, args.every)
+    for line in lines:
         print(line)
     broker.disconnect()
     return 0
@@ -895,6 +924,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="markets, with the server's name where it differs: NAS100=US100.cash")
     sp.add_argument("--minutes", type=float, default=10.0, help="how long to sample")
     sp.add_argument("--every", type=float, default=5.0, help="seconds between samples")
+    sp.add_argument("--day", help="a past day, YYYY-MM-DD: its spread in the profile's session windows (09-11 and 13-17 "
+                    "Amsterdam) from the terminal's tick history, so nobody has to sit at the terminal then")
     sp.set_defaults(func=cmd_mt5_spreads)
     sp = sub.add_parser("mt5-test", help="connect to the MetaTrader 5 terminal and print account, server time offset and bars")
     sp.add_argument("--symbol", default="EURUSD")

@@ -896,3 +896,46 @@ def test_a_busy_terminal_is_asked_again_before_the_window_gives_up(monkeypatch):
     with pytest.raises(RuntimeError, match="Authorization failed"):
         wrong.connect()
     assert wrong.mt5.calls == 1
+
+
+class TickMT5(FakeMT5):
+    """A tick history: EURUSD quoted every minute (1 pip, 3 pips from 07:30 to 07:44 UTC), XAUUSD only once at 06:59."""
+    COPY_TICKS_INFO = 1
+
+    def __init__(self):
+        super().__init__()
+        self.asked = []
+
+    def copy_ticks_range(self, name, first, last, flags):
+        self.asked.append((name, first, last, flags))
+        rows = []
+        if name == "EURUSD":
+            for at in pd.date_range("2026-10-01 06:59", "2026-10-01 07:59", freq="1min"):
+                wide = pd.Timestamp("2026-10-01 07:30") <= at < pd.Timestamp("2026-10-01 07:45")
+                rows.append((at, 1.1000, 1.1003 if wide else 1.1001))
+        elif name == "XAUUSD":
+            rows.append((pd.Timestamp("2026-10-01 06:59"), 4000.0, 4000.3))
+        ticks = [(server_seconds(at), bid, ask, 0.0, 0, server_seconds(at) * 1000, 6, 0.0) for at, bid, ask in rows
+                 if first <= server_seconds(at) <= last]
+        return np.array(ticks, dtype=[("time", "<i8"), ("bid", "<f8"), ("ask", "<f8"), ("last", "<f8"), ("volume", "<u8"),
+                                      ("time_msc", "<i8"), ("flags", "<u4"), ("volume_real", "<f8")])
+
+
+def test_a_past_day_s_spread_comes_from_the_tick_history_per_session_window():
+    """mt5-spreads --day: the spread every minute of the session window (09-10 Amsterdam = 07-08 UTC) from the ticks, the
+    quote standing at each moment; a market whose last quote is over 5 minutes old counts no more."""
+    from kronos_trader.cli import spread_history_report
+    api = TickMT5()
+    broker = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    settings = Settings()
+    settings.risk.max_spread_stop_fraction = 0.3
+    settings.session.enabled, settings.session.windows = True, [["09:00", "10:00"]]
+    settings.session.timezone = "Europe/Amsterdam"
+    eur, gold = spread_history_report(broker, settings, ["EURUSD", "XAUUSD"], "2026-10-01", every=60)
+    assert eur.startswith("EURUSD (EURUSD): 61 samples (2026-10-01 Europe/Amsterdam, median 09:00-10:00 1.0)")
+    assert "spread median 1.0 pips" in eur and "90 % 3.0" in eur and "max 3.0" in eur
+    assert api.asked[0][1] == server_seconds(pd.Timestamp("2026-10-01 06:55"))      # 5 minutes early: the standing quote
+    assert api.asked[0][2] == server_seconds(pd.Timestamp("2026-10-01 08:00"))
+    assert gold.startswith("XAUUSD (XAUUSD): 5 samples")                           # 07:00-07:04, then stale
+    settings.session.windows = [["20:00", "21:00"]]
+    assert "no prices" in spread_history_report(broker, settings, ["EURUSD"], "2026-10-01", every=60)[0]

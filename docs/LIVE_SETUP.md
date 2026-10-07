@@ -71,6 +71,16 @@ each, so an update never clashes with them; `set "FUNDED=1"` there once the acco
 -3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). With two terminals installed, every manual MT5 command needs the terminal first:
 `$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window.
 
+**FTMO's spreads.** `mt5-spreads` puts the server's spread per market beside the backtest's and the 30 % cap: now
+(`--minutes 10`), or for a past day's session windows from the terminal's tick history (`--day 2026-10-07`), so nobody
+has to sit at the terminal at 10:00 and 14:00. FTMO also charges commission, which the spread leaves out: forex $2.50
+a lot a side, metals 0.0007 % of the volume a side, crypto 0.0325 % a side, indices none (FTMO, July and September
+2025); `ftmo_report.bat` shows what each trade paid.
+
+```powershell
+.\.venv\Scripts\python.exe -m kronos_trader --config config/dorus_live.yaml mt5-spreads --symbols EURUSD,XAUUSD,NAS100=US100.cash,BTCUSD --day 2026-10-07
+```
+
 **One window per market.** A market runs in one window per journal: a second one (the script run again, a market
 started by hand) says `NAS100 runs already in another window ... (process 1234)` and stops before it touches the
 terminal; the scripts close it after 5 seconds. So when a window is missing, run the script again: it starts only

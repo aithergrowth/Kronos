@@ -169,6 +169,35 @@ class MT5Broker(Broker):
         names = [getattr(x, "name", str(x)) for x in found]
         return sorted(n for n in names if text.upper() in n.upper())
 
+    def spread_history(self, symbol: str, start, end, every: float = 5.0, stale_minutes: float = 5.0) -> List[float]:
+        """The spread (ask - bid, in price) every ``every`` seconds from ``start`` to ``end`` (naive UTC), from the
+        terminal's tick history: what an entry at any moment of that time met, so a busy minute counts no more than a
+        quiet one. A moment whose last quote is older than ``stale_minutes`` (a market closed or stopped) is left out;
+        empty when the server has no ticks for the time."""
+        name = self.mt5_symbol(symbol)
+        self.mt5.symbol_select(name, True)
+        offset = self.server_offset(symbol)
+        lo, hi = pd.Timestamp(start) + offset, pd.Timestamp(end) + offset                 # server time
+        epoch = pd.Timestamp("1970-01-01")
+        first = int((lo - epoch).total_seconds()) - int(stale_minutes * 60)              # the quote standing at the start
+        ticks = self.mt5.copy_ticks_range(name, first, int((hi - epoch).total_seconds()),
+                                          getattr(self.mt5, "COPY_TICKS_INFO", 1))
+        if ticks is None or len(ticks) == 0:
+            return []
+        df = pd.DataFrame(ticks)
+        df = df[(df["bid"] > 0) & (df["ask"] > 0)]
+        if df.empty:
+            return []
+        when = pd.to_datetime(df["time_msc"], unit="ms") if "time_msc" in df.columns else pd.to_datetime(df["time"], unit="s")
+        quotes = pd.DataFrame({"spread": (df["ask"] - df["bid"]).to_numpy(), "at": when.to_numpy()},
+                              index=pd.DatetimeIndex(when.to_numpy())).sort_index()
+        quotes = quotes[~quotes.index.duplicated(keep="last")]
+        grid = pd.date_range(lo, hi, freq=pd.Timedelta(seconds=every))
+        seen = quotes.reindex(quotes.index.union(grid)).ffill().reindex(grid)
+        age = pd.Series(grid, index=grid) - seen["at"]
+        fresh = age.notna() & (age <= pd.Timedelta(minutes=stale_minutes))
+        return seen.loc[fresh, "spread"].astype(float).tolist()
+
     def symbol_details(self, name: str) -> Dict[str, Any]:
         """What the terminal says about one symbol: description, digits, contract size, volume limits, trade mode."""
         info = self.mt5.symbol_info(name)
