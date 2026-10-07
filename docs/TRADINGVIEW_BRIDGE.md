@@ -63,6 +63,15 @@ bars from these feeds open at 21:00/22:00 UTC (New York close); when
 resampling intraday bars yourself, pass `--session-offset 2` (or 3 in summer)
 so the daily/weekly candles line up with the platform.
 
+## Headlines in the Telegram messages (7 October)
+
+With `TRADINGVIEW_MCP_TOKEN` set on the computer that runs the windows, the POI-touch notice and the message after a
+trade carry up to three TradingView headlines of the last 24 hours for that market (`live.news_headlines: 3`, 0 = off;
+`live.news_headlines_hours: 24`), read at most every 15 minutes per market. They are context for the trader, not an
+input to a trade. Without the token, or when a read fails, the messages are as before and nothing else changes. The
+news blackout does not need the token: its calendar is `data/calendar/high_impact.csv` (from the TradingView economic
+calendar, refreshed in the repository) beside the ForexFactory weekly feed.
+
 ## Rule: news is not a signal
 
 The rule set says external factors must not influence the trade. The calendar
