@@ -56,8 +56,12 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 ## Risk and the account guard
 
 - Stake 1.5 % of the initial balance a trade on the demo, lowered to 1.0 % from -3 % and 0.5 % from -6 % below the
-  start. FTMO, setup B on the 2-Step (Max, 6 October, evening): `RISK=1.25` and `PRODUCT=ftmo_2step` in
-  `scripts/ftmo_local.bat`; a 4H zone on EURUSD, gold or NAS100 risks twice that, a BTC trade half. (On the 1-Step:
+  start. FTMO, setup B on the 2-Step: `RISK=1.5` (Max, 7 October, evening; 1.25 since 6 October) and
+  `PRODUCT=ftmo_2step` in `scripts/ftmo_local.bat`; a 4H zone on EURUSD, gold or NAS100 risks twice that, a BTC trade
+  half, and from -3 % below the start the base is 1.0 %, from -6 % 0.5 %. The challenge replay of tonight's set at
+  1.5 % against 1.25 %: the 2026 starts funded within 6 weeks 64 % (37 %), within 2 months 97 % (93 %); the 2024-25
+  starts within 3 months 52 % (50 %), failed 4 % (1 %); the average month +8.6 % (+7.2 %), the worst -6.0 % (-5.0 %);
+  at 1.75 % 7 % failed, at 2 % 17 %. (On the 1-Step:
   `RISK=1.0`, `PRODUCT=ftmo_1step`.) `TARGET` and `PROTECT` (e.g. 10 and 4; 5 in the verification) halve the stake
   within `PROTECT` % of the phase's target (`risk.target_protect_pct`, off unless set).
 - The guard refuses a trade when the worst case (every open trade, every resting limit and the new one stopped out)
