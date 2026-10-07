@@ -33,14 +33,14 @@ in the MT5 terminal and tokens in environment variables.
 
 | | EURUSD (`dorus_live.yaml`) | XAUUSD (`dorus_live_gold.yaml`) | NAS100 (`dorus_live_nas100.yaml`) | BTCUSD (`dorus_live_btc.yaml`) |
 |---|---|---|---|---|
-| Bias gate | 3 of 5 timeframes aligned, the 1H among them; or the 1D and the 1H alone at half the stake (7 October) | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
+| Bias gate | 3 of 5 timeframes aligned, the 1H among them; or the 1D and the 1H, then at half the stake (7 October; any trade read as that pair, also a 1D+4H+1H one) | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
 | Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |
 | Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
 | Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |
 | Break-even | after 4R | after 2R (7 October) | after 4R | after 4R |
-| Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 2R (nearest liquidity) |
+| Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 3R (nearest liquidity; 2R before 7 October) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
 | Time limit | none | none | 48 hours | none |
 | Re-entry | after a stop in the same visit, and a second visit | no | no | no |
@@ -114,17 +114,21 @@ Backtests on 1-minute data with the corrected clock, one trade at a time, guard 
 largest drawdown (`docs/backtests/winrate/README.md`; each run writes a `.provenance.json` with the code, settings,
 data hashes and cost assumptions):
 
-| Market | 2024 - Sep 2026 | 2017 - 2023 (BTC Jun 2020 - Jan 2024) |
+| Market | 2024 - Sep 2026 | June 2017 - 2023 (BTC June 2020 - 2023) |
 |---|---|---|
-| EURUSD (re-entries, limit) | 30, 47 %, +25.6R, -5.0R | 85, 26 %, +7.3R, -15.0R |
-| XAUUSD (2R fallback target) | 142, 51 %, +69.3R, -8.8R | 382, 37 %, +3.4R, -32.5R |
-| NAS100 (limit entry) | 32, 47 %, +31.9R, -3.0R | 96, 28 %, +33.6R, -10.6R |
-| BTCUSD (balance shift) | 113, 55 %, +69.6R, -6.0R (+49.8R of it in 2026) | 178, 35 %, -37.6R, -38.0R |
+| EURUSD (re-entries, limit; the 1D+1H pair at half) | 54, 39 %, +30.0R, -5.5R | 136, 21 %, -0.6R, -22.4R |
+| XAUUSD (three of five, 2R fallback target) | 132, 51 %, +88.3R, -4.2R | 309, 28 %, -30.9R, -54.8R |
+| NAS100 (limit entry) | 38, 47 %, +37.3R, -4.0R | 82, 26 %, +30.3R, -9.0R |
+| BTCUSD (balance shift, target capped at 3R) | 89, 61 %, +82.9R, -3.5R (+48.0R of it in 2026) | 157, 32 %, -38.9R, -39.3R (the morning's profile: the flip on a broken P, 2R cap) |
 
-The 2024 - 2026 column is with the zone visited within 24 hours of forming (7 October); the 2017 - 2023 column is
-from before it. With FTMO's measured costs (spread and commission) the four together, two open, 1.25 %: +0.47R a
-trade, an average month +5.7 % (median +4.6 %), 10 of 32 months losing, the worst -6.7 %; the 2-Step from the 2026
-starts within 6 weeks 40 %, 2 months 59 %, 3 months 77 %; from the 2024-25 starts within a year 100 %, none failed.
+Both columns are the profiles of the 7 October restart: the zone visited within 24 hours of forming, the smaller gaps
+on EURUSD and NAS100, gold's three of five, BTC's neutral broken P and 3R cap, EURUSD's daily-plus-hourly pair at half
+(its R counted at that stake). With FTMO's measured costs (spread and commission) the four together, two open,
+1.25 %, 4H zones x2, BTC half: 9.8 trades a month, 51 % won, +0.63R a trade, an average month +7.2 %, 7 of 32 months
+losing, the worst -5.0 %; the 2-Step from the 2026 starts within 6 weeks 37 %, 2 months 93 %, 3 months 100 %; from the
+2024-25 starts within 2 months 25 %, 3 months 50 %, 1 % failed (README "Into the profiles (7 October)"). The set that
+ran until then: 10.6 trades a month, +0.34R a trade, an average month +5.0 %, 12 losing months, the worst -9.1 %,
+15 % of the 2024-25 starts failed.
 
 Since 6 October (evening) the profiles are chosen on 2024-2026 only (Max): the older column is kept for the record.
 The edge is the recent market's: NAS100 is the only market positive in both periods by a margin, and the FTMO 2-step

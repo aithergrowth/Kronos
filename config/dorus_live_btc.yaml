@@ -9,7 +9,8 @@
 #     his rule decide; the price is the lower win rate. With W+D+4H as well: +51.2R, 2025 -7.7R, drawdown -13.8R, so not that.
 #   - tp_max_rr 2 (nearest): 5 October, the target capped at 2R takes the nearest liquidity when the previous high lies further, and
 #     keeps the far target when nothing nearer fits: 2024-2026 145 trades, 51 %, +62.3R, drawdown -10.1R against 133, 35 %, +55.0R
-#     (`btc_cap2_long`); 1.5R and 2.5R gave the same picture to March 2025 (a plateau, not a spike).
+#     (`btc_cap2_long`); 1.5R and 2.5R gave the same picture to March 2025 (a plateau, not a spike). 7 October: the cap at 3R
+#     with the 24 h touch rule and the neutral broken P (the line itself).
 #   Kept as in the live profile: the sessions (trading BTC around the clock lost 8.3 % by February 2026 and halted the run),
 #   the 1D/4H/1H zones (15m zones with 1m entries added one losing trade), one BTC trade at a time (two lost -4.8R), and
 #   the account guard of config/dorus_live.yaml (two open on the account, one per market, -4 % a day, -8 % static from the start).
@@ -69,7 +70,10 @@ risk:
   tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
-  tp_max_rr: 2.0                  # 5 October: BTC 2024-2026 51 % and +62.3R against 35 % and +55.0R uncapped (see the header)
+  tp_max_rr: 3.0                  # 7 October: the previous high stays the target; only when it lies more than 3R away (was 2R)
+                                  # the nearest liquidity within 3R. BTC 2024-02 to 2026-10 with tonight's rules and FTMO's costs:
+                                  # 3R 88 trades, 60 %, +64.7R, drawdown -4.0R; 2R 89, 62 %, +60.8R, -4.0R; uncapped 86, 47 %,
+                                  # +60.6R, -11.7R. Halves against 2R +2.6 / +1.3R
   tp_cap_choice: nearest
   spread_buffer_pips: 1.0
 session:

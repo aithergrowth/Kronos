@@ -63,7 +63,10 @@ risk:
   zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
                                   # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
   combo_risk_multiplier: {1D+1H: 0.5}   # 7 October: the daily-plus-hourly trades at half the stake: 2024-25 challenge starts lost
-                                  # 1 % at 0.5 and 0.6, 3 % at 0.75, 4 % at 0.85, 6 % at full stake; 2026 within 2 months 89-90 % at each
+                                  # 1 % at 0.5 and 0.6, 3 % at 0.75, 4 % at 0.85, 6 % at full stake; 2026 within 2 months 89-90 % at each.
+                                  # It falls on every trade the pair matches (44 of 54): the full combinations come before the
+                                  # scalp one, so 18 the 1D+4H+1H scalp combination took at full stake before read 1D+1H now.
+                                  # Only the 26 new ones at half: 2 % lost against 1 %, 2026 within 6 weeks 41 % against 37 %
   limit_entry_fraction: 0.25      # 6 October, evening (Max: decide on the last 3 years): a limit 25 % of the way back toward the stop,
   limit_entry_minutes: 240        # valid 4 hours, as NAS100. EURUSD 2024-2026: 31 trades, 45 %, +24.6R (2024 +1.7, 2025 +16.7, 2026 +6.2)
                                   # against 38, 50 %, +15.8R (-1.4 / +9.9 / +7.3); README "The last three years"

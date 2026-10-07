@@ -1374,7 +1374,7 @@ Together (two open, 1.25 %, 4H zones x2, BTC half, 0.10R a trade for slippage on
 
 | Set | Trades a month | R a trade | Month average | Losing months | Worst month | 2026 starts funded within 6 wk / 2 mo / 3 mo | 2024-25 starts within 2 mo / 3 mo / lost |
 |---|---|---|---|---|---|---|---|
-| The 24 h set (runs until the restart of 7 October) | 9.6 | +0.47 | +5.7 % | 10 of 32 | -6.7 % | 40 / 59 / 77 % | 15 / 41 / 0 % |
+| The 24 h set (the profiles of the 7 October morning; the live windows ran the set before it until the restart) | 9.6 | +0.47 | +5.7 % | 10 of 32 | -6.7 % | 40 / 59 / 77 % | 15 / 41 / 0 % |
 | **With the four changes** | 9.0 | **+0.64** | **+6.6 %** | **9** | **-5.4 %** | 38 / **85** / **100 %** | **24 / 51** / 1 % |
 
 Not taken on top (same replay): a third open slot (no change: three open at once almost never happens), GER40 as a
@@ -1416,6 +1416,11 @@ against 28, 46 %, +31.2R; halves +3.3 / +6.4R; April-September 2026 10 trades +5
 The worst month is -5.0 % at each. **Taken at 0.5.** (A first replay put the three quarters on gold's 1D+1H trades as
 well and read 1 % lost at 0.75; on EURUSD alone it is 3 %.)
 
+The half stake falls on every trade the pair matches, 44 of the 54: the full combinations are tried before the scalp
+combination, so 18 trades the 1D+4H+1H scalp combination took at full stake before read as 1D+1H now (the replay
+above already counts them at half). With only the 26 new ones at half (and BTC at 3R, below): 2026 starts within
+6 weeks 41 % against 37 %, 2024-25 starts lost 2 % against 1 %. Left as it is.
+
 On top of it, the 15m zones: 77 trades (2.4 a month), +47.1R, both halves better, but the 2024-25 starts slow to 40 %
 within three months (worst month -6.8 %, lost 2 % at a 0.6 or 0.75 stake); two positions on top: lost 3 %. Kept for later, as are 15m zones with two positions (49 trades, +35.8R,
 the challenge unchanged) and two of five on NAS100 (+9 trades, +1.6R, April-September 2026 -2.0R).
@@ -1423,3 +1428,65 @@ the challenge unchanged) and two of five on NAS100 (+9 trades, +1.6R, April-Sept
 Chance: of the ten variants best on February 2024 - March 2026, two to five were also better on April - September
 2026 (`holdout.py`), so a single winner on the whole period means little; the daily-plus-hourly combination was
 better on both.
+
+### BTC: the previous high, capped at 3R (7 October, afternoon)
+
+Max: "is een fixed btc doel wel slim ipv gewoon op de vorige high zetten?" BTC's target is the previous high (the low
+for a sell); the cap only decides what happens when that high lies far: beyond the cap the nearest liquidity within
+it, the far high when nothing nearer fits. On the BTC line of the table above (the neutral broken P, FTMO's costs):
+
+| Cap | Trades | Won | R after costs | Drawdown | Halves |
+|---|---|---|---|---|---|
+| 2R (until the restart) | 89 | 62 % | +60.8R | -4.0R | +19.0 / +41.8R |
+| **3R** | 88 | 60 % | **+64.7R** | -4.0R | +21.6 / +43.1R |
+| none (always the previous high) | 86 | 47 % | +60.6R | -11.7R | +17.8 / +42.8R |
+
+**Taken: 3R** (`risk.tp_max_rr: 3.0` in `config/dorus_live_btc.yaml`). The account replay of the set
+(EURUSD's pair at half): an average month +7.2 % (+7.1 %), 2026 starts funded within 6 weeks 37 % (41 %), within
+2 months 93 % (90 %), within 3 months 100 %; the 2024-25 starts unchanged (25 % / 50 %, 1 % lost); the worst month
+-5.0 % at both.
+
+The other BTC variants on the same line, none taken (R against +60.8R): break-even at +2R or +1.5R (-2.5R, -1.5R),
+a 24 h holding limit (-2.2R), stops of at least 150 USD (-6.2R), no scalp combination (-2.8R, drawdown -6.5R), gaps
+from 0.15 or 0.25 of the median range (-14.0R, -11.9R), swing points of one or three candles (-62.0R, -6.9R), the
+daily-plus-hourly pair (-6.5R), the week end as well (-16.6R), the stop behind the protector (-47.1R), other targets
+(the impulse origin -24.2R, the pullback origin -2.7R, the nearest liquidity -24.9R, a look-back of 48 or 120 candles
+-2.1R, -2.7R). A liquidity look-back of 40 and stops of at least 100 USD change no trade.
+
+### June 2017 - 2023 for tonight's changes
+
+Since 6 October the profiles are chosen on 2024-2026 (Max); the older years are for the record. Each change on the set
+before it, FTMO's costs, halves split in September 2020 (BTC: June 2020 - 2023, split in March 2022):
+
+| Market | Change | Before | After |
+|---|---|---|---|
+| EURUSD | the smaller gap | 71, +3.9R, -13.0R (+12.0 / -8.1R) | 82, -8.4R, -22.1R (+9.9 / -18.3R) |
+| EURUSD | the daily-plus-hourly pair, on the smaller gap | 82, -8.4R | 136, +2.1R, -25.5R (+23.8 / -21.7R) |
+| EURUSD | the pair without the smaller gap | 71, +3.9R | 120, +6.3R, -19.7R |
+| NAS100 | the smaller gap | 82, +37.4R, -11.4R (+2.8 / +34.6R) | 82, +30.3R, -9.0R (-5.5 / +35.8R) |
+| Gold | three of five, R:R floor 0.8, break-even at +2R | 375, -38.8R, -65.1R | 291, -41.6R, -62.9R |
+
+The smaller gap loses in these years on both markets that took it (EURUSD -12.3R, NAS100 -7.1R) and wins on
+2024-2026 (+4.2R, +4.4R); the daily-plus-hourly pair wins in both periods on either gap. Gold has no edge in these
+years with or without its changes.
+
+### The set of the 7 October restart
+
+The four markets together, two open, 1.25 %, 4H zones x2, BTC half, FTMO's costs and 0.10R a trade for slippage,
+February 2024 - September 2026:
+
+| | Until the restart | From the restart |
+|---|---|---|
+| Trades a month | 10.6 | 9.8 |
+| Won | 50 % | 51 % |
+| R a trade | +0.34 | +0.63 |
+| Average win / loss | +1.84R / -1.14R | +2.31R / -1.12R |
+| Month average | +5.0 % | +7.2 % |
+| Losing months (of 32) | 12 | 7 |
+| Worst month | -9.1 % | -5.0 % |
+| 2026 starts funded within 6 weeks / 2 months / 3 months | 30 / 48 / 65 % | 37 / 93 / 100 % |
+| 2024-25 starts funded within 2 / 3 months | 16 / 39 % | 25 / 50 % |
+| 2024-25 starts lost | 15 % | 1 % |
+
+Per market (FTMO's costs, one open): EURUSD 1.0 trades a month +26.1R -> 1.7 a month +40.9R; gold +59.0R -> +84.2R;
+NAS100 +28.9R -> +37.3R; BTC +38.7R with a -14.4R drawdown -> +64.7R with -4.0R.
