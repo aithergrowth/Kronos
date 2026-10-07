@@ -287,7 +287,7 @@ class Backtester:
                         "kronos": None if fc is None else f"{fc.direction} {fc.confidence:.0%}",
                         # the bias the trade was taken under: mode (full / scalp), the combo that matched, the reading per timeframe
                         "bias_mode": getattr(analysis.decision.mode, "value", str(analysis.decision.mode)),
-                        "bias_combo": "+".join(tf.label for tf in (analysis.decision.matched_combo or ())),
+                        "bias_combo": setup.bias_combo or "+".join(tf.label for tf in (analysis.decision.matched_combo or ())),
                         "bias_aligned": "+".join(tf.label for tf in analysis.decision.aligned),
                         "bias_by_tf": " ".join(f"{tf.label}={b.bias}" for tf, b in analysis.biases.items()),
                 }

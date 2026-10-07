@@ -275,6 +275,27 @@ def test_confirmation_risk_multiplier_stakes_the_trades_of_that_confirmation_typ
         assert ratio == pytest.approx(0.5 if b.meta["confirmation"] == named else 1.0, rel=0.02)
 
 
+def test_a_reversal_at_a_named_zone_timeframe_trades_against_the_bias(hk_data):
+    """``confirmation.reversal_poi_timeframes`` (7 October, Max: the big zone's liquidity swept, then a balance shift): a
+    visited zone of a named timeframe is also traded against the bias or without one, on its own shift timeframe
+    (``reversal_confirmation_tf``), labelled REV so ``risk.combo_risk_multiplier`` sets its stake. Off by default."""
+    def run(**rev):
+        s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+        s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+        s.risk.combo_risk_multiplier = {"REV": 0.5}
+        for key, value in rev.items():
+            setattr(s.confirmation, key, value)
+        return Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    base = run()
+    assert base.trades and not any(t.meta["bias_combo"] == "REV" for t in base.trades)
+    rev = run(reversal_poi_timeframes=(T.H_4, T.H_1), reversal_confirmation_tf={T.H_4: T.MIN_15, T.H_1: T.MIN_15})
+    reversals = [t for t in rev.trades if t.meta["bias_combo"] == "REV"]
+    assert reversals and all(t.meta["confirmation_tf"] == "15m" for t in reversals)
+    normal = next(t for t in rev.trades if t.meta["bias_combo"] != "REV")
+    for t in reversals:
+        assert t.meta["risk_budget"] == pytest.approx(0.5 * normal.meta["risk_budget"], rel=0.05)
+
+
 def test_max_zone_age_by_tf_limits_only_the_named_timeframes(hk_data):
     """``confirmation.max_zone_age_by_tf`` ({1H: 24} in YAML) limits the age of the zones of the timeframes it names; the zones
     of the other timeframes keep ``max_zone_age_candles`` (here off)."""

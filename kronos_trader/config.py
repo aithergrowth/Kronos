@@ -214,6 +214,14 @@ class ConfirmationParams:
                                         # traded, whatever the zone's timeframe (7 October, the set that runs, 2024-02 to 2026-09
                                         # with FTMO's costs: touched within a day 299 trades, 53 %, +140.7R; later 39 trades, 28 %,
                                         # -25.0R, losing in both halves and in every market)
+    reversal_poi_timeframes: Tuple[Timeframe, ...] = ()   # 7 October (Max): zones of these timeframes are also traded against the
+                                        # bias or without one, as a reversal: price sweeps the liquidity at the big zone, then a balance
+                                        # shift on reversal_confirmation_tf. Such a trade carries the combination label REV (stake:
+                                        # risk.combo_risk_multiplier). () = off
+    reversal_confirmation_tf: Dict[Timeframe, Timeframe] = field(default_factory=dict)   # the shift's timeframe per reversal zone
+                                        # timeframe, e.g. {1D: 1H, 4H: 1H}; a timeframe not named keeps the normal table
+    reversal_requires_sweep: bool = True   # the reversal's shift counts only after its timeframe swept liquidity (bs_requires_sweep)
+    reversal_max_touch_age_hours: float = 0.0   # the 24 h rule for a reversal zone; 0 = none (a big zone is often weeks old)
     poi_in_poi: bool = False            # a zone is traded only when it lies in a zone of a higher timeframe in the same direction that
                                         # is not invalidated: "POI in een POI = trade pas plaatsen bij een aantrekkelijke RR" (the DV-Institute
                                         # trade plan board, between the POI and the entry step). Off = every zone of poi_timeframes

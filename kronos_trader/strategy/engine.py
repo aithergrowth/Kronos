@@ -16,6 +16,7 @@ opened (one trade per account, prop-firm limits) is the risk guard's job.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -383,14 +384,19 @@ class StrategyEngine:
                         analysis.forecasts[tf] = fc
 
         diagnostic = False
+        reversal_only = False
         if not decision.tradable:
             analysis.rejections.append(decision.reason)
             if assume_direction is None:
-                return analysis
-            diagnostic = True
-            direction = assume_direction
-            allowed_poi_tfs = tuple(POI_TIMEFRAMES)
-            analysis.rejections.append(f"diagnostic: walking on as {direction.name} past the bias gate; nothing below is a signal")
+                if not s.confirmation.reversal_poi_timeframes:
+                    return analysis
+                reversal_only = True                 # the bias refuses; a reversal at a big zone may still trade (below)
+                direction, allowed_poi_tfs = Direction.LONG, ()
+            else:
+                diagnostic = True
+                direction = assume_direction
+                allowed_poi_tfs = tuple(POI_TIMEFRAMES)
+                analysis.rejections.append(f"diagnostic: walking on as {direction.name} past the bias gate; nothing below is a signal")
         else:
             direction = Direction.from_bias(decision.direction)
             allowed_poi_tfs = tuple(s.confirmation.poi_timeframes) if decision.mode is TradeMode.FULL else tuple(s.confirmation.scalp_poi_timeframes)
@@ -420,7 +426,7 @@ class StrategyEngine:
                 diagnostic = True
 
         # the last day against the trade: a run of several average 1H ranges against the direction is a zone being run through --
-        if s.confirmation.max_adverse_move_atr > 0 and Timeframe.H_1 in views:
+        if not reversal_only and s.confirmation.max_adverse_move_atr > 0 and Timeframe.H_1 in views:
             adverse = adverse_move_atr(views[Timeframe.H_1], direction)
             if adverse is not None and adverse >= s.confirmation.max_adverse_move_atr:
                 analysis.rejections.append(f"the last 24 1H candles ran {adverse:.1f} average ranges against the {direction.name.lower()} "
@@ -439,7 +445,35 @@ class StrategyEngine:
                     return analysis
                 diagnostic = True
 
-        # 4: POIs being visited now, highest timeframe first ------------------------------
+        # 4-6: the zones in the bias direction; then (confirmation.reversal_poi_timeframes) a reversal at a big zone ---------
+        walk = dict(symbol=symbol, spec=spec, views=views, structures=structures, pois=pois, tracker=tracker, lowest=lowest,
+                    lowest_tf=lowest_tf, price=price, now=now, equity=equity, decision=decision,
+                    max_confirmation_age=max_confirmation_age, step_minutes=step_minutes)
+        if not reversal_only:
+            self._walk(analysis, direction=direction, allowed_poi_tfs=allowed_poi_tfs, diagnostic=diagnostic, **walk)
+            if diagnostic or analysis.signal is not None:
+                return analysis
+        if s.confirmation.reversal_poi_timeframes:
+            sides = (Direction.LONG, Direction.SHORT) if reversal_only else (Direction(-direction.value),)
+            for side in sides:
+                self._walk(analysis, direction=side, allowed_poi_tfs=tuple(s.confirmation.reversal_poi_timeframes),
+                           diagnostic=False, reversal=True, **walk)
+                if analysis.signal is not None:
+                    return analysis
+        return analysis
+
+    def _walk(self, analysis: Analysis, symbol: str, spec, views, structures, pois: List[POI], tracker, lowest, lowest_tf,
+              price: float, now: pd.Timestamp, equity: float, direction: Direction, allowed_poi_tfs, decision,
+              diagnostic: bool, max_confirmation_age: int, step_minutes: Optional[int], reversal: bool = False) -> None:
+        """Steps 4-6 for one direction: the zones of ``allowed_poi_tfs`` price is visiting, their gates, a confirmation, the
+        setup and the signal (``analysis.signal``), or each refusal in ``analysis.rejections``. ``reversal``: a zone traded
+        against the bias or without one (confirmation.reversal_*): its own shift timeframe, a sweep before the shift, its own
+        touch-age limit, and the combination label REV."""
+        s = self.settings
+        bias_side = direction.bias
+        bias_dir = direction.bias if reversal else decision.direction
+        combo = "REV" if reversal else combo_label(decision)
+        cparams = replace(s.confirmation, bs_requires_sweep=True) if reversal and s.confirmation.reversal_requires_sweep else s.confirmation
         # with entry_outside_zone the visit tracker (lowest timeframe) decides, not the zone's own-timeframe status: a touch inside
         # the still-open candle of the zone's timeframe leaves the status FRESH although the visit is already running
         eligible = ((POIStatus.ACTIVE, POIStatus.TESTED, POIStatus.FRESH) if s.confirmation.entry_outside_zone else (POIStatus.ACTIVE,))
@@ -450,13 +484,13 @@ class StrategyEngine:
         if not candidates:
             n_dir = sum(1 for p in pois if p.direction is bias_side and p.timeframe in allowed_poi_tfs
                         and p.status is not POIStatus.INVALIDATED)
-            analysis.rejections.append(f"price is not inside a {bias_side} POI ({n_dir} valid zones mapped)")
+            analysis.rejections.append(f"{'reversal: ' if reversal else ''}price is not inside a {bias_side} POI ({n_dir} valid zones mapped)")
             if diagnostic:
                 analysis.rejections.extend(_diagnostic_zone_notes(pois, bias_side, allowed_poi_tfs, price))
-            return analysis
+            return
 
         for poi in candidates:
-            label = poi.describe()
+            label = ("reversal: " if reversal else "") + poi.describe()
             max_age = s.confirmation.max_zone_age_by_tf.get(poi.timeframe, s.confirmation.max_zone_age_candles)
             if max_age > 0:
                 age = zone_age_candles(now, poi.created_at, poi.timeframe)
@@ -473,7 +507,7 @@ class StrategyEngine:
             if touch_ts is None:
                 analysis.rejections.append(f"{label}: no active visit on {lowest_tf.label}")
                 continue
-            limit_h = s.confirmation.max_touch_age_hours
+            limit_h = s.confirmation.reversal_max_touch_age_hours if reversal else s.confirmation.max_touch_age_hours
             if limit_h > 0 and poi.created_at is not None:
                 waited = (pd.Timestamp(touch_ts) - pd.Timestamp(poi.created_at)) / pd.Timedelta(hours=1)
                 if waited > limit_h:
@@ -487,13 +521,15 @@ class StrategyEngine:
                 continue
 
             conf_tfs = [tf for tf in allowed_confirmation_timeframes(poi.timeframe, s.confirmation) if tf in views]
+            if reversal and poi.timeframe in s.confirmation.reversal_confirmation_tf:
+                conf_tfs = [tf for tf in (s.confirmation.reversal_confirmation_tf[poi.timeframe],) if tf in views]
             if not conf_tfs:
                 needed = [tf.label for tf in allowed_confirmation_timeframes(poi.timeframe, s.confirmation)]
                 analysis.rejections.append(f"{label}: no confirmation timeframe data ({'/'.join(needed)} needed)")
                 continue
             confirmation = None
             for ctf in conf_tfs:
-                confirmation = find_confirmation(views[ctf], poi, touch_ts, s.confirmation, s.structure,
+                confirmation = find_confirmation(views[ctf], poi, touch_ts, cparams, s.structure,
                                                  confirmation_age(max_confirmation_age, step_minutes, ctf), structure=structures.get(ctf))
                 if confirmation is not None:
                     break
@@ -506,7 +542,7 @@ class StrategyEngine:
             entry = spec.round_price(confirmation.close)
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
-                                         setup_risk(s.risk, poi.timeframe, combo_label(decision),
+                                         setup_risk(s.risk, poi.timeframe, combo,
                                                     confirmation_label(confirmation)), equity,
                                          breakeven_trigger_r(poi.timeframe, s.exits), protection_level=protection, touch_ts=touch_ts)
             if setup is None:
@@ -514,7 +550,7 @@ class StrategyEngine:
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}{note}")
                 continue
             setup.touched_at = pd.Timestamp(touch_ts)
-            setup.bias_combo = combo_label(decision)
+            setup.bias_combo = combo
             setup.visit_number = visits
             if s.risk.stop_basis == "confirmation":      # the stop sits beyond the extreme since the (re-)entry, not behind a P
                 stop_detail = {"stop_tf": confirmation.timeframe.label, "stop_p_open": None, "stop_p_close": None,
@@ -528,28 +564,29 @@ class StrategyEngine:
                     f"diagnostic: {label} would give {direction.name} entry {setup.entry} stop {setup.stop} target {setup.take_profit} "
                     f"({setup.confirmation.type.value} on {setup.confirmation.timeframe.label} at {setup.confirmation.timestamp}, "
                     f"R:R 1:{setup.rr:.2f}); not a signal")
-                return analysis
+                return
 
             # 6: Kronos as an extra indicator ---------------------------------------------------
             notes: List[str] = []
             forecast = self._forecast(views[confirmation.timeframe], notes)
             if forecast is not None:
                 analysis.forecasts.setdefault(confirmation.timeframe, forecast)
-                if s.kronos.mode == "filter" and forecast.conflicts_with(decision.direction) \
+                if s.kronos.mode == "filter" and forecast.conflicts_with(bias_dir) \
                         and forecast.confidence >= s.kronos.min_confidence:
                     reason = (f"{label}: Kronos forecast {forecast.direction} ({forecast.confidence:.0%}, "
-                              f"{forecast.pct_change:+.2f}%) conflicts with {decision.direction} bias")
+                              f"{forecast.pct_change:+.2f}%) conflicts with {bias_dir} bias")
                     analysis.rejections.append(reason)
                     analysis.signal = Signal(now, SignalStatus.REJECTED, setup, forecast, [reason])
                     continue
-                elif forecast.conflicts_with(decision.direction):
+                elif forecast.conflicts_with(bias_dir):
                     setup.notes.append(f"Kronos disagrees ({forecast.direction} {forecast.confidence:.0%}) - advisory only")
                 else:
                     setup.notes.append(f"Kronos {forecast.direction} ({forecast.confidence:.0%}, {forecast.pct_change:+.2f}%)")
             setup.notes.extend(notes)
             analysis.signal = Signal(now, SignalStatus.VALID, setup, forecast, [])
-            return analysis
+            return
 
         if diagnostic:
             analysis.rejections.extend(_diagnostic_zone_notes(pois, bias_side, allowed_poi_tfs, price))
-        return analysis
+        return
+
