@@ -388,3 +388,21 @@ def test_setup_risk_halves_the_stake_for_a_timeframe_at_50_50():
     assert setup_risk(params, Timeframe.H_1, "1D+1H", "BS").risk_pct == 1.5
     both = RiskParams(risk_pct=1.5, zone_risk_multiplier={"4H": 2.0}, neutral_bias_risk_multiplier={"1M": 0.5})
     assert setup_risk(both, Timeframe.H_4, None, None, ("1M",)).risk_pct == 1.5
+
+
+def test_limit_entry_price_rests_on_the_break_level_or_falls_back_to_the_fraction():
+    """``risk.limit_entry_at: break_level``: the limit rests on the balance level the shift closed through when that lies
+    between the signal's price and the stop; otherwise the fraction rule (0.25 when the fraction is 0) places it."""
+    from types import SimpleNamespace
+    from kronos_trader.core import Direction
+    from kronos_trader.strategy.risk import limit_entry_price
+    long = SimpleNamespace(direction=Direction.LONG, stop=1.0950, confirmation=SimpleNamespace(break_level=1.0980))
+    assert limit_entry_price(long, 1.1000, 0.25, "break_level") == (1.0980, "limit break_level")
+    assert limit_entry_price(long, 1.1000, 0.25, "") == (pytest.approx(1.09875), "limit 0.25")
+    beyond = SimpleNamespace(direction=Direction.LONG, stop=1.0950, confirmation=SimpleNamespace(break_level=1.0940))
+    price, mode = limit_entry_price(beyond, 1.1000, 0.0, "break_level")         # the level lies past the stop
+    assert price == pytest.approx(1.09875) and mode.startswith("limit 0.25")
+    above = SimpleNamespace(direction=Direction.LONG, stop=1.0950, confirmation=SimpleNamespace(break_level=1.1010))
+    assert limit_entry_price(above, 1.1000, 0.1, "break_level")[0] == pytest.approx(1.0995)   # past the price: the fraction
+    short = SimpleNamespace(direction=Direction.SHORT, stop=1.1050, confirmation=SimpleNamespace(break_level=1.1020))
+    assert limit_entry_price(short, 1.1000, 0.25, "break_level") == (1.1020, "limit break_level")

@@ -22,6 +22,7 @@ from ..execution.base import ClosedTrade
 from ..execution.paper import PaperBroker
 from ..execution.risk_guard import RiskGuard
 from ..strategy.engine import StrategyEngine
+from ..strategy.risk import limit_entry_price
 from ..strategy.risk import confirmation_label, reconcile_risk, resize_at, setup_risk, stepped_risk
 
 
@@ -292,10 +293,12 @@ class Backtester:
                         "bias_by_tf": " ".join(f"{tf.label}={b.bias}" for tf, b in analysis.biases.items()),
                 }
                 frac = float(getattr(s.risk, "limit_entry_fraction", 0.0) or 0.0)
-                if frac > 0:
-                    # a limit order part-way back toward the stop instead of the market: it can fill from the next candle on
-                    limit = price_now - setup.direction.sign * frac * abs(price_now - setup.stop)
-                    pending = {"setup": setup, "limit": spec.round_price(limit), "meta": {**meta, "entry_mode": f"limit {frac:g}",
+                at_level = str(getattr(s.risk, "limit_entry_at", "") or "")
+                if frac > 0 or at_level == "break_level":
+                    # a limit order part-way back toward the stop instead of the market, or on the balance level the shift closed
+                    # through (its retest): it can fill from the next candle on
+                    limit, mode = limit_entry_price(setup, price_now, frac, at_level)
+                    pending = {"setup": setup, "limit": spec.round_price(limit), "meta": {**meta, "entry_mode": mode,
                                "signal_price": price_now}, "expires": now + pd.Timedelta(minutes=int(s.risk.limit_entry_minutes))}
                     mark_traded = getattr(self.engine, "mark_traded", None)
                     if mark_traded is not None:

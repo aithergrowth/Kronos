@@ -345,6 +345,13 @@ class RiskParams:
                                         # the guard while it rests (6 October: 25 % for 4 hours added R on NAS100 in 2017-2023 and
                                         # 2024-2026; the backtest and the live runner, paper and MT5)
     limit_entry_minutes: int = 240
+    limit_entry_at: str = ""            # "" = the fraction above; "break_level" = the limit rests on the balance level the confirmation's
+                                        # shift closed through (confirmation.break_level), the retest of that level (research 8 October:
+                                        # his entry after the shift is the retest of the level, not a fraction of the stop distance). When
+                                        # that level lies past the stop or past the signal's price, the fraction rule (0.25 when the
+                                        # fraction is 0) places the limit instead. Needs limit_entry_minutes. Measured 8-9 October on
+                                        # 2026: worse on gold (-2.6R), EURUSD (-1.8R) and NAS100 (-8.2R), BTC +2.2R from three trades
+                                        # fewer: off
 
 
 @dataclass
@@ -354,6 +361,12 @@ class ExitParams:
     partials: bool = False              # rule: no partials
     breakeven_offset_pips: float = 0.0  # 0 = exact entry
     max_hold_hours: float = 0.0         # 0 = off; else a trade still open this many hours after its fill is closed at the market
+    day_close: str = ""                 # "" = off; "22:10": every open position is closed at the market at that clock (session.timezone)
+                                        # each day, before the daily break. Set it to the last candle before the broker's break (the data:
+                                        # NAS100 stops 22:15 Amsterdam, gold 23:00; the backtest closes on the first candle opening at or
+                                        # after the clock). 8 October: on NAS100 one night in five gaps more than the median 4H stop, the
+                                        # 99th percentile night gap is 5.5 stops; it cost 4R of 26R in 2026 (two winners cut short).
+                                        # Gold's nights are small (the close costs 11R of 40R), its weekends are not
 
 
 @dataclass

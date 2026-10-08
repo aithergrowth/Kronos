@@ -151,3 +151,33 @@ def test_a_candle_that_reaches_break_even_and_trades_back_closes_at_break_even()
     broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.1100, 100.0, 0.0010, 4.0, price=1.1000, ts=t0)
     assert broker.on_candle("EURUSD", Candle(0, t0, 1.1000, 1.1045, 1.1002, 1.1040)) == []    # stays above: kept at BE
     assert broker.open_positions()[0].breakeven_done
+
+
+def test_day_close_cutoff_is_the_next_clock_in_the_session_timezone():
+    """``exits.day_close``: a position closes at the first "HH:MM" (session timezone) at or after it opened."""
+    from kronos_trader.strategy.exits import day_close_cutoff_after
+    # 8 October 2026, Amsterdam = UTC+2: a trade opened 14:00 UTC (16:00 local) closes at 22:50 local = 20:50 UTC
+    assert day_close_cutoff_after(pd.Timestamp("2026-10-08 14:00"), "22:50") == pd.Timestamp("2026-10-08 20:50")
+    # opened after the cutoff (21:30 UTC = 23:30 local): the next day's 22:50
+    assert day_close_cutoff_after(pd.Timestamp("2026-10-08 21:30"), "22:50") == pd.Timestamp("2026-10-09 20:50")
+    # exactly at the cutoff: closes now
+    assert day_close_cutoff_after(pd.Timestamp("2026-10-08 20:50"), "22:50") == pd.Timestamp("2026-10-08 20:50")
+    # in winter (UTC+1) the same clock is 21:50 UTC
+    assert day_close_cutoff_after(pd.Timestamp("2026-12-01 10:00"), "22:50") == pd.Timestamp("2026-12-01 21:50")
+
+
+def test_the_paper_broker_closes_a_position_before_the_daily_break():
+    from kronos_trader.config import Settings
+    from kronos_trader.core import Direction
+    from kronos_trader.execution import PaperBroker
+    settings = Settings(); settings.exits.day_close = "22:50"
+    broker = PaperBroker(settings)
+    broker.set_price("NAS100", 20000.0)
+    pos = broker.place_market_order("NAS100", Direction.LONG, 1.0, 19900.0, 20300.0, 100.0, 100.0, 4.0, meta={},
+                                    price=20000.0, ts=pd.Timestamp("2026-10-08 14:00"), price_is_fill=True)
+    from kronos_trader.core import CandleSeries
+    quiet = CandleSeries.from_records([(20010.0, 20020.0, 20000.0, 20015.0)], T.MIN_5, start="2026-10-08 20:40", symbol="NAS100")
+    assert broker.on_candle("NAS100", quiet[0]) == []                                   # opens 22:40 local: still open
+    late = CandleSeries.from_records([(20015.0, 20025.0, 20005.0, 20020.0)], T.MIN_5, start="2026-10-08 20:50", symbol="NAS100")
+    closed = broker.on_candle("NAS100", late[0])                                         # opens 22:50 local (the cutoff): closed at its close
+    assert len(closed) == 1 and closed[0].reason == "day_close" and broker.open_positions() == []

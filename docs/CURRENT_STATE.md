@@ -91,7 +91,8 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 - The FTMO watchdog sends the account's day at 22:05 Amsterdam (`--report-at`, read from the terminal like
   `ftmo_report.bat`): balance and equity against the start, the day's trades with R after costs and their entry
   slippage, what is open and its risk to the stops, the room under FTMO's floors, the distance to the target and the
-  trading days. Once a day, also after a restart (`journal_ftmo/day_report.json`); a computer that was off at 22:05
+  trading days, and (9 October) the edge meter: the R after costs of the last 20 and the last 30 closed bot trades,
+  a warning when the last 20 are under 0R or the last 30 under -5R (a losing month is noise, a lost edge is not). Once a day, also after a restart (`journal_ftmo/day_report.json`); a computer that was off at 22:05
   sends it when it is back that evening. `ftmo_report.bat` with `--telegram` sends the same message by hand.
   The scripts pass it their markets (`--expect`): a market whose window never started is named 5 minutes after the
   watchdog's start (6 October, evening: start_ftmo.bat opened every window but NAS100's and nothing said so); the
@@ -110,8 +111,10 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 ## In the code, measured, not used
 
 `bias.reclaim_candles` (failed on 2017-2023), `structure.poi_gap_zones` (more R, more failed challenges), `confirmation.poi_in_poi`, `risk.tp_fixed_rr`,
-`prop_firm.weekend_close` (for a funded Standard account). Each is off by default; `docs/backtests/winrate/README.md`
-has the measurements.
+`prop_firm.weekend_close` (for a funded Standard account), `exits.day_close` (every position closed at a clock before the
+daily break: on NAS100 -1.6R over 2024-2026 and no overnight gap through a stop; gold -11R in 2026, so not there),
+`risk.limit_entry_at: break_level` (the limit on the balance level the shift closed through: worse on gold, EURUSD and
+NAS100). Each is off by default; `docs/backtests/winrate/README.md` has the measurements.
 
 ## What the evidence says
 

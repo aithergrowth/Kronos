@@ -190,3 +190,17 @@ def test_forward_report_sends_the_day_message_with_telegram(record, tmp_path, mo
     sent.clear()
     assert cli.main(["forward-report", "--journal", "journal_ftmo/trades.csv", "--out-dir", str(tmp_path / "rep")]) == 0
     assert sent == []                                                                   # without --telegram: the files only
+
+
+def test_the_edge_line_reads_the_last_trades_and_warns_when_they_run_cold():
+    """The 22:05 report's edge meter: the R after costs of the last 20 and 30 bot trades; a warning under 0R / -5R."""
+    from kronos_trader.forward import edge_line
+    import numpy as np
+    stamps = pd.date_range("2026-10-01", periods=30, freq="h")
+    rec = pd.DataFrame({"exit_time": stamps, "r_net": [2.0, -1.0] * 15, "source": "bot"})
+    assert edge_line(rec.head(19)) == ""                                       # too few to read
+    line = edge_line(rec)
+    assert line.startswith("Edge: last 20 trades +10.0R, last 30 +15.0R")
+    cold = rec.copy(); cold.loc[cold.index[-20:], "r_net"] = -1.0
+    assert edge_line(cold).startswith("⚠️ Edge: last 20 trades -20.0R")
+    assert edge_line(pd.DataFrame({"exit_time": stamps[:25], "r_net": [np.nan] * 25, "source": "bot"})) == ""   # nothing after costs yet

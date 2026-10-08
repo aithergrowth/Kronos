@@ -12,7 +12,7 @@ import pandas as pd
 from ..config import Settings
 from ..core.candles import Candle
 from ..core.types import Direction
-from ..strategy.exits import breakeven_reached, weekend_cutoff_after
+from ..strategy.exits import breakeven_reached, weekend_cutoff_after, day_close_cutoff_after
 from .base import Broker, ClosedTrade, LimitOrder, Position
 
 
@@ -305,6 +305,11 @@ class PaperBroker(Broker):
             hold = self.settings.exits.max_hold_hours
             if hold and pos.opened_at is not None and pd.Timestamp(close_ts) - pos.opened_at >= pd.Timedelta(hours=float(hold)):
                 closed.append(self.close_position(pos.id, "time", float(candle.close), close_ts, market=True))
+                continue
+            day_close = getattr(self.settings.exits, "day_close", "")
+            if day_close and pos.opened_at is not None and pd.Timestamp(close_ts) >= day_close_cutoff_after(
+                    pos.opened_at, day_close, self.settings.session.timezone):
+                closed.append(self.close_position(pos.id, "day_close", float(candle.close), close_ts, market=True))
                 continue
             weekend = self.settings.prop_firm.weekend_close
             if weekend and pos.opened_at is not None and pd.Timestamp(close_ts) >= weekend_cutoff_after(pos.opened_at, weekend):

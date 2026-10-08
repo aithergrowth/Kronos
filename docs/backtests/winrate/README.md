@@ -1759,3 +1759,50 @@ What stood out (trades, won, R, change by half):
   replay) is `docs/backtests/research_2026_2026-10-08.md`: no further variant survived on any market; the two changes
   above stand. Its one open build item: a limit entry resting at the balance level the 5m shift closed through
   (`risk.limit_entry_at: break_level`), BTC first, then gold.
+
+### The night of 8-9 October: three years, gaps, a day close, the limit on the level, the edge meter
+
+Max: "Onderzoek succes je hebt de hele nacht ik zie morgen de uitkomst met wat je hebt gedaan". Nothing changed in the
+profiles tonight; two options were built and measured, both off, and the daily report gained an edge meter.
+
+- **The two 8 October changes over 2024-2026** (the live set with FTMO costs, `r26_<market>_live_full`, against the
+  morning base `*_fix_full`): EURUSD 49 trades, 47 %, +45.7R, drawdown -5.6R, 8 of 22 months losing (base 54, 39 %,
+  +40.9R, -10.4R, 11 of 24): the 4H veto with `shift_flips_balance` holds on three years. Gold 143, 49 %, +81.6R,
+  -7.7R (base 134, 50 %, +78.6R, -5.5R): +3R over three years, all of it 2026, 2024-2025 a little under the base and
+  a deeper drawdown. 2026-specific, kept because 2026 is the judge, watched.
+- **Overnight gaps** (the 5-minute data 2024-2026, Amsterdam clock, the first candle of a day against the last close
+  before it): NAS100 trades 00:00-22:15, every night a break. Night gaps: the 90th percentile 62 points, the 99th
+  204 points, against a median 4H-zone stop of 37 points: one night in five gaps more than that stop, the
+  99th-percentile night is 5.5 stops; over a weekend one in two. Gold (break 23:00-00:00): the 99th-percentile night
+  $13 against a median stop of $14.8, weekends 22 % beyond the stop. A gap through the stop fills at the open, not at
+  the stop: at the double 4H stake a 5.5-stop gap against the trade is -16 % of the account. In the 38 NAS100 trades of
+  2024-2026 no gap went through a stop (the two overnight stops filled at the stop).
+- **Flat before the break** (the trades held over a break, closed at the last price of the day instead): NAS100
+  -2.3R over three years (6 trades), gold -24.1R (36 trades): a day close only makes sense on NAS100.
+- **`exits.day_close`** (built: paper broker and live, "HH:MM" in the session's timezone; the backtest closes on the
+  first candle opening at or after the clock, live closes at the clock). NAS100 "22:10" 2026: the same 16 trades,
+  62 %, +22.2R against +26.3R (two winners that reached the target the next day were cut at +1.7R and +0.7R).
+  2024-2026: 38 trades, 50 % (47 %), +35.6R (+37.2R), drawdown -4.0R both: five trades changed, two overnight
+  losers closed near flat (+1.0R and +2.0R better), two winners cut (-2.4R, -1.8R), one time exit a little lower.
+  Gold "22:55" 2026: 38 trades, +28.8R against +39.5R: no. The funded replay of 2026 with the NAS100 day close:
+  +14.6 % a month (15.6), no losing month, the worst month +3.2 % (+5.3), +10 % in a median 22 days (21), 69 %
+  within 30 days (71 %). Off by default, Max decides. Before it goes live the clock must sit before FTMO's US100
+  daily close (MT5: Market Watch, Specification, the trade hours); the data's break starts 22:15 Amsterdam.
+- **A limit on the balance level** (`risk.limit_entry_at: break_level`, the research workflow's open build item:
+  the limit rests on the level the 5m shift closed through, the fraction rule when that level lies past the stop or
+  the price, 240 minutes). 2026: BTC 16 trades, 56 %, +48.5R against 19, 63 %, +46.3R (+2.2R from three trades
+  fewer, January-April -2.3R); BTC with the limit 15 % back toward the stop instead of 25 %: 16, +52.4R (the winners
+  fill either way, the difference is three trades). Gold 33, 52 %, +36.9R (-2.6R, drawdown -3.0R), EURUSD 13, 54 %,
+  +11.1R (-1.8R), NAS100 15, 60 %, +18.1R (-8.2R). Not taken on any market: the quarter-way limit already catches the
+  retest, the level misses fills. Code kept, off.
+- **Monthly stop, the 4H stake, BTC's stake** (the funded replay on the 2026 ledgers at 1.5 %, the multipliers, two
+  open, the guard): the live set +15.6 % a month, no losing month, +10 % in a median 21 days, 71 % within 30 days. A
+  monthly loss stop at 4.5 % changes nothing in 2026 (at 3 %: +11.0 %, two losing months). The 4H zones at the
+  single stake +14.1 % (68 % within 30 days), at 1.5x +15.0 %. BTC at the full stake +19.1 %. 1.0 % risk +10.6 %,
+  1.0 % with the single 4H stake +9.4 % (median 27 days).
+- **Losing months** (Max: "een slechte trade kan gebeuren maar maanden niet"): with the 2024-2026 edge intact and ten
+  trades a month, 14 % of months lose by chance; with the winners halved 38 %; on the 2026 set 4 %. A losing month is
+  noise, a lost edge is not, so the daily FTMO report ends with an **edge meter** (`forward.edge_line`): the R after
+  costs of the last 20 and the last 30 closed bot trades, a warning when the last 20 are under 0R or the last 30 under
+  -5R. The backtest expects about +0.6R a trade: twenty trades under zero is about a one-in-twenty event with the edge
+  intact, and the signal to look at the trades before trading on.

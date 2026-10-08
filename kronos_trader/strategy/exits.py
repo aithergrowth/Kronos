@@ -51,3 +51,14 @@ def in_weekend_close(ts, at: str) -> bool:
     clock = ny - ny.normalize()
     return ((ny.weekday() == 4 and clock >= _ny_clock(at)) or ny.weekday() == 5
             or (ny.weekday() == 6 and clock < _ny_clock(WEEK_OPEN_NY)))
+
+
+def day_close_cutoff_after(ts, at: str, tz: str = "Europe/Amsterdam") -> pd.Timestamp:
+    """The first ``at`` ("HH:MM", ``tz`` clock) at or after ``ts`` (naive UTC), as naive UTC: when a position opened at ``ts``
+    is closed before the daily break (exits.day_close)."""
+    local = pd.Timestamp(ts).tz_localize("UTC").tz_convert(tz).tz_localize(None)
+    hh, mm = (int(x) for x in str(at).split(":"))
+    cut = local.normalize() + pd.Timedelta(hours=hh, minutes=mm)
+    if cut < local:
+        cut += pd.Timedelta(days=1)
+    return cut.tz_localize(tz).tz_convert("UTC").tz_localize(None)

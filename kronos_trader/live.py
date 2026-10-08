@@ -1168,8 +1168,9 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
         frac = float(getattr(self.settings.risk, "limit_entry_fraction", 0.0) or 0.0)
-        if frac > 0:                                     # the same checks at the market price first, as the backtest makes them
-            return self._place_limit(setup, now, sid, price, frac, risk_params)
+        at_level = str(getattr(self.settings.risk, "limit_entry_at", "") or "")
+        if frac > 0 or at_level == "break_level":        # the same checks at the market price first, as the backtest makes them
+            return self._place_limit(setup, now, sid, price, frac, risk_params, at_level)
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
         if risk_params.risk_pct != self.settings.risk.risk_pct:
             resized += f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)"
@@ -1200,12 +1201,15 @@ class LiveRunner:
         return pos, sid, risk_amount, risk_params, resized, margin_note
 
     # ------------------------------------------------------------ limit entries (risk.limit_entry_fraction)
-    def _place_limit(self, setup: TradeSetup, now: pd.Timestamp, sid: str, price: float, frac: float, risk_params):
-        """Inside the account lock: a limit ``frac`` of the way from the executable price back toward the stop, sized on the
-        smaller stop, the margin checked; returns ("limit", order, sid) or the refusal to send."""
-        from .strategy.risk import resize_at
+    def _place_limit(self, setup: TradeSetup, now: pd.Timestamp, sid: str, price: float, frac: float, risk_params, at_level: str = ""):
+        """Inside the account lock: a limit ``frac`` of the way from the executable price back toward the stop, or on the
+        balance level the shift closed through (``at_level`` break_level), sized on the smaller stop, the margin checked;
+        returns ("limit", order, sid) or the refusal to send."""
+        from .strategy.risk import limit_entry_price, resize_at
         d = self.spec.price_decimals
-        limit = self.spec.round_price(price - setup.direction.sign * frac * abs(price - setup.stop))
+        raw, mode = limit_entry_price(setup, price, frac, at_level)
+        limit = self.spec.round_price(raw)
+        self._limit_mode = mode
         lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, self.broker.equity(),
                                                             self.spec, risk_params)
         if rr < self.settings.risk.min_rr:
@@ -1247,13 +1251,14 @@ class LiveRunner:
         self.save_limits()
         d = self.spec.price_decimals
         side = "BUY" if order.direction is Direction.LONG else "SELL"
-        frac = float(self.settings.risk.limit_entry_fraction)
+        mode = getattr(self, "_limit_mode", "") or f"limit {float(self.settings.risk.limit_entry_fraction):g}"
+        where = "on the balance level the shift closed through" if mode == "limit break_level" else \
+            f"{float(mode.split()[1]) if len(mode.split()) > 1 else 0:.0%} back toward the stop"
         self.note("limit_placed", now, id=order.id, direction=order.direction.name, entry=float(order.price), stop=float(order.stop),
                   take_profit=float(order.take_profit), lots=float(order.lots), risk=float(order.risk_amount),
-                  note=f"setup {sid}; valid until {order.expires_at:%H:%M} UTC")
-        self.notifier.send(f"📌 {self.symbol} {side} LIMIT {order.lots:.2f} lots @ {order.price:.{d}f} ({frac:.0%} back toward the "
-                           f"stop)  SL {order.stop:.{d}f}  TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until "
-                           f"{order.expires_at:%H:%M} UTC (id {order.id})")
+                  note=f"setup {sid}; {mode}; valid until {order.expires_at:%H:%M} UTC")
+        self.notifier.send(f"📌 {self.symbol} {side} LIMIT {order.lots:.2f} lots @ {order.price:.{d}f} ({where})  SL {order.stop:.{d}f}  "
+                           f"TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until {order.expires_at:%H:%M} UTC (id {order.id})")
 
     def load_limits(self) -> None:
         if self.limits_path is None or not self.limits_path.exists():
@@ -1472,14 +1477,17 @@ class LiveRunner:
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
         hold = self.settings.exits.max_hold_hours
         weekend = self.settings.prop_firm.weekend_close
-        if (hold or weekend) and not callable(getattr(self.broker, "on_candle", None)):
-            from .strategy.exits import weekend_cutoff_after
+        day_close = getattr(self.settings.exits, "day_close", "")
+        if (hold or weekend or day_close) and not callable(getattr(self.broker, "on_candle", None)):
+            from .strategy.exits import day_close_cutoff_after, weekend_cutoff_after
             now = self.clock()
             for pid, pos in list(open_by_id.items()):
                 if getattr(pos, "status", "filled") != "filled" or pos.opened_at is None:
                     continue
                 if hold and now - pd.Timestamp(pos.opened_at) >= pd.Timedelta(hours=float(hold)):
                     reason, why = "time", f"after {hold:g} h"
+                elif day_close and now >= day_close_cutoff_after(pos.opened_at, day_close, self.settings.session.timezone):
+                    reason, why = "day_close", f"before the daily break ({day_close} {self.settings.session.timezone})"
                 elif weekend and now >= weekend_cutoff_after(pos.opened_at, weekend):
                     reason, why = "weekend", f"before the weekend (Friday {weekend} New York)"
                 else:

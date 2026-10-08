@@ -311,7 +311,26 @@ def day_message(rec: pd.DataFrame, status: Dict[str, Any], positions: List[Dict[
     if len(mine):
         lines.append(f"Since the start: {len(mine)} trade(s), {100.0 * float((mine['net'] > 0).mean()):.0f} % won, "
                      f"{float(mine['r_net'].sum()):+.2f}R after costs, net {float(mine['net'].sum()):+,.2f}")
+        edge = edge_line(mine)
+        if edge:
+            lines.append(edge)
     return "\n".join(lines)
+
+
+def edge_line(mine: pd.DataFrame, short: int = 20, long: int = 30, long_floor: float = -5.0) -> str:
+    """The edge meter (Max, 8 October: a losing month is noise, a lost edge is not): the R after costs of the last ``short``
+    and ``long`` closed trades, with a warning when the last ``short`` are under 0R or the last ``long`` under
+    ``long_floor``. Empty with fewer than ``short`` trades: nothing to read yet. The backtest expects about +0.6R a
+    trade, so twenty trades under zero is roughly a one-in-twenty event with the edge intact."""
+    rec = mine.dropna(subset=["r_net"]).sort_values("exit_time")
+    if len(rec) < short:
+        return ""
+    last_short = float(rec.tail(short)["r_net"].sum())
+    last_long = float(rec.tail(long)["r_net"].sum()) if len(rec) >= long else None
+    text = f"Edge: last {short} trades {last_short:+.1f}R" + (f", last {long} {last_long:+.1f}R" if last_long is not None else "")
+    if last_short < 0 or (last_long is not None and last_long < long_floor):
+        return f"⚠️ {text}: under the backtest's expectation, look at the trades before trading on"
+    return text
 
 
 # ------------------------------------------------------------------ the report

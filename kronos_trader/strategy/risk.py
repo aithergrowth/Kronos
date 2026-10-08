@@ -487,3 +487,17 @@ def build_setup(
         notes=[f"{stop_note}; {stop_pips:.1f} pips incl. {params.spread_buffer_pips:.0f}-pip buffer"],
     )
     return setup, reasons
+
+
+def limit_entry_price(setup, price_now: float, frac: float, at_level: str = "") -> Tuple[float, str]:
+    """Where the limit entry rests: on the balance level the confirmation's shift closed through (``at_level``
+    "break_level") when that level lies between the signal's price and the stop, else ``frac`` of the way from the signal's
+    price back toward the stop (0.25 when the fraction is 0). Returns ``(price, entry_mode label)``."""
+    sign = setup.direction.sign
+    if at_level == "break_level":
+        level = float(setup.confirmation.break_level)
+        if sign * (price_now - level) > 0 and sign * (level - setup.stop) > 0:
+            return level, "limit break_level"
+        frac = frac if frac > 0 else 0.25
+        return price_now - sign * frac * abs(price_now - setup.stop), f"limit {frac:g} (level past the stop or the price)"
+    return price_now - sign * frac * abs(price_now - setup.stop), f"limit {frac:g}"
