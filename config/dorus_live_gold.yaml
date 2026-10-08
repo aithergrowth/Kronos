@@ -74,9 +74,10 @@ risk:
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
   tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
-  tp_fallback: ""                 # 8 October (Max: "beter zonder 2r doel"): no target that reaches min_rr -> no trade. January-September
-  tp_fallback_rr: 0.0             # 2026, FTMO costs: 22 trades, 77 % won, +37.9R, both halves better, against 34, 56 %, +31.4R with the
-                                  # fixed 2R target of 6 October (that one earned more in 2024-2025: +27.0 / +25.8 against +9.3 / +7.6)
+  tp_fallback: fixed              # 6 October, evening (Max: decide on the last 3 years): where no target reaches min_rr, a fixed 2R target
+  tp_fallback_rr: 2.0             # instead of no trade. Checked again 8 October on these settings, FTMO costs, 2024-01 to 2026-09: 132 trades,
+                                  # 51 %, +84.2R, 7 of 31 months losing, deepest dip -4.5R; without it 82, 48 %, +51.3R, 11 losing, -8.6R
+                                  # (better only in 2026, +37.9R against +31.4R). Kept (Max: ja); README "January-September 2026 per market"
   spread_buffer_pips: 1.0
 session:
   enabled: true

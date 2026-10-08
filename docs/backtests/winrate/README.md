@@ -1660,7 +1660,7 @@ Max: "5-8 verliezers is meer dan pech". The live set (FTMO costs, 2024-02 to 202
   halves, but +11.6R; at half stake on BTC and gold it is the last row above, kept as a candidate); BTC without its
   D+4H+1H scalp (lost 4 % -> 7 %).
 
-### January-September 2026 per market, and gold without the 2R target (8 October)
+### January-September 2026 per market, and gold's 2R target checked again (8 October)
 
 Max: "alleen 2026 belangrijk", only the four live markets. Each variant against the live profile on the same window,
 FTMO costs, halves January-April / May-September:
@@ -1677,7 +1677,7 @@ FTMO costs, halves January-April / May-September:
 | | stop behind the protecting swing | 9 | 22 % | -1.7 | -0.5 | -1.2 |
 | | session liquidity; without the 1H requirement | 16 | 38 % | +9.1 (the same trades) | | |
 | Gold | with the fixed 2R target | 34 | 56 % | +31.4 | +12.2 | +19.2 |
-| | **no 2R target (taken)** | 22 | 77 % | +37.9 | +14.3 | +23.6 |
+| | no 2R target | 22 | 77 % | +37.9 | +14.3 | +23.6 |
 | | the next liquidity as the target | 34 | 62 % | +31.7 | +12.8 | +18.9 |
 | | entry within 0.5 zone heights | 22 | 68 % | +30.8 | +11.8 | +19.0 |
 | | a second trade in the same visit | 38 | 55 % | +33.3 | +13.2 | +20.1 |
@@ -1689,9 +1689,25 @@ FTMO costs, halves January-April / May-September:
 | BTC | as it runs | 18 | 61 % | +45.5 | +1.1 | +44.4 |
 | | a second trade in the same visit | 19 | 58 % | +44.4 | -0.0 | +44.4 |
 
-- Taken (Max, 8 October: "beter zonder 2r doel"): gold `risk.tp_fallback: ""`, no trade where no target reaches the
-  minimum R:R. The 12 trades the fixed 2R target added in 2026 lost 6.5R together; in 2024-2025 the same rule earned
-  (+27.0 / +25.8 against +9.3 / +7.6, "The last three years"), so this is a choice for the market as it is now.
+- Gold without the 2R target looked best in 2026 (Max: "beter zonder 2r doel"), so it went into the profile and
+  was checked on January 2024 - September 2026 with today's gold settings the same morning, FTMO costs:
+
+| Gold, 2024-01 to 2026-09 | Trades | Won | R | Deepest dip | Losing months | 2024 / 2025 / 2026 |
+|---|---|---|---|---|---|---|
+| **Fixed 2R target (kept)** | 132 | 51 % | +84.2 | -4.5 | 7 of 31 | +23.9 / +28.9 / +31.4 |
+| The next liquidity as the target | 118 | 53 % | +62.0 | -5.5 | 9 of 31 | +14.7 / +15.6 / +31.7 |
+| No 2R target | 82 | 48 % | +51.3 | -8.6 | 11 of 31 | +6.1 / +7.4 / +37.9 |
+
+  Better only in 2026, by 12 trades: the 2R target stays (Max: ja, the same morning).
 - EURUSD entry within 0.5 zone heights, January 2024 - September 2026: 47 trades, 34 %, +18.3R against 54, 39 %,
   +38.4R as it runs; within 1.0: 53, 34 %, +23.6R. Better in 2026 by two trades, clearly worse before: not taken.
 - The 2R target cap on EURUSD over the same 2024-2026 window: 53 trades, 42 %, +28.1R against +38.4R: not taken.
+- NAS100 without the 1W veto over January 2024 - September 2026: 44 trades, 45 %, +42.8R against 38, 47 %, +37.3R,
+  the same dip (-4.0R); the extra R is 2026's two trades. Not taken.
+- Also run on 2026 and not better: 15m zones on gold (33 trades, 67 %, the same R, dip -3.0R), NAS100 (24, 50 %, less
+  R) and BTC (26, 54 %, less R); session liquidity on gold (71 %, -1.3R), NAS100 (55 %, less R) and BTC (+1.4R, two
+  trades); gold without the 24-candle zone age (73 %, -1.7R) or with a second trade per visit (one more trade, -1.0R),
+  these gold runs against the settings without the 2R target; BTC with D+1H or 4H+1H combinations (29-32 trades, 48-50 %, -5.5R),
+  entry within 0.5 zone heights (14 trades, -2.3R), retests (the same), a limit 25 % back (+11.8R, but -4.7R in
+  January-April and 50 % won); NAS100 with D+1H (23 trades, 52 %, the same R) and entry within 0.5 zone heights
+  (4 trades).
