@@ -206,6 +206,9 @@ class ConfirmationParams:
                                         # re-entered by the spike of 11 Nov 13:22; the stop above that spike's high)
     max_extension_zones: float = 1.5    # ASSUMPTION: confirmation must close within N POI-heights beyond the zone
     allow_retest: bool = False          # ASSUMPTION: only the first return to a POI is traded (Q13 not stated)
+    max_adverse_move_candles: int = 24  # the closed 1H candles the move is measured over (the average range stays over 24): 24 = the last
+                                        # day; 3-6 = the approach into the zone (8 October: a 25-pip rally in three 1H candles ran through
+                                        # EURUSD's supply and the short)
     max_adverse_move_atr: float = 0.0   # 0 = off; else no entry when the last 24 closed 1H candles moved this many average 1H ranges
                                         # (ATR 24) against the trade: the zone is being run through, not tested (entry anatomy, 5 October,
                                         # five markets 2023-2026: 14 trades at 3 or more won 21 %, -7.9R, negative in 2024, 2025 and 2026)

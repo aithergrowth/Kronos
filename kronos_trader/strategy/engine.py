@@ -135,15 +135,16 @@ class LazyStructures(dict):
 
 
 
-def adverse_move_atr(h1: CandleSeries, direction: Direction, candles: int = 24) -> Optional[float]:
-    """How far the last ``candles`` closed 1H candles moved against ``direction``, in average 1H true ranges over the same
-    candles; None with too little history."""
+def adverse_move_atr(h1: CandleSeries, direction: Direction, candles: int = 24, atr_candles: int = 24) -> Optional[float]:
+    """How far the last ``candles`` closed 1H candles moved against ``direction``, in average 1H true ranges over the last
+    ``atr_candles``; None with too little history."""
     df = h1.df
-    if len(df) < candles + 2:
+    atr_candles = max(int(atr_candles), int(candles))
+    if len(df) < atr_candles + 2 or candles < 1:
         return None
     high, low, close = df["high"].to_numpy(float), df["low"].to_numpy(float), df["close"].to_numpy(float)
-    prev = close[-candles - 1:-1]
-    tr = np.maximum(high[-candles:] - low[-candles:], np.maximum(abs(high[-candles:] - prev), abs(low[-candles:] - prev)))
+    prev = close[-atr_candles - 1:-1]
+    tr = np.maximum(high[-atr_candles:] - low[-atr_candles:], np.maximum(abs(high[-atr_candles:] - prev), abs(low[-atr_candles:] - prev)))
     atr = float(tr.mean())
     if atr <= 0:
         return None
@@ -437,7 +438,7 @@ class StrategyEngine:
 
         # the last day against the trade: a run of several average 1H ranges against the direction is a zone being run through --
         if not reversal_only and s.confirmation.max_adverse_move_atr > 0 and Timeframe.H_1 in views:
-            adverse = adverse_move_atr(views[Timeframe.H_1], direction)
+            adverse = adverse_move_atr(views[Timeframe.H_1], direction, s.confirmation.max_adverse_move_candles)
             if adverse is not None and adverse >= s.confirmation.max_adverse_move_atr:
                 analysis.rejections.append(f"the last 24 1H candles ran {adverse:.1f} average ranges against the {direction.name.lower()} "
                                            f"(max {s.confirmation.max_adverse_move_atr:g}); no entry into that")

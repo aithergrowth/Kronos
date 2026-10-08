@@ -542,3 +542,18 @@ def test_poi_in_poi_needs_a_higher_zone_of_the_same_side_that_overlaps():
     assert _parent_zone(h1, [zone(T.D_1, Bias.BULLISH, 1.1630, 1.1700)]) is None                    # no overlap
     assert _parent_zone(h1, [zone(T.D_1, Bias.BULLISH, 1.1500, 1.1610, POIStatus.INVALIDATED)]) is None
     assert _parent_zone(daily, [daily, h1]) is None                                                 # a lower zone is no parent
+
+
+def test_adverse_move_can_look_at_the_approach_only():
+    """``confirmation.max_adverse_move_candles``: the move over the last N candles in the day's average range (8 October:
+    a three-candle rally into the zone that the 24-candle window did not see)."""
+    from kronos_trader.strategy.engine import adverse_move_atr
+    rows = [(1.0, 1.001, 0.999, 1.0)] * 30 + [(1.0, 1.003, 1.0, 1.003), (1.003, 1.006, 1.003, 1.006), (1.006, 1.009, 1.006, 1.009)]
+    h1 = CandleSeries.from_records(rows, T.H_1, start="2026-10-08 00:00", symbol="EURUSD")
+    day = adverse_move_atr(h1, Direction.SHORT)
+    approach = adverse_move_atr(h1, Direction.SHORT, candles=3)
+    assert approach == pytest.approx(day)                     # the same net move: 9 pips, in the day's average range
+    assert approach > 4.0                                      # three candles of 3 pips against a 24-candle range near 2 pips
+    assert adverse_move_atr(h1, Direction.LONG, candles=3) == pytest.approx(-approach)
+    short = CandleSeries.from_records(rows[-10:], T.H_1, start="2026-10-08 00:00", symbol="EURUSD")
+    assert adverse_move_atr(short, Direction.SHORT, candles=3) is None       # too little history for the 24-candle range
