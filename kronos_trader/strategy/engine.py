@@ -507,7 +507,8 @@ class StrategyEngine:
             if touch_ts is None:
                 analysis.rejections.append(f"{label}: no active visit on {lowest_tf.label}")
                 continue
-            limit_h = s.confirmation.reversal_max_touch_age_hours if reversal else s.confirmation.max_touch_age_hours
+            limit_h = s.confirmation.reversal_max_touch_age_hours if reversal else \
+                s.confirmation.max_touch_age_by_tf.get(poi.timeframe, s.confirmation.max_touch_age_hours)
             if limit_h > 0 and poi.created_at is not None:
                 waited = (pd.Timestamp(touch_ts) - pd.Timestamp(poi.created_at)) / pd.Timedelta(hours=1)
                 if waited > limit_h:

@@ -214,6 +214,9 @@ class ConfirmationParams:
                                         # traded, whatever the zone's timeframe (7 October, the set that runs, 2024-02 to 2026-09
                                         # with FTMO's costs: touched within a day 299 trades, 53 %, +140.7R; later 39 trades, 28 %,
                                         # -25.0R, losing in both halves and in every market)
+    max_touch_age_by_tf: Dict[Timeframe, float] = field(default_factory=dict)   # max_touch_age_hours per zone timeframe, in
+                                        # place of it for the timeframes named (0 = no limit there), e.g. {1D: 168} (Max, 8 October: a
+                                        # week-old drawing is fine on the higher timeframes)
     reversal_poi_timeframes: Tuple[Timeframe, ...] = ()   # 7 October (Max): zones of these timeframes are also traded against the
                                         # bias or without one, as a reversal: price sweeps the liquidity at the big zone, then a balance
                                         # shift on reversal_confirmation_tf. Such a trade carries the combination label REV (stake:

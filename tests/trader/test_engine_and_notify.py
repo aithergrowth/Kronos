@@ -237,6 +237,27 @@ def test_max_touch_age_hours_refuses_a_zone_touched_long_after_it_formed(hk_data
                                 / pd.Timedelta(hours=1) <= limit for t in fresh.trades)
 
 
+def test_max_touch_age_by_tf_sets_the_limit_per_zone_timeframe(hk_data):
+    """``confirmation.max_touch_age_by_tf`` in place of max_touch_age_hours for the zone timeframes it names (0 = no limit
+    there): Max, 8 October, a week-old drawing is fine on the higher timeframes."""
+    def run(**c):
+        s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+        s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+        for key, value in c.items():
+            setattr(s.confirmation, key, value)
+        return Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    base = run()
+    waited = {(t.meta["poi_tf"], round((pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"]))
+                                       / pd.Timedelta(hours=1), 1)) for t in base.trades}
+    tf, hours = max(waited, key=lambda x: x[1])              # the latest-touched zone of the base run
+    strict = run(max_touch_age_hours=0.5)
+    assert all(t.meta["poi_tf"] != tf or (pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"]))
+               / pd.Timedelta(hours=1) <= 0.5 for t in strict.trades)
+    freed = run(max_touch_age_hours=0.5, max_touch_age_by_tf={T.parse(tf): 0})
+    assert any(t.meta["poi_tf"] == tf and (pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"]))
+               / pd.Timedelta(hours=1) > 0.5 for t in freed.trades)
+
+
 def test_combo_risk_multiplier_stakes_the_trades_of_that_bias_combination(hk_data):
     """``risk.combo_risk_multiplier``: the trades the bias allowed through the named combination risk that multiple, the
     others the profile's stake; which trades are taken does not change."""
