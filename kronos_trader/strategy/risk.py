@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import replace
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from ..config import RiskParams, SymbolSpec
 from ..core.timeframe import Timeframe
@@ -266,12 +266,17 @@ def fallback_target(
 
 
 def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None,
-               confirmation: Optional[str] = None) -> RiskParams:
+               confirmation: Optional[str] = None, neutral: Iterable[str] = ()) -> RiskParams:
     """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
     4H zone at twice the stake, BTC at half), the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
-    timeframes joined by +, as ``TradeSetup.bias_combo``) and the confirmation type's ``confirmation_risk_multiplier``
-    (``confirmation``: BS, BMS, BOS or first_candle, as ``confirmation_label``); ``params`` itself when all are 1."""
+    timeframes joined by +, as ``TradeSetup.bias_combo``), the confirmation type's ``confirmation_risk_multiplier``
+    (``confirmation``: BS, BMS, BOS or first_candle, as ``confirmation_label``) and ``neutral_bias_risk_multiplier`` for
+    each timeframe in ``neutral`` (the labels of the bias timeframes reading 50/50, as ``TradeSetup.neutral_timeframes``);
+    ``params`` itself when all are 1."""
     mult = float(params.stake_multiplier or 1.0)
+    if neutral and getattr(params, "neutral_bias_risk_multiplier", None):
+        for label in neutral:
+            mult *= float(params.neutral_bias_risk_multiplier.get(label, 1.0))
     if zone_tf is not None and params.zone_risk_multiplier:
         mult *= float(params.zone_risk_multiplier.get(zone_tf.label, 1.0))
     if combo and getattr(params, "combo_risk_multiplier", None):

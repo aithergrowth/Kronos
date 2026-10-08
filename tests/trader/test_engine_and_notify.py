@@ -256,6 +256,26 @@ def test_combo_risk_multiplier_stakes_the_trades_of_that_bias_combination(hk_dat
         assert ratio == pytest.approx(0.5 if b.meta["bias_combo"] == named else 1.0, rel=0.02)
 
 
+def test_neutral_bias_risk_multiplier_stakes_the_trades_taken_while_that_timeframe_reads_50_50(hk_data):
+    """``risk.neutral_bias_risk_multiplier``: a trade taken while the named timeframe's bias reads 50/50 risks that multiple,
+    the others the profile's stake; which trades are taken does not change (8 October: the month at 50/50 at half)."""
+    def run(mult):
+        s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+        s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+        s.risk.neutral_bias_risk_multiplier = mult
+        return Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    base = run({})
+    states = [dict(x.split("=") for x in t.meta["bias_by_tf"].split()) for t in base.trades]
+    neutral = [tf for st in states for tf, b in st.items() if b == "50/50"]
+    assert base.trades and neutral
+    named = max(set(neutral), key=neutral.count)
+    half = run({named: 0.5})
+    assert [pd.Timestamp(t.opened_at) for t in half.trades] == [pd.Timestamp(t.opened_at) for t in base.trades]
+    for st, b, h in zip(states, base.trades, half.trades):
+        ratio = h.meta["risk_budget"] / b.meta["risk_budget"]
+        assert ratio == pytest.approx(0.5 if st.get(named) == "50/50" else 1.0, rel=0.02)
+
+
 def test_confirmation_risk_multiplier_stakes_the_trades_of_that_confirmation_type(hk_data):
     """``risk.confirmation_risk_multiplier``: the trades entered on the named confirmation type risk that multiple, the
     others the profile's stake; which trades are taken does not change."""

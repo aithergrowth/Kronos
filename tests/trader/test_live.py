@@ -1161,11 +1161,11 @@ def test_the_fill_message_says_why_the_stake_differs(setup):
     runner.settings.risk.risk_pct = 1.0
     r = runner.settings.risk
     assert runner.stake_note(RiskParams(risk_pct=1.0)) == ""
-    assert runner.stake_note(RiskParams(risk_pct=2.0)) == " (2 % on this trade: x2 for its zone, its bias combination, its confirmation or the profile's stake)"
+    assert runner.stake_note(RiskParams(risk_pct=2.0)) == " (2 % on this trade: x2 for its zone, its bias combination, its confirmation, a 50/50 timeframe or the profile's stake)"
     r.target_pct, r.target_protect_pct = 10.0, 4.0
     broker._balance = 107_000.0
     assert runner.stake_note(RiskParams(risk_pct=0.5)) == " (0.5 % on this trade: near the target)"
-    assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone, its bias combination, its confirmation or the profile's stake)"
+    assert runner.stake_note(RiskParams(risk_pct=0.25)) == " (0.25 % on this trade: near the target, x0.5 for its zone, its bias combination, its confirmation, a 50/50 timeframe or the profile's stake)"
 
 
 def test_a_second_window_for_a_market_stops_at_the_start(tmp_path):

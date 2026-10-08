@@ -354,6 +354,7 @@ class TradeSetup:
     touched_at: Optional[pd.Timestamp] = None      # when price entered the zone on the lowest timeframe (this visit)
     visit_number: Optional[int] = None             # 1 = the first return to the zone
     bias_combo: str = ""                            # the timeframes whose alignment allowed it, e.g. "1D+1H" (risk.combo_risk_multiplier)
+    neutral_timeframes: Tuple[str, ...] = ()        # the bias timeframes reading 50/50 at the setup (risk.neutral_bias_risk_multiplier)
 
     @property
     def stop_pips(self) -> Optional[float]:

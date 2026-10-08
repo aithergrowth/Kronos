@@ -541,9 +541,10 @@ class StrategyEngine:
             # 5: the setup ---------------------------------------------------------------
             entry = spec.round_price(confirmation.close)
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
+            neutral = tuple(tf.label for tf in decision.neutral)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
                                          setup_risk(s.risk, poi.timeframe, combo,
-                                                    confirmation_label(confirmation)), equity,
+                                                    confirmation_label(confirmation), neutral), equity,
                                          breakeven_trigger_r(poi.timeframe, s.exits), protection_level=protection, touch_ts=touch_ts)
             if setup is None:
                 note = f" [stop would be {spec.round_price(protection)} = {stop_detail.get('stop_basis')}]" if diagnostic else ""
@@ -551,6 +552,7 @@ class StrategyEngine:
                 continue
             setup.touched_at = pd.Timestamp(touch_ts)
             setup.bias_combo = combo
+            setup.neutral_timeframes = neutral
             setup.visit_number = visits
             if s.risk.stop_basis == "confirmation":      # the stop sits beyond the extreme since the (re-)entry, not behind a P
                 stop_detail = {"stop_tf": confirmation.timeframe.label, "stop_p_open": None, "stop_p_close": None,

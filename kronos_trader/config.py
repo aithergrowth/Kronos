@@ -318,6 +318,9 @@ class RiskParams:
                                         # through that combination (the matched timeframes joined by +) risks that multiple as well
     confirmation_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"BOS": 0.5}: a trade entered on that
                                         # confirmation type (BS, BMS, BOS, first_candle) risks that multiple as well
+    neutral_bias_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"1M": 0.5}: a trade taken while that
+                                        # timeframe's bias reads 50/50 risks that multiple as well (8 October, Max: the long losing runs
+                                        # came from trades with the month at 50/50, won 29-33 % against 50-60 %)
     stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
     target_pct: float = 0.0             # the challenge phase's profit target in % of the initial balance (FTMO 2-Step: 10, then 5 in
                                         # the verification); 0 = none known. With target_protect_pct: within that many % of the target

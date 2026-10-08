@@ -1633,3 +1633,29 @@ average 1H ranges against the trade. The 7 October BTC long came after 2.8. On t
 EURUSD's entries into a zone after a strong move are among its winners (five blocked trades, +10.6R); elsewhere the
 filter removes one to five trades. The account replay at 3 ranges: 2024-25 starts lost 4 % -> 1 %, but the month
 average +8.2 % -> +7.9 % and one more losing month. Not taken: the gains are one or two trades a market.
+
+### Losing runs, the month at 50/50, and liquidity taken earlier in the day (8 October)
+
+Max: "5-8 verliezers is meer dan pech". The live set (FTMO costs, 2024-02 to 2026-09, 312 trades, 51 % won):
+
+- On the account the longest losing run is 7 and there are four runs of 5 or more. Shuffling the same trades 5,000
+  times gives a median longest run of 7 and four runs of 5 or more: the runs are what the win rate makes. After a
+  loss the next trade lost 46 % (49 % overall), so a pause or a smaller stake after losses cannot pick the losers
+  (as the 5 October tests found).
+- What the long runs share is the month: EURUSD's 11 in a row (February to August 2024, all 1D+1H trades) and gold's
+  7 came with the 1M bias at 50/50. Trades with the month at 50/50: 48, won 29-33 % (EURUSD 31 trades +9.2R, gold 9
+  +1.2R, NAS100 2 -2.0R, BTC 6 +2.2R), still positive in both halves but far below the 50-60 % of the rest.
+- Account replay at 1.5 % (4H x2, BTC half, EURUSD 1D+1H half, two open):
+
+| | Funded in 6 wk / 2 mo (2026 starts) | 2024-25 starts within 3 mo / lost | Month average | Losing months |
+|---|---|---|---|---|
+| As it runs | 64 / 97 % | 52 / 4 % | +8.2 % | 7 |
+| **Month at 50/50 at half the stake** | 62 / 96 % | 55 / 1 % | +8.1 % | 6 |
+| Month at 50/50 skipped | 49 / 95 % | 60 / 0 % | +8.0 % | 5 |
+| Previous day's low (long) / high (short) taken before the signal, half (BTC, gold) | 64 / 97 % | 52 / 1 % | +8.2 % | 6 |
+
+- Taken (Max: ja, long and short): `risk.neutral_bias_risk_multiplier: {1M: 0.5}` in the four profiles.
+- Screened, not taken: the Asia range (00:00-08:00 Amsterdam) taken before the signal (better in one half, worse in
+  the other); the previous day's extreme taken before the signal (41 trades won 32 % against 54 %, lower in both
+  halves, but +11.6R; at half stake on BTC and gold it is the last row above, kept as a candidate); BTC without its
+  D+4H+1H scalp (lost 4 % -> 7 %).

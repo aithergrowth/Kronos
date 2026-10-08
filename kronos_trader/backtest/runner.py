@@ -174,7 +174,7 @@ class Backtester:
                 return None, "limit entry: expired unfilled"
             return pending, None
         risk_params = setup_risk(stepped_risk(s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
-                                 confirmation_label(setup.confirmation))
+                                 confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ()))
         ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * risk_params.risk_pct / 100.0)
         if not ok:
             return None, reason
@@ -249,7 +249,7 @@ class Backtester:
                     continue
                 ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * setup_risk(stepped_risk(
                     s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
-                    confirmation_label(setup.confirmation)).risk_pct / 100.0)
+                    confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ())).risk_pct / 100.0)
                 if not ok:
                     rejected += 1
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
@@ -262,7 +262,7 @@ class Backtester:
                 lots_now, risk_amount_now, risk_distance_now, rr_now, _ = resize_at(
                     price_now, setup.stop, setup.take_profit, broker.equity(), spec,
                     setup_risk(stepped_risk(s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
-                               confirmation_label(setup.confirmation)))
+                               confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ())))
                 if wrong_side or rr_now < s.risk.min_rr or lots_now <= 0:
                     rejected += 1
                     reason = ("price moved: wrong side of the stop" if wrong_side else

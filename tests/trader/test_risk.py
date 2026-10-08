@@ -376,3 +376,15 @@ def test_the_stake_halves_near_the_phase_target():
     assert stepped_risk(verification, 10_100, 10_000).risk_pct == pytest.approx(0.625)
     off = RiskParams(risk_pct=1.25, target_pct=10.0)                                                 # a target without a window
     assert stepped_risk(off, 10_900, 10_000) is off
+
+
+def test_setup_risk_halves_the_stake_for_a_timeframe_at_50_50():
+    from kronos_trader.config import RiskParams
+    from kronos_trader.core.timeframe import Timeframe
+    from kronos_trader.strategy.risk import setup_risk
+    params = RiskParams(risk_pct=1.5, neutral_bias_risk_multiplier={"1M": 0.5})
+    assert setup_risk(params, Timeframe.H_1, "1D+1H", "BS", ("1M",)).risk_pct == 0.75
+    assert setup_risk(params, Timeframe.H_1, "1D+1H", "BS", ("1W", "4H")).risk_pct == 1.5
+    assert setup_risk(params, Timeframe.H_1, "1D+1H", "BS").risk_pct == 1.5
+    both = RiskParams(risk_pct=1.5, zone_risk_multiplier={"4H": 2.0}, neutral_bias_risk_multiplier={"1M": 0.5})
+    assert setup_risk(both, Timeframe.H_4, None, None, ("1M",)).risk_pct == 1.5

@@ -59,6 +59,10 @@ risk:
   sl_offset_pips: 0.0
   min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
   max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
+  neutral_bias_risk_multiplier: {1M: 0.5}   # 8 October (Max: ja, long and short): a trade taken while the month reads 50/50 at half
+                                  # the stake. The long losing runs came from those trades (EURUSD 11 in a row in 2024, gold 7): they
+                                  # won 29-33 % against 50-60 %. Account replay at 1.5 %, 2024-02 to 2026-09: 2024-25 starts lost 4 % ->
+                                  # 1 %, funded within 3 months 52 % -> 55 %, losing months 7 -> 6; 2026 within 2 months 97 % -> 96 %
   zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
                                   # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
   tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
