@@ -272,6 +272,25 @@ def test_poi_touch_is_announced_once(setup):
     assert len(touches) == 1 and "waiting for a confirmation" in touches[0]
 
 
+def test_no_touch_notice_for_a_zone_the_engine_will_not_trade_for_its_age(setup):
+    """With confirmation.max_touch_age_hours a zone visited more than that long after it formed is spent: the engine
+    will not trade it, so "waiting for a confirmation" would wait for nothing (8 October, a BTC 1D zone 328 h old)."""
+    from dataclasses import replace
+
+    def touches(created_at):
+        notifier = TelegramNotifier(dry_run=True)
+        fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+        poi = replace(setup.poi, created_at=created_at)
+        engine = FakeEngine(replace(setup, poi=poi), pois=[poi], price=101.0, signal_on_first_call=False)
+        settings = Settings(); settings.confirmation.max_touch_age_hours = 24
+        runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
+        runner.step(NOW)
+        return [m for m in notifier.sent if "inside the" in m and "POI" in m]
+
+    assert len(touches(NOW - pd.Timedelta(hours=3))) == 1
+    assert touches(NOW - pd.Timedelta(hours=328)) == []
+
+
 def test_the_poi_touch_carries_the_latest_headlines_when_there_are_any(setup):
     from kronos_trader.notify.headlines import Headlines
 

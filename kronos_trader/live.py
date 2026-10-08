@@ -676,6 +676,8 @@ class LiveRunner:
                 continue
             if poi.key in self._touched:
                 continue
+            if self.spent_zone(poi, now):
+                continue
             self._touched.add(poi.key)
             self.note("poi_touch", analysis.timestamp, poi_tf=poi.timeframe.label, direction=poi.direction.name,
                       price=float(analysis.price), note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
@@ -685,6 +687,27 @@ class LiveRunner:
                                f"({analysis.decision.reason}); waiting for a confirmation"
                                + "".join(f"\n📰 {line}" for line in news))
             self.send_chart(analysis, "touch", timeframe=poi.timeframe)
+
+    def spent_zone(self, poi, now: Optional[pd.Timestamp] = None) -> bool:
+        """True when the engine will not trade ``poi`` for its age: older than the profile's zone age limit, or visited
+        more than confirmation.max_touch_age_hours after it formed (the visit's start as the engine's visit tracker has
+        it, else ``now``). Such a zone gets no touch notice: "waiting for a confirmation" would wait for nothing (8
+        October: a BTC 1D zone of 22 September, visited 328 hours later)."""
+        from .strategy.engine import zone_age_candles
+        c = self.settings.confirmation
+        now = pd.Timestamp(now) if now is not None else self.clock()
+        created = getattr(poi, "created_at", None)
+        if created is None:
+            return False
+        max_age = c.max_zone_age_by_tf.get(poi.timeframe, c.max_zone_age_candles)
+        if max_age > 0 and zone_age_candles(now, created, poi.timeframe) > max_age:
+            return True
+        if c.max_touch_age_hours > 0:
+            state = getattr(getattr(self.engine, "visits", {}).get(self.symbol), "states", {}).get(getattr(poi, "key", None))
+            start = getattr(state, "visit_start_ts", None) or now
+            if (pd.Timestamp(start) - pd.Timestamp(created)) / pd.Timedelta(hours=1) > c.max_touch_age_hours:
+                return True
+        return False
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds
