@@ -32,14 +32,58 @@ def _far_edge(gap: Gap, direction: Bias, mode: str) -> float:
     return gap.low if direction is Bias.BULLISH else gap.high     # gap_bottom: where the balance level begins
 
 
+def session_levels(series: CandleSeries, tz: str = "Europe/Amsterdam", asia_end_hour: int = 8) -> Dict[str, np.ndarray]:
+    """Per candle: yesterday's high and low (the whole previous local day) and today's Asia range (local 00:00 to
+    ``asia_end_hour``, from that hour on; NaN before it). Known at the candle, so no look-ahead."""
+    df = series.df
+    local = pd.DatetimeIndex(df["timestamp"]).tz_localize("UTC").tz_convert(tz)
+    day = pd.Index(local.normalize().tz_localize(None))
+    hour = np.asarray(local.hour)
+    frame = pd.DataFrame({"day": day, "high": df["high"].to_numpy(), "low": df["low"].to_numpy(), "hour": hour})
+    daily = frame.groupby("day").agg(high=("high", "max"), low=("low", "min"))
+    prev = daily.shift(1)
+    asia = frame[frame["hour"] < asia_end_hour].groupby("day").agg(high=("high", "max"), low=("low", "min"))
+    after = hour >= asia_end_hour
+    return {"pdh": prev["high"].reindex(day).to_numpy(), "pdl": prev["low"].reindex(day).to_numpy(),
+            "ah": np.where(after, asia["high"].reindex(day).to_numpy(), np.nan),
+            "al": np.where(after, asia["low"].reindex(day).to_numpy(), np.nan)}
+
+
+def _session_x(st: StructureAnalysis, gap: Gap, params: StructureParams, levels: Dict[str, np.ndarray]) -> Optional[Tuple[float, int]]:
+    """The session level the displacement of ``gap`` closed through (yesterday's high or low, the Asia range), and the
+    candle that did it; None when it took none. The close before P must still sit on the near side of the level."""
+    close = st.series.close
+    i0, i1 = gap.protector_index, min(gap.index + params.poi_break_window, len(close) - 1)
+    if i0 < 1:
+        return None
+    bull = gap.direction is Bias.BULLISH
+    for name in (("pdh", "ah") if bull else ("pdl", "al")):
+        level = levels[name][gap.index]
+        if not np.isfinite(level) or (close[i0 - 1] > level if bull else close[i0 - 1] < level):
+            continue
+        for i in range(i0, i1 + 1):
+            if (close[i] > level) if bull else (close[i] < level):
+                return float(level), i
+    return None
+
+
 def _map_liquidity_to_protection(st: StructureAnalysis, params: StructureParams) -> List[POI]:
     ts_list = st.series.ts_list
     by_break: Dict[object, POI] = {}
+    levels = None
+    intraday = st.series.timeframe.minutes < 1440
     for gap in st.gaps:
         d = gap.direction
         brk = next((b for b in st.breaks if b.direction is d
                     and gap.protector_index <= b.index <= gap.index + params.poi_break_window), None)
-        if brk is None:
+        session = None
+        if brk is None and getattr(params, "session_liquidity", False) and intraday:
+            if levels is None:
+                levels = session_levels(st.series, params.session_tz, params.asia_end_hour)
+            session = _session_x(st, gap, params, levels)
+        if brk is None and session is not None:
+            x, key, created = session[0], ("session", gap.index), max(gap.index, session[1])   # yesterday / Asia liquidity taken
+        elif brk is None:
             if not params.poi_gap_zones:
                 continue                               # no liquidity taken by this displacement: no X, no POI
             x, key, created = (gap.high if d is Bias.BULLISH else gap.low), ("gap", gap.index), gap.index   # the price gap alone

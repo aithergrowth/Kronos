@@ -113,6 +113,11 @@ class StructureParams:
                                         # impulse's start); last = the gap nearest the break, the P closest to X (a tighter zone)
     poi_gap_zones: bool = False         # also a gap whose displacement took no liquidity maps a zone, from its P to the gap's far edge (his
                                         # "price gap" trades: gold 12 Aug 2025, bought at the top of the daily gap the NFP candle of 1 Aug left)
+    session_liquidity: bool = False     # 8 October (Max: "vormen van liquiditeit"): on timeframes below the day, a displacement that closes
+                                        # through yesterday's high or low, or through the Asia range (00:00-08:00 Amsterdam) after 08:00,
+                                        # took liquidity as well: X is that level when no swing broke ("Asia-session liquidity", A 01:09:15)
+    session_tz: str = "Europe/Amsterdam"  # the day and the Asia range for session_liquidity
+    asia_end_hour: int = 8
     max_bars_sweep_to_balance: int = 40 # legacy mode: the balance level must form within this many candles after the sweep
     poi_requires_break: bool = False    # legacy mode: also require a structure break
     poi_far_edge: str = "gap_bottom"    # legacy mode: gap_bottom | gap_top | protector
