@@ -1618,3 +1618,18 @@ stops (median 0.59 %) the full stake is cut back on 74 of 88 trades, an average 
 In June 2020 - 2023 (134 trades, 33 %, -29.9R; wider stops, median 0.74 %) BTC alone would have cost -0.94 % a month
 at the full stake against -0.58 % at half. A small gain while BTC pays, a larger loss when it does not: BTC stays at
 half, to be looked at again after about 20 live BTC trades.
+
+### No entry after a day-long run against the trade (8 October)
+
+`confirmation.max_adverse_move_atr` (built 5 October, off): no entry when the last 24 closed 1H candles moved this many
+average 1H ranges against the trade. The 7 October BTC long came after 2.8. On the profiles that run, FTMO's costs:
+
+| | EURUSD | Gold | NAS100 | BTC |
+|---|---|---|---|---|
+| 2.5 ranges | -10.4R (halves -2.6 / -7.7) | +0.6R | +1.0R | +0.9R |
+| 3 ranges | -10.4R | +2.1R (+1.1 / +1.1) | +1.0R | +0.9R |
+| 4 ranges | -7.7R | 0.0R | 0.0R | +1.1R |
+
+EURUSD's entries into a zone after a strong move are among its winners (five blocked trades, +10.6R); elsewhere the
+filter removes one to five trades. The account replay at 3 ranges: 2024-25 starts lost 4 % -> 1 %, but the month
+average +8.2 % -> +7.9 % and one more losing month. Not taken: the gains are one or two trades a market.
