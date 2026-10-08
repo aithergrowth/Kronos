@@ -1711,3 +1711,8 @@ FTMO costs, halves January-April / May-September:
   entry within 0.5 zone heights (14 trades, -2.3R), retests (the same), a limit 25 % back (+11.8R, but -4.7R in
   January-April and 50 % won); NAS100 with D+1H (23 trades, 52 %, the same R) and entry within 0.5 zone heights
   (4 trades).
+- 5m zones as well (1m confirmation), April-September 2026 against the same months without them, FTMO costs:
+  EURUSD 30 trades against 10, 30 % won against 40 %, +7.3R against +6.1R, deepest dip -11.3R against -2.8R; gold 50
+  against 14, 50 % against 86 %, +28.3R against +29.2R; NAS100 26 against 9, 35 % against 56 %, +8.4R against +11.4R;
+  BTC 56 against 13, 41 % against 69 %, +12.9R against +44.4R, dip -17.8R. Three to four times the trades, and the
+  extra ones lose: not taken. The set stays as it runs.
