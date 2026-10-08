@@ -1591,3 +1591,30 @@ February 2024 - September 2026:
 
 Per market (FTMO's costs, one open): EURUSD 1.0 trades a month +26.1R -> 1.7 a month +40.9R; gold +59.0R -> +84.2R;
 NAS100 +28.9R -> +37.3R; BTC +38.7R with a -14.4R drawdown -> +64.7R with -4.0R.
+
+### Older zones on the higher timeframes, and BTC at the full stake (8 October)
+
+Max: "a week-old drawing is fine on the higher timeframes". `confirmation.max_touch_age_by_tf` (branch
+`feature/touch-age-tf`, off by default) sets the 24 h touch limit per zone timeframe; 1H kept 24 h. February 2024 -
+September 2026, FTMO's costs, R against the profile that runs:
+
+| | EURUSD | Gold | NAS100 | BTC |
+|---|---|---|---|---|
+| Runs now (trades, R) | 54, +40.9R | 132, +84.2R | 38, +37.3R | 88, +64.7R |
+| 4H 3 days, 1D a week | -1.9R | -6.5R | -3.0R | -3.3R |
+| 4H a week, 1D two weeks | -1.9R | -6.5R | -4.0R | -1.7R |
+| 4H and 1D no limit | +0.8R | -6.5R | -4.0R | -13.3R |
+| 1D no limit | -0.3R | -5.6R | -1.0R | -12.3R |
+
+- The older zones add one to six trades a market, most of them losing (gold's five 1D trades won 20 %, -2.0R; NAS100's
+  four lost), and with one open per market they push out 1H trades that won (gold up to three, +6.4R; BTC up to four,
+  +14.0R).
+- Account replay (2-Step, 1.5 %, all four markets): 2026 starts funded within six weeks 64 % -> 36-48 %, 2024-25 starts
+  lost 4 % -> 7-15 %, worst month -6.0 % -> -6.7 to -10.0 %. Not taken: the 24 h limit stays for every timeframe.
+
+BTC at the full stake instead of half (the same replay): 2026 starts funded within six weeks 64 % -> 76 %, the month
+average +8.2 % -> +8.4 %, 2024-25 starts lost 4 % -> 3 %. FTMO's crypto margin caps the position: with 2024-26's tight
+stops (median 0.59 %) the full stake is cut back on 74 of 88 trades, an average real stake of 0.87 % against 0.63 %.
+In June 2020 - 2023 (134 trades, 33 %, -29.9R; wider stops, median 0.74 %) BTC alone would have cost -0.94 % a month
+at the full stake against -0.58 % at half. A small gain while BTC pays, a larger loss when it does not: BTC stays at
+half, to be looked at again after about 20 live BTC trades.
