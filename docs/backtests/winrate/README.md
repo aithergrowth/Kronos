@@ -1755,4 +1755,7 @@ What stood out (trades, won, R, change by half):
   +124.9R (+113.1R); a month 9.4 trades, +12.5R, +15.9 % (+11.3R, +14.1 %); no losing month (one); the worst month
   +5.3 % (+4.1 %); +10 % from a 2026 start in a median 21 days (22), within 30 days 71 % (63 %). In-sample numbers:
   the honest expectation is the review's (docs/REVIEW_2026-10-08.md), these are the direction.
-- The research workflow's own report, when it finishes, goes to `scratchpad/r26_report.md` and a note here.
+- The research workflow's report (142 runs, two verifiers per candidate, the combination per market, the funded
+  replay) is `docs/backtests/research_2026_2026-10-08.md`: no further variant survived on any market; the two changes
+  above stand. Its one open build item: a limit entry resting at the balance level the 5m shift closed through
+  (`risk.limit_entry_at: break_level`), BTC first, then gold.
