@@ -71,9 +71,16 @@ class TelegramNotifier:
         return bool(self.token and self.chat_id)
 
     # ------------------------------------------------------------ transport
+    def _redact(self, text: str) -> str:
+        """The bot token out of an error text: requests names the URL, and the URL carries the token (8 October)."""
+        return text.replace(self.token, "<token>") if self.token else text
+
     def _call(self, method: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         import requests
-        resp = requests.post(API.format(token=self.token, method=method), json=payload, timeout=self.timeout)
+        try:
+            resp = requests.post(API.format(token=self.token, method=method), json=payload, timeout=self.timeout)
+        except Exception as exc:                          # no network, a timeout: the same error without the token in it
+            raise RuntimeError(self._redact(f"{type(exc).__name__}: {exc}")) from None
         if resp.status_code != 200:
             retry_after = None
             try:
@@ -155,7 +162,7 @@ class TelegramNotifier:
                                   files={"photo": fh}, timeout=self.timeout * 2)
             return r.ok
         except Exception as exc:                         # never raises, as send
-            self._warn(f"chart not sent: {exc}")
+            self._warn(self._redact(f"chart not sent: {exc}"))
             return False
 
     # ------------------------------------------------------------ messages

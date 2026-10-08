@@ -41,8 +41,12 @@ confirmation:
                                   # spent, A 00:33:37). Gold 2023-2026 (`v4_gold_age24_full`): 119 trades, 45 %, +38.7R, drawdown -9.9R,
                                   # every year better (+8.3 / +12.1 / +9.2 / +9.2) against 129, 46 %, +30.4R, -10.8R; 12 and 48 candles
                                   # sat on the same level where they were stopped. Not on EURUSD (same R) or BTC (+54.4R against +62.3R)
-  poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
-                                  # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
+  poi_timeframes: [4H, 1H]        # 8 October: no daily zones. Under the 24 h touch rule they never traded in 2024-2026 (the rule's
+                                  # clock ran from the zone candle's open, which left a daily zone no hours; corrected 8 October), so
+                                  # the tested set had none; with the clock right gold's one 2026 daily trade lost 1R on a $211 stop
+                                  # and pushed out a +5.7R 1H trade (34 trades +25.2R against +31.9R). Older 1D zones lost in every
+                                  # market (README "Older zones on the higher timeframes"). No weekly or monthly zones either: their
+                                  # sweep stop and previous-extreme target do not fit
 risk:
   risk_pct: 1.5                   # 5 October, Max: 1.5 % (challenge sim, EURUSD + gold + BTC, 790 starts 2024-2026: funded 82 % vs 91 % at 1 %, phase 1 median 61 vs 116 days)
   drawdown_steps: [[-3, 1.0], [-6, 0.5]]   # 5 October: with the balance 3 % under the start a trade risks 1.0 %, from 6 % under

@@ -18,7 +18,7 @@ in the MT5 terminal and tokens in environment variables.
 
 ## The rules all four profiles share
 
-- Zones on 1D, 4H and 1H; the entry is a balance shift (a close beyond the opposing gap's edge) on one timeframe per
+- Zones on 4H and 1H (daily zones off since 8 October: under the 24 h touch rule none ever traded, see the profiles); the entry is a balance shift (a close beyond the opposing gap's edge) on one timeframe per
   zone timeframe: 1D zone -> 1H, 4H -> 15m, 1H -> 5m. No BMS/BOS or first-candle entries.
 - The entry may lie at most half the zone deep; one trade per zone visit and no second visit to a zone (EURUSD excepted,
   below).

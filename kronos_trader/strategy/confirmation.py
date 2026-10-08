@@ -57,8 +57,8 @@ def find_confirmation(
     n = len(ltf)
     if n == 0:
         return None
-    touch_index = ltf.index_at_or_after(touch_ts)
-    if touch_index >= n:
+    touch_index = max(0, ltf.index_after(touch_ts) - 1)     # the candle that holds the touch (a 5m touch at 09:05 lies in
+    if touch_index >= n:                                      # the 15m candle of 09:00: its sweep belongs to the stop; 8 October)
         return None
     if getattr(params, "search_from_reentry", True):
         touch_index = latest_entry_index(ltf, poi, touch_index)

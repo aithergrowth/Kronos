@@ -31,8 +31,12 @@ confirmation:
     1H: 5m
   entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
   one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
-  poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
-                                  # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
+  poi_timeframes: [4H, 1H]        # 8 October: no daily zones. Under the 24 h touch rule they never traded in 2024-2026 (the rule's
+                                  # clock ran from the zone candle's open, which left a daily zone no hours; corrected 8 October), so
+                                  # the tested set had none; with the clock right gold's one 2026 daily trade lost 1R on a $211 stop
+                                  # and pushed out a +5.7R 1H trade (34 trades +25.2R against +31.9R). Older 1D zones lost in every
+                                  # market (README "Older zones on the higher timeframes"). No weekly or monthly zones either: their
+                                  # sweep stop and previous-extreme target do not fit
 structure:
   min_gap_fraction: 0.1           # 7 October (Max: all improvements in): a gap counts from a tenth of the median candle range (the
                                   # default a fifth). 2024-02 to 2026-09 with FTMO's costs: EURUSD 28 trades, +31.2R against 30,

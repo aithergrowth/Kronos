@@ -265,3 +265,24 @@ def test_a_later_shift_over_a_newer_gap_counts_when_the_first_one_was_not_action
     assert now_fresh is not None and now_fresh.index == 12 and now_fresh.break_level == 1.0117
     earliest = find_confirmation(series, poi, series.timestamps.iloc[0], params, max_age=100, structure=st)
     assert earliest is not None and earliest.index == 3                                       # with no age limit the first one still comes first
+
+
+def test_the_candle_that_holds_the_touch_gives_the_sweep_extreme_for_the_stop():
+    """A touch seen on the 5m at 09:05 lies inside the 15m candle of 09:00: that candle's high is the sweep the stop
+    goes behind (8 October: the search began at the next 15m candle, and the stop sat inside the sweep)."""
+    from kronos_trader.config import StructureParams
+    from kronos_trader.core.types import Bias, Gap, POI
+    from kronos_trader.strategy.structure import StructureAnalysis
+    poi = POI(T.H_4, Bias.BEARISH, 1.0100, 1.0140, None, None, 0, pd.Timestamp("2024-01-01 09:00"))
+    rows = [(1.0120, 1.0150, 1.0115, 1.0125),      # 09:00: the touch (seen on the 5m at 09:05), the sweep high 1.0150
+            (1.0125, 1.0135, 1.0118, 1.0130),      # 09:15
+            (1.0130, 1.0138, 1.0110, 1.0112)]      # 09:30: closes under the bullish gap -> the balance shift
+    series = CandleSeries.from_records(rows, T.MIN_15, start="2024-01-02 09:00", symbol="EURUSD")
+    st = StructureAnalysis(series, StructureParams())
+    st.gaps = [Gap(Bias.BULLISH, 1.0122, 1.0126, 1, series.timestamps.iloc[1], 0, 1.0115, 1.0150, 0)]
+    params = ConfirmationParams(allow_first_candle=False, allow_bms=False, accept_bos=False)
+    conf = find_confirmation(series, poi, pd.Timestamp("2024-01-02 09:05"), params, max_age=100, structure=st)
+    assert conf is not None and conf.type is ConfirmationType.BS and conf.index == 2
+    assert conf.invalidation_price == 1.0150                 # not 1.0138, the high of the candles after the touch
+    aligned = find_confirmation(series, poi, pd.Timestamp("2024-01-02 09:00"), params, max_age=100, structure=st)
+    assert aligned is not None and aligned.invalidation_price == 1.0150

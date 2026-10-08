@@ -227,14 +227,25 @@ def test_max_touch_age_hours_refuses_a_zone_touched_long_after_it_formed(hk_data
     s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
     s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
     base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
-    waited = [(pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"])) / pd.Timedelta(hours=1) for t in base.trades]
+    from kronos_trader.strategy.engine import touch_age_hours
+    waited = [touch_age_hours(t.meta["poi_formed"], T.parse(t.meta["poi_tf"]), t.meta["touched_at"]) for t in base.trades]
     limit = min(waited) + 1.0                                # the freshest visit stays, the later ones go
     assert max(waited) > limit
     s.confirmation.max_touch_age_hours = limit
     fresh = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
     assert any("after it formed" in r and "a spent zone" in r for r in fresh.rejection_reasons)
-    assert fresh.trades and all((pd.Timestamp(t.meta["touched_at"]) - pd.Timestamp(t.meta["poi_formed"]))
-                                / pd.Timedelta(hours=1) <= limit for t in fresh.trades)
+    assert fresh.trades and all(touch_age_hours(t.meta["poi_formed"], T.parse(t.meta["poi_tf"]), t.meta["touched_at"]) <= limit
+                                for t in fresh.trades)
+
+
+def test_touch_age_counts_from_the_close_of_the_candle_that_formed_the_zone():
+    """``created_at`` is the open of the candle that completed the zone; the zone exists from its close. A daily zone
+    (candles stamped at the New York close, 21:00 UTC) touched two hours into the next session is 2 h old, not 26
+    (8 October: counted from the open, no daily zone passed the 24 h touch rule)."""
+    from kronos_trader.strategy.engine import touch_age_hours
+    assert touch_age_hours(pd.Timestamp("2026-06-01 21:00"), T.D_1, pd.Timestamp("2026-06-02 23:00")) == 2.0
+    assert touch_age_hours(pd.Timestamp("2026-06-02 08:00"), T.H_4, pd.Timestamp("2026-06-02 12:30")) == 0.5
+    assert touch_age_hours(pd.Timestamp("2026-06-02 08:00"), T.H_1, pd.Timestamp("2026-06-03 09:30")) == 24.5
 
 
 def test_combo_risk_multiplier_stakes_the_trades_of_that_bias_combination(hk_data):

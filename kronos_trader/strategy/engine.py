@@ -185,6 +185,14 @@ def zone_age_candles(now, created_at, timeframe: Timeframe) -> float:
     return (pd.Timestamp(now) - pd.Timestamp(created_at)) / one
 
 
+def touch_age_hours(created_at, timeframe: Timeframe, touch_ts) -> float:
+    """Hours from the zone forming to the visit's first touch. A zone forms when the candle that completed it closes;
+    ``created_at`` is that candle's open (counted from there a daily zone had no hours left within the 24 h touch
+    rule and a 4H zone 20; 8 October)."""
+    formed = timeframe.close_time(pd.Timestamp(created_at))
+    return (pd.Timestamp(touch_ts) - formed) / pd.Timedelta(hours=1)
+
+
 class StrategyEngine:
     def __init__(self, settings: Optional[Settings] = None, forecaster=None, calendar=None):
         self.settings = settings or Settings()
@@ -509,7 +517,7 @@ class StrategyEngine:
                 continue
             limit_h = s.confirmation.reversal_max_touch_age_hours if reversal else s.confirmation.max_touch_age_hours
             if limit_h > 0 and poi.created_at is not None:
-                waited = (pd.Timestamp(touch_ts) - pd.Timestamp(poi.created_at)) / pd.Timedelta(hours=1)
+                waited = touch_age_hours(poi.created_at, poi.timeframe, touch_ts)
                 if waited > limit_h:
                     analysis.rejections.append(f"{label}: touched {waited:.0f} h after it formed (max {limit_h:g} h): a spent zone")
                     continue

@@ -143,3 +143,27 @@ def test_a_close_beyond_the_last_gap_flips_the_balance_view_when_asked(scenario_
     assert timeframe_bias(st).balance_view is Bias.BULLISH
     shifted = timeframe_bias(st, BiasParams(shift_flips_balance=True))
     assert shifted.balance_view is Bias.BEARISH and "balance shift" in shifted.notes[1]
+
+
+def test_a_refused_direction_does_not_hide_a_match_the_other_way():
+    """8 October: with ``min_matching_timeframes`` 2 the bullish month and 4H, vetoed by the weekly, returned before the
+    bearish W+D+1H was looked at, so EURUSD shorts were refused; the mirror image (a bearish month and 4H) traded."""
+    from kronos_trader.config import BiasParams
+    params = BiasParams(min_matching_timeframes=2, required_aligned=(T.H_1,), no_trade_against=(T.W_1,),
+                        full_combos=((T.MN_1, T.W_1, T.D_1), (T.MN_1, T.D_1, T.H_1), (T.D_1, T.H_1)))
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.BEARISH, T.D_1: Bias.BEARISH, T.H_4: Bias.BULLISH, T.H_1: Bias.BEARISH}
+    d = combine_biases(votes, params)
+    assert d.mode is TradeMode.FULL and d.direction is Bias.BEARISH and d.matched_combo == (T.D_1, T.H_1)
+    mirror = {tf: (b.opposite if b is not Bias.NEUTRAL else b) for tf, b in votes.items()}
+    m = combine_biases(mirror, params)
+    assert m.mode is TradeMode.FULL and m.direction is Bias.BULLISH and m.matched_combo == (T.D_1, T.H_1)
+    # the 1H requirement refused the bullish month and 4H first; the bearish D+1H still trades
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.NEUTRAL, T.D_1: Bias.BEARISH, T.H_4: Bias.BULLISH, T.H_1: Bias.BEARISH}
+    assert combine_biases(votes, params).direction is Bias.BEARISH
+    # a weekly against the bearish side still vetoes it, whatever refused the bullish side
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.BULLISH, T.D_1: Bias.BEARISH, T.H_4: Bias.NEUTRAL, T.H_1: Bias.BEARISH}
+    assert combine_biases(votes, params).mode is TradeMode.NONE
+    # when neither direction matches, the refusal is still the reason
+    votes = {T.MN_1: Bias.BULLISH, T.W_1: Bias.BEARISH, T.D_1: Bias.BEARISH, T.H_4: Bias.BULLISH, T.H_1: Bias.NEUTRAL}
+    none = combine_biases(votes, params)
+    assert none.mode is TradeMode.NONE and none.direction is Bias.NEUTRAL and "1W against" in none.reason

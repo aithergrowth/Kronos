@@ -632,7 +632,7 @@ def test_account_lock_serialises_and_a_stale_file_never_blocks_for_good(tmp_path
     assert not path.exists()
     path.write_text("123")
     import os, time as _t
-    old = _t.time() - 120
+    old = _t.time() - 301                                                   # stale after five minutes (8 October; was 60 s)
     os.utime(path, (old, old))                                              # left behind by a killed window
     with AccountLock(path, timeout=0.2) as third:
         assert third.held

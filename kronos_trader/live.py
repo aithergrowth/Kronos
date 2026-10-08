@@ -153,9 +153,11 @@ class AccountLock:
     """A lock file next to the journal, shared by the windows of one account. It waits up to ``timeout`` seconds; when it
     could not take the lock, ``held`` stays False and the caller defers the entry (``LiveRunner.execute``): trading on
     without it would let two windows pass the account's risk checks at once. A file older than ``stale`` seconds (left by
-    a killed window) is removed, so a stuck file costs at most a minute of deferral, never the trading itself."""
+    a killed window) is removed, so a stuck file costs at most five minutes of deferral, never the trading itself (8
+    October: at 60 s a slow terminal's own entry, a dozen calls and a 2 s wait for the position, could outlive the lock
+    and let a second window past the account's checks)."""
 
-    def __init__(self, path: Optional[Path], timeout: float = 10.0, stale: float = 60.0):
+    def __init__(self, path: Optional[Path], timeout: float = 10.0, stale: float = 300.0):
         self.path, self.timeout, self.stale, self.held = path, timeout, stale, False
 
     def __enter__(self) -> "AccountLock":
@@ -191,7 +193,7 @@ class AccountLock:
         if self.held:
             try:
                 self.path.unlink()
-            except OSError:                 # gone already, or held by a virus scanner / OneDrive (WinError 32): stale in 60 s
+            except OSError:                 # gone already, or held by a virus scanner / OneDrive (WinError 32): stale in five minutes
                 pass
             self.held = False
         return False
@@ -937,7 +939,7 @@ class LiveRunner:
             if self.broker is not None:
                 self.notifier.send(f"{self.symbol}: dry-run, order not sent")
             return
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk(setup))
+        ok, reason = self._can_open(setup, now)
         if not ok:
             self.notifier.send_setup(setup, forecast, self.spec)
             self.notifier.send(f"⛔ {self.symbol}: setup NOT executable - {reason}")
@@ -1075,9 +1077,11 @@ class LiveRunner:
         room = max(0.0, room)
         return room / per_lot, room
 
-    def planned_risk(self, setup: Optional[TradeSetup] = None) -> float:
+    def planned_risk(self, setup: Optional[TradeSetup] = None) -> Optional[float]:
         """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps, times
-        the profile's stake and the setup's zone multiplier (setup B)."""
+        the profile's stake and the setup's zone multiplier (setup B). ``None`` when the terminal did not answer: the
+        guard's worst case then cannot be known, and the caller refuses the entry (8 October: a 0 here let a trade
+        past the day's limit)."""
         from .strategy.risk import confirmation_label, setup_risk, stepped_risk
         try:
             params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
@@ -1087,7 +1091,16 @@ class LiveRunner:
                                 getattr(setup, "neutral_timeframes", ()) if setup is not None else ())
             return float(self.broker.equity()) * params.risk_pct / 100.0
         except Exception:
-            return 0.0
+            return None
+
+    NO_PLANNED_RISK = "the trade's risk could not be computed (the terminal did not answer); not executed, next scan again"
+
+    def _can_open(self, setup: TradeSetup, now: pd.Timestamp) -> Tuple[bool, str]:
+        """The guard's answer for ``setup``, a refusal when its risk is unknown."""
+        risk = self.planned_risk(setup)
+        if risk is None:
+            return False, self.NO_PLANNED_RISK
+        return self.guard.can_open(self.broker, now, self.symbol, new_risk=risk)
 
     def stake_note(self, risk_params) -> str:
         """Why a trade risks other than the profile's risk_pct, for the fill message: the balance under the start (drawdown
@@ -1112,7 +1125,7 @@ class LiveRunner:
         """The checks and the order, inside the account lock: the message to send on a refusal, else
         ``(position, setup id, risk amount, risk params, resize note, margin note)``."""
         sid = short_id_for((setup.poi.key, str(setup.confirmation.timestamp)))
-        ok, reason = self.guard.can_open(self.broker, now, self.symbol, new_risk=self.planned_risk(setup))
+        ok, reason = self._can_open(setup, now)
         if not ok:
             self.note("not_executed", now, id=sid, reason=reason)
             return f"⛔ {self.symbol}: not executed - {reason}"

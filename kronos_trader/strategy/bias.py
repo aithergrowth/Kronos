@@ -147,14 +147,20 @@ def combine_biases(biases: Dict[Timeframe, Bias], params: Optional[BiasParams] =
         if len(aligned) < params.min_matching_timeframes:
             continue
         aligned_set = set(aligned)
+        # a refusal of one direction never hides a match in the other (8 October: with min_matching_timeframes 2 a
+        # bullish month and 4H under the weekly veto returned before the bearish W+D+1H was looked at: EURUSD shorts lost)
         vetoes = [tf for tf in params.no_trade_against if tf in conflicting]
         if vetoes:
-            return BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
-                                f"{direction}: {'+'.join(tf.label for tf in vetoes)} against -> no trade")
+            if best is None:
+                best = BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
+                                    f"{direction}: {'+'.join(tf.label for tf in vetoes)} against -> no trade")
+            continue
         if params.required_aligned and not set(params.required_aligned) <= aligned_set:
             missing = "+".join(tf.label for tf in params.required_aligned if tf not in aligned_set)
-            return BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
-                                f"{direction}: {missing} not aligned (required) -> no trade")
+            if best is None:
+                best = BiasDecision(Bias.NEUTRAL, TradeMode.NONE, aligned, conflicting, neutral, None,
+                                    f"{direction}: {missing} not aligned (required) -> no trade")
+            continue
         for combo in params.active_full_combos:
             if set(combo) <= aligned_set:
                 return BiasDecision(direction, TradeMode.FULL, aligned, conflicting, neutral, tuple(combo),
