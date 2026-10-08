@@ -15,10 +15,17 @@ bias:
   min_matching_timeframes: 2      # 7 October: with [1D, 1H] above (the three-timeframe combinations still need their three)
   required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
                                   # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
-  no_trade_against: [1W]          # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
+  no_trade_against: [1W, 4H]        # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
                                   # plaatsen" (A 01:58:37-01:59:24). EURUSD 2023-2026: 58 trades, 55 %, +21.1R, drawdown -5.3R against 73,
                                   # 49 %, +11.8R, -11.3R (`eu_against_w_full`); chosen on EURUSD, GBPUSD agrees (kept 43, 58 %, +12.7R
                                   # against 62, +8.2R). The monthly is left out: on EURUSD the monthly-against trades won (14, 71 %)
+                                  # 8 October (Max: fix it): the 4H joins the veto, with shift_flips_balance below. January-September 2026,
+                                  # FTMO costs: 12 trades, 50 %, +12.9R, drawdown -1.9R against 16, 38 %, +9.1R, -2.9R; both halves
+                                  # better (+1.0 / +2.8R), five losers out, one trade in. The short of 8 October (into a supply the
+                                  # price had just run through) was not taken under it. README "Research 2026"
+  shift_flips_balance: true       # 8 October, with the veto above: the 1H balance view turns on a close beyond the far edge of the last
+                                  # gap (the balance shift the confirmation trades), so a rally that shifts the 1H ends the 1D+1H short
+                                  # match before the entry; alone 15 trades, 40 %, +10.0R
 confirmation:
   allow_first_candle: false
   max_touch_age_hours: 24         # 7 October: no trade in a zone first visited more than a day after it formed (2024-02 to

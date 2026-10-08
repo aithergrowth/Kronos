@@ -84,7 +84,10 @@ class DorusCheck:
                                                         "data": base64.b64encode(png).decode("ascii")}})
         content.append({"type": "text", "text": f"{context}\n\n{ANSWER}"})
         system = SYSTEM + ("\n\n" + self.rubric if self.rubric else "")
-        return {"model": self.model, "max_tokens": 600, "system": system, "messages": [{"role": "user", "content": content}]}
+        # the current models think before they answer and the thinking counts toward max_tokens: room for it, at low effort
+        # (a chart reading, not a proof); the answer itself stays two sentences of JSON
+        return {"model": self.model, "max_tokens": 4000, "output_config": {"effort": "low"}, "system": system,
+                "messages": [{"role": "user", "content": content}]}
 
     def review(self, context: str, images: Sequence[Tuple[str, bytes]] = ()) -> Verdict:
         answer = self._post(self.request_body(context, images))

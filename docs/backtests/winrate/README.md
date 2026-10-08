@@ -1716,3 +1716,43 @@ FTMO costs, halves January-April / May-September:
   against 14, 50 % against 86 %, +28.3R against +29.2R; NAS100 26 against 9, 35 % against 56 %, +8.4R against +11.4R;
   BTC 56 against 13, 41 % against 69 %, +12.9R against +44.4R, dip -17.8R. Three to four times the trades, and the
   extra ones lose: not taken. The set stays as it runs.
+
+### Research 2026: the four markets, January-September 2026 only (8 October, afternoon)
+
+Max: "ga een groot onderzoek inlassen ... entries, exits, liquiditeit, balance levels, timeframes, bias, balance shifts
+... alleen 2026 ... de winrate en R moeten echt goed zijn". Tooling `scratchpad/r26.py` (variants of the live profiles on
+2026-01-01 to 2026-09-24, FTMO costs, halves January-April / May-September); the live base of each market with the
+8 October fixes: EURUSD 16 trades 38 % +9.1R, gold 34, 56 %, +31.4R, NAS100 16, 62 %, +26.3R, BTC 19, 63 %, +46.3R.
+What stood out (trades, won, R, change by half):
+
+| Market | Variant | Result | Halves | Taken |
+|---|---|---|---|---|
+| EURUSD | the 4H in the veto with `shift_flips_balance` | 12, 50 %, +12.9R, dd -1.9R | +1.0 / +2.8 | **yes** |
+| EURUSD | the 4H in the veto alone | 14, 43 %, +11.0R | +1.0 / +0.9 | in the above |
+| EURUSD | `bs_requires_sweep` (a sweep before the shift) | 5, 60 %, +8.9R (8 losers and 3 winners out) | +1.2 / -1.4 | no: too few trades |
+| EURUSD | `tp_policy: pullback_origin` (the low the move into the zone started from) | 19, 37 %, +12.3R | -1.8 / +5.0 | no: one half |
+| EURUSD | the three combined | 15, 47 %, +16.1R | -1.8 / +8.8 | no: the target part |
+| EURUSD | 4H+1H as a combination | 26, 35 %, +14.5R | +5.4 / 0.0 | no: one half, lower win rate |
+| EURUSD | `max_entry_outside: 0.75` | 14, 43 %, +11.0R | +1.0 / +0.9 | no: two trades |
+| EURUSD | `conflict_rule: recent`, `swing 1/1`, `swing 3/3`, `poi_break_window` 0 or -1, `poi_gap_choice: last`, BMS, BOS, `bs_requires_structure`, `previous_extreme` target, the approach filter | worse or the same | | no |
+| Gold | `poi_gap_choice: last` + `allow_retest` | 38, 61 %, +39.5R, top three 39 % | +4.0 / +4.1 | **yes** |
+| Gold | `poi_gap_choice: last` alone | 38, 58 %, +36.5R | +1.0 / +4.1 | in the above |
+| Gold | `allow_retest` alone | 34, 59 %, +34.4R (one trade swapped) | +3.0 / 0.0 | in the above |
+| Gold | `poi_break_window: -1` | 26, 69 %, +29.4R | -5.3 / +3.3 | no: less R, one half |
+| Gold | `bs_requires_sweep` | 29, 59 %, +30.3R | +1.9 / -3.0 | no |
+| Gold | `pullback_origin` target, `bs_requires_structure`, swing 3/3, `conflict_rule: recent`, `poi_break_window: 0` | much worse | | no |
+| NAS100 | the 4H in the veto | 15, 67 %, +27.3R (one loser out) | 0.0 / +1.0 | no: one trade |
+| NAS100 | the 1D+1H pair | 23, 52 %, +26.3R | +1.9 / -2.0 | no |
+| NAS100 | `pullback_origin` target, `bs_requires_sweep`, `bs_requires_structure`, `poi_gap_choice: last`, `poi_break_window`, swings, entries until 21:00 | worse | | no |
+| BTC | `poi_gap_choice: last` | 22, 64 %, +48.3R | +2.5 / -0.5 | no: thin, one half |
+| BTC | `pullback_origin` target | 18, 67 %, +47.1R | 0.0 / +0.8 | no: one trade |
+| BTC | the two combined | 21, 67 %, +49.1R | +2.5 / +0.3 | no: thin |
+| BTC | `bs_requires_sweep` (12, 58 %, +31.3R), `bs_requires_structure`, `poi_break_window`, swings, no scalp, `conflict_rule: recent`, entries until 21:00 | worse | | no |
+
+- The approach filter (`max_adverse_move_candles` 4 or 6 at 2.0-2.5 ranges) removed no 2026 trade on EURUSD or gold: the
+  8 October short's approach measured about 1.7 ranges over four closed 1H candles. Off.
+- The set with the two changes, 2026 at 1.5 % with the multipliers, two open, the guard: 85 trades, 60 % won (55 %),
+  +124.9R (+113.1R); a month 9.4 trades, +12.5R, +15.9 % (+11.3R, +14.1 %); no losing month (one); the worst month
+  +5.3 % (+4.1 %); +10 % from a 2026 start in a median 21 days (22), within 30 days 71 % (63 %). In-sample numbers:
+  the honest expectation is the review's (docs/REVIEW_2026-10-08.md), these are the direction.
+- The research workflow's own report, when it finishes, goes to `scratchpad/r26_report.md` and a note here.

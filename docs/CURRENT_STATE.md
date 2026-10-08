@@ -34,16 +34,17 @@ in the MT5 terminal and tokens in environment variables.
 | | EURUSD (`dorus_live.yaml`) | XAUUSD (`dorus_live_gold.yaml`) | NAS100 (`dorus_live_nas100.yaml`) | BTCUSD (`dorus_live_btc.yaml`) |
 |---|---|---|---|---|
 | Bias gate | 3 of 5 timeframes aligned, the 1H among them; or the 1D and the 1H, then at half the stake (7 October; any trade read as that pair, also a 1D+4H+1H one) | 3 of 5 with the 1H among them (since 7 October; was 2) | as EURUSD | 3 of 5, no 1H rule; the balance turns on a close beyond the last gap's far edge (`shift_flips_balance`); a broken P reads 50/50 (`balance_violation: neutral`, 7 October) |
-| Higher-timeframe veto | weekly | none (since 6 October) | weekly | none |
+| Higher-timeframe veto | weekly and 4H (8 October; weekly since 5 October), and the 1H balance view turns on a balance shift (`shift_flips_balance`) | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |
 | Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
+| The zone's gap when an impulse left several | the first (the deepest P) | the one nearest the break (`poi_gap_choice: last`, 8 October) | the first | the first |
 | Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |
 | Break-even | after 4R | after 2R (7 October) | after 4R | after 4R |
 | Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 3R (nearest liquidity; 2R before 7 October) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
 | Time limit | none | none | 48 hours | none |
-| Re-entry | after a stop in the same visit, and a second visit | no | no | no |
+| Re-entry | after a stop in the same visit, and a second visit | a second visit (8 October), not after a stop in the same visit | no | no |
 | Entry order | limit 25 % of the way back toward the stop, valid 4 hours | market | limit, as EURUSD | market (paper on the demo) |
 | Stake (setup B) | a 4H zone twice | a 4H zone twice | a 4H zone twice | half |
 

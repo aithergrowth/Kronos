@@ -37,6 +37,10 @@ confirmation:
     1H: 5m
   entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
   one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+  allow_retest: true              # 8 October (Max: fix it): a second visit to a zone is traded too (the stopped one still not re-entered in
+                                  # the same visit). With poi_gap_choice last, January-September 2026, FTMO costs: 38 trades, 61 %,
+                                  # +39.5R against 34, 56 %, +31.4R; both halves better (+4.0 / +4.1R), the best three trades 39 % of
+                                  # the R against 49 %. Alone +3.0R (one trade swapped); the gap choice alone +5.1R. README "Research 2026"
   max_zone_age_candles: 24        # 5 October: only zones at most 24 candles of their own timeframe old ("volledig gebruikt" zones are
                                   # spent, A 00:33:37). Gold 2023-2026 (`v4_gold_age24_full`): 119 trades, 45 %, +38.7R, drawdown -9.9R,
                                   # every year better (+8.3 / +12.1 / +9.2 / +9.2) against 129, 46 %, +30.4R, -10.8R; 12 and 48 candles
@@ -113,3 +117,7 @@ live:
   dorus_check: advisory           # 8 October (Max: both checks): after an entry Claude reads the setup and its charts the way Dorus
                                   # would (docs/DORUS_REVIEW.md); the verdict goes to Telegram and dorus_checks.csv. Advice only:
                                   # the trade stands. Off until ANTHROPIC_API_KEY and DORUS_CHECK_MODEL are set on the computer
+structure:
+  poi_gap_choice: last            # 8 October (Max: fix it): with several gaps in one impulse the zone is the gap nearest the break, the P
+                                  # closest to X (a tighter zone), not the earliest one. 2026: 38 trades, 58 %, +36.5R against 34, 56 %,
+                                  # +31.4R (five trades in, one out; +1.0 / +4.1R by half). EURUSD and NAS100 lose with it, BTC +2.0R
