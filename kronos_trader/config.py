@@ -488,6 +488,11 @@ class LiveParams:
     news_headlines: int = 3                  # the latest TradingView headlines (TRADINGVIEW_MCP_TOKEN) under the POI touch and after a
                                              # trade: context for the trader, never an input to a trade; 0 = off
     news_headlines_hours: float = 24.0       # only headlines of the last this many hours
+    dorus_check: str = "off"                 # 8 October (Max): "advisory" = after an entry Claude reads the setup and its charts the
+                                             # way Dorus would (docs/DORUS_REVIEW.md); the verdict goes to Telegram and to
+                                             # dorus_checks.csv next to the journal. It never blocks or changes a trade. Needs
+                                             # ANTHROPIC_API_KEY and DORUS_CHECK_MODEL in the environment, otherwise it stays off
+    dorus_check_timeout: float = 60.0        # seconds the API call may take (it runs beside the loop, which never waits on it)
     send_charts: bool = True                 # a chart image with the briefing, the POI touch and every setup
     charts_dir: str = "charts"
     chart_lookback: int = 120                # candles on the image

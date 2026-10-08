@@ -333,6 +333,15 @@ class LiveRunner:
         from .notify.headlines import Headlines
         self.headlines = Headlines(settings.live.news_headlines, settings.live.news_headlines_hours) \
             if settings.live.news_headlines else None
+        self.dorus = None                                   # the Dorus check after an entry (live.dorus_check: advisory)
+        self.dorus_wait = False                             # tests: run the check in the loop instead of beside it
+        if str(settings.live.dorus_check).lower() == "advisory":
+            from .notify.dorus_check import DorusCheck
+            check = DorusCheck(timeout=settings.live.dorus_check_timeout)
+            if check.available:
+                self.dorus = check
+            else:
+                print(f"[live] {symbol}: Dorus check off (ANTHROPIC_API_KEY or DORUS_CHECK_MODEL not set)")
         self.seen: set = set()
         self.pending: Dict[str, PendingSetup] = {}
         self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
@@ -941,10 +950,94 @@ class LiveRunner:
             self.notifier.send_approval_request(setup, pending.short_id, forecast, self.spec, pending.expires_at)
             self.send_chart(analysis, "setup", setup=setup, forecast=forecast)
             return
-        self.execute(setup, forecast, now)
+        limits_before = set(self.limits)
+        position = self.execute(setup, forecast, now)
         news = self.news_lines(now)
         if news:
             self.notifier.send(f"📰 {self.symbol}, the latest news (TradingView):" + "".join(f"\n• {line}" for line in news))
+        placed = [self.limits[k] for k in self.limits if k not in limits_before]
+        if position is not None or placed:
+            self.dorus_review(analysis, setup, now, sid, limit_price=placed[0]["price"] if placed else None)
+
+    def dorus_context(self, analysis: Analysis, setup: TradeSetup, now: pd.Timestamp, limit_price: Optional[float] = None) -> str:
+        """The setup in words for the Dorus check: the trade, the zone and its age, the confirmation, the bias per
+        timeframe, how far the entry lies from the zone and how the last day moved, in average 1H ranges."""
+        d = self.spec.price_decimals
+        poi, conf = setup.poi, setup.confirmation
+        side = "demand" if poi.direction is Bias.BULLISH else "supply"
+        local = pd.Timestamp(now).tz_localize("UTC").tz_convert(self.settings.session.timezone)
+        lines = [f"Market {self.symbol}, {pd.Timestamp(now):%Y-%m-%d %H:%M} UTC ({local:%a %H:%M} Amsterdam).",
+                 f"The bot went {setup.direction.name} at {setup.entry:.{d}f}"
+                 + (f" (a limit order at {limit_price:.{d}f})" if limit_price is not None else "")
+                 + f", stop {setup.stop:.{d}f}, target {setup.take_profit:.{d}f} ({setup.tp_source}), R:R {setup.rr:.1f}."]
+        waited = ""
+        if setup.touched_at is not None and poi.created_at is not None:
+            waited = f", touched {setup.touched_at:%m-%d %H:%M} ({(setup.touched_at - poi.created_at) / pd.Timedelta(hours=1):.0f} h after it formed)"
+        x = f", X {poi.liquidity_level:.{d}f}" if poi.liquidity_level is not None else ""
+        lines.append(f"Zone: {poi.timeframe.label} {side} {poi.low:.{d}f}-{poi.high:.{d}f}{x}, formed {poi.created_at:%m-%d %H:%M}"
+                     f"{waited}, visit {setup.visit_number or 1}.")
+        kind = getattr(getattr(conf, "type", None), "value", "")
+        lines.append(f"Confirmation: {kind} on the {conf.timeframe.label} at {pd.Timestamp(conf.timestamp):%m-%d %H:%M} UTC.")
+        lines.append(f"Bias: {analysis.decision.direction.name.lower()} {analysis.decision.mode.value} ({analysis.decision.reason}); "
+                     + "; ".join(f"{tf.label} {b.bias.name.lower()} (liquidity {b.liquidity_view.name.lower()}, balance "
+                                 f"{b.balance_view.name.lower()})" for tf, b in sorted(analysis.biases.items(), reverse=True)))
+        hourly = self._views.get(Timeframe.H_1)
+        if hourly is not None and len(hourly.df) >= 24:
+            h = hourly.df.tail(24)
+            rng = float((h["high"] - h["low"]).mean()) or 1.0
+            move = (float(h["close"].iloc[-1]) - float(h["open"].iloc[0])) * setup.direction.sign / rng
+            outside = max(0.0, poi.low - setup.entry, setup.entry - poi.high) / rng
+            lines.append(f"Last 24 1H candles: {move:+.1f} average 1H ranges in the trade's direction. Entry {outside:.1f} "
+                         f"average 1H ranges outside the zone.")
+        return "\n".join(lines)
+
+    def dorus_review(self, analysis: Analysis, setup: TradeSetup, now: pd.Timestamp, sid: str,
+                     limit_price: Optional[float] = None) -> None:
+        """The Dorus check after an entry (live.dorus_check): the charts are drawn here, the API call and the Telegram line
+        run beside the loop, which never waits for them. Advice only, and never fatal."""
+        if self.dorus is None:
+            return
+        try:
+            context = self.dorus_context(analysis, setup, now, limit_price)
+            images = []
+            from .notify.chart import render_chart
+            zones = self.chart_zones(analysis, setup)
+            for tf in dict.fromkeys((Timeframe.H_4, Timeframe.H_1, setup.confirmation.timeframe)):
+                if tf not in self._views:
+                    continue
+                path = render_chart(self._views[tf], f"{self.settings.live.charts_dir}/{self.symbol}_{tf.label}_dorus.png",
+                                    pois=zones, setup=setup, title=f"{self.symbol} {tf.label}", lookback=self.settings.live.chart_lookback,
+                                    price_decimals=self.spec.price_decimals)
+                images.append((f"{self.symbol} {tf.label} chart", Path(path).read_bytes()))
+        except Exception as exc:
+            print(f"[live] {self.symbol}: Dorus check could not be prepared ({exc})")
+            return
+        row = {"time": str(now), "symbol": self.symbol, "id": sid, "direction": setup.direction.name,
+               "zone_tf": setup.poi.timeframe.label, "entry": limit_price if limit_price is not None else setup.entry,
+               "stop": setup.stop, "target": setup.take_profit, "rr": round(setup.rr, 2)}
+        check, notifier, journal_path = self.dorus, self.notifier, self.settings.live.journal_path
+
+        def work() -> None:
+            import html
+            from .notify.dorus_check import log_verdict
+            try:
+                verdict = check.review(context, images)
+            except Exception as exc:
+                print(f"[live] {self.symbol}: Dorus check failed ({exc})")
+                return
+            notifier.send(f"🧭 Dorus-check {self.symbol} {setup.direction.name.lower()}: {verdict.icon} {verdict.verdict} - "
+                          f"{html.escape(verdict.reason)}")
+            if journal_path:
+                try:
+                    log_verdict(Path(journal_path).parent / "dorus_checks.csv", {**row, "verdict": verdict.verdict, "reason": verdict.reason})
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: Dorus check not logged ({exc})")
+
+        if self.dorus_wait:
+            work()
+        else:
+            import threading
+            threading.Thread(target=work, daemon=True, name=f"dorus-{self.symbol}").start()
 
     def news_lines(self, now: Optional[pd.Timestamp] = None) -> List[str]:
         """The latest TradingView headlines of this market (live.news_headlines): context for the trader, never an input

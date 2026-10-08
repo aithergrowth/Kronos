@@ -104,3 +104,7 @@ prop_firm:
                                   # trading. The challenge simulations count the static rule
 kronos:
   mode: "off"
+live:
+  dorus_check: advisory           # 8 October (Max: both checks): after an entry Claude reads the setup and its charts the way Dorus
+                                  # would (docs/DORUS_REVIEW.md); the verdict goes to Telegram and dorus_checks.csv. Advice only:
+                                  # the trade stands. Off until ANTHROPIC_API_KEY and DORUS_CHECK_MODEL are set on the computer

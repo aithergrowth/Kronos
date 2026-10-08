@@ -49,3 +49,18 @@ after a 1H displacement of about 1,100 points down that broke the 1H structure (
 day were bullish, which allowed it; the entry came 640 points above the zone. Stopped out. By the questions: the
 zone was old (3), it was run through rather than tested (4), and the entry came far from the zone (6) -> ❌. The 24 h
 touch rule in the profiles since that evening refuses it.
+
+## The two checks, and how to switch the per-trade one on
+
+- **Morning review**: a scheduled Claude session every weekday at 08:35 Amsterdam fetches the candles (TradingView for
+  EURUSD, gold and NAS100, Bitstamp for BTC), runs `scripts/morning_review.py build` and `dossiers`, reads the summary
+  and the charts, and sends Max the verdict per market.
+- **Per-trade check** (`kronos_trader/notify/dorus_check.py`, `live.dorus_check: advisory` in the four live profiles):
+  after an entry, or a limit order placed, the bot draws the 4H, 1H and confirmation charts and sends them with the
+  setup to the Anthropic Messages API. The answer goes to Telegram (`🧭 Dorus-check EURUSD long: ✅ eens - ...`) and to
+  `dorus_checks.csv` next to the journal. The call runs beside the loop, so the entry never waits, and a failed call
+  changes nothing. It stays off until the computer that runs the bot has `ANTHROPIC_API_KEY` and `DORUS_CHECK_MODEL`
+  set, for the FTMO windows in `scripts\ftmo_local.bat` (not in git); the key never goes into a file of this
+  repository or into a chat.
+- Neither check blocks a trade. Whether the per-trade verdict may ever veto one is decided on `dorus_checks.csv`
+  against the results: only when the ❌ trades lose clearly more than the ✅ ones over enough trades.
