@@ -72,3 +72,20 @@ def test_telegram_errors_never_carry_the_bot_token(monkeypatch):
         notifier._call("getMe", {})
     assert "SECRET-TOKEN" not in str(err.value) and "<token>" in str(err.value)
     assert notifier.send("hallo") is False               # swallowed, as before
+
+
+def test_a_position_without_a_stop_is_said_at_once_and_blocks_new_entries(setup, tmp_path):
+    """The guard counts a stopless position as no risk (it cannot price its loss); the window now says so on Telegram
+    the moment it sees one and refuses every new entry until the position has a stop."""
+    from kronos_trader.core import Direction
+    from kronos_trader.execution.base import Position
+    runner, notifier, broker = _runner(setup, tmp_path)
+    naked = Position(id="777", symbol="EURUSD", direction=Direction.LONG, lots=0.1, entry=1.1, stop=0.0, take_profit=1.12,
+                     opened_at=NOW - pd.Timedelta(hours=1), risk_amount=0.0, risk_distance=0.0, breakeven_r=4.0, initial_stop=0.0)
+    broker.open_positions = lambda symbol=None: [naked]
+    runner.step(NOW)
+    alarms = [m for m in notifier.sent if "NO STOP" in m]
+    assert len(alarms) == 1 and "777" in alarms[0]
+    assert any("without a stop on the server: no new trade" in m for m in notifier.sent)
+    runner.step(NOW + pd.Timedelta(minutes=5))
+    assert len([m for m in notifier.sent if "NO STOP" in m]) == 1          # said once per position

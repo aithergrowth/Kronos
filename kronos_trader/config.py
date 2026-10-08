@@ -162,6 +162,9 @@ class BiasParams:
     mirror_data_dir: Optional[str] = None   # cache directory with <mirror_symbol>_<TF>.csv (data/dxy: TradingView TVC:DXY daily, weekly, monthly)
     mirror_timeframes: Tuple[Timeframe, ...] = (Timeframe.MN_1, Timeframe.W_1, Timeframe.D_1)   # the course mirrors the monthly down
     mirror_invert: bool = True              # EURUSD moves against the dollar index
+    mirror_fill_neutral_only: bool = False  # the mirror only breaks a 50/50 of the pair's own reading; off: it replaces the reading
+                                            # (8 October: his two documented EURUSD shorts were refused because the pair's month, week
+                                            # and day read 50/50 while he read them bearish from the dollar index)
 
     @property
     def active_full_combos(self) -> Tuple[Tuple[Timeframe, ...], ...]:

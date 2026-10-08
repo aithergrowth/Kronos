@@ -1096,10 +1096,17 @@ class LiveRunner:
     NO_PLANNED_RISK = "the trade's risk could not be computed (the terminal did not answer); not executed, next scan again"
 
     def _can_open(self, setup: TradeSetup, now: pd.Timestamp) -> Tuple[bool, str]:
-        """The guard's answer for ``setup``, a refusal when its risk is unknown."""
+        """The guard's answer for ``setup``, a refusal when its risk is unknown or a position of the account has no stop
+        (the guard would count that position as no risk)."""
         risk = self.planned_risk(setup)
         if risk is None:
             return False, self.NO_PLANNED_RISK
+        try:
+            stopless = [p.id for p in self.broker.open_positions() if getattr(p, "status", "filled") == "filled" and not p.stop]
+        except Exception:
+            stopless = []
+        if stopless:
+            return False, f"position(s) {', '.join(stopless)} without a stop on the server: no new trade until every position has one"
         return self.guard.can_open(self.broker, now, self.symbol, new_risk=risk)
 
     def stake_note(self, risk_params) -> str:
@@ -1503,7 +1510,14 @@ class LiveRunner:
         last = lowest.last
         for pos in open_by_id.values():
             self.known_positions.setdefault(pos.id, pos)
-            if pos.breakeven_done or getattr(pos, "status", "filled") != "filled":
+            if getattr(pos, "status", "filled") != "filled":
+                continue
+            if not pos.stop and not pos.meta.get("no_stop_sent"):    # 8 October: the guard counts such a position as no
+                pos.meta["no_stop_sent"] = True                        # risk; say so at once, not only in the 22:05 report
+                self.note("no_stop", id=pos.id)
+                self.notifier.send(f"🚨 {self.symbol}: position {pos.id} has NO STOP on the server; no new trade until it has "
+                                   f"one (set it in the terminal)")
+            if pos.breakeven_done:
                 continue
             if pos.breakeven_r <= 0 or pos.risk_distance <= 0:
                 continue                                   # no trigger or no risk known: never move a stop on a guess

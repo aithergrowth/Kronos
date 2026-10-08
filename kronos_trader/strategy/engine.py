@@ -260,6 +260,8 @@ class StrategyEngine:
         for tf in b.mirror_timeframes:
             if tf not in mviews or len(mviews[tf]) < 10:
                 continue
+            if b.mirror_fill_neutral_only and tf in biases and biases[tf].bias is not Bias.NEUTRAL:
+                continue                                   # the pair's own reading stands; the mirror only breaks a 50/50
             mb = timeframe_bias(analyze_structure(mviews[tf], self.settings.structure), b)
             flip = (lambda x: x.opposite) if b.mirror_invert else (lambda x: x)
             out[tf] = TimeframeBias(tf, flip(mb.bias), flip(mb.liquidity_view), flip(mb.balance_view),
