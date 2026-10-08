@@ -1659,3 +1659,39 @@ Max: "5-8 verliezers is meer dan pech". The live set (FTMO costs, 2024-02 to 202
   the other); the previous day's extreme taken before the signal (41 trades won 32 % against 54 %, lower in both
   halves, but +11.6R; at half stake on BTC and gold it is the last row above, kept as a candidate); BTC without its
   D+4H+1H scalp (lost 4 % -> 7 %).
+
+### January-September 2026 per market, and gold without the 2R target (8 October)
+
+Max: "alleen 2026 belangrijk", only the four live markets. Each variant against the live profile on the same window,
+FTMO costs, halves January-April / May-September:
+
+| Market | Variant | Trades | Won | R | Jan-Apr | May-Sep |
+|---|---|---|---|---|---|---|
+| EURUSD | as it runs | 16 | 38 % | +9.1 | +5.2 | +3.9 |
+| | entry within 0.5 zone heights (`confirmation.max_extension_zones: 0.5`) | 14 | 43 % | +11.0 | +6.2 | +4.8 |
+| | 15m zones as well (5m confirmation) | 24 | 38 % | +10.7 | +4.4 | +6.3 |
+| | both of these | 21 | 33 % | +7.6 | +4.3 | +3.3 |
+| | target capped at 2R / 2.5R / 3R | 16 | 38 % | +6.4 / +6.9 / +6.9 | | |
+| | market entry instead of the limit | 18 | 44 % | +5.2 | +1.9 | +3.3 |
+| | without the 1W veto | 19 | 32 % | +6.3 | +4.3 | +2.0 |
+| | stop behind the protecting swing | 9 | 22 % | -1.7 | -0.5 | -1.2 |
+| | session liquidity; without the 1H requirement | 16 | 38 % | +9.1 (the same trades) | | |
+| Gold | with the fixed 2R target | 34 | 56 % | +31.4 | +12.2 | +19.2 |
+| | **no 2R target (taken)** | 22 | 77 % | +37.9 | +14.3 | +23.6 |
+| | the next liquidity as the target | 34 | 62 % | +31.7 | +12.8 | +18.9 |
+| | entry within 0.5 zone heights | 22 | 68 % | +30.8 | +11.8 | +19.0 |
+| | a second trade in the same visit | 38 | 55 % | +33.3 | +13.2 | +20.1 |
+| | limit 25 % back into the zone | 30 | 43 % | +34.4 | +6.8 | +27.6 |
+| | target capped at 3R | 34 | 59 % | +25.8 | +10.1 | +15.7 |
+| NAS100 | as it runs | 16 | 62 % | +26.5 | +18.3 | +8.2 |
+| | without the 1W veto | 18 | 61 % | +31.8 | +17.3 | +14.6 |
+| | capped at 3R; market entry; a second trade per visit; without the 1H requirement | 16-20 | 45-67 % | +20.4 to +24.5 | | |
+| BTC | as it runs | 18 | 61 % | +45.5 | +1.1 | +44.4 |
+| | a second trade in the same visit | 19 | 58 % | +44.4 | -0.0 | +44.4 |
+
+- Taken (Max, 8 October: "beter zonder 2r doel"): gold `risk.tp_fallback: ""`, no trade where no target reaches the
+  minimum R:R. The 12 trades the fixed 2R target added in 2026 lost 6.5R together; in 2024-2025 the same rule earned
+  (+27.0 / +25.8 against +9.3 / +7.6, "The last three years"), so this is a choice for the market as it is now.
+- EURUSD entry within 0.5 zone heights, January 2024 - September 2026: 47 trades, 34 %, +18.3R against 54, 39 %,
+  +38.4R as it runs; within 1.0: 53, 34 %, +23.6R. Better in 2026 by two trades, clearly worse before: not taken.
+- The 2R target cap on EURUSD over the same 2024-2026 window: 53 trades, 42 %, +28.1R against +38.4R: not taken.

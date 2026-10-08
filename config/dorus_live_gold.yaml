@@ -74,9 +74,9 @@ risk:
   tp_lookback_candles: 72         # only used by previous_extreme
   tp_buffer_pips: 0.0
   tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
-  tp_fallback: fixed              # 6 October, evening (Max: decide on the last 3 years): where no target reaches min_rr, a fixed 2R target
-  tp_fallback_rr: 2.0             # instead of no trade. Gold 2024-2026: 138 trades, 51 %, +63.1R (2024 +27.0, 2025 +25.8, 2026 +10.4)
-                                  # against 100, 48 %, +32.1R (+9.3 / +7.6 / +15.1); README "The last three years"
+  tp_fallback: ""                 # 8 October (Max: "beter zonder 2r doel"): no target that reaches min_rr -> no trade. January-September
+  tp_fallback_rr: 0.0             # 2026, FTMO costs: 22 trades, 77 % won, +37.9R, both halves better, against 34, 56 %, +31.4R with the
+                                  # fixed 2R target of 6 October (that one earned more in 2024-2025: +27.0 / +25.8 against +9.3 / +7.6)
   spread_buffer_pips: 1.0
 session:
   enabled: true

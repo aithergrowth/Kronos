@@ -40,7 +40,7 @@ in the MT5 terminal and tokens in environment variables.
 | Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
 | Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |
 | Break-even | after 4R | after 2R (7 October) | after 4R | after 4R |
-| Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 3R (nearest liquidity; 2R before 7 October) |
+| Target | origin of the move that made the zone | as EURUSD; no trade where none reaches the minimum R:R (a fixed 2R target until 8 October) | as EURUSD | the previous extreme, capped at 3R (nearest liquidity; 2R before 7 October) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
 | Time limit | none | none | 48 hours | none |
 | Re-entry | after a stop in the same visit, and a second visit | no | no | no |
