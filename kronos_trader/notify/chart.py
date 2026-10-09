@@ -14,7 +14,18 @@ import numpy as np
 import pandas as pd
 
 from ..core.candles import CandleSeries
+from ..core.timeframe import Timeframe
 from ..core.types import POI, Bias, ForecastSummary, TradeSetup
+
+# chart file names: the minute and the month differ only in case ("1m", "1M"), one file on Windows and macOS, so the
+# second overwrites the first and git reads the other as modified for ever (9 October, Max's laptop); the live charts
+# never render a minute chart, the dossiers and the run charts do
+CHART_LABELS = {Timeframe.MIN_1: "1min", Timeframe.MN_1: "1MO"}
+
+
+def chart_label(tf: Timeframe) -> str:
+    return CHART_LABELS.get(tf, tf.label)
+
 
 UP, DOWN = "#2e9e5b", "#d9534f"
 BULL_ZONE, BEAR_ZONE = (0.18, 0.62, 0.36, 0.18), (0.85, 0.33, 0.31, 0.18)

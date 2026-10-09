@@ -6,7 +6,7 @@ Visit memory: the run's own engine (visits counted from each zone's formation).
 
 ## 1m
 
-![1m](1m.png)
+![1m](1min.png)
 
 Balance levels: 83 kept of 102 three-candle gaps in the window; 19 dropped by the size threshold (20% of the median range before them).
 
@@ -223,7 +223,7 @@ Balance levels: 11 kept of 19 three-candle gaps in the window; 8 dropped by the 
 
 ## 1M
 
-![1M](1M.png)
+![1M](1MO.png)
 
 Bias **neutral**: liquidity view bearish, balance view bullish.
 

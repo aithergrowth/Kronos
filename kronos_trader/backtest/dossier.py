@@ -20,6 +20,7 @@ from ..core.candles import CandleSeries
 from ..core.timeframe import BIAS_TIMEFRAMES, POI_TIMEFRAMES, Timeframe
 from ..core.types import Bias, POIStatus
 from ..data.resample import MultiTimeframeData
+from ..notify.chart import chart_label
 from ..strategy.engine import StrategyEngine
 
 
@@ -129,7 +130,7 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
         if tb is not None:
             title += f"  bias {tb.bias.name.lower()} (liquidity {tb.liquidity_view.name.lower()}, balance {tb.balance_view.name.lower()})"
         setup = analysis.signal.setup if analysis.has_valid_signal and analysis.signal.setup.confirmation.timeframe is tf else None
-        png = render_chart(view, out / f"{tf.label}.png", pois=chart_zones, setup=setup, title=title,
+        png = render_chart(view, out / f"{chart_label(tf)}.png", pois=chart_zones, setup=setup, title=title,
                            subtitle="; ".join(tb.notes[:2]) if tb is not None else "", lookback=lookback, price_decimals=decimals, max_zones=4)
         lines += [f"## {tf.label}", "", f"![{tf.label}]({png.name})", ""]
         if tb is not None:

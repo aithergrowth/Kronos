@@ -6,7 +6,7 @@ Visit memory: warm-up replay of 5732 steps before this moment.
 
 ## 1m
 
-![1m](1m.png)
+![1m](1min.png)
 
 Balance levels: 80 kept of 109 three-candle gaps in the window; 29 dropped by the size threshold (20% of the median range before them).
 
@@ -233,7 +233,7 @@ Balance levels: 11 kept of 20 three-candle gaps in the window; 9 dropped by the 
 
 ## 1M
 
-![1M](1M.png)
+![1M](1MO.png)
 
 Bias **neutral**: liquidity view bearish, balance view bullish.
 

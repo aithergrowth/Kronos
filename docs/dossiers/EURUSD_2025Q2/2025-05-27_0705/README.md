@@ -217,7 +217,7 @@ Balance levels: 14 kept of 25 three-candle gaps in the window; 11 dropped by the
 
 ## 1M
 
-![1M](1M.png)
+![1M](1MO.png)
 
 Bias **bullish**: liquidity view bullish, balance view bullish.
 

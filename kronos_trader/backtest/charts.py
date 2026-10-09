@@ -15,6 +15,7 @@ import pandas as pd
 from ..config import Settings
 from ..core.timeframe import Timeframe
 from ..data.resample import MultiTimeframeData
+from ..notify.chart import chart_label
 from ..strategy.engine import StrategyEngine
 
 
@@ -68,7 +69,7 @@ def render_trade_charts(
         if "ledger zone drawn dashed" in " ".join(flags) and pd.notna(row.get("poi_low")):
             boxes.append((float(row["poi_low"]), float(row["poi_high"]), f"{row.get('poi_tf', '')} zone of the trade"))
         lines = stop_p_lines(row)
-        name = f"{symbol}_{seq:03d}_{now:%Y%m%d_%H%M}_{tf.label}.png"
+        name = f"{symbol}_{seq:03d}_{now:%Y%m%d_%H%M}_{chart_label(tf)}.png"
         paths.append(render_chart(views[tf], out / name, pois=zones, setup=drawn, title=title,
                                   subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=lookback, price_decimals=decimals,
                                   max_zones=max_zones, extra_boxes=boxes, extra_lines=lines))
