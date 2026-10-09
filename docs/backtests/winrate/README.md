@@ -1830,6 +1830,7 @@ No rule looked at the age of the visit.
   winners above) and keep their open visit.
 - Three years (2024 - September 2026, FTMO costs): gold 143 trades, +81.6R, unchanged. EURUSD 41 trades against 49,
   +40.7R against +45.7R, 49 % won (47 %), drawdown -4.7R (-5.6R): eight stale-visit trades of 2024-2025 go, five
-  losers and three winners (+1.8R, +3.2R, +4.7R), none in 2026. So the rule costs about 1.7R a year on EURUSD on
-  the older data and nothing elsewhere, and it refuses the trade Max does not want. **Taken** (Max, 9 October:
+  losers and three winners (+1.8R, +3.2R, +4.7R), none in 2026. NAS100 39 trades against 38, +36.2R against +37.2R:
+  one extra 1H loser in May 2025, the rest the same. So the rule costs about 1.7R a year on EURUSD on the older
+  data, a trade on NAS100, nothing on gold, and it refuses the trade Max does not want. **Taken** (Max, 9 October:
   "fix this now") into the four profiles: `max_visit_age_by_tf: {1H: 24}`.
