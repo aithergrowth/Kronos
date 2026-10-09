@@ -1806,3 +1806,30 @@ profiles tonight; two options were built and measured, both off, and the daily r
   costs of the last 20 and the last 30 closed bot trades, a warning when the last 20 are under 0R or the last 30 under
   -5R. The backtest expects about +0.6R a trade: twenty trades under zero is about a one-in-twenty event with the edge
   intact, and the signal to look at the trades before trading on.
+
+### The 8 October EURUSD short, and a stale visit (9 October, morning)
+
+The live short of 8 October 16:07 (1H zone 1.12008-1.12292, stop 1.12040, target 1.11816, stopped after 12 minutes,
+-1.1R after costs; price then ran 50 pips up). Replayed on the current code by Claude Code on Max's laptop with the
+FTMO bars and here with TradingView bars (`decision-dossier`, warm-up 2 days): the same short, no gate refuses it.
+The bias read bearish on 1H, 4H, 1D and 1W (the month 50/50); the zone formed 7 October 10:00 Amsterdam and was
+touched an hour later; the 4H veto, the balance flip and the 24 h touch rule all pass. What set the trade apart: the
+visit was 29 hours old. Price had respected the zone the day before, hung half a pip under it for a day, poked it
+once more, and the 5m shift came on a sweep of a 25-minute-old high while the liquidity above the zone was untaken.
+No rule looked at the age of the visit.
+
+- Built: `confirmation.max_visit_age_hours` (every zone) and `max_visit_age_by_tf` (per zone timeframe): no signal
+  more than that many hours after the visit's first touch. With `{1H: 24}` the replay refuses the zone ("first
+  touched 29 h ago (max 24 h): the visit is old") and finds no setup.
+- Every zone at 24 h, 2026: EURUSD 12 trades +9.6R against +12.9R (the 4H-zone winner of 13 August, 140 h after
+  its touch, goes; a 1H loser an hour later comes in), gold 38, +36.5R against +39.5R (the 4H winner of 25
+  February, 38 h), NAS100 unchanged, BTC 16 trades +45.6R against +46.3R, drawdown -3.5R (-2.8R). At 12 h: EURUSD
+  +14.9R (one trade swapped for another), gold -1.8R, NAS100 10 trades +13.1R, BTC -3.5R. Not that.
+- The 1H zones alone at 24 h, 2026: not one trade changes on any of the four markets; every 1H-zone trade of 2026
+  came within 20 hours of its touch (gold's median 5 h). The 4H-zone visits run longer (38 h and 140 h on the
+  winners above) and keep their open visit.
+- Three years (2024 - September 2026, FTMO costs): gold 143 trades, +81.6R, unchanged. EURUSD 41 trades against 49,
+  +40.7R against +45.7R, 49 % won (47 %), drawdown -4.7R (-5.6R): eight stale-visit trades of 2024-2025 go, five
+  losers and three winners (+1.8R, +3.2R, +4.7R), none in 2026. So the rule costs about 1.7R a year on EURUSD on
+  the older data and nothing elsewhere, and it refuses the trade Max does not want. **Taken** (Max, 9 October:
+  "fix this now") into the four profiles: `max_visit_age_by_tf: {1H: 24}`.

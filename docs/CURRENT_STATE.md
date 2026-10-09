@@ -37,6 +37,7 @@ in the MT5 terminal and tokens in environment variables.
 | Higher-timeframe veto | weekly and 4H (8 October; weekly since 5 October), and the 1H balance view turns on a balance shift (`shift_flips_balance`) | none (since 6 October) | weekly | none |
 | Zone age | any | at most 24 candles of its timeframe | any | any |
 | Zone first visited (since 7 October) | within 24 hours of forming | the same | the same | the same |
+| Signal after the visit's first touch (since 9 October) | within 24 hours on a 1H zone, any on a 4H zone | the same | the same | the same |
 | Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
 | The zone's gap when an impulse left several | the first (the deepest P) | the one nearest the break (`poi_gap_choice: last`, 8 October) | the first | the first |
 | Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |

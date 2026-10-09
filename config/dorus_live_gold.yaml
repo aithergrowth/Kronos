@@ -24,6 +24,12 @@ confirmation:
   max_touch_age_hours: 24         # 7 October: no trade in a zone first visited more than a day after it formed (2024-02 to
                                   # 2026-09, the four profiles, FTMO costs: +0.34R -> +0.47R a trade, losing months 12 -> 10 of 32,
                                   # challenge starts 2024-25 failed 15 % -> 0 %; docs/backtests/winrate/README.md "Spent zones")
+  max_visit_age_by_tf: {1H: 24}   # 9 October: a 1H zone gives no signal more than a day after its visit's first touch. The EURUSD
+                                  # short of 8 October (stopped, -1.1R) came 29 h after the touch of a 1H zone price had hung under
+                                  # for a day while the liquidity above was untaken; every other gate passed. 2026 on the four
+                                  # markets: not one trade changes (every 1H-zone trade came within 20 h of the touch); 2024-2025:
+                                  # EURUSD 8 trades fewer, 5 losers and 3 winners, -5.0R of +45.7R over three years, gold unchanged.
+                                  # On 4H zones the limit would cost (winners 38 h and 140 h after the touch): they keep their visit
   allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
   allow_bms: false                # the plain break is a liquidity sweep in his reading (A 01:29:29, 01:33:47)
   accept_bos: false
