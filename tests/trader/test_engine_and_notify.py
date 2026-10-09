@@ -238,6 +238,36 @@ def test_max_touch_age_hours_refuses_a_zone_touched_long_after_it_formed(hk_data
                                 for t in fresh.trades)
 
 
+def test_max_visit_age_refuses_a_signal_long_after_the_visits_first_touch(hk_data):
+    """``confirmation.max_visit_age_hours`` / ``max_visit_age_by_tf``: no signal more than that many hours after the visit's
+    first touch (9 October: the EURUSD short of 8 October came 29 h after the touch of a 1H zone price had hung under
+    for a day). The per-timeframe form limits only the named zone timeframe. Off by default."""
+    s = _settings(); s.confirmation.allow_first_candle = True; s.confirmation.entry_outside_zone = True
+    s.prop_firm.max_drawdown_pct = 1000.0; s.prop_firm.daily_loss_limit_pct = 1000.0
+    base = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    ages = {t.meta["setup_id"] if "setup_id" in t.meta else i: (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["touched_at"])) / pd.Timedelta(hours=1)
+            for i, t in enumerate(base.trades)}
+    oldest = max(ages.values())
+    limit = min(ages.values()) + 0.5                          # the freshest visit stays, the older ones go
+    assert oldest > limit
+    s.confirmation.max_visit_age_hours = limit
+    fresh = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert any("the visit is old" in r for r in fresh.rejection_reasons)
+    assert fresh.trades and all((pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["touched_at"])) / pd.Timedelta(hours=1) <= limit
+                                for t in fresh.trades)
+    # the per-timeframe form: the limit on a timeframe none of the trades' zones have changes nothing
+    s.confirmation.max_visit_age_hours = 0.0
+    s.confirmation.max_visit_age_by_tf = {T.MN_1: limit}
+    same = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert len(same.trades) == len(base.trades)
+    tf = T.parse(max(base.trades, key=lambda t: (pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["touched_at"]))).meta["poi_tf"])
+    s.confirmation.max_visit_age_by_tf = {tf: limit}
+    only = Backtester(s, hk_data, "09988", step_tf=T.MIN_15, start="2024-05-20", end="2024-06-07").run()
+    assert len(only.trades) < len(base.trades)
+    assert all((pd.Timestamp(t.opened_at) - pd.Timestamp(t.meta["touched_at"])) / pd.Timedelta(hours=1) <= limit
+               for t in only.trades if T.parse(t.meta["poi_tf"]) is tf)
+
+
 def test_touch_age_counts_from_the_close_of_the_candle_that_formed_the_zone():
     """``created_at`` is the open of the candle that completed the zone; the zone exists from its close. A daily zone
     (candles stamped at the New York close, 21:00 UTC) touched two hours into the next session is 2 h old, not 26

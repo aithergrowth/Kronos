@@ -524,6 +524,13 @@ class StrategyEngine:
                 if waited > limit_h:
                     analysis.rejections.append(f"{label}: touched {waited:.0f} h after it formed (max {limit_h:g} h): a spent zone")
                     continue
+            visit_h = float(getattr(s.confirmation, "max_visit_age_by_tf", {}).get(poi.timeframe,
+                                                                                 getattr(s.confirmation, "max_visit_age_hours", 0.0)) or 0.0)
+            if visit_h > 0:
+                since_touch = (pd.Timestamp(now) - pd.Timestamp(touch_ts)) / pd.Timedelta(hours=1)
+                if since_touch > visit_h:
+                    analysis.rejections.append(f"{label}: first touched {since_touch:.0f} h ago (max {visit_h:g} h): the visit is old")
+                    continue
             if visits > 1 and not s.confirmation.allow_retest:
                 analysis.rejections.append(f"{label}: visit #{visits} - only the first return is traded")
                 continue

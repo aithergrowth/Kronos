@@ -225,6 +225,14 @@ class ConfirmationParams:
                                         # traded, whatever the zone's timeframe (7 October, the set that runs, 2024-02 to 2026-09
                                         # with FTMO's costs: touched within a day 299 trades, 53 %, +140.7R; later 39 trades, 28 %,
                                         # -25.0R, losing in both halves and in every market)
+    max_visit_age_hours: float = 0.0    # 0 = off; else no signal more than this many hours after the visit's first touch (9 October: the
+                                        # EURUSD short of 8 October came 29 h after the touch, on a zone price had hung under for a day
+                                        # while the liquidity above it was still untaken; the touch is the moment, a shift a day later is
+                                        # another story)
+    max_visit_age_by_tf: Dict[Timeframe, float] = field(default_factory=dict)   # the same limit per zone timeframe, in place of
+                                        # max_visit_age_hours: {1H: 24} = a 1H zone is traded within a day of its touch, a 4H zone as
+                                        # long as its visit stays open (2026: every 1H-zone trade of EURUSD and gold came within 20 h of
+                                        # the touch, the 4H-zone winners after 38 h and 140 h)
     reversal_poi_timeframes: Tuple[Timeframe, ...] = ()   # 7 October (Max): zones of these timeframes are also traded against the
                                         # bias or without one, as a reversal: price sweeps the liquidity at the big zone, then a balance
                                         # shift on reversal_confirmation_tf. Such a trade carries the combination label REV (stake:
