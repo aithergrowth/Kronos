@@ -1,0 +1,79 @@
+status: incomplete_chart_record
+regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression completion is implied.
+unshown_annotation_fields_may_be_omitted: true
+symbol: BTCUSD
+source: K2 — Mijn Bitcoin visie en weekly kansen, 00:26
+source_url: https://www.skool.com/dorusview/classroom/304766fd?md=78ef5903bc4f435997de67e79210c4dd
+media_url: https://www.loom.com/embed/e5ebcd79549f4aae94d6a89cb0d6e158?autoplay=0&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true
+notes: Dorus conditions the illustrated weekly view on closing above the indicated
+  area; this is not a confirmed entry.
+caption_review:
+  scope: continuous public playback captions from 00:00 through 02:57 end; selected chart frames
+  independent_audio_verification: false
+  observations:
+  - timestamp: '00:19–00:47'
+    finding: Weekly close above the indicated area supports the illustrated bullish view; a close below leads to a different scenario.
+  - timestamp: '00:47–01:03'
+    finding: Describes alternative paths and a possible balance shift; desired and expected paths are distinguished.
+  - timestamp: '01:05–01:43'
+    finding: Identifies preferred deeper buying areas but says they may not be reached.
+  - timestamp: '02:00–02:37'
+    finding: Consults total crypto market-cap charts, including TOTAL2 and TOTAL3; says he does not really focus on trendlines here.
+observations:
+  displayed_chart_timeframe: 1W
+  other_frame_observed: 1M near 00:06
+  chart_feed: INDEX
+  lesson_date: '2026-09-27'
+  visible_alert_text: BTCUSD Crossing 82,815.31
+  alert_price: 82815.31
+  separate_crosshair_price: 82818.9
+  displayed_live_quote: 84848.56
+  alert_is_entry_stop_or_target: false
+missing:
+- executed trade
+- POI/invalidation bounds
+- confirmation entry/stop/target
+- verified chart timezone
+- source sweep identity and verified coverage of the requested historical candles
+confidence:
+  explicit_caption_conditions: high
+  chart_observations: medium
+  complete_trade_specification: not_assessed
+data_request:
+  symbol: BTCUSD
+  feed: INDEX
+  displayed_timeframe: 1W
+  provider_symbol: INDEX:BTCUSD
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: '2026-09-27'
+    kind: dated lesson, not trade execution
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: k2_btc_weekly
+    provider_symbol: INDEX:BTCUSD
+    timeframe: 1W
+    date_from_inclusive: '2024-01-01'
+    date_to_inclusive: '2026-09-27'
+    date_basis: provider-native bar dates
+    purpose: weekly analysis context
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.
+evidence_location: Linked academy lesson at the stated timestamp; raw academy screenshot
+  excluded from PR.

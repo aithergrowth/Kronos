@@ -1,0 +1,72 @@
+code: 47a4919dce64c601f5cd310c8cc7d229bfddfd4f source 0b02c0a91cdc
+   1m: CandleSeries(BTCUSD 1m, n=415568, 2025-12-20 00:00:00 -> 2026-10-04 14:07:00)
+   5m: CandleSeries(BTCUSD 5m, n=290178, 2024-01-01 00:00:00 -> 2026-10-04 13:25:00)
+  15m: CandleSeries(BTCUSD 15m, n=96726, 2024-01-01 00:00:00 -> 2026-10-04 13:15:00)
+   1H: CandleSeries(BTCUSD 1H, n=32942, 2023-01-01 00:00:00 -> 2026-10-04 13:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17002, 2019-01-01 00:00:00 -> 2026-10-04 12:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  14508/290178 2024-02-20 09:00:00 equity=100,000 trades=0
+  29016/290178 2024-04-10 18:00:00 equity=102,351 trades=1
+  43524/290178 2024-05-31 03:00:00 equity=103,197 trades=5
+  58032/290178 2024-07-20 12:00:00 equity=109,760 trades=11
+  72540/290178 2024-09-08 21:00:00 equity=114,238 trades=15
+  87048/290178 2024-10-29 06:00:00 equity=119,694 trades=23
+  101556/290178 2024-12-18 15:00:00 equity=123,761 trades=33
+  116064/290178 2025-02-07 00:00:00 equity=117,717 trades=38
+  130572/290178 2025-03-29 09:00:00 equity=116,122 trades=42
+  145080/290178 2025-05-18 18:00:00 equity=112,687 trades=45
+  159588/290178 2025-07-08 03:00:00 equity=114,270 trades=47
+  174096/290178 2025-08-27 12:00:00 equity=113,341 trades=50
+  188604/290178 2025-10-16 21:00:00 equity=118,324 trades=59
+  203112/290178 2025-12-06 06:00:00 equity=116,635 trades=62
+  217620/290178 2026-01-25 15:00:00 equity=115,116 trades=67
+  232128/290178 2026-03-17 00:00:00 equity=115,057 trades=74
+  246636/290178 2026-05-06 09:00:00 equity=114,108 trades=80
+  261144/290178 2026-06-25 18:00:00 equity=127,505 trades=81
+  275652/290178 2026-08-15 03:00:00 equity=125,826 trades=88
+  290160/290178 2026-10-04 12:00:00 equity=133,398 trades=92
+Backtest BTCUSD  2024-02-01 00:00:00 -> 2026-10-04 13:25:00  (step 5m, 281250 steps, 7430.7s)
+  signals 112  guard-rejected 20  trades 92
+  wins 41  losses 50  break-even 1  win rate 44.6%
+  avg R +0.33  total R +30.8  best +11.8  worst -1.0
+  profit factor 1.57  net P&L +33,398  return +33.40%  max DD 9.10%
+  by_poi_tf:
+    1D: n=6 avgR=+0.67 sumR=+4.0
+    1H: n=72 avgR=+0.48 sumR=+34.5
+    4H: n=14 avgR=-0.55 sumR=-7.7
+  by_confirmation:
+    BS: n=92 avgR=+0.33 sumR=+30.8
+  by_exit:
+    breakeven: n=1 avgR=+0.00 sumR=+0.0
+    stop: n=50 avgR=-1.00 sumR=-50.0
+    take_profit: n=41 avgR=+1.97 sumR=+80.8
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       18  max 1 open trade(s) per account
+        2  price moved: R:R below minimum
+  engine rejections (top):
+     92676  POI - no active visit on 5m
+     45528  bullish - 1H not aligned (required) -> no trade
+     22245  POI - no active visit on 1m
+     17928  bearish - 1H not aligned (required) -> no trade
+     10176  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=50/5
+      9084  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+      8496  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=be
+      8172  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=bearish, 4H=
+  distinct zones behind the rejections (bars above count every candle):
+       600  POI - no active visit on 5m
+       281  POI - touched
+       216  POI - no active visit on 1m
+        90  POI - already traded on visit #1 - one trade per visit
+        43  POI - visit #2 - only the first return is traded
+        10  POI - visit #3 - only the first return is traded
+         3  POI - visit #4 - only the first return is traded
+         2  POI - visit #5 - only the first return is traded
+         2  POI - R:R 0.44 below minimum 0.5 (target 15m buy-side liquidity 76944.00000 
+         1  POI - R:R 0.32 below minimum 0.5 (target 15m buy-side liquidity 44873.00000 
+         1  POI - R:R 0.28 below minimum 0.5 (target 1H origin high 44766.00000 (31 cand
+         1  POI - R:R 0.42 below minimum 0.5 (target 15m buy-side liquidity 56476.00000 
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_base_long.csv (+ .equity.csv, .provenance.json)

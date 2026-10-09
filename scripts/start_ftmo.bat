@@ -1,0 +1,80 @@
+@echo off
+rem FTMO windows beside the demo: EURUSD, XAUUSD, NAS100 and BTCUSD on the FTMO MT5 terminal, orders without the
+rem Approve tap, their own journal (journal_ftmo\) and "[FTMO]" in front of every Telegram message.
+rem Before: the FTMO terminal installed, logged in to the trial or challenge account, Algo Trading on (green).
+rem The password stays in the terminal: MT5_LOGIN, MT5_PASSWORD and MT5_SERVER are cleared for these windows, so they
+rem trade the account the FTMO terminal is logged in to. A window whose symbol the server lacks stops at the start.
+rem
+rem Your own values go in scripts\ftmo_local.bat (not in git, so an update never clashes with them), one per line:
+rem   set "MT5_PATH=D:\FTMO MetaTrader 5\terminal64.exe"     the terminal (right-click its shortcut, Properties, Target)
+rem   set "ACCOUNT=25000"                                     the challenge size: the guard's -4 %% day and -8 %% count from it
+rem   set "NAS_NAME=US100.cash"  /  set "BTC_NAME=BTCUSD"     the server's names
+rem   set "FUNDED=1"                                          once funded: 1.0 %% risk (0.5 %% from -3 %%) and flat by Friday 15:45 New York
+rem   set "PRODUCT=ftmo_2step"                                the FTMO 2-Step: the guard stops at a -4 %% day and 9.5 %% under the
+rem                                                           start (without PRODUCT: the profiles' -4 %% day, -8 %%)
+rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: a -2.9 %% day and 9 %% under the highest day-start balance
+rem   set "RISK=1.25"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
+rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
+rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
+rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
+rem   set "WATCHDOG_PING_URL=https://hc-ping.com/..."         the healthchecks.io check that says when the computer stops
+rem                                                           (docs/LIVE_SETUP.md "When the whole computer stops")
+rem To list the server's names, in PowerShell in the Kronos folder:
+rem   $env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"; Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue
+rem   .\.venv\Scripts\python.exe -m kronos_trader mt5-symbols --search 100
+rem Out since 5 October (docs/backtests/winrate/README.md): GBPUSD (-25.3R over 2017-2026 on the corrected clock). BTCUSD
+rem stays (Max, 5 October); FTMO's crypto leverage makes the margin cap trade it smaller.
+rem The pull and the windows sit in one block that ends with exit /b (see start_live.bat).
+rem The windows start 8 seconds apart: five attaching to the terminal at once timed out ("IPC timeout", 6 October).
+rem One window per market: a window whose market runs already (journal_ftmo\window_<market>.lock, or a fresh heartbeat
+rem of a running window on older code) says so and closes itself after 5 seconds. Run this again while windows run and
+rem it starts exactly the missing ones; to restart a market, close its window first. The watchdog names on Telegram a
+rem market without a window 5 minutes after it started (--expect; 6 October: NAS100 did not open and nothing said so).
+rem At 22:05 the watchdog sends the account's day (balance, the day's trades with R after costs, open risk, the room under
+rem FTMO's floors, the target). With WATCHDOG_PING_URL set (docs/LIVE_SETUP.md "When the whole computer stops") it calls
+rem that address every 5 minutes, and healthchecks.io alerts when the calls stop: the computer is off, asleep or offline.
+rem To start a new watchdog after an update: close its window, run this again.
+cd /d "%~dp0.."
+set "MT5_PATH=C:\Program Files\FTMO MetaTrader 5\terminal64.exe"
+rem FTMO's own installer puts the terminal here (6 October, Max's laptop)
+if exist "C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe" set "MT5_PATH=C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"
+set "ACCOUNT=10000"
+set "NAS_NAME=US100.cash"
+set "BTC_NAME=BTCUSD"
+set "FUNDED="
+set "RISK="
+set "WEEKEND_CLOSE="
+set "PRODUCT="
+set "TARGET="
+set "PROTECT="
+if exist "%~dp0ftmo_local.bat" call "%~dp0ftmo_local.bat"
+set MT5_LOGIN=
+set MT5_PASSWORD=
+set MT5_SERVER=
+set "PY=.\.venv\Scripts\python.exe"
+set "COMMON=--broker mt5 --execute --no-approval --account-size %ACCOUNT% --journal journal_ftmo/trades.csv --tag FTMO"
+rem The challenge and the verification may hold over the weekend; a funded FTMO Account of the Standard type may not.
+rem 15:45: an hour before the forex close, so US100.cash (whose Friday may end at 16:00 New York) is closed in time too
+if defined FUNDED set "COMMON=%COMMON% --risk-pct 1.0 --drawdown-steps=-3:0.5 --weekend-close 15:45"
+if not defined FUNDED if defined WEEKEND_CLOSE set "COMMON=%COMMON% --weekend-close %WEEKEND_CLOSE%"
+if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
+if defined PRODUCT set "COMMON=%COMMON% --product %PRODUCT%"
+if defined TARGET set "COMMON=%COMMON% --target-pct %TARGET%"
+if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
+set "WATCH=--journal journal_ftmo/trades.csv --tag FTMO --expect EURUSD,XAUUSD,NAS100,BTCUSD --report-at 22:05 --account-size %ACCOUNT% --mt5-names NAS100=%NAS_NAME%,BTCUSD=%BTC_NAME%"
+if defined PRODUCT set "WATCH=%WATCH% --product %PRODUCT%"
+if defined TARGET set "WATCH=%WATCH% --target-pct %TARGET%"
+if not defined TARGET if not defined FUNDED set "WATCH=%WATCH% --target-pct 10"
+(
+  git pull --ff-only || (echo. & echo UPDATE FAILED: the windows start on the code already here. Read the message above. & pause)
+  start "FTMO EURUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  ping -n 9 127.0.0.1 >nul
+  start "FTMO XAUUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  ping -n 9 127.0.0.1 >nul
+  start "FTMO NAS100" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_nas100.yaml live --symbol NAS100 --mt5-symbol %NAS_NAME% %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  ping -n 9 127.0.0.1 >nul
+  start "FTMO BTCUSD" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --mt5-symbol %BTC_NAME% %COMMON%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  ping -n 9 127.0.0.1 >nul
+  start "FTMO watchdog" powershell -NoExit -Command "%PY% -m kronos_trader --config config/dorus_live.yaml watchdog %WATCH%; if ($LASTEXITCODE -eq 3) { Start-Sleep 5; exit }"
+  exit /b
+)

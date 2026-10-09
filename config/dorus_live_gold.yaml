@@ -1,0 +1,129 @@
+# Live profile for XAUUSD on the demo, 4 October 2026 (evening): config/dorus_live.yaml (version 3) with the bias gate changed for gold.
+# Evidence (HistData 1m, docs/backtests/winrate/README.md "Frequency", `gold_intra_c_full`): with the book's gate (3 of 5, the 1H
+# required) gold gives 84 trades, 38 %, +7.8R over 2023-2026 with a -19.8R drawdown and a run through 10 % static in May 2024;
+# with two of 1D/4H/1H aligned (the 1H still required) 163 trades, 44 %, +27.6R, every year positive (2023 +3.5, 2024 +7.7,
+# 2025 +6.1, 2026 +10.3), drawdown -12.9R, never 10 % under the start at 1 % risk. The same gate loses on EURUSD and GBPUSD
+# (2023-2026 EURUSD -7.3R), so it is gold's reading only. Everything else as the live profile, the account guard included
+# (-8 % static from the start since 5 October; from the peak this reading would have touched the halt once, peak -12.2 % at 1 %).
+bias:
+  extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
+  full_combos: [[1M, 1W, 1D], [1M, 1D, 1H], [1D, 1H], [4H, 1H]]   # gold, 4 October: two of 1D/4H/1H with the 1H is a match
+  min_matching_timeframes: 3      # 7 October (Max: all improvements in): three of five, as the book; the two-timeframe combinations
+                                  # above count only when a third timeframe agrees as well (the count is checked first). With R:R 0.8
+                                  # and break-even at 2R below, 2024-02 to 2026-09 with FTMO's costs:
+                                  # 132 trades, 51 %, +84.2R, drawdown -4.5R against 135, 52 %, +66.9R, -6.6R (halves +1.6 / +15.6R);
+                                  # three of five alone +75.5R (-4.3 / +12.9R). Was 2 since 4 October (see the header)
+  required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
+                                  # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
+  no_trade_against: []            # 6 October (Max: aan): no veto for gold. On the corrected candles with this profile, 2024-2026: 105 trades,
+                                  # +32.3R, drawdown -9.2R against 84, +26.1R, -7.2R with [1M, 1W]; 2017-2023: 319 trades, +8.8R, -22.6R
+                                  # against 201, +3.6R, -27.6R (README "Gold without the veto (6 October)"). The veto of 5 October ("Als de higher
+                                  # timeframe voor mij tegenzit ...", A 01:58:37) came from the 2023-2026 candles before the correction
+confirmation:
+  allow_first_candle: false
+  max_touch_age_hours: 24         # 7 October: no trade in a zone first visited more than a day after it formed (2024-02 to
+                                  # 2026-09, the four profiles, FTMO costs: +0.34R -> +0.47R a trade, losing months 12 -> 10 of 32,
+                                  # challenge starts 2024-25 failed 15 % -> 0 %; docs/backtests/winrate/README.md "Spent zones")
+  max_visit_age_by_tf: {1H: 24}   # 9 October: a 1H zone gives no signal more than a day after its visit's first touch. The EURUSD
+                                  # short of 8 October (stopped, -1.1R) came 29 h after the touch of a 1H zone price had hung under
+                                  # for a day while the liquidity above was untaken; every other gate passed. 2026 on the four
+                                  # markets: not one trade changes (every 1H-zone trade came within 20 h of the touch); 2024-2025:
+                                  # EURUSD 8 trades fewer, 5 losers and 3 winners, -5.0R of +45.7R over three years, gold unchanged.
+                                  # On 4H zones the limit would cost (winners 38 h and 140 h after the touch): they keep their visit
+  allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
+  allow_bms: false                # the plain break is a liquidity sweep in his reading (A 01:29:29, 01:33:47)
+  accept_bos: false
+  bs_threshold: gap_edge          # "sterk genoeg om boven dit balance level uit te komen" (A 01:31:52)
+  confirmation_tf_mode: exact     # one entry timeframe per zone timeframe
+  min_confirmation_tf:            # the written table one step up: his 1H-zone entries are 5m shifts (suite readings C, D:
+    1M: 4H                        # 18 Mar 2024 at 12:40 / 1.6 pips, 11 Nov 2025 at 15:10 / 1.5 pips from his entries)
+    1W: 4H
+    1D: 1H
+    4H: 15m
+    1H: 5m
+  entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
+  one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+  allow_retest: true              # 8 October (Max: fix it): a second visit to a zone is traded too (the stopped one still not re-entered in
+                                  # the same visit). With poi_gap_choice last, January-September 2026, FTMO costs: 38 trades, 61 %,
+                                  # +39.5R against 34, 56 %, +31.4R; both halves better (+4.0 / +4.1R), the best three trades 39 % of
+                                  # the R against 49 %. Alone +3.0R (one trade swapped); the gap choice alone +5.1R. README "Research 2026"
+  max_zone_age_candles: 24        # 5 October: only zones at most 24 candles of their own timeframe old ("volledig gebruikt" zones are
+                                  # spent, A 00:33:37). Gold 2023-2026 (`v4_gold_age24_full`): 119 trades, 45 %, +38.7R, drawdown -9.9R,
+                                  # every year better (+8.3 / +12.1 / +9.2 / +9.2) against 129, 46 %, +30.4R, -10.8R; 12 and 48 candles
+                                  # sat on the same level where they were stopped. Not on EURUSD (same R) or BTC (+54.4R against +62.3R)
+  poi_timeframes: [4H, 1H]        # 8 October: no daily zones. Under the 24 h touch rule they never traded in 2024-2026 (the rule's
+                                  # clock ran from the zone candle's open, which left a daily zone no hours; corrected 8 October), so
+                                  # the tested set had none; with the clock right gold's one 2026 daily trade lost 1R on a $211 stop
+                                  # and pushed out a +5.7R 1H trade (34 trades +25.2R against +31.9R). Older 1D zones lost in every
+                                  # market (README "Older zones on the higher timeframes"). No weekly or monthly zones either: their
+                                  # sweep stop and previous-extreme target do not fit
+risk:
+  risk_pct: 1.5                   # 5 October, Max: 1.5 % (challenge sim, EURUSD + gold + BTC, 790 starts 2024-2026: funded 82 % vs 91 % at 1 %, phase 1 median 61 vs 116 days)
+  drawdown_steps: [[-3, 1.0], [-6, 0.5]]   # 5 October: with the balance 3 % under the start a trade risks 1.0 %, from 6 % under
+                                  # it 0.5 %; only the stake changes, never the trades. FTMO challenge, five markets, two open,
+                                  # 790 starts 2024-2026: funded 85 % flat -> 92 %. On the funded account plan 1.0 % with
+                                  # [[-3, 0.5]]: lost within a year 11 % flat -> 2 % (with every trade 0.15R worse live: 21 % -> 11 %)
+  min_rr: 0.8                     # 7 October, FTMO's costs, 2024-02 to 2026-09, with three of five and break-even at 2R: 0.8 +84.2R,
+                                  # 1.2 +81.4R (drawdown -6.4R), 1.5 +74.8R; with three of five and break-even at 4R: 0.5 +75.5R,
+                                  # 0.8 +82.2R. 6 October, Max: judged on the recent years (0.5 / 1.0 / 1.5 since 2024: +26.1 /
+                                  # +22.1 / +18.5R); over 2017-2026 the 1.5 of 5 October did better in 2017-2022
+  max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
+  stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
+  stop_protection: recent_1h
+  sl_offset_pips: 0.0
+  min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
+  max_spread_stop_fraction: 0.3   # 6 October: live only, no entry while the spread is over 30 % of the stop distance (a market opening, news)
+  neutral_bias_risk_multiplier: {1M: 0.5}   # 8 October (Max: ja, long and short): a trade taken while the month reads 50/50 at half
+                                  # the stake. The long losing runs came from those trades (EURUSD 11 in a row in 2024, gold 7): they
+                                  # won 29-33 % against 50-60 %. Account replay at 1.5 %, 2024-02 to 2026-09: 2024-25 starts lost 4 % ->
+                                  # 1 %, funded within 3 months 52 % -> 55 %, losing months 7 -> 6; 2026 within 2 months 97 % -> 96 %
+  zone_risk_multiplier: {4H: 2.0}   # 6 October, setup B (Max: go): a 4H zone risks twice risk_pct. 4H zones on EURUSD, gold and
+                                  # NAS100: 47 % won, +0.49R a trade 2017-2023; 64 %, +1.04R 2024-2026 (README "Setup B")
+  tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
+                                  # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
+                                  # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
+                                  # 18 Mar 2024 3.2 pips from his targets; 11 Nov 2025 8.6 pips nearer than his (the dip after the zone
+                                  # formed, open). Version 1 used previous_extreme over 72 candles before the touch (too far on gold)
+  tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
+  tp_lookback_candles: 72         # only used by previous_extreme
+  tp_buffer_pips: 0.0
+  tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
+  tp_fallback: fixed              # 6 October, evening (Max: decide on the last 3 years): where no target reaches min_rr, a fixed 2R target
+  tp_fallback_rr: 2.0             # instead of no trade. Checked again 8 October on these settings, FTMO costs, 2024-01 to 2026-09: 132 trades,
+                                  # 51 %, +84.2R, 7 of 31 months losing, deepest dip -4.5R; without it 82, 48 %, +51.3R, 11 losing, -8.6R
+                                  # (better only in 2026, +37.9R against +31.4R). Kept (Max: ja); README "January-September 2026 per market"
+  spread_buffer_pips: 1.0
+session:
+  enabled: true
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # "van 9 tot 11 en van 1 uur tot 5 uur" (A 02:24:07)
+  timezone: Europe/Amsterdam
+news:
+  enabled: true                   # no entry right before high-impact news (A 02:00:28, G 11:13)
+exits:
+  breakeven_r_intraday: 2.0       # 7 October (Max: all improvements in): gold to break-even at +2R, not 4R (the written plan's swing
+                                  # value): +2.0R with three of five and R:R 0.8, drawdown -5.5R -> -4.5R, both halves +1.0R.
+                                  # The other markets keep 4R: an earlier break-even cost them more winners than it saved
+  breakeven_r_swing: 2.0
+  partials: false
+prop_firm:
+  max_open_trades: 2              # 5 October: two open on the account, one per market (EURUSD, gold, BTC, GBPUSD, NAS100 at 1.5 %,
+  max_open_per_symbol: 1          # 790 challenge starts 2024-2026: funded 85 %, phase 1 median 42 days; one open on the account 74 %, 51 days)
+  daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
+  monthly_loss_limit_pct: 0.0     # off by Max's choice (5 October): better entries, not a stop. At 4.5 % (3R at 1.5 %), five markets, two open,
+                                  # 2024-2026: worst month -11.0 % -> -5.2 %, drawdown -24 % -> -15 %, the average month +6.0 %
+                                  # -> +5.6 %, 790 challenge starts funded 85 % -> 91 % (phase 1 median 42 -> 56 days); set 4.5 to
+                                  # turn it on
+  max_drawdown_pct: 8.0           # inside FTMO's 10 % with margin
+  drawdown_basis: initial         # 5 October: FTMO's 10 % is static below the initial balance; from the peak the guard stopped
+                                  # the bot after a normal swing back from a gain (8 % is 5.3R at 1.5 %) while FTMO still allowed
+                                  # trading. The challenge simulations count the static rule
+kronos:
+  mode: "off"
+live:
+  dorus_check: advisory           # 8 October (Max: both checks): after an entry Claude reads the setup and its charts the way Dorus
+                                  # would (docs/DORUS_REVIEW.md); the verdict goes to Telegram and dorus_checks.csv. Advice only:
+                                  # the trade stands. Off until ANTHROPIC_API_KEY and DORUS_CHECK_MODEL are set on the computer
+structure:
+  poi_gap_choice: last            # 8 October (Max: fix it): with several gaps in one impulse the zone is the gap nearest the break, the P
+                                  # closest to X (a tighter zone), not the earliest one. 2026: 38 trades, 58 %, +36.5R against 34, 56 %,
+                                  # +31.4R (five trades in, one out; +1.0 / +4.1R by half). EURUSD and NAS100 lose with it, BTC +2.0R

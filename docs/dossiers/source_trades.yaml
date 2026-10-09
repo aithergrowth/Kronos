@@ -1,0 +1,56 @@
+# Dorus's dated trades, one record each, for scripts/source_trades.py (the fast loop: one trade against the engine).
+# Times are UTC entry minutes as settled in docs/dossiers/SOURCE_TRADES.md; prices are his, from his recaps.
+- id: K3a
+  symbol: XAUUSD
+  direction: short
+  time: "2026-08-26 13:45"
+  entry: 4624.53
+  stop: 4639.55
+  target: 4594.98
+  result: won
+  source: "K3 Loom 02:40; chart on UTC+1 (tool anchor 14:46); Astra's control of 2 October"
+- id: K3b
+  symbol: XAUUSD
+  direction: short
+  time: "2026-08-26 15:05"
+  entry: 4623.59
+  stop: 4633.72
+  target: 4595.62
+  result: won
+  source: "K3 Loom 03:48; 4623.59 traded in the 15:05 UTC candle"
+- id: EU-2025-11-11
+  symbol: EURUSD
+  direction: short
+  time: "2025-11-11 15:05"
+  entry: 1.15963
+  stop: 1.16060
+  target: 1.15687
+  result: won
+  source: "his recap screenshot (FXCM 5m/1H), DXY mirror; entry 15:0x-15:16 UTC"
+- id: EU-2024-03-18
+  symbol: EURUSD
+  direction: short
+  time: "2024-03-18 12:40"
+  entry: 1.0895
+  stop: 1.0905
+  target: 1.0866
+  result: won
+  source: "his recap screenshot (5m); stop 9.5 pips, target 29.3 pips, 3.08R; entry about 12:40 UTC"
+- id: EU-2025-12-09
+  symbol: EURUSD
+  direction: long
+  time: "2025-12-09 15:36"
+  entry: 1.16335
+  stop: 1.15908
+  target: 1.16823
+  result: won
+  source: "his weekly-chart recap (OANDA 1W): protect the low of the weekly P, target the weekly high"
+- id: BTC-2026-09-14
+  symbol: BTCUSD
+  direction: long
+  time: "2026-09-14 12:00"
+  entry: 76000
+  stop: 75200
+  target: 82400
+  result: won
+  source: "academy recording '21.000 euro verdiend met bitcoin', third buy; crosshair Mon 14 Sep 14:00 UTC+2 on the circled low 75,500-76,000, target the liquidity (x) at 82,400; ESTIMATED entry/stop (no order labels), see docs/dossiers/BTCUSD_2026-09-14/README.md"

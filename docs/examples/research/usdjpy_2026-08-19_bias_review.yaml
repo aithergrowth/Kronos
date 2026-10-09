@@ -1,0 +1,82 @@
+status: student_scalp_claim_with_dorus_bias_warning
+regression_ready: false
+retrieval_metadata_complete: true
+retrieval_metadata_scope: Request identity and parameters only; no OHLC, candle-coverage or regression completion is implied.
+unshown_annotation_fields_may_be_omitted: true
+symbol: USDJPY
+source: S2 — Long trade USDJPY; Dorus reply dated Aug 19; attached 43-second chart
+  video
+source_url: https://www.skool.com/dorusview/long-trade-usdjpy
+source_author: Dorus Wanders (critique only)
+chart_author: Jelle Engels
+notes: Dorus identifies errors in the student’s bias analysis but does not enumerate
+  the exact incorrect levels or votes.
+confidence:
+  critique: high
+  student_price_labels: medium
+  accepted_scalp_classification: not_assessed
+observations:
+  displayed_chart_timeframes:
+  - 1H
+  - 1D
+  chart_feed: FOREXCOM
+  selected_daily_label: Fri 07 Aug 26
+  other_daily_axis_label: Mon 24 Aug 26
+  displayed_clock_zone: UTC+2
+student_claim_not_dorus_rule:
+  aligned_timeframes:
+  - 1D
+  - 4H
+  - 1H
+  confirmation_timeframe: 1m
+  direction: bullish
+student_plan_not_dorus_expectations:
+  entry_price_label: 158.373
+  stop_price_label: 157.842
+  target_price_label: 159.189
+evidence_image: assets/usdjpy_student_daily.jpg
+missing:
+- which bias votes Dorus corrects
+- Dorus-approved POI timeframe
+- exact entry/sweep/break candle times
+- verified required candle coverage within the requested interval
+- OHLC export
+data_request:
+  symbol: USDJPY
+  feed: FOREXCOM
+  displayed_timeframes:
+  - 1H
+  - 1D
+  chart_month: 2026-08
+  provider_symbol: FOREXCOM:USDJPY
+  source_event_utc_range_established: false
+  source_observed_dates:
+  - value: '2026-08-07'
+    kind: selected chart date Fri 07 Aug 26; not entry time
+  - value: '2026-08-24'
+    kind: separate date/drawing label Mon 24 Aug 26; not execution
+  request_parameters_complete: true
+  completion_scope: Only the retrieval identity and exact request parameters are complete; source annotations,
+    required candle coverage and regression readiness are not thereby verified.
+  preserve_native_bar_alignment: true
+  export_timestamp_rule: Use provider-reported candle-open timestamps and convert to UTC; do not infer
+    UTC candle opens from the screenshot display clock.
+  requests:
+  - request_id: s2_usdjpy_student_daily
+    provider_symbol: FOREXCOM:USDJPY
+    timeframe: 1D
+    date_from_inclusive: '2026-04-01'
+    date_to_inclusive: '2026-08-31'
+    date_basis: provider-native bar dates
+    purpose: student daily context; Dorus-approved POI unresolved
+    window_origin: researcher-selected padding window; neither endpoint is asserted as a Dorus chart annotation
+      or trade event
+    poi_timeframe_verified: false
+    ohlc_obtained: false
+    coverage_verified: false
+  checks_after_retrieval:
+  - Identify the source-referenced scenario and relevant sweep/break before treating dates as event annotations.
+  - Count at least 60 actual candles before the relevant sweep; extend the request earlier if needed.
+  - Check coverage through the demonstrated post-break return when applicable; extend later if necessary.
+  - Keep unshown event, zone, entry, stop and target fields omitted; do not infer numeric annotations
+    from axis proximity.

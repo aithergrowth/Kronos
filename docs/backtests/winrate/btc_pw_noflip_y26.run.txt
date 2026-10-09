@@ -1,0 +1,57 @@
+code: 47a4919dce64c601f5cd310c8cc7d229bfddfd4f source 0b02c0a91cdc (uncommitted changes)
+   1m: CandleSeries(BTCUSD 1m, n=415568, 2025-12-20 00:00:00 -> 2026-10-04 14:07:00)
+   5m: CandleSeries(BTCUSD 5m, n=290178, 2024-01-01 00:00:00 -> 2026-10-04 13:25:00)
+  15m: CandleSeries(BTCUSD 15m, n=96726, 2024-01-01 00:00:00 -> 2026-10-04 13:15:00)
+   1H: CandleSeries(BTCUSD 1H, n=32942, 2023-01-01 00:00:00 -> 2026-10-04 13:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17002, 2019-01-01 00:00:00 -> 2026-10-04 12:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  217620/290178 2026-01-25 15:00:00 equity=99,004 trades=1
+  232128/290178 2026-03-17 00:00:00 equity=106,748 trades=10
+  246636/290178 2026-05-06 09:00:00 equity=108,451 trades=17
+  261144/290178 2026-06-25 18:00:00 equity=135,424 trades=20
+  275652/290178 2026-08-15 03:00:00 equity=144,227 trades=30
+  290160/290178 2026-10-04 12:00:00 equity=152,260 trades=34
+Backtest BTCUSD  2026-01-01 00:00:00 -> 2026-10-04 13:25:00  (step 5m, 79650 steps, 2153.4s)
+  signals 60  guard-rejected 26  trades 34
+  wins 13  losses 20  break-even 1  win rate 38.2%
+  avg R +1.36  total R +46.1  best +23.9  worst -1.0
+  profit factor 3.18  net P&L +52,260  return +52.26%  max DD 5.11%
+  by_poi_tf:
+    1D: n=3 avgR=+0.03 sumR=+0.1
+    1H: n=24 avgR=+1.72 sumR=+41.2
+    4H: n=7 avgR=+0.68 sumR=+4.8
+  by_confirmation:
+    BS: n=34 avgR=+1.36 sumR=+46.1
+  by_exit:
+    breakeven: n=1 avgR=+0.00 sumR=+0.0
+    stop: n=20 avgR=-1.00 sumR=-20.0
+    take_profit: n=13 avgR=+5.09 sumR=+66.1
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       26  max 1 open trade(s) per account
+  engine rejections (top):
+     43098  POI - no active visit on 1m
+      5340  bearish - 1M+1W+1H aligned but not a valid combination -> no trade
+      5184  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=50
+      5160  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=bu
+      4070  POI - touched
+      3312  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=bullish, 4H=
+      3300  bearish - 1M+1W+4H aligned but not a valid combination -> no trade
+      3048  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=bearish, 4H=50
+  distinct zones behind the rejections (bars above count every candle):
+       194  POI - no active visit on 1m
+        85  POI - touched
+        33  POI - already traded on visit #1 - one trade per visit
+        17  POI - visit #2 - only the first return is traded
+         8  POI - visit #3 - only the first return is traded
+         4  POI - visit #4 - only the first return is traded
+         2  POI - visit #5 - only the first return is traded
+         1  POI - R:R 0.18 below minimum 0.5 (target 15m sell-side liquidity 70486.00000
+         1  POI - R:R 0.32 below minimum 0.5 (target 15m sell-side liquidity 70486.00000
+         1  POI - R:R 0.17 below minimum 0.5 (target 15m sell-side liquidity 69049.00000
+         1  POI - entry 67069.0 lies 79% of the zone's height inside it (max 50%): no ro
+         1  POI - R:R 0.11 below minimum 0.5 (target 1H buy-side liquidity 71896.00000 (
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_pw_noflip_y26.csv (+ .equity.csv, .provenance.json)

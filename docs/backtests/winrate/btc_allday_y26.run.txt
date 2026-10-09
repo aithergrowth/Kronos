@@ -1,0 +1,70 @@
+code: 81729f388edc538ba1ec0dfb4a7af47ee7b2c073 source b814de119162
+   5m: CandleSeries(BTCUSD 5m, n=83106, 2025-12-20 00:00:00 -> 2026-10-04 13:25:00)
+  15m: CandleSeries(BTCUSD 15m, n=47094, 2025-06-01 00:00:00 -> 2026-10-04 13:15:00)
+   1H: CandleSeries(BTCUSD 1H, n=32942, 2023-01-01 00:00:00 -> 2026-10-04 13:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17002, 2019-01-01 00:00:00 -> 2026-10-04 12:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  4155/83106 2026-01-03 10:15:00 equity=99,012 trades=1
+  8310/83106 2026-01-17 20:30:00 equity=98,026 trades=2
+  12465/83106 2026-02-01 06:45:00 equity=99,247 trades=7
+  16620/83106 2026-02-15 17:00:00 equity=100,129 trades=14
+  20775/83106 2026-03-02 03:15:00 equity=99,132 trades=15
+  24930/83106 2026-03-16 13:30:00 equity=99,132 trades=15
+  29085/83106 2026-03-30 23:45:00 equity=99,132 trades=15
+  33240/83106 2026-04-14 10:00:00 equity=99,132 trades=15
+  37395/83106 2026-04-28 20:15:00 equity=99,132 trades=15
+  41550/83106 2026-05-13 06:30:00 equity=99,132 trades=15
+  45705/83106 2026-05-27 16:45:00 equity=99,132 trades=15
+  49860/83106 2026-06-11 03:00:00 equity=99,132 trades=15
+  54015/83106 2026-06-25 13:15:00 equity=99,132 trades=15
+  58170/83106 2026-07-09 23:30:00 equity=99,132 trades=15
+  62325/83106 2026-07-24 09:45:00 equity=99,132 trades=15
+  66480/83106 2026-08-07 20:00:00 equity=99,132 trades=15
+  70635/83106 2026-08-22 06:15:00 equity=99,132 trades=15
+  74790/83106 2026-09-05 16:30:00 equity=99,132 trades=15
+  78945/83106 2026-09-20 02:45:00 equity=99,132 trades=15
+  83100/83106 2026-10-04 13:00:00 equity=99,132 trades=15
+Backtest BTCUSD  2026-01-01 00:00:00 -> 2026-10-04 13:25:00  (step 5m, 79650 steps, 1828.8s)
+  signals 186  guard-rejected 171  trades 15
+  wins 5  losses 9  break-even 1  win rate 33.3%
+  avg R -0.05  total R -0.7  best +4.9  worst -1.0
+  profit factor 0.90  net P&L -868  return -0.87%  max DD 7.75%
+  by_poi_tf:
+    1H: n=12 avgR=-0.30 sumR=-3.6
+    4H: n=3 avgR=+0.97 sumR=+2.9
+  by_confirmation:
+    BS: n=15 avgR=-0.05 sumR=-0.7
+  by_exit:
+    breakeven: n=1 avgR=+0.00 sumR=+0.0
+    stop: n=9 avgR=-1.00 sumR=-9.0
+    take_profit: n=5 avgR=+1.66 sumR=+8.3
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+      169  drawdown 8.32% reached the 8.0% limit
+        2  max 1 open trade(s) per account
+  engine rejections (top):
+    123516  POI - no active visit on 5m
+     17472  POI - touched
+     15323  bearish - 1H not aligned (required) -> no trade
+      5856  bearish - 1M+1W+1H aligned but not a valid combination -> no trade
+      4620  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=bu
+      4416  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=50
+      3372  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=bullish, 4H=
+      3168  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=bearish, 4H=50
+  distinct zones behind the rejections (bars above count every candle):
+       304  POI - no active visit on 5m
+       150  POI - touched
+        22  POI - visit #2 - only the first return is traded
+        15  POI - already traded on visit #1 - one trade per visit
+         9  POI - visit #3 - only the first return is traded
+         2  POI - visit #4 - only the first return is traded
+         2  POI - R:R 0.44 below minimum 0.5 (target 15m buy-side liquidity 76944.00000 
+         1  POI - R:R 0.22 below minimum 0.5 (target 1H origin low 87377.00000 (31 candl
+         1  POI - R:R 0.43 below minimum 0.5 (target 1H origin low 87284.00000 (31 candl
+         1  POI - R:R 0.23 below minimum 0.5 (target 1H origin low 87377.00000 (31 candl
+         1  POI - R:R 0.44 below minimum 0.5 (target 1H origin low 87284.00000 (31 candl
+         1  POI - R:R 0.23 below minimum 0.5 (target 15m sell-side liquidity 82279.00000
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_allday_y26.csv (+ .equity.csv, .provenance.json)

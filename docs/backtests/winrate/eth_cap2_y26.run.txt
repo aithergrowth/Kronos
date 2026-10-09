@@ -1,0 +1,57 @@
+code: 7d12dde1e8b13c74054a1be1171625b2bbc70376 source 5c4f75d1bbd8
+   5m: CandleSeries(ETHUSD 5m, n=290406, 2024-01-01 00:00:00 -> 2026-10-05 08:25:00)
+  15m: CandleSeries(ETHUSD 15m, n=96802, 2024-01-01 00:00:00 -> 2026-10-05 08:15:00)
+   1H: CandleSeries(ETHUSD 1H, n=32961, 2023-01-01 00:00:00 -> 2026-10-05 08:00:00)
+   4H: CandleSeries(ETHUSD 4H, n=17007, 2019-01-01 00:00:00 -> 2026-10-05 08:00:00)
+   1D: CandleSeries(ETHUSD 1D, n=3338, 2017-08-16 00:00:00 -> 2026-10-05 00:00:00)
+   1W: CandleSeries(ETHUSD 1W, n=478, 2017-08-14 00:00:00 -> 2026-10-05 00:00:00)
+   1M: CandleSeries(ETHUSD 1M, n=111, 2017-08-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  217800/290406 2026-01-26 06:00:00 equity=97,116 trades=6
+  232320/290406 2026-03-17 16:00:00 equity=97,452 trades=11
+  246840/290406 2026-05-07 02:00:00 equity=97,452 trades=11
+  261360/290406 2026-06-26 12:00:00 equity=100,205 trades=16
+  275880/290406 2026-08-15 22:00:00 equity=95,190 trades=27
+  290400/290406 2026-10-05 08:00:00 equity=89,774 trades=37
+Backtest ETHUSD  2026-01-01 00:00:00 -> 2026-10-05 08:25:00  (step 5m, 79878 steps, 2407.3s)
+  signals 53  guard-rejected 16  trades 37
+  wins 14  losses 22  break-even 1  win rate 37.8%
+  avg R -0.29  total R -10.7  best +1.8  worst -1.1
+  profit factor 0.52  net P&L -10,226  return -10.23%  max DD 10.88%
+  by_poi_tf:
+    1D: n=2 avgR=-1.00 sumR=-2.0
+    1H: n=24 avgR=-0.27 sumR=-6.6
+    4H: n=11 avgR=-0.19 sumR=-2.1
+  by_confirmation:
+    BS: n=37 avgR=-0.29 sumR=-10.7
+  by_exit:
+    breakeven: n=1 avgR=+0.00 sumR=+0.0
+    stop: n=22 avgR=-1.01 sumR=-22.1
+    take_profit: n=14 avgR=+0.82 sumR=+11.5
+  first guard breach: 2026-10-02 12:05:00  loss 10.23% of the initial balance >= 10.0%
+  guard rejections:
+       15  max 1 open trade(s) per account
+        1  price moved: R:R below minimum
+  engine rejections (top):
+     31054  POI - no active visit on 5m
+      8160  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=50/5
+      5040  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bull
+      4680  bearish - 1W+4H+1H aligned but not a valid combination -> no trade
+      3684  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bear
+      3488  POI - touched
+      3449  POI - already traded on visit #1 - one trade per visit
+      3396  bearish - 1W+1D+4H aligned but not a valid combination -> no trade
+  distinct zones behind the rejections (bars above count every candle):
+       222  POI - no active visit on 5m
+        84  POI - touched
+        37  POI - already traded on visit #1 - one trade per visit
+        19  POI - visit #2 - only the first return is traded
+         7  POI - visit #3 - only the first return is traded
+         2  POI - visit #4 - only the first return is traded
+         1  POI - R:R 0.06 below minimum 0.5 (target 1D buy-side liquidity 3176.06000 (x
+         1  POI - R:R 0.16 below minimum 0.5 (target 1D buy-side liquidity 3176.06000 (x
+         1  POI - R:R 0.13 below minimum 0.5 (target 1H buy-side liquidity 3279.94000 (x
+         1  POI - R:R 0.21 below minimum 0.5 (target 4H previous high 3263.84000 (72 can
+         1  POI - entry 3116.13 lies 61% of the zone's height inside it (max 50%): no ro
+         1  POI - R:R 0.36 below minimum 0.5 (target 4H previous high 3374.39000 (72 can
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_eth_cap2_y26.csv (+ .equity.csv, .provenance.json)

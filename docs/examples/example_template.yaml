@@ -1,0 +1,32 @@
+# Copy to <name>.yaml next to <name>.csv. Timestamps are candle OPEN times, UTC.
+# Everything under `expect` is checked by tests/trader/test_examples.py; leave out what you do not know.
+
+symbol: EURUSD
+timeframe: 4H                 # timeframe of the candles in <name>.csv and of the POI
+confirmation_timeframe: 15m   # where the entry was confirmed (optional, needs <name>_ltf.csv)
+direction: bullish            # bullish | bearish
+source: "Video 12 - Daily POI walkthrough, 14:32"   # where this example comes from
+notes: "Sweep of the Asian low, balance block is the last bearish candle before the 4H BOS"
+
+expect:
+  sweep:
+    candle: "2026-03-04 08:00"     # candle whose wick took the liquidity
+    level: 1.08210                 # the swept high/low (optional)
+  break:
+    candle: "2026-03-05 00:00"     # candle that CLOSED through the structural high/low
+    level: 1.08890                 # the broken high/low (optional)
+    kind: BOS                      # BOS | BMS (optional)
+  balance_block:                   # optional
+    low: 1.08290
+    high: 1.08460
+  poi:
+    low: 1.08150                   # the area as Dorus drew it: from the liquidity the displacement took (X) down to P
+    high: 1.08890
+    liquidity: 1.08890             # X (optional)
+    protection: 1.08150            # far extreme of P (optional)
+  entry:                           # optional
+    time: "2026-03-05 09:15"
+    price: 1.08510
+  stop: 1.08120                    # optional
+  target: 1.09650                  # optional
+  tolerance_pips: 3                # how exact the levels must match (default 3)
