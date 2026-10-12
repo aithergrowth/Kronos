@@ -1834,3 +1834,27 @@ No rule looked at the age of the visit.
   one extra 1H loser in May 2025, the rest the same. So the rule costs about 1.7R a year on EURUSD on the older
   data, a trade on NAS100, nothing on gold, and it refuses the trade Max does not want. **Taken** (Max, 9 October:
   "fix this now") into the four profiles: `max_visit_age_by_tf: {1H: 24}`.
+
+### NAS100: the weekly, the daily and the 1H as a combination (12 October)
+
+The morning check of 12 October saw a NAS100 long from a fresh 1H demand with the weekly, the daily and the 1H bullish,
+the month and the 4H at 50/50: no valid combination in the profile (M+W+D, M+D+1H, M+D+4H, or the D+4H+1H scalp), so
+no trade. Max: "Test". The profile against the same with `[1W, 1D, 1H]` added to `full_combos` (1 % units, the guard
+off, bid candles, HistData NSXUSD; the 1H stays required and the weekly a veto):
+
+| | Trades | Won | R | Drawdown |
+|---|---|---|---|---|
+| 2026 (to 24 September): profile / with W+D+1H | 16 / 17 | 62 % / 59 % | +26.3 / +25.3 | -2.0 / -2.0 |
+| 2024 - September 2026 | 39 / 42 | 46 % / 43 % | +36.2 / +33.2 | -5.0 / -7.0 |
+| 2017 - 2023 (out of sample) | 83 / 97 | 27 % / 26 % | +30.0 / +47.3 | -10.0 / -12.7 |
+
+- The case of the morning, W+D+1H with the month at 50/50, never came up in 2024-2026; in 2017-2023 it traded 7
+  times, all longs, and lost all 7 (-7.0R).
+- Every other added trade went against the month: 2024-2026 three shorts under a bullish month, all stopped (-3.0R,
+  one in January 2026); 2017-2023 seven, +24.3R, nearly all of it from three winners (+16.8R in August 2022, +7.7R in
+  March 2020, +4.0R in February 2022).
+- No trade is pushed out. Trades the profile took as the D+4H+1H scalp are named W+D+1H when the weekly agrees too;
+  their results are the same.
+
+Not taken: the morning's case lost every time it came up, and the rest is three outliers in older years against
+three straight losses in the recent ones.
