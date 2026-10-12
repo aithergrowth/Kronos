@@ -35,3 +35,23 @@
 - Week look-back (Friday): one day of log. The NAS100 long from the 57 h old demand that the 24 h rule blocked on 8 October
   would have been stopped (price ran through it to 30,735): the rule was right. The EURUSD short from the 4H supply
   without the 1H (blocked on 8 October) is still open as an idea: price is now inside that supply. Nothing recurs yet.
+
+## 2026-10-12 (Monday)
+
+- EURUSD ✅ eens (no trade): W and D bearish, 4H and 1H 50/50; price 1.1207 mid-range in the week-old range 1.1165-1.1245
+  (efficiency 0.23). Chance: a short after a sweep above 1.1243 with the 1H turning bearish (D+1H, half stake), target
+  1.1175 / 1.1165. No missed chance now; a long is blocked by the weekly.
+- XAUUSD ✅ eens (no trade): the range 4,066-4,230 holds; M and W bearish, 4H bullish, D 50/50; price 4,185 under the range
+  top. Missed chance: a short after a sweep of 4,230 with a 5m/15m shift, target 4,110; blocked by the bias combination
+  (M+W+1H is not in the profile).
+- NAS100 ⚠️ let op: W, D and 1H bullish; the 4H swept buy-side at 31,060 and reads 50/50, price inside the 4H supply
+  30,930-31,200. Missed chance: a long from the fresh 1H demand 30,926-30,981 on a 5m shift, target 31,200 / 31,400;
+  blocked by the bias combination (W+D+1H with the month 50/50); a bullish 4H close makes it the D+4H+1H scalp.
+- BTCUSD ✅ eens (wait): M, W and 4H bullish, D bearish (BMS 82,555); price 83,890 just swept the 84,121 high inside old
+  supply. Missed chance: a long from the fresh 4H demand 82,950-83,500 on a 15m shift; blocked by the bias combination
+  (M+W+4H), valid once the daily turns.
+- Friday's NAS100 long (the 1H demand touched 15:45 Amsterdam): replayed on TradingView data, the scalp combination fell
+  away when the 16:00 1H candle closed lower ("1H not aligned"); price then ran to 31,090. Second NAS100 chance in two
+  sessions left by W+D+1H / the 1H rule: a candidate to backtest (W+D+1H on NAS100). Nothing changed.
+- News: no high-impact; Fed Hammack 18:50 Amsterdam; US Columbus Day (bond market closed). Data: TradingView 08:37, BTC
+  from Bitstamp.
