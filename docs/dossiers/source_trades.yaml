@@ -48,9 +48,48 @@
 - id: BTC-2026-09-14
   symbol: BTCUSD
   direction: long
-  time: "2026-09-14 12:00"
-  entry: 76000
+  time: "2026-09-15 12:00"
+  entry: 76189.18
   stop: 75200
   target: 82400
   result: won
-  source: "academy recording '21.000 euro verdiend met bitcoin', third buy; crosshair Mon 14 Sep 14:00 UTC+2 on the circled low 75,500-76,000, target the liquidity (x) at 82,400; ESTIMATED entry/stop (no order labels), see docs/dossiers/BTCUSD_2026-09-14/README.md"
+  source: "academy recording '21.000 euro verdiend met bitcoin', third buy; target the liquidity (x) at 82,400. Corrected 12 October: the frame reads Tue 15 Sep 14:00 on a UTC+2 clock (the 4H candle 12:00-16:00 UTC, low 75,560 at 14:51 on Bitstamp) and the price line 76,189.18 (first traded 13:39 UTC); Mon 14 Sep's low was 76,370. The Live Q&A of 4 October calls these BTC buys spot positions: no stop. The stop 75,200 is a placeholder (price went to 74,913 at 18:50 UTC). See docs/dossiers/BTCUSD_2026-09-14/README.md"
+# Chart examples from the academy lessons (12 October). The lessons are TradingView replays with no time zone in frame: the UTC
+# minute is where his price traded in the HistData 1m candles (bid). Gold's charts were on UTC+2. Numbers from the long/short
+# tool's labels; "ESTIMATED" where the entry had no label and was derived from the stop and target distances.
+- id: ACA-EP1
+  symbol: XAUUSD
+  direction: short
+  time: "2026-06-17 18:55"
+  entry: 4310.79
+  stop: 4474.11
+  target: 4025.98
+  result: won
+  source: "academy 'Entry & Poi' 05:20-07:16: a 4H zone and a 5m balance shift, in on the retest (1.74R). 4310.79 traded at the 18:54 close, 55 min after the Fed decision (18:00 UTC), 20:55 Amsterdam. The bias lesson shows the same idea at the 4H close before the decision: 4379.52 / 4518.11 / 4025.37 (2.56R, 'vier van de vijf', W, D, 4H, 1H bearish, month 50/50). Target first traded 24 June 12:25 UTC"
+- id: ACA-EP2
+  symbol: XAUUSD
+  direction: short
+  time: "2026-06-23 16:20"
+  entry: 4136.52
+  stop: 4163.39
+  target: 4090.38
+  result: won
+  source: "academy 'Entry & Poi' 07:40-09:36: a 4H zone, a 5m balance shift, the stop on the P ('de candle die dit gat heeft veroorzaakt'), 1.72R. The entry candle is the 4H 14:00-18:00 UTC; 5m closes at his price at 14:10, 16:00-16:25 and 17:15, so replay with --before 150 --after 75. Target first traded 23:38 UTC"
+- id: ACA-TP1
+  symbol: XAUUSD
+  direction: short
+  time: "2026-05-04 15:15"
+  entry: 4546.5
+  stop: 4581.6
+  target: 4508.8
+  result: won
+  source: "academy 'Tradingplan' 10:50-12:01: a scalp (month and week 50/50, D+4H+1H) from a 4H zone with a 5m balance shift, stop on the high of the shift's swing (4581.9 at 14:20 UTC), 1.07R. ESTIMATED entry/stop/target from the tool's distances (35.09 and 37.66); 4546.5 traded 15:15-15:19 UTC, the target 16:08 UTC"
+- id: ACA-TP2
+  symbol: BTCUSD
+  direction: short
+  time: "2026-01-15 12:00"
+  entry: 96397
+  stop: 104042
+  target: 80664
+  result: won
+  source: "academy 'Tradingplan' 15:10-16:50: a weekly zone with a 1H balance shift, the stop behind the 1H P, 2.06R. ESTIMATED entry from the tool's distances (7,645.42 and 15,732.76). The frame's date reads Sun 18 Jan, but Bitstamp traded 96,397 only on 13-15 January (high 95,811 from the 16th), so the time is uncertain; replay with --before 720 --after 720. Target first traded 31 January 16:09 UTC"

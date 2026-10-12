@@ -1,5 +1,11 @@
 # BTCUSD, 14-16 September 2026: Dorus's third buy of the 21,000 EUR BTC trade, as the engine read it
 
+**Correction, 12 October.** The academy frame read in full reads Tuesday 15 September 14:00 on a UTC+2 clock, with the
+price line 76,189.18: the 4H candle 12:00-16:00 UTC, whose low was 75,560 at 14:51 UTC on Bitstamp. Monday 14
+September's low was 76,370, so the circled low is the 15th, between the two days walked below. The Live Q&A of 4
+October calls these BTC buys spot positions, without a stop. At 15 September 13:45 UTC the engine (live BTC profile)
+read 1M 50/50, 1W bullish, 1D 50/50, 4H 50/50, 1H bearish: refused, no setup within six hours.
+
 Source: three frames of the academy recording "21.000 euro verdiend met bitcoin" (INDEX:BTCUSD, chart clock UTC+2),
 relayed by Astra on 4 October: the daily overview with the crosshair on Saturday 8 August (the first buy), the 4H with
 the marked highs and lows (x) and the crosshair on Thursday 3 September 02:00, and the 4H with the circled low at
