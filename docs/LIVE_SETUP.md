@@ -116,6 +116,32 @@ message to Telegram. Once:
 From then on: the laptop sleeps, loses power or internet, or the watchdog window is closed, and within 15 minutes
 Telegram says the check is down; it says so again when the calls come back.
 
+**The weekly parity check (12 October).** Does the bot trade what the backtest trades? `scripts\parity_week.bat` takes
+the week from the FTMO journal and runs the backtest over the same week on the FTMO terminal's own candles (5m to
+monthly, from the terminal the windows trade on), each market with exactly the settings its window ran: they are
+rebuilt from the window's start record in `journal_ftmo\starts\`, and the report says when they are not identical. A
+setup has the same id on both sides (its zone and its confirmation candle), so every signal of the week gets a verdict:
+
+- **match**: both saw it and did the same with it (a trade with the same exit, a limit that did not fill, a refusal);
+- **outcome differs**: both saw it and the result differs: a live-only rule (the spread cap, the margin, the account's
+  other markets in the guard; the backtest runs one market at a time) or another fill or exit, worth a look;
+- **backtest only**: the window did not signal. Most often it was not running (its next journal row is a restart);
+  otherwise it saw other candles or other zone memory: worth a look;
+- **live only**: the backtest did not signal: worth a look.
+
+It reads only (no order; it may run while the windows trade), writes `journal_ftmo\parity\parity_<Monday>.md` with a
+CSV beside it and the candles it used (`--data-dir` reruns the week on exactly those), and sends the summary to
+Telegram. On a Friday evening it checks the week so far, on a Monday the week before; `--week last` or
+`--week 2026-10-05` picks another. Every Friday at 22:30 by itself (the laptop on and logged in, the terminal running),
+once in PowerShell in the Kronos folder:
+
+```powershell
+schtasks /Create /TN "Kronos parity" /TR "$PWD\scripts\parity_week_auto.bat" /SC WEEKLY /D FRI /ST 22:30
+```
+
+`parity_week_auto.bat` is the same check without the pause at the end, for the Task Scheduler and for Claude Code on
+the laptop ("run scripts\parity_week_auto.bat and explain the newest report in journal_ftmo\parity").
+
 Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
 touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
 (`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop

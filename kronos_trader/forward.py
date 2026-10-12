@@ -23,6 +23,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from .journal import journal_times
+
 DEAL_COLUMNS = ["ticket", "order", "position_id", "symbol", "type", "entry", "reason", "time", "price", "volume",
                 "profit", "commission", "swap", "fee", "magic", "comment"]
 BUY, SELL = 0, 1                                     # DEAL_TYPE_BUY / DEAL_TYPE_SELL (balance operations are 2 and up)
@@ -108,8 +110,8 @@ def account_from_mt5(broker) -> Dict[str, Any]:
 # ------------------------------------------------------------------ the journal
 
 def read_journal(path) -> pd.DataFrame:
-    frame = pd.read_csv(path, dtype={"id": str})
-    frame["time"] = pd.to_datetime(frame["time"], errors="coerce")
+    frame = pd.read_csv(path, dtype={"id": str, "symbol": str})
+    frame["time"] = journal_times(frame["time"])
     for col in ("entry", "stop", "take_profit", "rr", "lots", "risk", "price", "pnl", "r"):
         if col in frame:
             frame[col] = pd.to_numeric(frame[col], errors="coerce")

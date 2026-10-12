@@ -13,7 +13,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -380,8 +380,11 @@ def apply_product(settings: Settings, product: str) -> None:
         setattr(settings.prop_firm, key, value)
 
 
-def cmd_live(args) -> int:
-    from .live import WINDOW_TAKEN, LiveRunner, WindowLock, build_fetch
+def live_settings(args) -> Tuple[Settings, str]:
+    """A live window's settings from its command line: the profile with the command's overrides (account size, weekend
+    close, risk, drawdown steps, the target and its protection, the funding product, the journal), before the terminal is
+    asked anything (``cmd_live`` then sizes the market with the server's contract). The weekly parity check rebuilds a
+    window's settings from the command in its start record with this same function."""
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
     _apply_mt5_symbol(args, settings, symbol)
@@ -408,6 +411,12 @@ def cmd_live(args) -> int:
     if getattr(args, "journal", None):
         settings.live.journal_path = args.journal
         settings.live.charts_dir = str(Path(args.journal).parent / "charts")
+    return settings, symbol
+
+
+def cmd_live(args) -> int:
+    from .live import WINDOW_TAKEN, LiveRunner, WindowLock, build_fetch
+    settings, symbol = live_settings(args)
     if settings.live.journal_path:          # one window per market and journal, before the terminal is asked anything
         folder = Path(settings.live.journal_path).parent
         window = WindowLock(folder, symbol)
@@ -449,11 +458,9 @@ def cmd_live(args) -> int:
                         engine=_engine(settings),
                         dry_run=not args.execute, require_approval=not args.no_approval,
                         notify_every_scan=args.notify_every_scan, keep_paper_account=args.broker == "paper")
-    import hashlib
-    from .backtest.provenance import code_snapshot, settings_dict
+    from .backtest.provenance import code_snapshot, settings_fingerprint
     code = code_snapshot()
-    resolved = settings_dict(settings)
-    settings_sha = hashlib.sha256(json.dumps(resolved, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+    resolved, settings_sha = settings_fingerprint(settings)
     print(f"code: {code.get('commit')} source {code['source_sha256'][:12]}{' (uncommitted changes)' if code.get('dirty') else ''}, "
           f"settings {settings_sha[:12]}")
     runner.record_start(code, resolved, settings_sha, " ".join(sys.argv))
@@ -562,6 +569,26 @@ def cmd_forward_report(args) -> int:
         print(text)
         notifier.send(text)
     return 0
+
+
+def cmd_parity(args) -> int:
+    """The week's live journal against a backtest of the same week on the terminal's own candles, every market with its
+    window's settings (from the window's start record): every signal on both sides by its setup id, what each side did
+    with it, and why they differ. Reads only: no order, no window file changed. Writes parity/ next to the journal."""
+    from .parity import run_parity, summary_lines, telegram_text
+    settings = _load_settings(args)
+    report = run_parity(args.journal, week=args.week, start=args.start, end=args.end, markets=args.markets,
+                        data_dir=args.data_dir, out_dir=args.out_dir, warmup_days=args.warmup_days,
+                        account_size=args.account_size, product=args.product, mt5_names=args.mt5_names)
+    for line in summary_lines(report):
+        print(line)
+    print(f"report: {report.markdown_path}")
+    if args.telegram:
+        notifier = TelegramNotifier(params=settings.telegram)
+        if args.tag:
+            notifier.prefix = f"[{args.tag}] "
+        notifier.send(telegram_text(report))
+    return 0 if report.markets_checked else 1
 
 
 def cmd_watchdog(args) -> int:
@@ -1018,6 +1045,26 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--tag", help="with --telegram: [TAG] in front of the message, e.g. FTMO")
     sp.add_argument("--target-pct", type=float, help="with --telegram: the phase's profit target in %%, e.g. 10")
     sp.set_defaults(func=cmd_forward_report)
+
+    sp = sub.add_parser("parity", help="the week's live journal against a backtest of the same week on the terminal's candles "
+                        "with each window's own settings: every signal on both sides, what each did, why they differ (reads only)")
+    sp.add_argument("--journal", default="journal_ftmo/trades.csv")
+    sp.add_argument("--week", default="auto", help="auto (the week so far; on a Monday the week before), this, last, or a date "
+                    "inside the week (YYYY-MM-DD)")
+    sp.add_argument("--from", dest="start", help="the window's start in UTC (YYYY-MM-DD or 'YYYY-MM-DD HH:MM'), in place of --week")
+    sp.add_argument("--to", dest="end", help="with --from: the window's end in UTC (default: now)")
+    sp.add_argument("--markets", help="comma list, SYMBOL or SYMBOL=profile.yaml (default: the journal's markets; a market's "
+                    "settings come from its window's start record unless a profile is named)")
+    sp.add_argument("--data-dir", help="read <SYMBOL>_<TF>.csv candles here instead of the MT5 terminal (a rerun on the "
+                    "candles an earlier check saved in parity/candles_<week>)")
+    sp.add_argument("--warmup-days", type=float, default=7.0, help="days the backtest runs before the week (zones, visits)")
+    sp.add_argument("--account-size", type=float, help="a market without a start record: the account's initial balance")
+    sp.add_argument("--product", help="a market without a start record: the funding product, e.g. ftmo_2step")
+    sp.add_argument("--mt5-names", help="a market without a start record: the server's names, e.g. NAS100=US100.cash,BTCUSD=BTCUSD")
+    sp.add_argument("--out-dir", help="where the report goes (default: parity/ next to the journal)")
+    sp.add_argument("--telegram", action="store_true", help="send the summary to Telegram")
+    sp.add_argument("--tag", help="with --telegram: [TAG] in front of the message, e.g. FTMO")
+    sp.set_defaults(func=cmd_parity)
 
     sp = sub.add_parser("watchdog", help="watch the live windows' heartbeats (next to the journal) and say on Telegram when "
                         "one stops, its scans fail or its news calendar runs dry")

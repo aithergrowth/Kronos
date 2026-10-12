@@ -8,6 +8,7 @@ from that file alone.
 from __future__ import annotations
 
 import csv
+import hashlib
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -18,6 +19,21 @@ FIELDS = ["time", "symbol", "event", "id", "direction", "poi_tf", "confirmation"
 EVENTS = ("briefing", "poi_touch", "setup", "approval_requested", "approved", "approved_late", "skipped", "expired",
           "not_executed", "filled", "submitted", "fill_confirmed", "did_not_fill", "breakeven", "closed", "stale", "deferred",
           "start", "limit_placed", "limit_cancelled", "limit_gone")
+
+
+def setup_id(key) -> str:
+    """The id of a setup in the journal and in a backtest's signal log: the first 8 hex of the SHA-1 of its key, the zone's
+    key and the confirmation candle's open time as the live runner and the backtest both build it
+    (``(setup.poi.key, str(setup.confirmation.timestamp))``). The same setup gets the same id on both sides, which is what
+    the weekly parity check matches on (``live.short_id_for`` is the same function)."""
+    return hashlib.sha1(str(key).encode("utf-8")).hexdigest()[:8]
+
+
+def journal_times(values) -> pd.Series:
+    """The journal's ``time`` column as timestamps. The rows a scan writes carry microseconds (the clock), a close its
+    deal's whole second: one format inferred from the first row turned every other row into NaT (an evening summary of
+    0 closed trades), so each value is read as the ISO 8601 time it is."""
+    return pd.to_datetime(pd.Series(values), format="ISO8601", errors="coerce")
 
 
 class Journal:
@@ -63,7 +79,7 @@ def summary(path) -> Dict[str, Any]:
                     "win_rate": len(wins) / max(1, len(wins) + len(losses)), "avg_r": float(closed["r"].mean()),
                     "sum_r": float(closed["r"].sum()), "avg_win_r": float(wins["r"].mean()) if len(wins) else 0.0,
                     "pnl": float(closed["pnl"].sum())})
-        closed["month"] = pd.to_datetime(closed["time"]).dt.to_period("M").astype(str)
+        closed["month"] = journal_times(closed["time"]).dt.to_period("M").astype(str)
         out["by_month"] = {m: (len(g), round(float(g["r"].sum()), 2)) for m, g in closed.groupby("month")}
     return out
 

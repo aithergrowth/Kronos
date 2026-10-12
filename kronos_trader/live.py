@@ -35,7 +35,7 @@ from .core.types import Analysis, Bias, Direction, ForecastSummary, TradeMode, T
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
-from .journal import Journal
+from .journal import Journal, journal_times
 from .notify.telegram import TelegramNotifier
 from .strategy.engine import StrategyEngine, in_session
 from .strategy.exits import breakeven_reached
@@ -593,7 +593,8 @@ class LiveRunner:
         week_line = ""
         if self.journal is not None and self.journal.path.exists():
             try:
-                rows = pd.read_csv(self.journal.path, parse_dates=["time"])
+                rows = pd.read_csv(self.journal.path)
+                rows["time"] = journal_times(rows["time"])
                 rows = rows[rows["symbol"] == self.symbol]
                 dates = rows["time"].dt.tz_localize("UTC").dt.tz_convert(tz).dt.date
                 day = dates == local.date()

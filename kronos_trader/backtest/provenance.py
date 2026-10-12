@@ -8,7 +8,7 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -82,6 +82,13 @@ def _jsonable(obj: Any) -> Any:
 def settings_dict(settings) -> Dict[str, Any]:
     """Resolved settings as plain JSON (enums and timeframes as text; secrets are env var *names* only)."""
     return _jsonable(dataclasses.asdict(settings))
+
+
+def settings_fingerprint(settings) -> Tuple[Dict[str, Any], str]:
+    """The resolved settings and their SHA-256, as a live window records them at its start (the journal's ``start`` row,
+    ``starts/<symbol>_<time>.json``): the weekly parity check computes the same to show it ran the window's settings."""
+    resolved = settings_dict(settings)
+    return resolved, hashlib.sha256(json.dumps(resolved, sort_keys=True, default=str).encode("utf-8")).hexdigest()
 
 
 def data_manifest(data_dir, symbol: str) -> Dict[str, Any]:

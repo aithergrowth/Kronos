@@ -369,6 +369,24 @@ def test_evening_summary_once_per_weekday_from_the_journal(setup, tmp_path):
     assert sum("📊" in m for m in notifier.sent) == 1
 
 
+def test_evening_summary_reads_scan_rows_with_microseconds_and_closes_without(setup, tmp_path):
+    """A scan's row carries the clock's microseconds, a close its deal's whole second: the journal mixes both, and a
+    format inferred from the first row made every close unreadable (the summary said 0 trades closed)."""
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    settings.live.briefing_time = None
+    notifier = TelegramNotifier(dry_run=True)
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 18:00", symbol="EURUSD")}
+    runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=FakeEngine(setup, signal_on_first_call=False),
+                        clock=lambda: NOW)
+    runner.journal.log("start", "EURUSD", time=pd.Timestamp("2026-10-01 06:58:12.345678"), note="code x")
+    runner.journal.log("setup", "EURUSD", time=pd.Timestamp("2026-10-01 08:05:40.123456"))
+    runner.journal.log("closed", "EURUSD", time=pd.Timestamp("2026-10-01 14:10:00"), r=2.5, pnl=2500.0)
+    runner.step(pd.Timestamp("2026-10-01 20:01"))
+    summaries = [m for m in notifier.sent if "📊" in m]
+    assert len(summaries) == 1 and "1 trade(s) closed, 1 won, +2.50R" in summaries[0] and "1 setup(s)" in summaries[0]
+
+
 def test_a_touch_outside_the_entry_windows_waits_for_the_window(setup):
     """No entry can follow a touch at night: nothing is said then; a zone price is still in when a window opens is said
     at that moment."""

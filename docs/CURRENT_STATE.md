@@ -83,6 +83,13 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   ran on, journal fills the history lacks, and positions that are not the bot's. It also reads the account against
   the product's limits (`--product ftmo_2step` or `ftmo_1step`): what is left of the day and of the total, the open
   risk to every stop and the worst case. Output: `journal_ftmo/report/forward_report.html` and `forward_trades.csv`.
+- `scripts\parity_week.bat` (`python -m kronos_trader parity`, reads only, 12 October): the week's journal against a
+  backtest of the same week on the FTMO terminal's candles, each market with the settings its window ran (rebuilt from
+  its start record, the fingerprint compared). Every setup carries the same id in the journal and in the backtest's
+  signal log (`journal.setup_id`: zone and confirmation candle), so each signal is a match, an outcome that differs, a
+  backtest-only or a live-only signal, with what the files say about why (the window down, a restart, a live-only
+  rule). Output: `journal_ftmo/parity/parity_<Monday>.md` and `.csv`, the candles it used, a Telegram summary;
+  `parity_week_auto.bat` runs it without the pause (Task Scheduler every Friday at 22:30, `docs/LIVE_SETUP.md`).
 - Every window writes `heartbeat_<symbol>.json` next to its journal after each scan; a watchdog window (started
   by both scripts) says on Telegram when a window has not scanned for 5 minutes, has had no good scan for 15
   (MT5 link down, errors), or its news calendar has nothing ahead on a Monday to Thursday, and again when it is

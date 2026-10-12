@@ -204,3 +204,16 @@ def test_the_edge_line_reads_the_last_trades_and_warns_when_they_run_cold():
     cold = rec.copy(); cold.loc[cold.index[-20:], "r_net"] = -1.0
     assert edge_line(cold).startswith("⚠️ Edge: last 20 trades -20.0R")
     assert edge_line(pd.DataFrame({"exit_time": stamps[:25], "r_net": [np.nan] * 25, "source": "bot"})) == ""   # nothing after costs yet
+
+
+def test_read_journal_keeps_whole_second_rows_after_microsecond_rows(tmp_path):
+    """The live journal mixes the clock's microseconds (scans) and whole seconds (closes at their deal's time)."""
+    from kronos_trader.forward import read_journal
+    from kronos_trader.journal import Journal
+    j = Journal(tmp_path / "trades.csv")
+    j.log("start", "EURUSD", time=pd.Timestamp("2026-10-06 06:58:12.345678"), note="code x")
+    j.log("filled", "EURUSD", time=pd.Timestamp("2026-10-06 08:10:30.5"), id="P1", note="setup aaaaaaaa")
+    j.log("closed", "EURUSD", time=pd.Timestamp("2026-10-06 08:25:00"), id="P1", r=-1.0, reason="stop")
+    frame = read_journal(j.path)
+    assert frame["time"].notna().all()
+    assert frame.loc[frame["event"] == "closed", "time"].iloc[0] == pd.Timestamp("2026-10-06 08:25:00")
