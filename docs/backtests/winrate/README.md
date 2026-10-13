@@ -1984,5 +1984,12 @@ The profile: 41 trades in 33 months (1.2 a month, 12 months without one). Every 
 Only the second position holds. His own journal in the academy gives EURUSD 37 % (CJ 14:51), and he trades it "dit
 jaar" only on A++ setups (CJ 16:27).
 
-**Taken: nothing during the challenge** (the profiles are frozen). Candidates for after it, for Max to decide:
-`prop_firm.max_open_per_symbol: 2` for EURUSD (the account stays at two open) and `risk.min_rr: 0.8` for NAS100.
+**Taken (13 October, before the challenge; Max: "Perfect dan voeren we dat in"):** `prop_firm.max_open_per_symbol: 2`
+in `config/dorus_live.yaml` (the account stays at two open) and `risk.min_rr: 0.8` in `config/dorus_live_nas100.yaml`.
+The live runner now also refuses a new setup in a market while one of its limit entries rests, as the backtest does
+(with one slot a market the guard refused it already). Of the 14 extra EURUSD trades of both periods, 8 came from the
+zone the first trade was on (2024-2026 +4.6R, 2017-2023 -0.8R) and 6 from another zone (+1.8R, +7.8R); the guard
+refuses the second when both stops together would reach the day's limit. With the live profiles themselves (1.5 %, the
+multipliers, the guard): EURUSD 41 -> 45 trades, 46.3 -> 46.7 %, +38.8R -> +41.4R, the largest dip 6.67 % both;
+NAS100 37 -> 41 trades, 45.9 -> 46.3 %, +33.1R -> +34.1R, the largest dip 7.50 % -> 8.63 %. The four markets at 1 %
+under the account's two open: 320 trades, 50.9 %, +237.1R against 312, 51.0 %, +231.7R, drawdown 8.0R both.

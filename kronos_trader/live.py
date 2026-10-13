@@ -1108,6 +1108,16 @@ class LiveRunner:
             stopless = []
         if stopless:
             return False, f"position(s) {', '.join(stopless)} without a stop on the server: no new trade until every position has one"
+        # as the backtest: no new setup in this market while one of its limit entries rests, whatever the per-market slots
+        # (with prop_firm.max_open_per_symbol 2 a second position comes from a filled trade, never from a second limit)
+        working = getattr(self.broker, "limit_orders", None)
+        if callable(working):
+            try:
+                resting = working(self.symbol)
+            except Exception as exc:
+                return False, f"the resting limit entries could not be read ({exc})"
+            if resting:
+                return False, f"a limit entry is working in {self.symbol} ({resting[0].id})"
         return self.guard.can_open(self.broker, now, self.symbol, new_risk=risk)
 
     def stake_note(self, risk_params) -> str:

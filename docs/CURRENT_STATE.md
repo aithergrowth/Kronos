@@ -40,7 +40,8 @@ in the MT5 terminal and tokens in environment variables.
 | Signal after the visit's first touch (since 9 October) | within 24 hours on a 1H zone, any on a 4H zone | the same | the same | the same |
 | Smallest gap (of the median candle range) | 0.1 (7 October; was 0.2) | 0.2 | 0.1 (7 October) | 0.2 |
 | The zone's gap when an impulse left several | the first (the deepest P) | the one nearest the break (`poi_gap_choice: last`, 8 October) | the first | the first |
-| Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 1.0 | 0.5 |
+| Minimum R:R | 1.0 | 0.8 (7 October; was 0.5) | 0.8 (13 October; was 1.0) | 0.5 |
+| Open in the market | 2 (13 October): a second trade while the first runs, never while a limit rests | 1 | 1 | 1 |
 | Break-even | after 4R | after 2R (7 October) | after 4R | after 4R |
 | Target | origin of the move that made the zone | as EURUSD; a fixed 2R where none reaches the minimum R:R (`tp_fallback`) | as EURUSD | the previous extreme, capped at 3R (nearest liquidity; 2R before 7 October) |
 | Minimum stop | 8 pips | 8 pips ($0.80) | 12 points | $60 |
@@ -70,7 +71,7 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   would reach the day's or the total limit: with `--product ftmo_2step` -4 % a day and -9.5 % from the initial
   balance (FTMO 2-Step: 5 % and 10 %), with `ftmo_1step` -2.9 % a day and -9 % from the highest day-start balance
   (FTMO 1-Step: 3 % and 10 % trailing), without a product (the demo) the profiles' -4 % and -8 %. At most 2 open
-  trades, 1 per market, resting limits included; a position may tie up at most 45 % of the equity in margin. The
+  trades, 1 per market (EURUSD 2 since 13 October), resting limits included, and no new setup in a market while its limit rests; a position may tie up at most 45 % of the equity in margin. The
   highest day-start balance survives a restart (`guard_day_high.json` next to the journal).
 - The open-slot and worst-case checks and the order run under one lock shared by the account's windows. A window that
   cannot get the lock defers the entry and tries again every scan until it expires; it never trades without it.

@@ -1139,6 +1139,35 @@ def test_a_resting_limit_takes_the_markets_slot(setup):
     assert not ok and "resting limit entries count" in reason
 
 
+def test_with_two_slots_a_resting_limit_still_blocks_the_market_and_a_filled_trade_does_not(setup):
+    """prop_firm.max_open_per_symbol 2 (EURUSD, 13 October): the backtest takes no new setup while its limit works, so the
+    live runner refuses one too; once the limit has filled, the second slot is free for the next setup."""
+    runner, broker, notifier = _limit_runner(setup)
+    runner.guard.params.max_open_trades, runner.guard.params.max_open_per_symbol = 2, 2
+    runner.step(NOW)
+    order = broker.limit_orders()[0]
+    ok, reason = runner._can_open(setup, NOW)
+    assert not ok and reason == f"a limit entry is working in EURUSD ({order.id})"
+    broker.on_candle("EURUSD", Candle(0, NOW, 1.1, 1.1002, 1.0985, 1.0990))                 # the limit fills
+    runner.step(NOW + pd.Timedelta(minutes=16))
+    assert len(broker.open_positions("EURUSD")) == 1 and broker.limit_orders() == []
+    ok, reason = runner._can_open(setup, NOW + pd.Timedelta(minutes=16))
+    assert ok, reason
+    runner.guard.params.max_open_per_symbol = 1                                             # the other markets: one slot
+    ok, reason = runner._can_open(setup, NOW + pd.Timedelta(minutes=16))
+    assert not ok and "max 1 open trade(s) in EURUSD" in reason
+
+
+def test_a_terminal_that_cannot_list_its_limits_opens_nothing(setup):
+    runner, broker, notifier = _limit_runner(setup)
+
+    def broken(symbol=None):
+        raise RuntimeError("terminal busy")
+    broker.limit_orders = broken
+    ok, reason = runner._can_open(setup, NOW)
+    assert not ok and "could not be read" in reason
+
+
 def test_resting_limits_survive_a_restart_and_unknown_ones_are_cancelled(setup, tmp_path):
     """The window's resting limits are kept next to the journal: after a restart they are still watched (expiry, fill).
     A resting limit of this market the window has no record of is cancelled at its first scan."""

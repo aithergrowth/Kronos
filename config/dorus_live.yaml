@@ -113,7 +113,11 @@ exits:
   partials: false
 prop_firm:
   max_open_trades: 2              # 5 October: two open on the account, one per market (EURUSD, gold, BTC, GBPUSD, NAS100 at 1.5 %,
-  max_open_per_symbol: 1          # 790 challenge starts 2024-2026: funded 85 %, phase 1 median 42 days; one open on the account 74 %, 51 days)
+  max_open_per_symbol: 2          # 790 challenge starts 2024-2026: funded 85 %, phase 1 median 42 days; one open on the account 74 %, 51 days)
+                                  # 13 October (Max: invoeren): a second EURUSD trade while the first runs, never while a limit
+                                  # rests (as the backtest). 2024 - September 2026: 47 trades, 47 %, +44.2R against 41, 46 %, +38.8R;
+                                  # 2017-2023: +8.5R against +1.5R; with the four markets under the account's two open,
+                                  # +236.2R against +231.7R. README "The academy against the bot"
   daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
   monthly_loss_limit_pct: 0.0     # off by Max's choice (5 October): better entries, not a stop. At 4.5 % (3R at 1.5 %), five markets, two open,
                                   # 2024-2026: worst month -11.0 % -> -5.2 %, drawdown -24 % -> -15 %, the average month +6.0 %

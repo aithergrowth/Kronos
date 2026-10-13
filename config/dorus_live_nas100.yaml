@@ -54,8 +54,10 @@ risk:
                                   # it 0.5 %; only the stake changes, never the trades. FTMO challenge, five markets, two open,
                                   # 790 starts 2024-2026: funded 85 % flat -> 92 %. On the funded account plan 1.0 % with
                                   # [[-3, 0.5]]: lost within a year 11 % flat -> 2 % (with every trade 0.15R worse live: 21 % -> 11 %)
-  min_rr: 1.0                     # 6 October, Max: judged on the recent years (the bot trades now, not 2017): NAS100 since 2024 at 0.5 / 1.0 / 1.5: 67 / 45 / 31 trades, 54 / 47 / 45 % won, +19.8 / +21.5 / +20.5R.
-                                  # Over 2017-2026 the 1.5 of 5 October did better in 2017-2022 (docs/backtests/winrate/README.md)
+  min_rr: 0.8                     # 13 October (Max: invoeren; Dorus: "0,8 ... met mijn winrate winstgevend", QA 24:36): 2024 - September
+                                  # 2026 43 trades, 47 %, +37.2R against 39, 46 %, +36.2R at 1.0; 2017-2023 100 trades, 32 %, +38.8R
+                                  # against 83, 27 %, +30.0R. README "The academy against the bot". Was 1.0 since 6 October (judged
+                                  # on the recent years: 0.5 / 1.0 / 1.5 gave 67 / 45 / 31 trades, +19.8 / +21.5 / +20.5R then)
   max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
   stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
   stop_protection: recent_1h
