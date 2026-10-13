@@ -55,3 +55,21 @@
   sessions left by W+D+1H / the 1H rule: a candidate to backtest (W+D+1H on NAS100). Nothing changed.
 - News: no high-impact; Fed Hammack 18:50 Amsterdam; US Columbus Day (bond market closed). Data: TradingView 08:37, BTC
   from Bitstamp.
+
+## 2026-10-13 (Tuesday)
+
+- EURUSD ✅ eens (no trade): W, D and 4H bearish (the daily broke the week-old range low, BOS 1.11612), the 1H bullish
+  after a BMS through 1.11778 (a pullback). Trade: a short after price returns into the fresh supply 1.1187-1.1210 (4H/1H)
+  with a 15m/5m shift and the 1H turning bearish, target 1.1153 and below. No missed chance now; a shift while the 1H
+  still reads bullish is blocked by the 1H requirement (W+D+4H alone is his full match).
+- XAUUSD ✅ eens (no trade): the range 4,066-4,230 holds (efficiency 0.02); M and W bearish, D and 4H 50/50, 1H bullish;
+  price 4,185 in the 1H supply 4,185-4,204. Missed chance: a short after a sweep of 4,230 with a 5m/15m shift, target
+  4,110; blocked by the bias combination (M+W+1H is not in the profile).
+- NAS100 ✅ eens (wait): W and D bullish, 4H and 1H bearish after the drop from 31,060 to 30,480 (-7 hour ranges,
+  efficiency 0.57: run through, not tested). Missed chance: a long from the weekly/4H demand 29,820-30,258 after a sweep
+  and a shift (W+D); blocked by the month at 50/50 (only the D+4H+1H scalp is left) and the zone's age (24 h rule).
+- BTCUSD ✅ eens (wait): M, W and 1H bullish, D bearish, 4H 50/50; price 83,640 back in the 1H supply 83,400-83,900 after
+  the sweep to 81,000. Missed chance: a long from the fresh 1H demand 81,340-83,030 on a 15m shift; blocked by the bias
+  combination (M+W+1H), valid once the daily turns.
+- News: USD Existing Home Sales 16:00 Amsterdam (blackout 15:30-16:30 for the USD markets). Data: TradingView 08:36, BTC
+  from Bitstamp. The live profiles since 1d87337: EURUSD two positions at once, NAS100 at R:R 0.8 (from the next restart).
