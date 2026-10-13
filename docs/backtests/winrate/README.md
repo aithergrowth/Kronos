@@ -1858,3 +1858,131 @@ off, bid candles, HistData NSXUSD; the 1H stays required and the weekly a veto):
 
 Not taken: the morning's case lost every time it came up, and the rest is three outliers in older years against
 three straight losses in the recent ones.
+
+## The academy against the bot (12-13 October)
+
+Max had the academy's lessons read on his laptop (the captions of 28 of its 34 lessons and 18 chart frames; the
+transcripts stay on his machine). Of the 31 open questions 22 got an answer. Every rule he states there was set
+against the live profiles as a backtest, one change at a time: 1 % units, the guard off, bid candles, 2024-01-01 to
+2026-09-24 (the research ledgers of `q4_r26_*_visit1h_full`, reproduced trade for trade on today's code). A change
+that gained was then run on 2017-2023 (BTC June 2020-2023), and kept only if it gained there too.
+
+**What already matches.** The bias per timeframe is liquidity plus balance, 50/50 when they disagree (TP 02:56). The
+P is "de candle die dit gat heeft veroorzaakt" (EP 07:59). The shift's line moves to the newest gap (TP 15:13; the
+code takes the opposing gap current at each candle). The first candle after the shift is the shift candle itself (a
+run with `entry_after_shift` gives the same 312 trades). In a scalp the stop sits on the high of the shift's swing (TP
+11:39; the profiles' `stop_basis: confirmation`). He trades "gemiddeld nul tot acht trades per maand" (BA 08:16) at
+50-65 %; the four profiles together take 9.5 a month at 46-58 %.
+
+### His chart examples, replayed
+
+The lessons are TradingView replays without a clock in frame. Matching his prices in the 1m candles puts gold's
+charts on UTC+2 (records in `docs/dossiers/source_trades.yaml`). `scripts/source_trades.py` with the live profiles:
+
+| Example | His trade | The bot |
+|---|---|---|
+| Gold short 23 June 2026 (4H zone, 5m shift) | 4136.52 / 4163.39 / 4090.38, 1.72R, won | The same 4H zone (4137-4198) and nearly the same target: 15m shift at 14:45 UTC, 4126.02 / 4144.80 / 4088.26. With his 5m shift for a 4H zone: 14:35 UTC, 4126.60 / 4144.80 / 4090.00. Refused by the bias: 1H bullish, the week 50/50 (he reads W, D, 4H bearish) |
+| Gold short 17 June 2026 (bias lesson, "vier van de vijf") | 4310.79 / 4474.11 / 4025.98, 1.74R, won | His entry is 55 min after the Fed decision, 20:55 Amsterdam, from a daily zone (4353-4481; the profile trades 4H and 1H zones) first touched 160 h after it formed: news, session and zone age all refuse. The bias read bullish: the drop from 4379 to 4310 was inside a 1H and a 4H candle still open, and counting that open candle its long lower wick reads as a sell-side sweep (bullish again) |
+| Gold scalp 4 May 2026 (D+4H+1H, 4H zone, 5m shift) | about 4546.5 / 4581.6 / 4508.8, 1.07R, won | No zone: the 1H zone above (4590.8-4612.9) was missed by $8 and the 4H zone above it was broken; the bias refused (4H bullish) |
+| Gold, Live Q&A of 4 October: short 4164.38 / 4229.12 / 4111.26 (0.82R) if Monday's 9-10 h takes the 4H liquidity | not taken by him; it would have filled at 9:45 Amsterdam on 5 October and paid on 7 October | M, D and 4H bearish, the 1H 50/50: refused on the 1H requirement; no zone in reach |
+| BTC short January 2026 (weekly zone, 1H shift) | about 96,397 / 104,042 / 80,664, 2.06R, won | The bot maps no weekly zones |
+| BTC "21,000 euro" buy | 15 September (not the 14th), around 76,189 | A spot purchase without a stop (Live Q&A), not a prop trade; the bot refused (1H bearish) |
+
+Where the bot and he part is mostly the bias reading, then zone age, session and news.
+
+### The rules one by one (2024 - September 2026)
+
+Change in R against the profile, in brackets the change in trades (base: EURUSD 41 trades +38.8R, gold 143 +86.1R,
+NAS100 39 +36.2R, BTC 89 +70.6R; together 312, +231.7R):
+
+| Rule (lesson) | Variant | EURUSD | Gold | NAS100 | BTC | Sum |
+|---|---|---|---|---|---|---|
+| His bias table: M+W+D, W+D+4H, M+D+1H, no veto, no 1H requirement (TP 02:08-02:42) | `pure` | -22.0 (+11) | -35.4 (-22) | -13.5 (+35) | -5.9 (+5) | -76.7 |
+| His three combinations, the 1H and the vetoes kept | `combos` | -12.1 (-16) | -34.9 (-50) | 0 | -5.9 (+5) | -52.9 |
+| No veto per timeframe | `noveto` | -4.4 (+14) | | +5.5 (+6) | | |
+| No 1H requirement (W+D+4H is a full match, TP 02:14) | `noreq` | +3.6 (+13) | -4.5 (+35) | -9.5 (+27) | | |
+| The gap of a candle still open counts (BA 02:09) | `forming`* | -19.2 (+4) | -0.6 (-7) | +0.6 (+1) | -10.2 (+23) | -29.4 |
+| The balance side is the gap price is in (BA 04:44) | `tested` / `inside`* | -7.1 / -10.6 | -13.8 / -54.3 | -10.6 / +5.4 | -27.2 / -28.5 | -58.8 / -88.1 |
+| Mostly market orders (QA 54:13) | `market` | -16.0 (+4) | | -10.5 (+7) | | |
+| 4H zone -> 5m shift (TP 06:02) | `c4h5m` | -14.6 | -19.2 | -8.7 | +1.0 | -41.5 |
+| 1H -> 1m, 4H -> 5m, D -> 15m, 1m steps (EP 03:16) | `book1m` | -46.6 (+49) | -74.6 (+89) | -42.0 (+64) | +12.5 (+68) | -150.7 |
+| An earlier or later shift is a personal choice (EP 08:50) | `atleast` | -6.8 | -13.3 | -1.4 | +3.5 | -18.0 |
+| Zones on M, W, D, 4H, 1H (TP 04:12) | `poiall` | -0.1 | -9.7 | 0 | -4.1 | -14.0 |
+| 15m zones, 5m shifts | `m15` | +2.9 (+21) | +6.9 (+71) | -4.3 (+17) | -13.2 (+50) | |
+| Target: the next liquidity (TP 06:20) | `tpliq` | -27.5 | -29.6 | -2.2 | -24.5 | -83.7 |
+| R:R 0.8 is enough (QA 24:36) | `rr08` | -10.0 (+9) | (0.8 now) | +1.0 (+4) | -4.0 | |
+| Stop behind the P (TP 06:17) | `stopP` | -38.0 | -31.7 | -24.0 | -46.6 | -140.3 |
+| "Iets meer pips" (AN1 02:27): 1 pip, $1, 5 points, $50 | `slbuf` | -4.8 | -11.9 | -0.8 | -10.5 | -27.9 |
+| Break-even after 4R (TP 06:42) | `be4` | | -2.0 | | | |
+| SL and TP run (TP 07:43) | `nohold` | | | -1.7 | | |
+| 9 to 5 without the break (QA 44:32); 9 to 21 | `s917` / `s0921` | -4.2 / -6.4 | -11.0 / -19.3 | -6.9 / -6.1 | +4.8 / -2.8 | -17.4 / -34.6 |
+| No news minutes (QA 43:23) | `nonews` | -0.1 (+2) | +0.7 (+13) | -5.0 (+5) | +0.9 (+5) | -3.5 |
+| DXY as extra confirmation for EURUSD (B3 06:36), filling a 50/50 | `eudxy` | -7.4 (+5) | | | | |
+| A P closed through is a shift (QA 16:20), BTC | `btcflip` | | | | +3.7 (+24) | |
+| Zone age, second visits: not said (any age; the visit rule flipped) | `notouch` / `visit1` | -1.3 / -5.3 | -2.0 / -6.0 | -3.0 / -1.1 | -10.9 / -3.9 | -17.2 / -16.4 |
+| Weekend only on a swing account (QA 44:41): flat Friday 16:45 New York | `wkclose` | -2.0 | -7.7 | 0 | +1.4 | -8.3 |
+| BTC on weekends too | `btcwknd` | | | | -7.7 (+42) | |
+| All of his rules together (bias table, market orders, 9-17, liquidity target) | `academy` | -75.0 (+77) | -68.0 | -29.0 (+95) | -15.7 | -187.8 |
+
+\* a research option written for this test only (`bias.forming_candle`, `bias.balance_view: inside`), not kept in the code.
+
+Read literally, his rules give many more trades of a much lower quality: `academy` trades EURUSD 3.6 times a month
+(his own 3-7) at 25 % and -36.3R, where the profile takes 1.2 a month at 46 % and +38.8R. Each choice the profiles
+made on data holds against his literal rule: the target at the impulse's origin, the limit entry, the 1H
+requirement and the vetoes, the 24 h zone age, the 11-13 break, the 15m shift for a 4H zone.
+
+### Out of sample (2017-2023; BTC June 2020-2023)
+
+The profile there: EURUSD 87 trades +1.5R, gold 371 -25.1R, NAS100 83 +30.0R, BTC 130 -28.6R.
+
+| Change | 2024-2026 | 2017-2023 | |
+|---|---|---|---|
+| EURUSD: two positions at once (`max_open_per_symbol: 2`) | +5.5R (+6) | +6.9R (+10), 4 of 7 years better | **holds** |
+| NAS100: minimum R:R 0.8 | +1.0R (+4) | +8.8R (+17), 4 of 7 years better | **holds** |
+| EURUSD: no 1H requirement | +3.6R (+13) | -22.0R (+62), no year better | |
+| EURUSD: both of the above | +11.2R (+20) | -8.8R (+81) | |
+| NAS100: no weekly veto | +5.5R (+6) | -5.6R (+18) | |
+| NAS100: no veto and R:R 0.8 | -0.2R (+12) | +3.3R (+40) | |
+| NAS100: the gap price is in | +5.4R (-11) | -49.7R (-13), 13 % won | |
+| Gold: 15m zones | +6.9R (+71) | -12.0R (+178) | |
+| Gold: no news blackout | +0.7R (+13) | -3.8R (+18) | |
+| BTC: a broken P flips | +3.7R (+24) | -11.7R (+22) | |
+| BTC: 9 to 5 without the break | +4.8R (+13) | +1.3R (+16) | |
+| BTC: the table's shift or any timeframe up to the zone | +3.5R (+4) | +0.6R (+7) | |
+| BTC: 4H zone -> 5m shift | +1.0R (+19) | +0.8R (+6) | |
+| BTC: no news blackout | +0.9R (+5) | -3.4R (+7) | |
+
+The second EURUSD position also fits the account's two open trades: with the four markets' ledgers under a cap of
+two, 316 trades and +236.2R against 312 and +231.7R (one gold trade pushed out).
+
+### His money rules
+
+1 % flat and one trade per funded account (TP 06:13), on the profile's ledgers:
+
+- One open trade across the four markets: 283 trades, +214.0R against 312, +231.7R with two; the drawdown is the same.
+- The live multipliers against 1 % flat: the 4H zone at double stake adds gold +15.4R (drawdown 7.2R -> 9.2R) and
+  NAS100 +6.2R; EURUSD's half stake on the daily-and-hourly trades (31 of its 41, +20.8R) costs 10.4R and the
+  month-at-50/50 half stake 7.1R, each halving its drawdown (5.0R -> 2.5R).
+
+### More EURUSD trades (Max: "Dorus kan bij EURUSD echt 3-7 per maand")
+
+The profile: 41 trades in 33 months (1.2 a month, 12 months without one). Every variant that adds EURUSD trades:
+
+| Variant | Trades a month | R (2024-2026) | 2017-2023 |
+|---|---|---|---|
+| (the profile) | 1.2 | +38.8 | +1.5 |
+| Two positions at once | 1.4 | +44.2 | +8.5 |
+| 15m zones (the 23 added trades win 26 %, +0.9R) | 1.9 | +41.6 | |
+| No 1H requirement | 1.6 | +42.4 | -20.4 |
+| Two positions and no 1H requirement | 1.8 | +50.0 | -7.3 |
+| No weekly/4H veto | 1.7 | +34.3 | |
+| 9 to 5 / 9 to 21 | 1.5 / 1.7 | +34.5 / +32.3 | |
+| DXY filling a 50/50 | 1.4 | +31.3 | |
+| R:R 0.8 | 1.5 | +28.8 | |
+| His rules together | 3.6 | -36.3 | |
+
+Only the second position holds. His own journal in the academy gives EURUSD 37 % (CJ 14:51), and he trades it "dit
+jaar" only on A++ setups (CJ 16:27).
+
+**Taken: nothing during the challenge** (the profiles are frozen). Candidates for after it, for Max to decide:
+`prop_firm.max_open_per_symbol: 2` for EURUSD (the account stays at two open) and `risk.min_rr: 0.8` for NAS100.
