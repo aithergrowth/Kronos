@@ -73,3 +73,24 @@
   combination (M+W+1H), valid once the daily turns.
 - News: USD Existing Home Sales 16:00 Amsterdam (blackout 15:30-16:30 for the USD markets). Data: TradingView 08:36, BTC
   from Bitstamp. The live profiles since 1d87337: EURUSD two positions at once, NAS100 at R:R 0.8 (from the next restart).
+
+## 2026-10-14 (Wednesday)
+
+- EURUSD ✅ eens (no trade): W and D bearish; the 4H and 1H turned bullish (BMS through 1.12047), the pullback from 1.1155
+  runs on and price 1.1210 sits at the top of the 4H supply 1.1187-1.1210. The engine refuses both sides (the week
+  against the long; the 4H veto and the 1H against the short). Trade: a short once the 1H turns bearish in supply, target
+  1.1160. Missed chance: a short from the 4H supply 1.1203-1.1263 after a sweep of 1.1243; blocked by the zone's age
+  (formed 7 October, 24 h rule).
+- XAUUSD ✅ eens (no trade): the range 4,066-4,230 holds; M and W bearish, D and 4H 50/50, 1H bullish (BMS 4,167); price
+  4,155 in the middle, inside the 4H demand 4,143-4,182 and the 4H supply 4,155-4,190. Missed chance: a short at the
+  range top 4,205-4,230 after a sweep of 4,217 with a 15m shift, target 4,110; blocked by the bias combination (D and 4H
+  50/50). A 4H turning bullish would allow the 4H+1H long instead (no veto on gold).
+- NAS100 ✅ eens (wait): W and D bullish; M, 4H and 1H 50/50 after the sweep of 30,417; price 30,590 under the 4H supply
+  30,579-30,715. Missed chance: a long after a 1H close above 30,715 and a 5m shift, target 30,930-31,060; blocked by the
+  bias combination until the 4H and 1H turn bullish (then the D+4H+1H scalp, at half stake while the month reads 50/50).
+- BTCUSD ✅ eens (wait): M, W and 1H bullish, D bearish, 4H 50/50; price 83,370 inside the 82,900-84,100 range
+  (efficiency 0.06). Missed chance: a long from the fresh 1H demand 83,150-83,620 or 81,340-83,030 on a 5m shift, target
+  84,100-84,250; blocked by the bias combination (M+W+1H), valid once the daily turns.
+- News: ECB Lagarde 10:30 Amsterdam (EURUSD blackout 10:00-11:00), US CPI September 14:30 Amsterdam (blackout
+  14:00-15:00 for the USD markets). Data: TradingView 08:37, BTC from Bitstamp. First session of the FTMO challenge
+  (code 3e2a4d2 since 13 October 19:14).
