@@ -545,6 +545,11 @@ class LiveParams:
     briefing_time: Optional[str] = "08:45"   # Dorus analyses before the open: a bias and POI briefing at this local time (session timezone)
     summary_time: Optional[str] = "22:00"    # the day's closed trades, R, P&L and equity per market at this local time (weekdays)
     notify_poi_touch: bool = True            # a heads-up when price enters a POI in the bias direction, before any confirmation
+    notify_near_miss: bool = True            # 14 October (Max: "alles zien wat de bot ziet"): a zone in play, a shift seen, and the
+                                             # engine refused the trade: say why, in Dutch, once per zone and reason per four hours
+    notify_approach: bool = True             # price comes within approach_atr x ATR14(1H) of a zone the bias allows and the profile
+    approach_atr: float = 0.5                # trades: a heads-up once per zone per day, inside the entry windows
+    midday_time: Optional[str] = "12:55"     # a second briefing before the afternoon window, like the morning one; None = off
     news_headlines: int = 3                  # the latest TradingView headlines (TRADINGVIEW_MCP_TOKEN) under the POI touch and after a
                                              # trade: context for the trader, never an input to a trade; 0 = off
     news_headlines_hours: float = 24.0       # only headlines of the last this many hours

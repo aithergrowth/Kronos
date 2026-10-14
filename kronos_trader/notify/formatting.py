@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from html import escape
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 from ..config import SymbolSpec
 from ..core.types import Analysis, Bias, ForecastSummary, POIStatus, TradeMode, TradeSetup
@@ -161,9 +161,12 @@ def plain_wait(analysis: Analysis) -> Optional[str]:
     return None
 
 
-def format_briefing(analysis: Analysis, spec: Optional[SymbolSpec], zones: Iterable, when: str = "") -> str:
-    """The morning message of one market: price, the bias per timeframe, the decision in words, the zones that count."""
-    head = f"☀️ <b>{escape(analysis.symbol)}</b> · ochtendcheck{(' ' + escape(when)) if when else ''} · {_price(analysis.price, spec)}"
+def format_briefing(analysis: Analysis, spec: Optional[SymbolSpec], zones: Iterable, when: str = "", kind: str = "ochtendcheck",
+                    extra: Iterable[str] = ()) -> str:
+    """The morning (or midday) message of one market: price, the bias per timeframe, the decision in words, the zones that
+    count, then the ``extra`` lines (the regime, the news, the stake, the room to the limits, what a trade needs)."""
+    emoji = {"ochtendcheck": "☀️", "middagcheck": "🕐"}.get(kind, "☀️")
+    head = f"{emoji} <b>{escape(analysis.symbol)}</b> · {escape(kind)}{(' ' + escape(when)) if when else ''} · {_price(analysis.price, spec)}"
     lines = [head, f"Richting: {bias_line(analysis)}", escape(plain_decision(analysis.decision))]
     if analysis.has_valid_signal:
         lines.append("🎯 er staat een setup klaar (zie het setup-bericht)")
@@ -177,7 +180,74 @@ def format_briefing(analysis: Analysis, spec: Optional[SymbolSpec], zones: Itera
         lines += [escape(zone_line(p, analysis.price, spec)) for p in zones]
     else:
         lines.append("Geen verse zones in de buurt.")
+    lines += [escape(line) for line in extra if line]
     return "\n".join(lines)
+
+
+# the engine's refusals worth a message while a zone is in play (a near miss), in Dutch: "shift" ones mean a balance shift
+# was seen and the trade refused on its numbers, "zone" ones mean the zone itself does not qualify; the wait-class refusals
+# (no shift yet, a spent zone already left off the chart, outside the windows) stay silent
+NEAR_MISSES = (
+    ("shift", re.compile(r"R:R ([\d.]+) below minimum ([\d.]+) \(target (.+)\)"),
+     lambda m: f"R:R 1:{float(m.group(1)):.1f} onder het minimum 1:{float(m.group(2)):.1f} (doel: {m.group(3)})"),
+    ("shift", re.compile(r"no opposite liquidity or unmitigated balance block to target"),
+     lambda m: "geen doel te vinden (geen liquiditeit of balance block tegenover)"),
+    ("shift", re.compile(r"lies (\d+)% of the zone's height inside it \(max (\d+)%\)"),
+     lambda m: f"de instap ligt te diep in de zone ({m.group(1)}% van de hoogte, max {m.group(2)}%)"),
+    ("shift", re.compile(r"stop of ([\d.]+) pips too wide"),
+     lambda m: f"de stop van {float(m.group(1)):.1f} pips is te wijd voor de kleinste lotgrootte"),
+    ("shift", re.compile(r"a climax candle \(body ([\d.]+) ATR14"), lambda m: f"de shift-kaars is een climax-kaars ({m.group(1)} ATR14)"),
+    ("shift", re.compile(r"stop ([\d.]+) ATR14 of the (\S+) \(min ([\d.]+)\)"),
+     lambda m: f"de stop is te klein ({m.group(1)} ATR14 van de {m.group(2)}, min {m.group(3)})"),
+    ("shift", re.compile(r"the shift closed (\d+) min after the touch \(min (\d+) min\)"),
+     lambda m: f"de shift kwam te snel na het raken ({m.group(1)} min, min {m.group(2)})"),
+    ("shift", re.compile(r"on the wrong side of the New York day open ([\d.]+)"),
+     lambda m: f"de instap ligt aan de verkeerde kant van de New York-dagopen ({m.group(1)})"),
+    ("shift", re.compile(r"news blackout"), lambda m: "nieuws-blackout: geen instap rond het nieuws"),
+    ("zone", re.compile(r"visit #(\d+) - only the first return is traded"),
+     lambda m: f"dit is bezoek #{m.group(1)} aan de zone; alleen het eerste bezoek wordt verhandeld"),
+    ("zone", re.compile(r"first touched (\d+) h ago \(max ([\d.]+) h\)"),
+     lambda m: f"het bezoek is te oud ({m.group(1)} h, max {m.group(2)} h)"),
+)
+SILENT = re.compile(r"waiting for confirmation|no active visit|invalidated on|already traded on visit|touched \d+ h after it formed|"
+                    r"outside the entry windows|^diagnostic:")
+
+
+def classify_near_miss(reason: str) -> Optional[Tuple[str, str]]:
+    """The engine's refusal of a zone as ``(key, text)``: the key names the rules that refused (for the once-per-four-hours
+    throttle, so a new R:R number is not a new message), the text says it in Dutch. ``build_setup`` joins several reasons
+    with "; ": each is translated and all are named. None when it is no near miss: nothing has happened yet, or a refusal
+    this table does not know (a zone too old, a zone inside a larger one, missing data: the engine's business, not news)."""
+    if SILENT.search(reason):
+        return None
+    keys, texts, kinds = [], [], set()
+    for part in reason.split("; "):
+        for index, (kind, pattern, say) in enumerate(NEAR_MISSES):
+            m = pattern.search(part)
+            if m:
+                keys.append(str(index)); texts.append(say(m)); kinds.add(kind)
+                break
+    if not texts:
+        return None
+    head = "shift gezien, maar " if "shift" in kinds else "geen trade: "
+    return "+".join(keys), head + "; ".join(texts)
+
+
+def plain_near_miss(reason: str) -> Optional[str]:
+    """The engine's refusal of a zone in Dutch, or None when it is no near miss."""
+    found = classify_near_miss(reason)
+    return found[1] if found else None
+
+
+def format_near_miss(symbol: str, poi, text: str, spec: Optional[SymbolSpec] = None) -> str:
+    return (f"⚠️ <b>{escape(symbol)}</b> · {poi.timeframe.label} {zone_kind(poi)} {_price(poi.low, spec)}–{_price(poi.high, spec)}\n"
+            f"{escape(text)}")
+
+
+def format_approach(symbol: str, poi, price: float, spec: Optional[SymbolSpec] = None, confirm_tfs: Iterable = ()) -> str:
+    tfs = "/".join(tf.label for tf in confirm_tfs) or "lagere timeframe"
+    return (f"🔎 <b>{escape(symbol)}</b> nadert de {escape(zone_line(poi, price, spec))}\n"
+            f"zodra de prijs erin zit: wachten op een balance shift op de {tfs}")
 
 
 def format_touch(analysis: Analysis, poi, spec: Optional[SymbolSpec], confirm_tfs: Iterable = ()) -> str:

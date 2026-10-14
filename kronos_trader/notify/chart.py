@@ -48,6 +48,7 @@ def render_chart(
     mark_zones: bool = False,
     last_price: Optional[float] = None,
     limit_price: Optional[float] = None,
+    shade_spans: Iterable = (),
 ) -> Path:
     """Draw ``series`` (last ``lookback`` candles) with zones, setup lines and the forecast fan; return the PNG path.
 
@@ -73,6 +74,8 @@ def render_chart(
     fig, ax = plt.subplots(figsize=(11, 6), dpi=130)
     fig.patch.set_facecolor("white")
     d = price_decimals
+    for a, b in shade_spans:                                # the entry windows, as candle index ranges [a, b)
+        ax.axvspan(a - 0.5, b - 0.5, facecolor="#f2f2f2", edgecolor="none", zorder=0)
 
     # the price axis: the candles (and the setup), with room for the zones that lie near them ----------------------------
     last = float(closes[-1])

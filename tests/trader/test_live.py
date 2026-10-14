@@ -33,7 +33,7 @@ class FakeEngine:
         self.calls += 1
         decision = BiasDecision(Bias.BULLISH, TradeMode.FULL, (T.MN_1, T.W_1, T.D_1), (), (T.H_4, T.H_1), (T.MN_1, T.W_1, T.D_1), "test")
         signal = Signal(now, SignalStatus.VALID, self.setup, None, []) if self.calls == 1 and self.signal_on_first_call else None
-        return Analysis(symbol, now, self.price, {}, decision, self.pois, signal)
+        return Analysis(symbol, now, self.price, {}, decision, self.pois, signal, rejections=list(getattr(self, "rejections", [])))
 
 
 @pytest.fixture

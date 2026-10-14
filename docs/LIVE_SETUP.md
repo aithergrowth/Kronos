@@ -357,11 +357,34 @@ on mains power, awake and logged in to TWS:
 4. While testing, add `--notify-every-scan` to get one message per poll on
    the phone; drop it once you trust the loop.
 
-What arrives on the phone in a normal day: the morning analysis at 08:45
-Amsterdam (bias per timeframe, decision, the POI map), a heads-up when price
-enters a POI the bias allows, the setup with Approve / Skip once a
-confirmation closes, then fills, break-even moves and closes. Entries only
-between 09:00 and 17:00 Amsterdam and never inside a high-impact news window.
+What arrives on the phone in a normal day (the messages are in Dutch since
+14 October, one short message a market):
+
+- ☀️ 08:45 Amsterdam, the morning check: price, the bias per timeframe, the
+  decision in words, the zones the bot can still trade, then the regime
+  (trend or range, the day range against the last year), today's high-impact
+  news with its blackout minutes, the stake after the drawdown ladder and the
+  zone multipliers, the room to the day and total limits, the entry windows,
+  and what has to happen for a trade; with the 1H chart (the previous day's
+  high and low drawn, the entry windows shaded).
+- 🕐 12:55, the midday check: the same before the afternoon window
+  (`live.midday_time`; None switches it off).
+- 🔎 price comes within half a 1H ATR of a zone the bias allows
+  (`live.notify_approach`, `live.approach_atr`): once per zone per day.
+- 👀 price is inside such a zone (`live.notify_poi_touch`), with the chart.
+- ⚠️ a near miss (`live.notify_near_miss`): a balance shift was seen in a
+  zone in play and the engine refused the trade, with the reason in plain
+  words (the R:R under the minimum and the target it found, the stop too
+  small or too wide, the entry too deep in the zone, a climax candle, a
+  second visit, a blackout); once per zone and reason per four hours.
+- 🎯 the setup (and Approve / Skip when `live.require_approval` is on), 💸
+  the fill with the stake note, break-even moves, closes with R and P&L.
+- 📊 22:00, the evening line: closed trades, R, P&L, setups, zones touched,
+  near misses, equity, what is open; on Friday the week as well.
+
+All of it inside the entry windows (09:00-11:00 and 13:00-17:00 Amsterdam on
+the live profiles) and never inside a high-impact news window; outside the
+windows the bot only manages what is open.
 
 Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
 at 5 % daily and 10 % total loss, the guard stops at 4 % a day and 8 % below

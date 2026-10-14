@@ -404,6 +404,10 @@ class LiveRunner:
         self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
         self._views: Dict[Timeframe, CandleSeries] = {}
         self._touched: set = set()                          # POI keys already announced as entered
+        self._near_missed: Dict[Tuple[str, str], pd.Timestamp] = {}   # (zone key, reason) -> when the near miss was said
+        self._approached: Dict[str, object] = {}            # zone key -> local date of its approach notice
+        self._midday_on: Optional[object] = None            # local date of the last midday check
+        self._last_briefing_at: Optional[pd.Timestamp] = None
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
@@ -442,6 +446,9 @@ class LiveRunner:
         self.morning_briefing(analysis, now)
         self.evening_summary(now)
         self.announce_poi_touch(analysis, now)
+        self.midday_check(analysis, now)
+        self.announce_near_misses(analysis, now)
+        self.announce_approach(analysis, now)
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
@@ -483,29 +490,250 @@ class LiveRunner:
     # ------------------------------------------------------------ Dorus's routine
     def morning_briefing(self, analysis: Analysis, now: pd.Timestamp) -> None:
         """Once per weekday at ``live.briefing_time`` local time: the bias, the decision and the POI map for the day."""
-        at = self.settings.live.briefing_time
+        if self._briefing_due(now, self.settings.live.briefing_time, "_briefed_on"):
+            self._send_briefing(analysis, now, "ochtendcheck")
+
+    def midday_check(self, analysis: Analysis, now: pd.Timestamp) -> None:
+        """The same once more at ``live.midday_time``, before the afternoon window (14 October, Max: "ik wil alles zien")."""
+        if self._briefing_due(now, getattr(self.settings.live, "midday_time", None), "_midday_on"):
+            last = self._last_briefing_at
+            if last is not None and pd.Timestamp(now) - last < pd.Timedelta(hours=1):
+                return                                      # a window started after 12:55: the morning check just went out
+            self._send_briefing(analysis, now, "middagcheck")
+
+    def _briefing_due(self, now: pd.Timestamp, at: Optional[str], flag: str) -> bool:
+        """True once per weekday from ``at`` (local time) on; ``flag`` is the attribute that remembers the day it was sent."""
         if not at:
-            return
+            return False
         local = now.tz_localize("UTC").tz_convert(self.settings.session.timezone)
         hour, minute = (int(x) for x in at.split(":"))
-        if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._briefed_on == local.date():
-            return
-        self._briefed_on = local.date()
-        self.note("briefing", now, price=float(analysis.price), note=analysis.decision.reason)
+        if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or getattr(self, flag) == local.date():
+            return False
+        setattr(self, flag, local.date())
+        return True
+
+    def _send_briefing(self, analysis: Analysis, now: pd.Timestamp, kind: str) -> None:
+        local = now.tz_localize("UTC").tz_convert(self.settings.session.timezone)
+        self._last_briefing_at = pd.Timestamp(now)
+        self.note("briefing", now, price=float(analysis.price),
+                  note=analysis.decision.reason if kind == "ochtendcheck" else f"{kind}: {analysis.decision.reason}")
         # 14 October (Max: "de telegram berichten duidelijker"): one message a market in Dutch, the decision in words and only
-        # the zones the bot can still trade, then the 1H chart; the old three messages if the new one cannot be written
+        # the zones the bot can still trade, the extra lines, then the 1H chart; the old three messages if the new one fails
         try:
             from .notify.formatting import WEEKDAYS, format_briefing
-            text = format_briefing(analysis, self.spec, self.chart_zones(analysis), f"{WEEKDAYS[local.weekday()]} {local:%H:%M}")
+            zones = self.chart_zones(analysis)
+            text = format_briefing(analysis, self.spec, zones, f"{WEEKDAYS[local.weekday()]} {local:%H:%M}",
+                                   kind=kind, extra=self.briefing_extras(analysis, now, zones))
         except Exception as exc:
             print(f"[live] {self.symbol}: briefing text failed ({exc}); the plain analysis instead")
             text = None
         if text is not None:
             self.notifier.send(text)
         else:
-            self.notifier.send(f"☀️ {self.symbol} ochtendcheck ({local:%a %H:%M} {self.settings.session.timezone})")
+            self.notifier.send(f"☀️ {self.symbol} {kind} ({local:%a %H:%M} {self.settings.session.timezone})")
             self.notifier.send_analysis(analysis, self.spec)
-        self.send_chart(analysis, "briefing", timeframe=Timeframe.H_1)
+        self.send_chart(analysis, "briefing" if kind == "ochtendcheck" else kind, timeframe=Timeframe.H_1)
+
+    def closed_daily(self, now: pd.Timestamp) -> Optional[CandleSeries]:
+        """The daily candles closed by ``now``: the feeds hand over the forming day as well, the engine drops it
+        (``closed_as_of``) and so does every line that reads the days."""
+        daily = self._views.get(Timeframe.D_1)
+        if daily is None:
+            return None
+        try:
+            return daily.closed_as_of(pd.Timestamp(now))
+        except Exception:
+            return daily
+
+    def briefing_extras(self, analysis: Analysis, now: pd.Timestamp, zones: Optional[list] = None) -> List[str]:
+        """The lines under a briefing (14 October, Max: "alles wat je kan zien"): the regime, today's news with its blackouts,
+        the stake after the drawdown ladder, the room to the limits, the entry windows and what has to happen for a trade.
+        Every line on its own; a line that cannot be made is left out, never an error."""
+        lines: List[str] = []
+        tz = self.settings.session.timezone
+        local = pd.Timestamp(now).tz_localize("UTC").tz_convert(tz)
+        try:        # the regime: the 20-day efficiency ratio (trend or range) and the day range against the last year
+            daily = self.closed_daily(now)
+            if daily is not None and len(daily) >= 40:
+                closes = pd.Series(daily.close[-21:], dtype=float)
+                moved = float(closes.diff().abs().sum())
+                er = abs(float(closes.iloc[-1] - closes.iloc[0])) / moved if moved > 0 else 0.0
+                ranges = pd.Series(daily.high - daily.low, dtype=float).rolling(14).mean().dropna().tail(250)
+                pct = float((ranges <= ranges.iloc[-1]).mean() * 100) if len(ranges) else float("nan")
+                regime = "trending" if er >= 0.35 else "range"
+                lines.append(f"📈 Regime: {regime} (ER20 {er:.2f}) · dagbereik op het {pct:.0f}e percentiel van het jaar")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing regime line failed ({exc})")
+        try:        # the high-impact news still to come today, with the blackout each one brings
+            calendar = getattr(self.engine, "calendar", None)
+            if not self.settings.news.enabled:
+                lines.append("📰 Het nieuwsfilter staat uit in dit profiel")
+            elif calendar is not None:
+                end_of_day = (local.normalize() + pd.Timedelta(days=1)).tz_convert("UTC").tz_localize(None)
+                minutes = max(int((end_of_day - pd.Timestamp(now)).total_seconds() // 60), 1)
+                events = calendar.upcoming(self.symbol, now, within_minutes=minutes)
+                if events:
+                    n = self.settings.news
+                    bits = []
+                    for e in events[:4]:
+                        t = pd.Timestamp(e.time).tz_localize("UTC").tz_convert(tz)
+                        bits.append(f"{t:%H:%M} {e.title} ({e.currency}), blackout "
+                                    f"{t - pd.Timedelta(minutes=n.before_minutes):%H:%M}–{t + pd.Timedelta(minutes=n.after_minutes):%H:%M}")
+                    lines.append("📰 Nieuws vandaag: " + "; ".join(bits))
+                else:
+                    lines.append("📰 Geen high-impact nieuws meer vandaag")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing news line failed ({exc})")
+        try:        # the stake today and the room to the limits
+            if self.broker is not None:
+                from .strategy.risk import stepped_risk
+                balance, equity = float(self.broker.balance()), float(self.broker.equity())
+                base = self.settings.risk
+                stepped = stepped_risk(base, balance, self.settings.account_size)
+                pct = stepped.risk_pct * float(getattr(base, "stake_multiplier", 1.0) or 1.0)
+                if abs(stepped.risk_pct - base.risk_pct) < 1e-9:
+                    ladder = ""
+                elif balance >= self.settings.account_size:          # stepped_risk also halves the stake near the phase's target
+                    ladder = " (dicht bij het doel: halve inzet)"
+                else:
+                    ladder = f" (ladder: balans {100 * (balance / self.settings.account_size - 1):+.1f}% t.o.v. de start)"
+                multipliers = ", ".join(f"{getattr(k, 'label', k)}-zone ×{v:g}" for k, v in (getattr(base, "zone_risk_multiplier", {}) or {}).items())
+                lines.append(f"💰 Inzet: {pct:g}% = {equity * pct / 100:,.0f}{ladder}" + (f" · {multipliers}" if multipliers else ""))
+                g = self.guard
+                day_room = g.params.daily_loss_limit_pct - g.daily_loss_pct(equity)
+                total_room = g.params.max_drawdown_pct - g.drawdown_pct(equity)
+                lines.append(f"🛡 Ruimte: vandaag nog {day_room:.1f}% (grens {g.params.daily_loss_limit_pct:g}%), totaal nog "
+                             f"{total_room:.1f}% (grens {g.params.max_drawdown_pct:g}%) · balans {balance:,.0f}, equity {equity:,.0f}")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing stake line failed ({exc})")
+        try:        # the windows and what a trade needs
+            s = self.settings.session
+            if s.enabled:
+                lines.append("🕘 Vensters: " + " en ".join(f"{a}–{b}" for a, b in s.windows) + f" ({tz})")
+            if analysis.decision.tradable:
+                zones = [p for p in (self.chart_zones(analysis) if zones is None else zones) if p.direction is analysis.decision.direction]
+                if zones:
+                    from .notify.formatting import zone_line
+                    from .strategy.confirmation import allowed_confirmation_timeframes
+                    p = zones[0]
+                    tfs = "/".join(tf.label for tf in allowed_confirmation_timeframes(p.timeframe, self.settings.confirmation)) or "lagere timeframe"
+                    price = float(analysis.price)
+                    where = "de prijs zit erin: " if p.contains(price) else \
+                        f"de prijs naar de {p.timeframe.label}-zone ({zone_line(p, price, self.spec).split(' · ')[-1]}), dan "
+                    lines.append(f"🎯 Voor een trade: {where}een balance shift op de {tfs} binnen een venster")
+                else:
+                    lines.append("🎯 Voor een trade: eerst een verse zone in de richting van de bias")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing plan line failed ({exc})")
+        return lines
+
+    def announce_near_misses(self, analysis: Analysis, now: Optional[pd.Timestamp] = None) -> None:
+        """A zone in play (price in it, or entered earlier) and the engine refused the trade for a reason worth knowing: the
+        R:R, the stop, the depth, a second visit... Said once per zone and reason per four hours, inside the entry windows
+        (14 October, Max: "alles zien wat de bot doet")."""
+        if not getattr(self.settings.live, "notify_near_miss", False) or not analysis.decision.tradable or not analysis.rejections:
+            return
+        now = pd.Timestamp(now) if now is not None else self.clock()
+        session = self.settings.session
+        if session.enabled and not in_session(now, session)[0]:
+            return
+        from .notify.formatting import classify_near_miss, format_near_miss
+        allowed = self.tradable_timeframes(analysis)
+        price = float(analysis.price)
+        for key, when in list(self._near_missed.items()):   # the throttle's memory stays a day long
+            if now - when > pd.Timedelta(days=1):
+                del self._near_missed[key]
+        for poi in analysis.pois:
+            if poi.timeframe not in allowed or poi.direction is not analysis.decision.direction:
+                continue
+            if not (poi.contains(price) or poi.key in self._touched):
+                continue
+            prefix = poi.describe() + ":"
+            for reason in analysis.rejections:
+                if not (reason.startswith(prefix) or reason.startswith("reversal: " + prefix)):
+                    continue
+                found = classify_near_miss(reason.split(prefix, 1)[1].strip())
+                if found is None:
+                    continue
+                rule, text = found
+                key = (poi.key, rule)
+                last = self._near_missed.get(key)
+                if last is not None and now - last < pd.Timedelta(hours=4):
+                    continue
+                self._near_missed[key] = now
+                d = self.spec.price_decimals
+                self.note("near_miss", now, poi_tf=poi.timeframe.label, direction=poi.direction.name, price=price, reason=text,
+                          note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
+                try:
+                    self.notifier.send(format_near_miss(self.symbol, poi, text, self.spec))
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: near-miss message failed ({exc})")
+
+    def announce_approach(self, analysis: Analysis, now: Optional[pd.Timestamp] = None) -> None:
+        """Price comes within ``live.approach_atr`` ATR14 of the 1H of a zone the bias allows and the profile trades: a
+        heads-up once per zone per day, inside the entry windows (14 October)."""
+        if not getattr(self.settings.live, "notify_approach", False) or not analysis.decision.tradable:
+            return
+        now = pd.Timestamp(now) if now is not None else self.clock()
+        session = self.settings.session
+        if session.enabled and not in_session(now, session)[0]:
+            return
+        hourly = self._views.get(Timeframe.H_1)
+        if hourly is None:
+            return
+        from .strategy.risk import atr
+        ref = atr(hourly)
+        reach = float(getattr(self.settings.live, "approach_atr", 0.0) or 0.0) * (ref or 0.0)
+        if reach <= 0:
+            return
+        today = now.tz_localize("UTC").tz_convert(session.timezone).date()
+        for key, day in list(self._approached.items()):     # yesterday's notices are forgotten
+            if day != today:
+                del self._approached[key]
+        price = float(analysis.price)
+        from .notify.formatting import format_approach
+        from .strategy.confirmation import allowed_confirmation_timeframes
+        for poi in self.chart_zones(analysis):
+            if poi.direction is not analysis.decision.direction or poi.contains(price):
+                continue
+            distance = poi.low - price if poi.low > price else price - poi.high
+            if distance > reach or self._approached.get(poi.key) == today:
+                continue
+            self._approached[poi.key] = today
+            d = self.spec.price_decimals
+            self.note("approach", now, poi_tf=poi.timeframe.label, direction=poi.direction.name, price=price,
+                      note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
+            try:
+                self.notifier.send(format_approach(self.symbol, poi, price, self.spec,
+                                                   allowed_confirmation_timeframes(poi.timeframe, self.settings.confirmation)))
+            except Exception as exc:
+                print(f"[live] {self.symbol}: approach message failed ({exc})")
+
+    def chart_context(self, series: CandleSeries, now: Optional[pd.Timestamp] = None) -> Tuple[list, list]:
+        """For the charts without a setup: the previous day's high and low (the liquidity above and below the day; the last
+        CLOSED day, the feeds hand over the forming one too) as lines, and the entry windows as index spans of the drawn
+        candles to shade."""
+        lines, spans = [], []
+        try:
+            daily = self.closed_daily(now if now is not None else self.clock())
+            if daily is not None and len(daily) >= 1 and series.timeframe < Timeframe.D_1:
+                d = self.spec.price_decimals
+                lines = [(float(daily.high[-1]), f"vorige dag high {float(daily.high[-1]):.{d}f}", None),
+                         (float(daily.low[-1]), f"vorige dag low {float(daily.low[-1]):.{d}f}", None)]
+            session = self.settings.session
+            if session.enabled and series.timeframe < Timeframe.D_1:
+                view = series.tail(self.settings.live.chart_lookback)
+                inside = [in_session(pd.Timestamp(t), session)[0] for t in view.timestamps] + [False]
+                start = None
+                for i, flag in enumerate(inside):
+                    if flag and start is None:
+                        start = i
+                    elif not flag and start is not None:
+                        spans.append((start, i))
+                        start = None
+        except Exception as exc:
+            print(f"[live] {self.symbol}: chart context failed ({exc})")
+        return lines, spans
 
     def check_algo_trading(self, now: pd.Timestamp) -> None:
         """Every ten minutes with real orders on: is the terminal's Algo Trading button on?  When it is off MT5 refuses every
@@ -731,7 +959,7 @@ class LiveRunner:
         if local.weekday() > 4 or (local.hour, local.minute) < (hour, minute) or self._summarized_on == local.date():
             return
         self._summarized_on = local.date()
-        closed = setups = 0
+        closed = setups = touches = misses = 0
         wins, total_r, total_pnl = 0, 0.0, 0.0
         week_line = ""
         if self.journal is not None and self.journal.path.exists():
@@ -745,6 +973,8 @@ class LiveRunner:
                 closed, wins = len(done), int((done["r"] > 0).sum())
                 total_r, total_pnl = float(done["r"].sum()), float(done["pnl"].sum())
                 setups = int((day & (rows["event"] == "setup")).sum())
+                touches = int((day & (rows["event"] == "poi_touch")).sum())
+                misses = int((day & (rows["event"] == "near_miss")).sum())
                 if local.weekday() == 4:          # Friday: the week as well (Monday to today)
                     monday = (local - pd.Timedelta(days=4)).date()
                     week = rows[(dates >= monday) & (dates <= local.date()) & (rows["event"] == "closed")]
@@ -754,7 +984,7 @@ class LiveRunner:
             except Exception as exc:     # a summary must never stop the loop
                 print(f"[live] {self.symbol}: evening summary could not read the journal ({exc})")
         line = (f"📊 {self.symbol} {local:%a %d %b}: {closed} trade(s) closed, {wins} won, {total_r:+.2f}R, "
-                f"P&L {total_pnl:+,.0f}; {setups} setup(s)")
+                f"P&L {total_pnl:+,.0f}; {setups} setup(s), {touches} zone(s) geraakt, {misses} bijna-trade(s)")
         if self.broker is not None:
             try:
                 open_now = self.broker.open_positions(self.symbol)
@@ -780,6 +1010,7 @@ class LiveRunner:
             from .notify.formatting import bias_line, plain_decision
             zones = self.chart_zones(analysis, setup)
             label = {"briefing": "ochtendcheck", "touch": "in de zone", "setup": "setup"}.get(kind, kind)
+            extra_lines, spans = self.chart_context(series, analysis.timestamp) if setup is None else ([], [])
             title = f"{self.symbol} · {tf.label} · {label}"
             if setup is not None:
                 title += f" · R:R 1:{setup.rr:.1f} · {setup.lots:.2f} lots · risico {setup.risk_amount:,.0f}"
@@ -789,7 +1020,7 @@ class LiveRunner:
                                 pois=zones, setup=setup, forecast=forecast, title=title,
                                 subtitle=subtitle, lookback=self.settings.live.chart_lookback,
                                 price_decimals=self.spec.price_decimals, last_price=float(analysis.price),
-                                limit_price=limit_price)
+                                limit_price=limit_price, extra_lines=extra_lines, shade_spans=spans)
             self.notifier.send_photo(path, f"{self.symbol} {tf.label} {label}")
             if forecast is not None and self.settings.live.mt5_overlay and hasattr(self.broker, "server_offset"):
                 from .notify.mt5_overlay import write_forecast_file
