@@ -131,7 +131,8 @@ def write_decision_dossier(settings: Settings, data: MultiTimeframeData, symbol:
             title += f"  bias {tb.bias.name.lower()} (liquidity {tb.liquidity_view.name.lower()}, balance {tb.balance_view.name.lower()})"
         setup = analysis.signal.setup if analysis.has_valid_signal and analysis.signal.setup.confirmation.timeframe is tf else None
         png = render_chart(view, out / f"{chart_label(tf)}.png", pois=chart_zones, setup=setup, title=title,
-                           subtitle="; ".join(tb.notes[:2]) if tb is not None else "", lookback=lookback, price_decimals=decimals, max_zones=4)
+                           subtitle="; ".join(tb.notes[:2]) if tb is not None else "", lookback=lookback, price_decimals=decimals, max_zones=4,
+                           mark_zones=True)
         lines += [f"## {tf.label}", "", f"![{tf.label}]({png.name})", ""]
         if tb is not None:
             lines += [f"Bias **{tb.bias.name.lower()}**: liquidity view {tb.liquidity_view.name.lower()}, balance view {tb.balance_view.name.lower()}.", ""]

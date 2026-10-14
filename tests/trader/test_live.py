@@ -259,13 +259,13 @@ def test_morning_briefing_once_per_weekday(setup):
     runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=FakeEngine(setup, signal_on_first_call=False),
                         clock=lambda: NOW)
     runner.step(pd.Timestamp("2026-10-01 06:30"))            # 08:30 Amsterdam: too early
-    assert not any("morning analysis" in m for m in notifier.sent)
+    assert not any(m.startswith("☀️") for m in notifier.sent)
     runner.step(pd.Timestamp("2026-10-01 06:45"))            # 08:45: the briefing
     runner.step(pd.Timestamp("2026-10-01 07:00"))            # not again today
-    assert sum("morning analysis" in m for m in notifier.sent) == 1
+    assert sum(m.startswith("☀️") for m in notifier.sent) == 1
     runner.step(pd.Timestamp("2026-10-03 07:00"))            # Saturday: nothing
     runner.step(pd.Timestamp("2026-10-05 06:50"))            # Monday: again
-    assert sum("morning analysis" in m for m in notifier.sent) == 2
+    assert sum(m.startswith("☀️") for m in notifier.sent) == 2
 
 
 def test_poi_touch_is_announced_once(setup):
@@ -275,8 +275,8 @@ def test_poi_touch_is_announced_once(setup):
     runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
     runner.step(NOW)
     runner.step(NOW + pd.Timedelta(15, unit="min"))
-    touches = [m for m in notifier.sent if "inside the" in m and "POI" in m]
-    assert len(touches) == 1 and "waiting for a confirmation" in touches[0]
+    touches = [m for m in notifier.sent if "zit in de" in m]
+    assert len(touches) == 1 and "wacht op een balance shift" in touches[0]
 
 
 def test_no_touch_notice_for_a_zone_the_engine_will_not_trade_for_its_age(setup):
@@ -292,7 +292,7 @@ def test_no_touch_notice_for_a_zone_the_engine_will_not_trade_for_its_age(setup)
         settings = Settings(); settings.confirmation.max_touch_age_hours = 24
         runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
         runner.step(NOW)
-        return [m for m in notifier.sent if "inside the" in m and "POI" in m]
+        return [m for m in notifier.sent if "zit in de" in m]
 
     assert len(touches(NOW - pd.Timedelta(hours=3))) == 1
     assert touches(NOW - pd.Timedelta(hours=328)) == []
@@ -312,8 +312,8 @@ def test_the_poi_touch_carries_the_latest_headlines_when_there_are_any(setup):
     runner = LiveRunner(Settings(), "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
     runner.headlines = Headlines(client_factory=lambda: Client())
     runner.step(NOW)
-    touch = next(m for m in notifier.sent if "inside the" in m and "POI" in m)
-    assert touch.endswith("waiting for a confirmation\n📰 10:50 Reuters: Euro firms before ECB minutes")
+    touch = next(m for m in notifier.sent if "zit in de" in m)
+    assert "wacht op een balance shift" in touch and touch.endswith("\n📰 10:50 Reuters: Euro firms before ECB minutes")
     off = Settings(); off.live.news_headlines = 0
     assert LiveRunner(off, "EURUSD", fetch, notifier=TelegramNotifier(dry_run=True), engine=engine, clock=lambda: NOW).headlines is None
 
@@ -405,9 +405,9 @@ def test_a_touch_outside_the_entry_windows_waits_for_the_window(setup):
     runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
     runner.step(pd.Timestamp("2026-10-01 01:30"))                            # 03:30 Amsterdam
     runner.step(pd.Timestamp("2026-10-01 02:06"))
-    assert not any("inside the" in m for m in notifier.sent)
+    assert not any("zit in de" in m for m in notifier.sent)
     runner.step(pd.Timestamp("2026-10-01 07:01"))                            # 09:01: the window opens, price still in it
-    assert sum("inside the" in m for m in notifier.sent) == 1
+    assert sum("zit in de" in m for m in notifier.sent) == 1
 
 
 def test_touch_only_on_the_zone_timeframes_the_profile_trades(setup):
@@ -418,10 +418,10 @@ def test_touch_only_on_the_zone_timeframes_the_profile_trades(setup):
     engine = FakeEngine(setup, pois=[setup.poi], price=101.0, signal_on_first_call=False)
     runner = LiveRunner(settings, "EURUSD", fetch, notifier=notifier, engine=engine, clock=lambda: NOW)
     runner.step(NOW)
-    assert not any("inside the" in m for m in notifier.sent)
+    assert not any("zit in de" in m for m in notifier.sent)
     settings.confirmation.poi_timeframes = (T.D_1, T.H_4, T.H_1)
     runner.step(NOW + pd.Timedelta(15, unit="min"))
-    assert sum("inside the" in m for m in notifier.sent) == 1
+    assert sum("zit in de" in m for m in notifier.sent) == 1
 
 
 def test_chart_zones_are_the_nearest_tradable_ones(setup, scenario):

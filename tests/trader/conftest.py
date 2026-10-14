@@ -48,3 +48,13 @@ def _scratch_working_dir(tmp_path, monkeypatch):
     """Every test runs in its own empty directory: the live runner's relative journal/ and charts/ paths (Settings())
     land there, not in the repository's journal of the forward test."""
     monkeypatch.chdir(tmp_path)
+
+
+@pytest.fixture(autouse=True)
+def _no_live_environment(monkeypatch):
+    """The tests see no live credentials or terminal of the computer they run on: on Max's laptop the demo terminal's
+    MT5_PATH and login and the real Telegram token in the Windows environment made 11 tests fail (13 October)."""
+    for name in ("MT5_PATH", "MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER", "MT5_SERVER_OFFSET_HOURS", "TELEGRAM_BOT_TOKEN",
+                 "TELEGRAM_CHAT_ID", "TRADINGVIEW_MCP_TOKEN", "ANTHROPIC_API_KEY", "DORUS_CHECK_MODEL", "WATCHDOG_PING_URL",
+                 "KRONOS_TRADER_CONFIG"):
+        monkeypatch.delenv(name, raising=False)

@@ -167,7 +167,11 @@ class TelegramNotifier:
 
     # ------------------------------------------------------------ messages
     def send_setup(self, setup: TradeSetup, forecast: Optional[ForecastSummary] = None, spec: Optional[SymbolSpec] = None) -> bool:
-        return self.send("🚨 " + format_setup(setup, forecast, spec))
+        try:
+            from .formatting import format_setup_nl
+            return self.send(format_setup_nl(setup, spec))
+        except Exception:                                # never lose the setup over its wording
+            return self.send("🚨 " + format_setup(setup, forecast, spec))
 
     def send_analysis(self, analysis: Analysis, spec: Optional[SymbolSpec] = None) -> bool:
         return self.send(format_analysis(analysis, spec))

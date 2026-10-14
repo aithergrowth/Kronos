@@ -31,7 +31,7 @@ import pandas as pd
 from .config import Settings
 from .core.candles import CandleSeries
 from .core.timeframe import Timeframe
-from .core.types import Analysis, Bias, Direction, ForecastSummary, TradeMode, TradeSetup
+from .core.types import Analysis, Bias, Direction, ForecastSummary, POIStatus, TradeMode, TradeSetup
 from .data.tv_cache import load_all
 from .execution.base import Broker, Position
 from .execution.risk_guard import RiskGuard
@@ -485,9 +485,20 @@ class LiveRunner:
             return
         self._briefed_on = local.date()
         self.note("briefing", now, price=float(analysis.price), note=analysis.decision.reason)
-        self.notifier.send(f"☀️ {self.symbol} morning analysis ({local:%a %H:%M} {self.settings.session.timezone})")
-        self.notifier.send_analysis(analysis, self.spec)
-        self.send_chart(analysis, "briefing")
+        # 14 October (Max: "de telegram berichten duidelijker"): one message a market in Dutch, the decision in words and only
+        # the zones the bot can still trade, then the 1H chart; the old three messages if the new one cannot be written
+        try:
+            from .notify.formatting import WEEKDAYS, format_briefing
+            text = format_briefing(analysis, self.spec, self.chart_zones(analysis), f"{WEEKDAYS[local.weekday()]} {local:%H:%M}")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing text failed ({exc}); the plain analysis instead")
+            text = None
+        if text is not None:
+            self.notifier.send(text)
+        else:
+            self.notifier.send(f"☀️ {self.symbol} ochtendcheck ({local:%a %H:%M} {self.settings.session.timezone})")
+            self.notifier.send_analysis(analysis, self.spec)
+        self.send_chart(analysis, "briefing", timeframe=Timeframe.H_1)
 
     def check_algo_trading(self, now: pd.Timestamp) -> None:
         """Every ten minutes with real orders on: is the terminal's Algo Trading button on?  When it is off MT5 refuses every
@@ -713,16 +724,19 @@ class LiveRunner:
             series = self._views[tf]
             if forecast is None and self.settings.kronos.mode != "off" and getattr(self.engine, "forecaster", None) is not None:
                 forecast = self.engine._forecast(series, [])
-            bias = "  ".join(f"{t.label} {b.bias.name.lower()}" for t, b in sorted(analysis.biases.items())) if analysis.biases else ""
+            from .notify.formatting import bias_line, plain_decision
             zones = self.chart_zones(analysis, setup)
-            title = f"{self.symbol} {tf.label}  {kind}"
+            label = {"briefing": "ochtendcheck", "touch": "in de zone", "setup": "setup"}.get(kind, kind)
+            title = f"{self.symbol} · {tf.label} · {label}"
             if setup is not None:
-                title += f"  R:R 1:{setup.rr:.1f}  {setup.lots:.2f} lots  risk {setup.risk_amount:,.0f}"
+                title += f" · R:R 1:{setup.rr:.1f} · {setup.lots:.2f} lots · risico {setup.risk_amount:,.0f}"
+            decision = plain_decision(analysis.decision, emoji=False)
+            subtitle = f"{bias_line(analysis)}   |   {decision}" if analysis.biases else decision
             path = render_chart(series, f"{self.settings.live.charts_dir}/{self.symbol}_{tf.label}_{kind}.png",
                                 pois=zones, setup=setup, forecast=forecast, title=title,
-                                subtitle=f"{bias}  |  {analysis.decision.reason}", lookback=self.settings.live.chart_lookback,
-                                price_decimals=self.spec.price_decimals)
-            self.notifier.send_photo(path, f"{self.symbol} {tf.label} {kind}")
+                                subtitle=subtitle, lookback=self.settings.live.chart_lookback,
+                                price_decimals=self.spec.price_decimals, last_price=float(analysis.price))
+            self.notifier.send_photo(path, f"{self.symbol} {tf.label} {label}")
             if forecast is not None and self.settings.live.mt5_overlay and hasattr(self.broker, "server_offset"):
                 from .notify.mt5_overlay import write_forecast_file
                 write_forecast_file(self.symbol, forecast, series.timestamps.iloc[-1], tf, self.broker.server_offset(self.symbol),
@@ -737,12 +751,26 @@ class LiveRunner:
         return tuple(c.poi_timeframes) if analysis.decision.mode is TradeMode.FULL else tuple(c.scalp_poi_timeframes)
 
     def chart_zones(self, analysis: Analysis, setup: Optional[TradeSetup] = None, limit: int = 4) -> list:
-        """The zones worth drawing: the bias direction, the timeframes the profile trades, the ``limit`` nearest to price
-        (and the setup's own zone).  A chart with every zone of every timeframe hides the one that matters."""
-        zones = [p for p in analysis.pois if p.direction is analysis.decision.direction] or list(analysis.pois)
+        """The zones worth drawing and naming: on the timeframes the profile trades, not invalidated, not spent (the engine
+        would refuse them for their age: 14 October, Max: "oudere POI's weghalen"), in the bias direction when the bias
+        allows one, the ``limit`` nearest to price (and the setup's own zone). A chart with every zone of every timeframe,
+        a monthly zone of 800 pips among them, hides the one that matters."""
+        c = self.settings.confirmation
         if analysis.decision.tradable:
-            allowed = self.tradable_timeframes(analysis)
-            zones = [p for p in zones if p.timeframe in allowed] or zones
+            allowed = set(self.tradable_timeframes(analysis))
+        else:
+            allowed = set(c.poi_timeframes) | set(getattr(c, "scalp_poi_timeframes", ()) or ())
+        zones = [p for p in analysis.pois if p.status is not POIStatus.INVALIDATED and (not allowed or p.timeframe in allowed)]
+        zones = [p for p in zones if not self.spent_zone(p, analysis.timestamp)]
+        if analysis.decision.tradable:
+            zones = [p for p in zones if p.direction is analysis.decision.direction]
+        unique, seen = [], set()                      # a 4H and a 1H zone on the same candles: the larger one names it
+        for p in sorted(zones, key=lambda z: z.timeframe, reverse=True):
+            same = (round(p.low, 8), round(p.high, 8), p.direction)
+            if same not in seen:
+                seen.add(same)
+                unique.append(p)
+        zones = unique
         price = float(analysis.price)
         zones = sorted(zones, key=lambda p: 0.0 if p.contains(price) else min(abs(price - p.low), abs(price - p.high)))[:limit]
         if setup is not None and all(p.key != setup.poi.key for p in zones):
@@ -773,11 +801,16 @@ class LiveRunner:
             self._touched.add(poi.key)
             self.note("poi_touch", analysis.timestamp, poi_tf=poi.timeframe.label, direction=poi.direction.name,
                       price=float(analysis.price), note=f"{poi.low:.{d}f}-{poi.high:.{d}f}")
-            arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
             news = self.news_lines(now)
-            self.notifier.send(f"👀 {self.symbol} is inside the {poi.timeframe.label} {arrow} POI {poi.low:.{d}f}-{poi.high:.{d}f} "
-                               f"({analysis.decision.reason}); waiting for a confirmation"
-                               + "".join(f"\n📰 {line}" for line in news))
+            try:
+                from .notify.formatting import format_touch
+                from .strategy.confirmation import allowed_confirmation_timeframes
+                text = format_touch(analysis, poi, self.spec, allowed_confirmation_timeframes(poi.timeframe, self.settings.confirmation))
+            except Exception:
+                arrow = "▲" if poi.direction is Bias.BULLISH else "▼"
+                text = (f"👀 {self.symbol} zit in de {poi.timeframe.label} {arrow} zone {poi.low:.{d}f}-{poi.high:.{d}f}; "
+                        f"wacht op een balance shift")
+            self.notifier.send(text + "".join(f"\n📰 {line}" for line in news))
             self.send_chart(analysis, "touch", timeframe=poi.timeframe)
 
     def spent_zone(self, poi, now: Optional[pd.Timestamp] = None) -> bool:

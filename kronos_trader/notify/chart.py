@@ -45,8 +45,15 @@ def render_chart(
     max_zones: int = 6,
     extra_boxes: Iterable = (),
     extra_lines: Iterable = (),
+    mark_zones: bool = False,
+    last_price: Optional[float] = None,
 ) -> Path:
-    """Draw ``series`` (last ``lookback`` candles) with zones, setup lines and the forecast fan; return the PNG path."""
+    """Draw ``series`` (last ``lookback`` candles) with zones, setup lines and the forecast fan; return the PNG path.
+
+    Each zone is a band from the candle it formed on to the right edge, named at the right edge with its timeframe, side
+    and prices. Dorus's X, B and P marks go on the setup's zone, or on every zone with ``mark_zones`` (the dossiers); a
+    dashed line is the last price. The price axis follows the candles: a zone far away is left out of the picture
+    instead of squeezing the candles flat (14 October, Max: the monthly zone made the briefing chart unreadable)."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -62,23 +69,44 @@ def render_chart(
     horizon = max((len(p) for p in paths), default=0)
     x_right = n - 1 + max(horizon, 1) + 1
 
-    fig, ax = plt.subplots(figsize=(12, 6.2), dpi=110)
+    fig, ax = plt.subplots(figsize=(11, 6), dpi=130)
     fig.patch.set_facecolor("white")
+    d = price_decimals
 
-    # zones -------------------------------------------------------------------------------
+    # the price axis: the candles (and the setup), with room for the zones that lie near them ----------------------------
     last = float(closes[-1])
+    lo, hi = float(lows.min()), float(highs.max())
+    if setup is not None:
+        lo, hi = min(lo, setup.stop, setup.take_profit), max(hi, setup.stop, setup.take_profit)
+    span = (hi - lo) or abs(hi) * 1e-3 or 1e-6
+    near_lo, near_hi = lo - 0.5 * span, hi + 0.5 * span
     zones = sorted(pois, key=lambda p: abs((p.low + p.high) / 2 - last))[:max_zones]
     if setup is not None and getattr(setup, "poi", None) is not None and setup.poi not in zones:
         zones.append(setup.poi)
-    marked = {setup.poi.key} if setup is not None and getattr(setup, "poi", None) is not None else {p.key for p in zones}
+    zones = [p for p in zones if p.high >= near_lo and p.low <= near_hi
+             or (setup is not None and getattr(setup, "poi", None) is not None and p.key == setup.poi.key)]
+    for p in zones:
+        lo, hi = min(lo, max(p.low, near_lo)), max(hi, min(p.high, near_hi))
+    if paths:
+        lo = min(lo, max(float(forecast.expected_low), near_lo))
+        hi = max(hi, min(float(forecast.expected_high), near_hi))
+    pad = (hi - lo) * 0.06 or 1e-6
+    y_lo, y_hi = lo - pad, hi + pad
+
+    # zones -------------------------------------------------------------------------------
+    if setup is not None and getattr(setup, "poi", None) is not None:
+        marked = {setup.poi.key}
+    else:
+        marked = {p.key for p in zones} if mark_zones else set()
+    labels = []
     for poi in zones:
         colour = BULL_ZONE if poi.direction is Bias.BULLISH else BEAR_ZONE
         start = max(0, view.index_at_or_after(poi.created_at) - 1) if poi.created_at is not None else 0
         ax.add_patch(Rectangle((start, poi.low), x_right - start, poi.high - poi.low, facecolor=colour, edgecolor="none", zorder=1))
         bullish = poi.direction is Bias.BULLISH
-        arrow = "▲" if bullish else "▼"
-        ax.text(start + 0.3, (poi.low + poi.high) / 2, f"{poi.timeframe.label} {arrow} POI", fontsize=7.5, va="center", ha="left",
-                color="#333", zorder=5)
+        side = "demand" if bullish else "supply"
+        labels.append(((max(poi.low, y_lo) + min(poi.high, y_hi)) / 2,
+                       f"{poi.timeframe.label} {side} {poi.low:.{d}f}–{poi.high:.{d}f}", "#1f6f3f" if bullish else "#a3312b"))
         # Dorus's three marks on the zone's left edge: X the liquidity taken, B the balance level (the gap), P the protected candle.
         # With a setup only its own zone carries the marks, the other zones stay plain bands.
         if poi.key not in marked:
@@ -137,7 +165,7 @@ def render_chart(
         short = setup.direction.sign < 0
         ax.plot([ci], [setup.entry], marker="v" if short else "^", markersize=9, color="#333333", zorder=6)
         d = price_decimals
-        how = f"{conf.type.value} on {conf.timeframe.label}" if conf is not None else "confirmation"
+        how = f"{conf.type.value} op {conf.timeframe.label}" if conf is not None else "confirmation"
         ax.text(x0 + 0.3, setup.entry, f" {'SELL' if short else 'BUY'} {setup.entry:.{d}f}  ({how})", fontsize=8,
                 va="bottom", color="#222222", zorder=5)
         ax.text(x0 + 0.3, setup.stop, f" SL {setup.stop:.{d}f}  -1R", fontsize=8, va="bottom" if setup.stop > setup.entry else "top",
@@ -160,23 +188,38 @@ def render_chart(
         ax.axvline(n - 0.5, color="#999999", linewidth=0.6, linestyle=":", zorder=2)
         ax.legend(loc="upper right", fontsize=8, frameon=False)
 
+    # the last price, and the zone names at the right edge, spread so that none covers another ---------------------------
+    now_price = float(last_price) if last_price is not None and y_lo <= float(last_price) <= y_hi else last
+    ax.axhline(now_price, color="#555555", linewidth=0.8, linestyle="--", zorder=4)
+    labels.append((now_price, f"{now_price:.{d}f}", "#222222"))
+    gap = (y_hi - y_lo) * 0.045
+    placed = []
+    for y, text, colour in sorted(labels, key=lambda t: t[0]):
+        y = min(max(y, y_lo + gap / 2), y_hi - gap / 2)
+        if placed and y - placed[-1][0] < gap:
+            y = placed[-1][0] + gap
+        placed.append((y, text, colour))
+    if placed and placed[-1][0] > y_hi - gap / 2:                  # pushed past the top: shift the whole stack down
+        shift = placed[-1][0] - (y_hi - gap / 2)
+        placed = [(y - shift, t, c) for y, t, c in placed]
+    # with a setup the right edge carries the entry, stop and target: the zone names go to the left edge then
+    label_x, label_ha = (0.3, "left") if setup is not None else (x_right - 0.5, "right")
+    for y, text, colour in placed:
+        ax.text(label_x, y, text, fontsize=8.5, va="center", ha=label_ha, color=colour, zorder=7,
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor=colour, linewidth=0.6, alpha=0.9))
+
     # axes --------------------------------------------------------------------------------
     ax.set_xlim(-1, x_right)
-    lo = min(float(lows.min()), *(p.low for p in zones), *(float(getattr(forecast, "expected_low", lows.min())) for _ in [0]))
-    hi = max(float(highs.max()), *(p.high for p in zones), *(float(getattr(forecast, "expected_high", highs.max())) for _ in [0]))
-    if setup is not None:
-        lo, hi = min(lo, setup.stop, setup.take_profit), max(hi, setup.stop, setup.take_profit)
-    pad = (hi - lo) * 0.05 or 1e-6
-    ax.set_ylim(lo - pad, hi + pad)
+    ax.set_ylim(y_lo, y_hi)
     step = max(1, n // 8)
     ticks = list(range(0, n, step))
     ax.set_xticks(ticks)
-    ax.set_xticklabels([pd.Timestamp(times[i]).strftime("%d %b %H:%M") for i in ticks], fontsize=8, rotation=0)
-    ax.tick_params(axis="y", labelsize=8)
+    ax.set_xticklabels([pd.Timestamp(times[i]).strftime("%d %b %H:%M") for i in ticks], fontsize=9, rotation=0)
+    ax.tick_params(axis="y", labelsize=9)
     ax.grid(True, color="#eeeeee", linewidth=0.6)
-    fig.suptitle(title or f"{series.symbol} {series.timeframe.label}", x=0.01, y=0.985, ha="left", fontsize=11, fontweight="bold")
+    fig.suptitle(title or f"{series.symbol} {series.timeframe.label}", x=0.01, y=0.985, ha="left", fontsize=12, fontweight="bold")
     if subtitle:
-        ax.set_title(subtitle, loc="left", fontsize=8.5, color="#555555", pad=6)
+        ax.set_title(subtitle, loc="left", fontsize=9.5, color="#444444", pad=6)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
