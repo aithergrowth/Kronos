@@ -139,3 +139,18 @@ def test_a_limit_fill_whose_candle_also_reaches_the_stop_is_a_loss(scenario):
     rows = [(1.1000, 1.1005, 1.0995, 1.1000), (1.0990, 1.0992, 1.0940, 1.0945), (1.0945, 1.1310, 1.0940, 1.1300)]
     result = Backtester(_limit_settings(), _bars(rows), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
     assert len(result.trades) == 1 and result.trades[0].reason == "stop" and result.trades[0].r == pytest.approx(-1.0, abs=0.02)
+
+
+def test_the_backtest_refuses_an_entry_whose_spread_is_too_wide_for_the_stop_like_the_live_runner(scenario):
+    """risk.max_spread_stop_fraction in the backtest too (14 October): live refused a gold stop under 12 pips at FTMO's
+    3.7-pip spread while the research, with the assumed 2 pips, took it. The cap counts the broker's spread against the
+    stop distance at the executable price."""
+    s = Settings()
+    s.symbols["EURUSD"].typical_spread_pips = 60.0        # 60 pips against the 181-pip stop at the moved price: 33 % > 30 %
+    s.risk.max_spread_stop_fraction = 0.3
+    bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)))
+    result = bt.run()
+    assert result.trades == [] and "spread over 30% of the stop distance" in result.guard_reasons
+    s.risk.max_spread_stop_fraction = 0.5                 # 33 % passes a 50 % cap
+    bt = Backtester(s, _data([1.1100, 1.1150, 1.1120]), "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(_setup(scenario, 1.1700)))
+    assert len(bt.run().trades) == 1

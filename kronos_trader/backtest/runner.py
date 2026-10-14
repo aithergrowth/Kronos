@@ -295,6 +295,18 @@ class Backtester:
                     guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
                     log["outcome"] = reason
                     continue
+                # the live spread cap, on the broker's spread (14 October: live refuses a gold stop under 12 pips at FTMO's
+                # 3.7-pip spread while the research with the assumed 2 pips took it; the backtest now refuses alike)
+                cap = float(getattr(s.risk, "max_spread_stop_fraction", 0.0) or 0.0)
+                if cap > 0 and abs(price_now - setup.stop) > 0:
+                    spread = abs(broker.fill_price(self.symbol, Direction.LONG, float(candle.close))
+                                 - broker.fill_price(self.symbol, Direction.SHORT, float(candle.close)))
+                    if spread > cap * abs(price_now - setup.stop):
+                        rejected += 1
+                        reason = f"spread over {cap:.0%} of the stop distance"
+                        guard_reasons[reason] = guard_reasons.get(reason, 0) + 1
+                        log["outcome"] = f"{reason} ({spread / abs(price_now - setup.stop):.0%})"
+                        continue
                 fc = analysis.signal.forecast
                 meta = {
                         "sid": sid,
