@@ -87,3 +87,6 @@ data/histdata_1m/
 .env.*
 journal*/
 scripts/*_local.bat
+
+# Claude Code agent worktrees on this machine
+.claude/worktrees/
