@@ -50,6 +50,29 @@ per markt mediaan, 90e percentiel en maximum in punten/dollars, en vergelijk met
 punt, BTC 15 dollar). Sla op in kronos_notes\spreads.md.
 ```
 
+## Once: the BTC candle stamps (the research data cuts the day at a different hour than FTMO)
+
+```
+Alleen lezen. Zoek de nieuwste geëxporteerde kaarsen van BTCUSD in journal_ftmo\parity\ (of journal\parity\ van de
+trial): de bestanden met 4H, 1D en 1W in de naam. Geef per bestand de eerste tien tijdstempels (UTC) en zeg op welk uur
+de dagkaars begint en op welke weekdag en welk uur de weekkaars begint. Doe hetzelfde voor EURUSD en XAUUSD ter
+vergelijking. Sla op in kronos_notes\kaarsen.md.
+```
+
+## When the account reaches +10 % (the windows do not stop by themselves)
+
+The windows never stop at the target: `TARGET` (when set in `ftmo_local.bat`) only drives the protect step, and the
+day report shows the distance. When the day report shows +10 % or more: with four trading days done, let the open
+positions finish, stop the windows outside the sessions and request the verification in the FTMO dashboard; with
+fewer than four days, Max decides between trading on and waiting (a day with a position opened counts, whatever its
+size). Then:
+
+```
+Alleen lezen. Hoeveel handelsdagen telt de FTMO-challenge tot nu toe (dagen met een geopende positie, Praagse tijd) in
+journal_ftmo\trades.csv en in het forward-report? Wat is de gesloten balans en wat staat er open? Zijn alle vier de
+vensters gestopt (geen verse heartbeat_*.json)?
+```
+
 ## Once: the dashboard
 
 ```

@@ -46,6 +46,25 @@ from .risk import atr, build_setup, combo_label, confirmation_label, setup_risk
 from .structure import StructureAnalysis, analyze_structure
 
 
+def minutes_since_touch(confirmation, touch_ts) -> float:
+    """Minutes between the visit's touch and the close of the confirmation candle (research knob min_visit_age_minutes)."""
+    closed_at = pd.Timestamp(confirmation.timestamp) + confirmation.timeframe.delta()
+    return float((closed_at - pd.Timestamp(touch_ts)) / pd.Timedelta(minutes=1))
+
+
+def new_york_day_open(series: CandleSeries, now) -> Optional[float]:
+    """The open of the candle that starts the New York day ``now`` falls in (00:00 America/New_York); None when the
+    series has no candle at that boundary or it has not opened yet (research knob require_day_drift)."""
+    start = pd.Timestamp(now).tz_localize("UTC").tz_convert("America/New_York").normalize().tz_convert("UTC").tz_localize(None)
+    i = series.index_at_or_after(start)
+    if i >= len(series):
+        return None
+    ts = pd.Timestamp(series.timestamps.iloc[i])
+    if ts - start >= series.timeframe.delta() or ts > pd.Timestamp(now):
+        return None
+    return float(series.open[i])
+
+
 def _candle_open(series: CandleSeries, index: int) -> Optional[pd.Timestamp]:
     """Open time of the candle at ``index`` of ``series`` (None when the index is not in the view)."""
     try:
@@ -583,8 +602,22 @@ class StrategyEngine:
                                                f"max {body_cap:g})")
                     continue
 
+            # research (14 October): no signal whose confirmation closes within min_visit_age_minutes of the visit's touch
+            min_age = float(getattr(s.confirmation, "min_visit_age_minutes", 0.0) or 0.0)
+            if min_age > 0:
+                waited_min = minutes_since_touch(confirmation, touch_ts)
+                if waited_min < min_age:
+                    analysis.rejections.append(f"{label}: the shift closed {waited_min:.0f} min after the touch (min {min_age:g} min)")
+                    continue
+
             # 5: the setup ---------------------------------------------------------------
             entry = spec.round_price(confirmation.close)
+            # research (14 October): the trade on the right side of the New York day open (a long above it, a short below it)
+            if getattr(s.confirmation, "require_day_drift", False):
+                day_open = new_york_day_open(lowest, now)
+                if day_open is not None and (entry - day_open) * direction.sign <= 0:
+                    analysis.rejections.append(f"{label}: entry {entry} on the wrong side of the New York day open {day_open:.5g}")
+                    continue
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             neutral = tuple(tf.label for tf in decision.neutral)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,

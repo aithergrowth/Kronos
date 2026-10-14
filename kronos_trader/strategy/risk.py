@@ -391,6 +391,16 @@ def size_position(
     return round(lots, 4), risk_amount, risk_distance, stop_pips
 
 
+def shorten_target(entry: float, tp: float, direction: Direction, params: RiskParams, spec: SymbolSpec, source: str) -> Tuple[float, str]:
+    """Research (14 October): the target ``tp_buffer_fraction`` of its distance back toward the entry (0.05: just short of the
+    pool, where the literature places exits); unchanged when the knob is off."""
+    fraction = float(getattr(params, "tp_buffer_fraction", 0.0) or 0.0)
+    if fraction <= 0 or fraction >= 1:
+        return tp, source
+    shorter = spec.round_price(entry + (tp - entry) * (1.0 - fraction))
+    return shorter, f"{source} [{fraction:.0%} short of it]"
+
+
 def build_setup(
     symbol: str,
     spec: SymbolSpec,
@@ -469,7 +479,7 @@ def build_setup(
     if target is None:
         reasons.append("no opposite liquidity or unmitigated balance block to target")
         return None, reasons
-    tp_price, tp_source = spec.round_price(target[0]), target[1]
+    tp_price, tp_source = shorten_target(entry, spec.round_price(target[0]), direction, params, spec, target[1])
 
     reward_distance = abs(tp_price - entry)
     rr = reward_distance / rr_distance if rr_distance > 0 else 0.0
@@ -481,6 +491,7 @@ def build_setup(
         if nearer is not None:
             far_source, far_rr = tp_source, rr
             tp_price, tp_source = spec.round_price(nearer[0]), f"{nearer[1]} [nearer than {far_source} at 1:{far_rr:.1f}; R:R cap {params.tp_max_rr:.1f}]"
+            tp_price, tp_source = shorten_target(entry, tp_price, direction, params, spec, tp_source)
             reward_distance = abs(tp_price - entry)
             rr = reward_distance / rr_distance
     if lots <= 0:

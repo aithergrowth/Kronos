@@ -204,6 +204,10 @@ class ConfirmationParams:
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
     max_body_atr: float = 0.0           # research (14 October): 0 = off; else no entry on a confirmation candle whose body exceeds this many
                                         # ATR14 of its timeframe (a climax candle)
+    min_visit_age_minutes: float = 0.0  # research (14 October): 0 = off; else no signal whose confirmation candle closes within this many
+                                        # minutes of the visit's touch (the loss anatomy: shifts 10-30 minutes after the touch lose on gold and BTC)
+    require_day_drift: bool = False     # research (14 October): a long only when the entry lies above the day's open at 00:00 New York, a
+                                        # short only below it (the day's drift agrees with the trade; EURUSD on the ledgers)
     stop_window_includes_sweep: bool = False   # research (14 October): with search_from_reentry the stop window starts at the re-entry candle;
                                         # True also takes the candles wholly outside the zone right before it (the sweep of P), so the stop
                                         # sits beyond that sweep instead of inside it
@@ -293,6 +297,8 @@ class RiskParams:
                                         # vorige liquiditeitsgebied", A 01:54:47; his targets: the 12:45 low on 11 Nov 2025, the 15 Mar low on 18 Mar 2024,
                                         # the 24 Aug low on K3, all within 72 candles of a 1H zone); falls back to liquidity_nearest when nothing lies beyond entry
     tp_buffer_pips: float = 0.0         # previous_extreme: the target sits this many pips before the extreme (his: 0.3 pip and 1.0 point before the low)
+    tp_buffer_fraction: float = 0.0     # research (14 October): 0 = off; else the target the policy finds (or the fallback) moves this fraction of its
+                                        # distance back toward the entry (0.05: 5 % short of the pool); the minimum R:R is checked on the shorter target
     tp_fixed_rr: float = 0.0            # 0 = off; else the target sits this many R beyond the entry (R = the sizing distance) whatever the policy finds
                                         # tp_policy pullback_origin: the extreme from the zone's P candle to the touch, the high (long) / low (short)
                                         # the move back into the zone started from (Max, 7 October: "de vorige high die iets triggerde")
