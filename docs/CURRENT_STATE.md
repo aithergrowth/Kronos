@@ -72,7 +72,12 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   balance (FTMO 2-Step: 5 % and 10 %), with `ftmo_1step` -2.9 % a day and -9 % from the highest day-start balance
   (FTMO 1-Step: 3 % and 10 % trailing), without a product (the demo) the profiles' -4 % and -8 %. At most 2 open
   trades, 1 per market (EURUSD 2 since 13 October), resting limits included, and no new setup in a market while its limit rests; a position may tie up at most 45 % of the equity in margin. The
-  highest day-start balance survives a restart (`guard_day_high.json` next to the journal).
+  highest day-start balance survives a restart (`guard_day_high.json` next to the journal), and so does the day's start
+  balance (`guard_day_start.json`, 14 October): a window that starts mid-day while the terminal's trade history does not
+  list the morning's stop yet keeps the highest baseline the account's windows saw that day, so the morning's loss still
+  counts against the day.
+- A window remembers the setups it handled for a week (`seen_<symbol>.json`, 14 October): a restart inside a setup's
+  confirmation candle does not take the same setup again (with two places in EURUSD it could have).
 - The open-slot and worst-case checks and the order run under one lock shared by the account's windows. A window that
   cannot get the lock defers the entry and tries again every scan until it expires; it never trades without it.
 - Every start writes a `start` row to the journal and `starts/<symbol>_<time>.json` next to it: code revision, source

@@ -372,6 +372,17 @@ class LiveRunner:
         # visit, which one_trade_per_visit forbids (re-entries after a stop-out won 9 % in R6)
         self.traded_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"traded_{self.symbol}.json"
                                             if settings.live.journal_path else None)
+        # the setups this market handled survive a restart too: a restart while a setup's confirmation candle is still the newest
+        # would signal it again, and with two places in a market (EURUSD since 13 October, which also re-enters a zone in the
+        # same visit) the same setup could be taken twice (the laptop's code review, 13 October)
+        self.seen_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"seen_{self.symbol}.json"
+                                          if settings.live.journal_path else None)
+        self.seen_ids: Dict[str, str] = {}               # setup id -> when this window handled it
+        # the day's start balance, shared by the account's windows: a window that starts mid-day takes it from the terminal's
+        # trade history, which may not be complete yet (a terminal just started); the file keeps the highest one of the day
+        self.day_start_path: Optional[Path] = (Path(settings.live.journal_path).parent / "guard_day_start.json"
+                                               if settings.live.journal_path else None)
+        self._saved_day_start: Optional[Tuple[str, float]] = None
         self.lock_path: Optional[Path] = Path(settings.live.journal_path).parent / "account.lock" if settings.live.journal_path else None
         self.lock_timeout: float = 10.0                  # seconds a window waits for the account lock before it defers the entry
         # a paper account (BTC on Bitstamp prices) keeps its balance and open trades across a restart
@@ -381,6 +392,7 @@ class LiveRunner:
         self.load_paper()
         self.load_traded()
         self.load_limits()
+        self.load_seen()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
@@ -402,6 +414,7 @@ class LiveRunner:
         if self.broker is not None:
             try:
                 self.guard.update(now, equity, self.broker.balance())
+                self.sync_day_start()
                 self.save_day_high()
             except Exception as exc:     # a feed hiccup must not stop the loop; the guard re-checks before any order
                 print(f"[live] {self.symbol}: guard update failed ({exc})")
@@ -564,6 +577,73 @@ class LiveRunner:
             self._saved_day_high = value
         except Exception as exc:
             print(f"[live] {self.symbol}: could not write {self.day_high_path} ({exc})")
+
+    def load_seen(self) -> None:
+        """The setups this market handled (setup id -> when), from the file the last run left (none when there is no file)."""
+        if self.seen_path is None or not self.seen_path.exists():
+            return
+        try:
+            doc = json.loads(self.seen_path.read_text(encoding="utf-8"))
+            self.seen_ids = {str(k): str(v) for k, v in dict(doc).items()}
+        except Exception as exc:     # a damaged file must not stop the loop
+            print(f"[live] {self.symbol}: could not read {self.seen_path} ({exc})")
+
+    def save_seen(self, now: pd.Timestamp) -> None:
+        """Write the handled setups of the last week (older ones can no longer signal: their confirmation candle is long past)."""
+        if self.seen_path is None:
+            return
+        cutoff = pd.Timestamp(now) - pd.Timedelta(days=7)
+        kept = {}
+        for sid, when in self.seen_ids.items():
+            try:
+                if pd.Timestamp(when) < cutoff:
+                    continue
+            except Exception:
+                pass
+            kept[sid] = when
+        self.seen_ids = kept
+        try:
+            self.seen_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.seen_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(kept), encoding="utf-8")
+            os.replace(tmp, self.seen_path)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.seen_path} ({exc})")
+
+    def sync_day_start(self) -> None:
+        """Keep the guard's day start balance at the highest one any window of the account saw today. A window that (re)starts
+        mid-day takes it from the terminal's trade history; a history that is not complete yet would read the morning's losses
+        as zero and leave the day its whole limit again. The highest baseline is the strictest, and the right one when the
+        history was complete."""
+        g = self.guard
+        if self.day_start_path is None or g.day is None or not g.day_known:
+            return
+        day = str(pd.Timestamp(g.day).date())
+        on_file = 0.0
+        try:
+            if self.day_start_path.exists():
+                doc = json.loads(self.day_start_path.read_text(encoding="utf-8"))
+                if doc.get("day") == day and float(doc.get("account_size", -1)) == float(self.settings.account_size):
+                    on_file = float(doc.get("balance", 0.0))
+        except OSError as exc:       # another window replacing it this instant: never overwrite it blind, try next scan
+            print(f"[live] {self.symbol}: could not read {self.day_start_path} ({exc})")
+            return
+        except Exception as exc:     # a damaged file: written anew below
+            print(f"[live] {self.symbol}: could not read {self.day_start_path} ({exc})")
+        if on_file > g.day_start_balance:
+            g.day_start_balance = on_file
+            g.day_high = max(g.day_high, on_file)
+        if on_file >= g.day_start_balance or self._saved_day_start == (day, g.day_start_balance):
+            return
+        try:
+            self.day_start_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.day_start_path.with_name(f"{self.day_start_path.stem}_{self.symbol}.tmp")
+            tmp.write_text(json.dumps({"account_size": float(self.settings.account_size), "day": day,
+                                       "balance": float(g.day_start_balance)}), encoding="utf-8")
+            os.replace(tmp, self.day_start_path)
+            self._saved_day_start = (day, g.day_start_balance)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.day_start_path} ({exc})")
 
     def save_traded(self) -> None:
         traded = getattr(self.engine, "traded", None)
@@ -917,10 +997,12 @@ class LiveRunner:
         setup = analysis.signal.setup
         forecast = analysis.signal.forecast
         key = (setup.poi.key, str(setup.confirmation.timestamp))
-        if key in self.seen:
+        sid = short_id_for(key)
+        if key in self.seen or sid in self.seen_ids:
             return
         self.seen.add(key)
-        sid = short_id_for(key)
+        self.seen_ids[sid] = str(now)
+        self.save_seen(now)
         sf = self.journal.setup_fields(setup) if self.journal is not None else {}
         if self.stale and self.settings.live.require_fresh_data:
             self.note("stale", now, id=sid, note=self.stale_text(), **sf)

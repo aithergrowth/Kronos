@@ -43,11 +43,18 @@ def setup(scenario):
     return TradeSetup("EURUSD", Direction.LONG, poi, conf, 1.1000, 1.0949, 1.1200, 0.0052, 0.02, 3.85, 1.92, 1000.0, 4.0, "1H liquidity")
 
 
-def _runner(setup, broker, last_close=1.1, **kw):
+_WINDOWS = iter(range(1_000_000))
+
+
+def _runner(setup, broker, last_close=1.1, journal=None, **kw):
+    """A window of its own account: its own journal folder, so a second one in the same test is not a restart of the first
+    (a restarted window remembers the setups it handled, seen_<market>.json); ``journal`` the folder of a restart."""
     notifier = TelegramNotifier(dry_run=True)
     rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, max(1.101, last_close), min(1.099, last_close), last_close)]
     fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
-    runner = LiveRunner(Settings(), "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
+    settings = Settings()
+    settings.live.journal_path = journal or f"journal_{next(_WINDOWS)}/trades.csv"
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
                         dry_run=False, clock=lambda: NOW, **kw)
     return runner, notifier
 
@@ -731,14 +738,14 @@ def test_a_paper_window_keeps_its_account_across_a_restart(setup):
     recent closed P&L come back after a restart; the position ids go on where they stopped."""
     broker = PaperBroker(Settings())
     broker.set_price("EURUSD", 1.1)
-    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True)
+    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True, journal="journal/trades.csv")
     runner.step(NOW)
     pos = broker.open_positions()[0]
     broker._balance = 101_234.5
     broker._restored_realized = [(NOW - pd.Timedelta(hours=2), -500.0)]
     runner.save_paper()
     fresh = PaperBroker(Settings())
-    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True)
+    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True, journal="journal/trades.csv")
     assert fresh.balance() == pytest.approx(101_234.5)
     back = fresh.open_positions()[0]
     assert (back.id, back.direction, back.lots, back.entry, back.stop, back.breakeven_r) == \
@@ -830,7 +837,7 @@ def test_a_refused_break_even_is_retried_without_a_new_trigger(setup):
 def test_a_paper_restart_does_not_replay_old_candles_or_reuse_ids(setup):
     broker = PaperBroker(Settings())
     broker.set_price("EURUSD", 1.1)
-    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True)
+    runner, _ = _runner(setup, broker, require_approval=False, keep_paper_account=True, journal="journal/trades.csv")
     runner.step(NOW)
     for _ in range(3):
         broker.place_market_order("EURUSD", Direction.LONG, 0.1, 1.09, 1.12, 10.0, 0.01, 4.0, price=1.1, ts=NOW)
@@ -838,7 +845,7 @@ def test_a_paper_restart_does_not_replay_old_candles_or_reuse_ids(setup):
         broker.close_position(p.id, "manual", price=1.1, ts=NOW)
     runner.save_paper()
     fresh = PaperBroker(Settings())
-    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True)
+    again, _ = _runner(setup, fresh, require_approval=False, keep_paper_account=True, journal="journal/trades.csv")
     assert again._fed_until == runner._fed_until and again._fed_until is not None
     assert fresh.place_market_order("EURUSD", Direction.SHORT, 0.1, 1.11, 1.09, 10.0, 0.01, 4.0, price=1.1, ts=NOW).id == "P5"
 
@@ -1254,3 +1261,70 @@ def test_the_live_command_stops_when_the_market_runs_already(tmp_path, capsys):
     assert code == WINDOW_TAKEN
     assert "EURUSD runs already in another window" in capsys.readouterr().out
     held.release()
+
+
+def test_a_restart_does_not_take_the_same_setup_twice(setup, tmp_path):
+    """The setups a window handled are kept next to the journal (seen_<market>.json): a restart while a setup's confirmation
+    candle is still the newest does not signal it again. With two places in EURUSD (13 October), which also re-enters a
+    zone in the same visit, it would otherwise be a second trade on the same setup (the laptop's code review, 13 October)."""
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    settings.prop_firm.max_open_trades, settings.prop_firm.max_open_per_symbol = 2, 2
+    broker = PaperBroker(settings)
+    broker.set_price("EURUSD", 1.1)
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 3
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+
+    def window(minutes):
+        return LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=TelegramNotifier(dry_run=True),
+                          engine=FakeEngine(setup), dry_run=False, require_approval=False,
+                          clock=lambda: NOW + pd.Timedelta(minutes=minutes))
+
+    window(0).step(NOW)
+    assert len(broker.open_positions("EURUSD")) == 1
+    seen = tmp_path / "journal" / "seen_EURUSD.json"
+    assert short_id_for((setup.poi.key, str(setup.confirmation.timestamp))) in seen.read_text()
+    window(3).step(NOW + pd.Timedelta(minutes=3))                       # restarted inside the same 15m candle
+    assert len(broker.open_positions("EURUSD")) == 1                    # not taken a second time
+    seen.unlink()                                                       # without the record the second place took it
+    window(4).step(NOW + pd.Timedelta(minutes=4))
+    assert len(broker.open_positions("EURUSD")) == 2
+
+
+def test_the_days_start_balance_survives_a_restart_whose_history_is_not_complete(tmp_path):
+    """A window that starts mid-day takes the day's start balance from the terminal's trade history. When that history does
+    not list the morning's stop yet, the baseline would be the balance after it and the day would get its whole limit
+    again; guard_day_start.json keeps the highest baseline the account's windows saw today."""
+    import json
+    settings = Settings()
+    settings.account_size = 10_000.0
+    settings.live.journal_path = str(tmp_path / "journal" / "trades.csv")
+    first = LiveRunner(settings, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), clock=lambda: NOW)
+    first.guard.realized_since = lambda since: -300.0                   # a stop this morning
+    first.guard.update(NOW, 9_700.0, 9_700.0)
+    first.sync_day_start()
+    assert first.guard.day_start_balance == pytest.approx(10_000.0)
+    path = tmp_path / "journal" / "guard_day_start.json"
+    assert json.loads(path.read_text())["balance"] == pytest.approx(10_000.0)
+
+    again = LiveRunner(settings, "XAUUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), clock=lambda: NOW)
+    again.guard.realized_since = lambda since: 0.0                      # the restarted terminal does not list the stop yet
+    again.guard.update(NOW + pd.Timedelta(hours=2), 9_700.0, 9_700.0)
+    assert again.guard.day_start_balance == pytest.approx(9_700.0)
+    again.sync_day_start()
+    assert again.guard.day_start_balance == pytest.approx(10_000.0)      # the morning's loss still counts
+    assert again.guard.daily_loss_pct(9_700.0) == pytest.approx(3.0)
+
+    nxt = NOW + pd.Timedelta(days=1)                                    # a new day: yesterday's record does not apply
+    again.guard.update(nxt, 9_700.0, 9_700.0)
+    again.sync_day_start()
+    assert again.guard.day_start_balance == pytest.approx(9_700.0)
+    doc = json.loads(path.read_text())
+    assert doc["day"] == "2026-10-02" and doc["balance"] == pytest.approx(9_700.0)
+
+    other = Settings(); other.account_size = 25_000.0; other.live.journal_path = settings.live.journal_path
+    fresh = LiveRunner(other, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), clock=lambda: nxt)
+    fresh.guard.realized_since = lambda since: 0.0
+    fresh.guard.update(nxt, 25_000.0, 25_000.0)
+    fresh.sync_day_start()
+    assert fresh.guard.day_start_balance == pytest.approx(25_000.0)      # another account size: not this record
