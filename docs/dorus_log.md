@@ -94,3 +94,10 @@
 - News: ECB Lagarde 10:30 Amsterdam (EURUSD blackout 10:00-11:00), US CPI September 14:30 Amsterdam (blackout
   14:00-15:00 for the USD markets). Data: TradingView 08:37, BTC from Bitstamp. First session of the FTMO challenge
   (code 3e2a4d2 since 13 October 19:14).
+- Evening (cloud, after the close): the first day gave no trade on any market, as 45 % of first days do (a trade within two
+  trading days 55 %, a week 83 %). The CPI shock (3.7 % y/y) put all four in one USD move; the engine at 17:00 UTC reads
+  EURUSD, gold and BTC short-side, NAS100 neutral: gold's fresh 1H/4H supply 4,105-4,155 sits $22 above price (a short
+  from it is the likeliest first trade), EURUSD's only tradable zones are the two CPI-day supplies 14-28 pips above at a
+  quarter stake, NAS100 waits for the 1H and 4H to turn, BTC reads bearish-scalp on the window's candles. The day's
+  research (the README's 14 October evening section): nothing changes in the challenge; the gold 10:00-11:00 cut and
+  the EURUSD 14:30-16:00 cut are the two decisions for the next restart after it.

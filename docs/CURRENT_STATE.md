@@ -166,3 +166,25 @@ zones x2, BTC half, the changes above), starts February 2024 - September 2025: o
 4 trades. The forward
 record of the demo and the FTMO account is what will tell; the profiles stay frozen during a challenge unless a
 change has passed both periods and the challenge replay.
+
+## 14 October, evening: what changed on the first day of the challenge
+
+Nothing in the live profiles (frozen on 13 October). On the branch, for the next restart outside the sessions:
+
+- Telegram: near-miss messages (a zone in play, a shift seen, the trade refused and why), approach notices within half
+  a 1H ATR of a zone, the morning check with the regime, today's news and its blackouts, the stake after the ladder,
+  the room to the limits and what a trade needs, a midday check at 12:55, charts with the previous day's high and low
+  and the entry windows shaded (`live.notify_near_miss`, `notify_approach`, `approach_atr`, `midday_time`). Every
+  notice runs on its own in the step: one that fails can never skip the setup.
+- Research knobs, all off by default (the behaviour is unchanged, proven trade for trade): the conditional time stop,
+  the daily trend filter, the ATR stop floor, the climax-candle gate, the aligned-count stake, the target a fraction
+  short of the pool, the minimum visit age, the New York day-open gate, and the morning's four review variants.
+- The news calendar: two ISM rows of November moved to 15:00 UTC (the US clock change), the 15 October retail-sales
+  row to 12:30 UTC, the releases of 6-13 November added.
+- The backtester ends a limit order at its expiry before a candle after a closure can fill it; the weekly parity check
+  calls a profile with only new settings at their defaults "identical but for N new settings".
+- Known since today: the BTC research candles cut the day at UTC midnight while the window's MT5 candles cut it at
+  17:00 New York; on the window's candles the BTC profile makes +22.8R in sample (not +61.7R) and -3.8R out of sample
+  (not -41.6R). BTC stays at half stake; the decision whether it stays at all comes after the laptop's spread
+  measurement. The research of the day: `docs/backtests/winrate/README.md` (the 14 October evening section) and
+  `docs/research/2026-10-14/`.

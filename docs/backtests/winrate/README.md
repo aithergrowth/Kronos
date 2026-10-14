@@ -2014,3 +2014,129 @@ runs without the change, 0.10R a trade for costs:
 - The sweep does not rescue the spent zones: a few trades a market, most of them lost, and on gold the 2017-2023 gain
   comes with nothing in 2024-2026. The 24 h rule stays. The sweep option lived in a research worktree only
   (`confirmation.old_zone_requires_sweep`); it is not in the code. Nothing changed in the profiles.
+
+## The sweep of 14 October: the data, the statistics, the candidates (14 October, evening)
+
+Max, the first day of the FTMO challenge: "ga alles opzoeken en opslaan over traden en onderzoeken backtesten etc tot
+het uiterste", "kunnen we de kans van 50 % verder verhogen", "ik wil alles tot in de puntjes weten". Three workflows
+ran eighteen research angles, each followed by a skeptic who re-derived the numbers (the reports are under
+`docs/research/2026-10-14/`: `BACKLOG.md`, `DEEP_DIVE.md`, `MORE.md` are the syntheses, `RESULTS_14oct.md` the
+batch tables), and about 150 engine runs measured the candidates on the live profiles in research form (1 %, no
+multipliers, guard off; 2024-01..2026-09 in sample, 2017..2023 out of sample, BTC 2020-06..2023; 0.10R a trade).
+Nothing changed in the live profiles: the challenge runs on what was frozen on 13 October. What follows is what holds.
+
+### The data under the research
+
+- **BTC's research candles are not the candles the window sees.** `btc_data/` cuts the day at UTC midnight; FTMO's MT5
+  server (New York + 7) cuts it at 17:00 New York, and the BTC profile takes its bias from the month, the week and the
+  day. The live profile on candles anchored like the server (`btc_ny_old`, the weekly from Saturday 17:00 New York =
+  Sunday 00:00 server): 95 trades, 51 %, **+22.8R** in sample against 89, 58 %, +61.7R on the UTC candles (2026
+  -24.4R), and 59 trades, -3.8R out of sample against 130, -41.6R (+37.8R). The challenge replay with that ledger
+  (BTC at half stake, its true 0.18R cost): both phases 94 %, median 77 days, 2026 starts within six weeks 54 %,
+  funded +5.0 %/month; without BTC 99 %, 86 days, 45 %, +4.7 %; the UTC ledger said 100 %, 84 days, 71 %, +5.7 %.
+  Reading: BTC's +61.7R was mostly the cut of the day; at half stake it is still a small plus for the challenge and
+  about neutral after costs. Every BTC candidate is read on these candles from now on; the weekly convention is
+  read off the terminal's exported candles (the laptop prompt in `docs/LAPTOP_TASKS.md`).
+- **No look-ahead through the data boundary**: the EURUSD profile run to 30 June 2026 gives before 25 June exactly the
+  44 trades of the full run (entry, stop, target, exit, R). The invariants pass also found one backtester defect, a
+  limit order filled by the first candle after a closure although it had expired (1 of 1,339 fills; fixed, the
+  candle that opens at or after the expiry ends the order), and 214 exit stamps 0-5 minutes early (cosmetic).
+- Smaller, out-of-sample only: the HistData 5m files miss 20-24 % of their slots from February to July 2023 (25 OOS
+  trades), the 2017-2018 stamps sit an hour off in the six weeks a year where US and EU daylight saving disagree (7 OOS
+  trades), and the news calendar before 2023 holds 96-192 USD events a year against 250 from 2023, so the OOS period
+  under-applies the blackout. None of it touches 2024-2026.
+- **True costs**: the flat 0.10R is right for the four together and wrong per market: EURUSD costs 0.05R a trade
+  (p90 0.08), gold 0.045 (0.11), NAS100 0.065 (0.12 at 1.5 points; 0.19 at 5), BTC 0.18 (0.45; the crypto commission
+  alone is 0.11R against a $446 median stop). Stop-gap slippage is nil on 158 in-sample stops. The 2-Step replay with
+  a cost per market: both phases 100 % base, 94 % pessimistic, 89 % pessimistic with the spread cap at a $45 BTC
+  spread. The spreads of NAS100 and BTC were never measured (the laptop prompt).
+
+### The knobs sit on a plateau
+
+The 33-knob grid (`oct14b`: break-even 1R/2R/3R, spread cap 2-3 x, depth, minimum stop 10/12/100 pips, R:R
+0.8/1.0/1.2, stop offset 1/2/3/20 pips, the 15-minute scalp set, a New York window) found nothing above the base on
+EURUSD, gold or BTC (0 to -28R; the scalp set -18.2R on BTC); NAS100's break-even at 2R is -4.5R in the engine (the
+ledger re-walk had said +1.0R: the engine decides). The four variants from the morning's code review (`oct14c`: touch
+age from the first visit, the origin window without the P candle, a short's stop plus the spread, the stop window
+including the sweep) lose or change nothing (-14.2R on gold for the origin without P). The one existing knob never
+measured, the shift counted beyond the P candle instead of the gap edge (`confirmation.bs_threshold: protector`),
+loses on all four (-4.5 / -26.2 / -16.1 / -23.1R). The MAE/MFE walk of all 1,020 trades on the 5m candles says why
+nothing in trade management moves: 85-96 % of the stopped trades run through a stop 1.5 x as wide, winners go a
+median 0.4R against before they pay, a stop 10/20/30 % wider costs -23/-47/-52R over the four, a target 5 % nearer
+is -6.1R in sample (+6.2R out), break-even at +1R or +2R loses on every market in both periods (the rules as they run,
+4R and gold's 2R, are worth +3.0R / +12.7R against none), and no time exit passes both periods (NAS100's 48 h is right).
+
+### The candidates, both periods (the engine, after costs)
+
+| Candidate | Knob | 2024-26 | 2017-23 | Replay / screen | Read |
+|---|---|---|---|---|---|
+| Gold: no signal 10:00-10:59 and 15:00-15:29 Amsterdam (`ban`) | `session.windows` | +11.6R (-19 tr; 2024 +10.1, 2025 -1.7, 2026 +3.2) | +18.7R (6 of 7 years) | 84 -> 79 days, funded +5.7 -> +6.3 %/mo, 2026 six weeks 71 -> 66 %; screen pass, haircut +8.7R (floor 22R) | the strongest of the day; its two halves hold on their own: 10:00-11:00 alone +5.1 / +11.1R, 15:00-15:30 alone +5.4 / +6.4R |
+| Gold: entry at most a quarter deep (`dep25`) | `risk.max_entry_depth 0.25` | +3.1R (2026 -3.2) | +11.0R | not slower; screen pass, +2.3R | a peak: 0.20 is -1.4R, 0.30 -1.3R in sample (both +3.6 / +9.0R out); out-of-sample support only |
+| Gold: ban + depth + 3R fallback (`stack`) | three knobs | +10.7R (-32 tr; 2026 -7.0) | +33.2R (-85 tr) | 70 days, funded +6.3 % but the median month +3.2 and 2026 +10.0 against +10.9 | trims the live year: no |
+| Gold: fallback target 3R (`tpfb3`), spread 3.7 pips (`sp37`), 30 min after the touch (`mva30`) | | -0.1R; -11.6R; +5.4R | +21.5R; -0.4R; -5.5R | | out-of-sample only; the cost of the real spread; no |
+| EURUSD: no signal 14:30-15:59 (`usob`) | `session.windows` | +5.7R (-11 tr; every year positive) | +3.0R | 80 days, +5.8 %/mo, 2024-25 three months 42 -> 44 %; screen pass, +2.9R (floor 16R) | holds in both, small; 1.1 trades a month after it |
+| EURUSD: 10:00 start (`from10`), three timeframes (`mm3`), touch 12 h (`ta12`), stop >= 0.5 ATR (`msa05`), 60-day trend filter (`tr60`), both cuts (`both`) | | -1.7; -1.1; -2.2; +1.2; -1.7; +4.0R | +4.9; +9.9; +0.2; -2.5; +15.5; +7.8R | | fail the in-sample leg, or (`both`) leave 27 trades |
+| NAS100: no trade when the month reads 50/50 (`nm0`), with break-even 3R (`nstack`), break-even 3R alone (`be3`), depth 0.125 (`dep125`) | `neutral_bias_risk_multiplier {1M: 0.0}` | +3.3 (3 tr); +4.3; +1.0; -1.7R | +6.1 (8 tr); +7.1; +2.0; -0.2R | screen pass, +1.3 / +1.7R (floor 15R) | too few trades to decide; noted |
+| BTC on the FTMO candles: window to 15:30, entry outside 0.5, 3R floor, 30 min after the touch, the stack | | -3.8; -1.9; -13.7; -6.5; -2.8R | +2.2; -7.6; +33.9; +3.3; -3.3R | | nothing improves BTC in sample |
+
+The adoption rule that follows from the walk-forward work (below): a candidate's gain over the live profile after the
+haircut must exceed one standard error of the profile's own total (gold 22R, EURUSD 16R, NAS100 15R, BTC 29R), then
+the 2017-2023 period must not be below the profile, then 20 forward trades. Nothing measured today clears the first
+bar in sample; the gold ban and the EURUSD afternoon cut clear the other two and are the two decisions for Max at the
+next restart after the challenge (house rule) or after 20 forward trades (strict rule). The stake levers that change
+no trade: 4H zones at x1.5 instead of x2 (replay: median 84 -> 77 days, 2026 six weeks 71 -> 74 %, 91 against 85 %
+at 0.25R costs, 60 against 55 % with the winners halved, funded +5.3 against +5.7 %/month) and the stake by planned
+R:R (x2 above 1:3: gold +71.8 -> +109.7R / -62.2 -> -49.2R, NAS100 +32.9 -> +47.9 / +28.8 -> +62.1R at ledger level,
+EURUSD and BTC not) are Max's to weigh; the second needs a knob.
+
+### What the statistics say about the edge
+
+- **Random baselines** (the same geometry, a coin for the direction, a random candle in the window): in 2024-2026 the
+  whole result is the entry logic (combined z +6.6; a random trade with the live geometry makes 0R a trade). In
+  2017-2023 the direction call has no support in any market (EURUSD p 0.14, gold 0.32, NAS100 0.14, BTC 0.96: the mirror
+  trade won 58 of 101) and only the entry candle survives, on EURUSD (z +3.9) and NAS100 (+3.0). The morning window's
+  direction calls are coins in every market and both periods; BTC's whole in-sample result is its morning direction
+  call (42 trades, +53.4R of +61.7R). Gold's 4H double stake rests on 13 trades and fails both nulls out of sample;
+  EURUSD's 4H zones pass both.
+- **Overfitting** (CSCV on 116-220 variants a market): PBO EURUSD 0.58, gold 0.22, NAS100 0.73, BTC 0.45; the live
+  profiles were not the in-sample peaks, which is why they held. A variant that beats the live profile by 5R or more
+  in the in-sample half beats it in the out-of-sample half 2-7 % of the time. Deflated for 100 trials only gold keeps
+  a DSR above 0.5 (0.79); NAS100's and BTC's in-sample edges live in three trades each.
+- **Meta-labeling** (a model on the features at the signal, purged CV, 200 shuffles): nothing; the models learn the
+  planned R:R, which predicts wins and not R. The regime features (efficiency ratio, range percentile, previous-day
+  distances, the New York midnight drift) carry nothing. Regime gates on the ledgers: gold "no trade against the 4H
+  50-candle mean" (18 in-sample trades +0.5R; 67 out-of-sample trades -30.3R, negative in all seven years) and "half
+  stake when ER20 < 0.2" (in sample -9.8R, out of sample +30.7R) are the two gold rules with out-of-sample support and
+  no in-sample cost worth the name; both need code and are funded-account candidates. NAS100's edge is its
+  counter-trend pullbacks in both periods (no trend filter there); BTC has no regime cut on either candle set. Gold's
+  out-of-sample loss is 2018-2022 low-volatility gold (ATR under 1.08 % of price: 157 trades -34.1R; no such trade in 2026).
+- **Frequency** (the gaps between trades in the ledgers, the live set): a trade within 2 trading days 55 %, a week
+  83 %, two weeks 95 %, a month 100 %; the first trade comes from gold 50 %, BTC 23 %, EURUSD 13 %, NAS100 13 %; the
+  first trade loses 49 % of the time; FTMO's four trading days take a median 11 trading days; +10 % within 30 days
+  42 % (2026 starts 82 %). Spells of ten trading days without a trade happen 2.5 times a year.
+
+### The challenge itself (the pre-mortem, 14 October - 30 November)
+
+Ranked by what can end it: (1) the regime, not a rule, sets the pass rate (phase 1 within 47 days from 99 % of the
+2026 starts, 46 % of 2024-25, 9 % of 2017-23); (2) +10 % comes before the fourth trading day in 31 % of the 2026
+starts and the windows trade on at full stake (nothing in the live path reads the target): the manual rule in
+`docs/LAPTOP_TASKS.md`, `prop_firm.stop_at_target` as code off by default after; (3) a weekend or overnight gap
+through a double-stake 4H position is the one instant fail the guard cannot see (about 1.7 % over the window; 4H x1.5
+or the Friday close are the levers); (4) BTC's unmeasured spread and the candle cut; (5) true costs; (6) the
+daily-loss guard is FTMO's rule up to a 1 % buffer and blind to hand-opened positions; (7) a restart runs the branch
+head untested (every notice in the live step now runs on its own, so a notice that fails can no longer skip the
+setup); (8) the seeded calendar had two rows an hour off (fixed) and ended on 4 November (extended to 13 November);
+(9) NAS100's morning spread; (10) a sleeping laptop or Patch Tuesday 10 November costs entries, never a breach;
+(11) Telegram is the only alarm channel; (12) the clock-change week 26 October - 1 November is handled by the tested
+New York + 7 path (US data at 13:30 Amsterdam that week; four read-only checks on the Monday).
+
+### Not worth another run
+
+The 33-knob grid and the review variants above; the shift threshold `protector`; meta-labeling and every regime
+feature as a filter; the ATR percentile, the week's range, the weekday of the zone, the month of the year; break-even
+at 1R / 1.5R / 3R, trailing to structure, a 24 h or 72 h hold, a 10-30 % wider or tighter stop, a 5-30 % nearer
+target; the breaker / inverse-gap zones (the wrong direction in sample) and the age of X (young zones are the best);
+the EURUSD day-open drift (flips one hour later); the consecutive-loss, cushion, month-stop and cool-down rules; the
+double-stake weekend filter (the full Friday close is no worse and removes the whole tail); a minimum R:R of 3 (keeps
+the R, empties the challenge); the stake and protection ladders beyond the current one (all 99-100 % funded in
+sample, 3-7 % out of sample: market composition is the only lever that moves the out-of-sample number).
