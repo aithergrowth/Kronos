@@ -1993,3 +1993,24 @@ refuses the second when both stops together would reach the day's limit. With th
 multipliers, the guard): EURUSD 41 -> 45 trades, 46.3 -> 46.7 %, +38.8R -> +41.4R, the largest dip 6.67 % both;
 NAS100 37 -> 41 trades, 45.9 -> 46.3 %, +33.1R -> +34.1R, the largest dip 7.50 % -> 8.63 %. The four markets at 1 %
 under the account's two open: 320 trades, 50.9 %, +237.1R against 312, 51.0 %, +231.7R, drawdown 8.0R both.
+
+## Month and week as a match, and spent zones after a sweep (14 October)
+
+Two of Max's questions from the morning review: "boeie dat dag en 4H op 50/50 als we een match hebben op week maand"
+(gold: M and W bearish, D and 4H 50/50), and why the EURUSD short from the 7 October supply after a sweep of 1.1243 is
+not taken (the 24 h touch rule). The live profiles in research form (1 %, no multipliers, guard off), against the same
+runs without the change, 0.10R a trade for costs:
+
+| Variant | EURUSD | Gold | NAS100 | BTC |
+|---|---|---|---|---|
+| M+W+1H as an extra combination, 2024-2026 | +15 trades, 7 % won, -9.2R | +27, 33 %, +1.6R | +27, 26 %, +11.4R | +48, 35 %, -17.5R |
+| the same, 2017-2023 (BTC 2020-2023) | +63, 21 %, -11.8R | +37, 14 %, -24.7R | +76, 16 %, -31.1R | +44, 43 %, -6.7R |
+| M+W alone (BTC, no 1H rule), 2024-2026 / 2020-2023 | | | | -13.3R / -14.7R |
+| a zone past 24 h when the shift came after a sweep, 2024-2026 | +3, all lost, -6.0R | 0 | +3, all lost, -3.3R | +10, 30 %, -8.0R |
+| the same, 2017-2023 | +8, 25 %, -2.9R | +9.0R | +2.0R | -2.1R |
+
+- The month and the week alone pick the direction too early: the added trades win 7-35 %, and NAS100's +11.4R of the
+  recent years is -31.1R before them. The day (or the 4H with the 1H on gold) stays part of every match.
+- The sweep does not rescue the spent zones: a few trades a market, most of them lost, and on gold the 2017-2023 gain
+  comes with nothing in 2024-2026. The 24 h rule stays. The sweep option lived in a research worktree only
+  (`confirmation.old_zone_requires_sweep`); it is not in the code. Nothing changed in the profiles.
