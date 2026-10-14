@@ -61,7 +61,15 @@ def find_confirmation(
     if touch_index >= n:                                      # the 15m candle of 09:00: its sweep belongs to the stop; 8 October)
         return None
     if getattr(params, "search_from_reentry", True):
-        touch_index = latest_entry_index(ltf, poi, touch_index)
+        reentry = latest_entry_index(ltf, poi, touch_index)
+        if getattr(params, "stop_window_includes_sweep", False) and reentry > touch_index:
+            # research: the candles wholly outside the zone right before the re-entry are the sweep of P; the stop
+            # belongs beyond their extreme, so the window starts at the first of them
+            k = reentry - 1
+            while k > touch_index and (ltf.high[k - 1] < poi.low or ltf.low[k - 1] > poi.high):
+                k -= 1
+            reentry = k
+        touch_index = reentry
     ext = poi.height * params.max_extension_zones
     st = structure if structure is not None else analyze_structure(ltf, structure_params)
     bullish = poi.direction is Bias.BULLISH

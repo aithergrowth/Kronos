@@ -78,6 +78,11 @@ and cancels, at its first scan, a resting limit of its market it has no record o
   counts against the day.
 - A window remembers the setups it handled for a week (`seen_<symbol>.json`, 14 October): a restart inside a setup's
   confirmation candle does not take the same setup again (with two places in EURUSD it could have).
+- The zones' visit memory survives a restart too (`visits_<symbol>.json`, 14 October, the engine review): a fresh
+  window used to date a visit's first touch to the first candle it had, which moved the 24 h touch-age and visit-age
+  gates away from the backtest's. The touch notice and the chart age a zone from its candle's close, as the engine does.
+- The setup chart goes to Telegram after an executed entry (with the resting limit's price on it), not only in the
+  dry run or with the approval step (14 October).
 - The open-slot and worst-case checks and the order run under one lock shared by the account's windows. A window that
   cannot get the lock defers the entry and tries again every scan until it expires; it never trades without it.
 - Every start writes a `start` row to the journal and `starts/<symbol>_<time>.json` next to it: code revision, source

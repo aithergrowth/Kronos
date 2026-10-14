@@ -378,6 +378,11 @@ class LiveRunner:
         self.seen_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"seen_{self.symbol}.json"
                                           if settings.live.journal_path else None)
         self.seen_ids: Dict[str, str] = {}               # setup id -> when this window handled it
+        # the zones' visit memory (when each visit began, how many there were) survives a restart too: a fresh window sees
+        # only its first candles and would date a visit's first touch to the first candle it has, which moves the 24 h
+        # touch-age and visit-age gates away from the backtest's (the engine review of 14 October)
+        self.visits_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"visits_{self.symbol}.json"
+                                            if settings.live.journal_path else None)
         # the day's start balance, shared by the account's windows: a window that starts mid-day takes it from the terminal's
         # trade history, which may not be complete yet (a terminal just started); the file keeps the highest one of the day
         self.day_start_path: Optional[Path] = (Path(settings.live.journal_path).parent / "guard_day_start.json"
@@ -393,6 +398,7 @@ class LiveRunner:
         self.load_traded()
         self.load_limits()
         self.load_seen()
+        self.load_visits()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
@@ -428,6 +434,7 @@ class LiveRunner:
             self.report_loop_error(exc)
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
+        self.save_visits(now)
         self.process_decisions(now)
         if self.deferred and self.broker is not None and not self.dry_run:
             self.retry_deferred(now)
@@ -545,6 +552,51 @@ class LiveRunner:
             os.replace(tmp, self.paper_path)
         except Exception as exc:
             print(f"[live] {self.symbol}: paper account not saved ({exc})")
+
+    def load_visits(self) -> None:
+        """The zones' visit states from the file the last run left (none when there is no file): the tracker goes on
+        folding candles after each state's last candle, as it does inside one run."""
+        visits = getattr(self.engine, "visits", None)
+        if self.visits_path is None or visits is None or not self.visits_path.exists():
+            return
+        try:
+            from .strategy.poi import VisitState, VisitTracker
+            rows = json.loads(self.visits_path.read_text(encoding="utf-8"))
+            tracker = visits.setdefault(self.symbol, VisitTracker())
+            for row in rows:
+                key = (str(row["key"][0]), int(row["key"][1]), str(row["key"][2]))
+                state = VisitState(last_ts=pd.Timestamp(row["last_ts"]) if row.get("last_ts") else None,
+                                   inside=bool(row.get("inside")), visits=int(row.get("visits") or 0),
+                                   visit_start_ts=pd.Timestamp(row["visit_start_ts"]) if row.get("visit_start_ts") else None,
+                                   invalid=bool(row.get("invalid")))
+                if row.get("first_touch_ts") and hasattr(state, "first_touch_ts"):
+                    state.first_touch_ts = pd.Timestamp(row["first_touch_ts"])
+                tracker.states[key] = state
+        except Exception as exc:     # a damaged file must not stop the loop: the memory starts afresh, as before
+            print(f"[live] {self.symbol}: could not read {self.visits_path} ({exc})")
+
+    def save_visits(self, now: Optional[pd.Timestamp] = None) -> None:
+        """Write the visit states that saw a candle in the last 14 days (older zones are past every age gate)."""
+        visits = getattr(self.engine, "visits", None)
+        tracker = visits.get(self.symbol) if isinstance(visits, dict) else None
+        if self.visits_path is None or tracker is None:
+            return
+        cutoff = (pd.Timestamp(now) if now is not None else self.clock()) - pd.Timedelta(days=14)
+        rows = []
+        for key, st in tracker.states.items():
+            if st.last_ts is None or pd.Timestamp(st.last_ts) < cutoff:
+                continue
+            rows.append({"key": [key[0], int(key[1]), key[2]], "last_ts": str(st.last_ts), "inside": bool(st.inside),
+                         "visits": int(st.visits), "visit_start_ts": str(st.visit_start_ts) if st.visit_start_ts is not None else None,
+                         "invalid": bool(st.invalid),
+                         "first_touch_ts": str(getattr(st, "first_touch_ts", None)) if getattr(st, "first_touch_ts", None) is not None else None})
+        try:
+            self.visits_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.visits_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(rows), encoding="utf-8")
+            os.replace(tmp, self.visits_path)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.visits_path} ({exc})")
 
     def load_traded(self) -> None:
         """Zones this market traded per visit, from the file the last run left (none when there is no file)."""
@@ -712,7 +764,8 @@ class LiveRunner:
         self.notifier.send(line + week_line)
 
     def send_chart(self, analysis: Analysis, kind: str, timeframe: Optional[Timeframe] = None,
-                   setup: Optional[TradeSetup] = None, forecast: Optional[ForecastSummary] = None) -> None:
+                   setup: Optional[TradeSetup] = None, forecast: Optional[ForecastSummary] = None,
+                   limit_price: Optional[float] = None) -> None:
         """Chart image to Telegram (candles, zones, setup, Kronos fan) and the MT5 overlay file; never fatal."""
         if not self.settings.live.send_charts or not self._views:
             return
@@ -735,7 +788,8 @@ class LiveRunner:
             path = render_chart(series, f"{self.settings.live.charts_dir}/{self.symbol}_{tf.label}_{kind}.png",
                                 pois=zones, setup=setup, forecast=forecast, title=title,
                                 subtitle=subtitle, lookback=self.settings.live.chart_lookback,
-                                price_decimals=self.spec.price_decimals, last_price=float(analysis.price))
+                                price_decimals=self.spec.price_decimals, last_price=float(analysis.price),
+                                limit_price=limit_price)
             self.notifier.send_photo(path, f"{self.symbol} {tf.label} {label}")
             if forecast is not None and self.settings.live.mt5_overlay and hasattr(self.broker, "server_offset"):
                 from .notify.mt5_overlay import write_forecast_file
@@ -818,7 +872,7 @@ class LiveRunner:
         more than confirmation.max_touch_age_hours after it formed (the visit's start as the engine's visit tracker has
         it, else ``now``). Such a zone gets no touch notice: "waiting for a confirmation" would wait for nothing (8
         October: a BTC 1D zone of 22 September, visited 328 hours later)."""
-        from .strategy.engine import zone_age_candles
+        from .strategy.engine import touch_age_hours, zone_age_candles
         c = self.settings.confirmation
         now = pd.Timestamp(now) if now is not None else self.clock()
         created = getattr(poi, "created_at", None)
@@ -830,7 +884,9 @@ class LiveRunner:
         if c.max_touch_age_hours > 0:
             state = getattr(getattr(self.engine, "visits", {}).get(self.symbol), "states", {}).get(getattr(poi, "key", None))
             start = getattr(state, "visit_start_ts", None) or now
-            if (pd.Timestamp(start) - pd.Timestamp(created)) / pd.Timedelta(hours=1) > c.max_touch_age_hours:
+            # the engine's clock: a zone forms when its candle closes (the review of 14 October: counted from the open, a
+            # 1H zone touched 23.5 h after forming got no notice and no place on the chart while the engine traded it)
+            if touch_age_hours(created, poi.timeframe, start) > c.max_touch_age_hours:
                 return True
         return False
 
@@ -1075,6 +1131,8 @@ class LiveRunner:
             self.notifier.send(f"📰 {self.symbol}, the latest news (TradingView):" + "".join(f"\n• {line}" for line in news))
         placed = [self.limits[k] for k in self.limits if k not in limits_before]
         if position is not None or placed:
+            # the chart of what was sent (14 October: without the approval step no setup chart went out at all)
+            self.send_chart(analysis, "setup", setup=setup, forecast=forecast, limit_price=placed[0]["price"] if placed else None)
             self.dorus_review(analysis, setup, now, sid, limit_price=placed[0]["price"] if placed else None)
 
     def dorus_context(self, analysis: Analysis, setup: TradeSetup, now: pd.Timestamp, limit_price: Optional[float] = None) -> str:

@@ -912,8 +912,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--start")
     sp.add_argument("--end")
     sp.add_argument("--no-spread", action="store_true")
-    sp.add_argument("--quote-basis", choices=("mid", "bid"), default="mid",
-                    help="what the candles are: mid prices (default) or bid quotes (HistData, Dukascopy bid files)")
+    sp.add_argument("--quote-basis", choices=("mid", "bid"), default="bid",
+                    help="what the candles are: bid quotes (HistData, Dukascopy and MT5 candles; the default since 14 October) or mid prices")
     sp.add_argument("--progress", action="store_true")
     sp.add_argument("--dossier-dir", help="write a decision dossier (charts, bias notes, gaps, zones, rejections) at every signal, from the run's own engine state")
     sp.add_argument("--dossier-limit", type=int, default=200, help="at most this many dossiers per run")

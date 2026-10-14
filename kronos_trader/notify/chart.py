@@ -47,6 +47,7 @@ def render_chart(
     extra_lines: Iterable = (),
     mark_zones: bool = False,
     last_price: Optional[float] = None,
+    limit_price: Optional[float] = None,
 ) -> Path:
     """Draw ``series`` (last ``lookback`` candles) with zones, setup lines and the forecast fan; return the PNG path.
 
@@ -78,6 +79,8 @@ def render_chart(
     lo, hi = float(lows.min()), float(highs.max())
     if setup is not None:
         lo, hi = min(lo, setup.stop, setup.take_profit), max(hi, setup.stop, setup.take_profit)
+    if last_price is not None:                           # the live price belongs in the picture
+        lo, hi = min(lo, float(last_price)), max(hi, float(last_price))
     span = (hi - lo) or abs(hi) * 1e-3 or 1e-6
     near_lo, near_hi = lo - 0.5 * span, hi + 0.5 * span
     zones = sorted(pois, key=lambda p: abs((p.low + p.high) / 2 - last))[:max_zones]
@@ -154,7 +157,8 @@ def render_chart(
     # setup: the position tool from the confirmation candle to the right edge -----------------
     if setup is not None:
         conf = getattr(setup, "confirmation", None)
-        ci = view.index_at_or_after(conf.timestamp) if conf is not None else n - 1
+        # the candle that holds the confirmation's time (a 5m shift at 09:35 lies in the 1H candle of 09:00), not the next one
+        ci = view.index_after(conf.timestamp) - 1 if conf is not None else n - 1
         ci = min(max(ci, 0), n - 1)
         x0, width = ci + 0.5, x_right - (ci + 0.5)
         risk_lo, risk_hi = sorted((setup.entry, setup.stop))
@@ -172,6 +176,10 @@ def render_chart(
                 color=DOWN, zorder=5)
         ax.text(x0 + 0.3, setup.take_profit, f" TP {setup.take_profit:.{d}f}  +{setup.rr:.1f}R", fontsize=8,
                 va="top" if setup.take_profit < setup.entry else "bottom", color=UP, zorder=5)
+        if limit_price is not None:                      # the resting limit entry, part of the way back toward the stop
+            ax.hlines(float(limit_price), x0, x_right, colors="#1f4e79", linestyles="--", linewidth=1.0, zorder=5)
+            ax.text(x0 + 0.3, float(limit_price), f" LIMIT {float(limit_price):.{d}f}", fontsize=8,
+                    va="top" if short else "bottom", color="#1f4e79", zorder=5)
 
     # forecast fan ------------------------------------------------------------------------
     if paths:

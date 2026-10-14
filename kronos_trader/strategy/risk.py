@@ -21,6 +21,8 @@ from .structure import StructureAnalysis
 
 def compute_stop(direction: Direction, invalidation_price: float, spec: SymbolSpec, params: RiskParams) -> float:
     offset = params.sl_offset_pips * spec.pip_size
+    if direction is Direction.SHORT and getattr(params, "short_stop_spread", False):
+        offset += float(spec.typical_spread_pips) * spec.pip_size     # the ask stands a spread above the bid extreme
     stop = invalidation_price - offset if direction is Direction.LONG else invalidation_price + offset
     return spec.round_price(stop)
 
@@ -165,6 +167,8 @@ def impulse_origin_target(
     # the window ends with the P candle (the impulse itself starts there), not before the zone's first candle
     p_index = getattr(poi.gap, "protector_index", None) if getattr(poi, "gap", None) is not None else None
     end = int(p_index) + 1 if p_index is not None else series.index_at_or_after(poi.created_at)
+    if p_index is not None and not getattr(params, "tp_origin_includes_p", True):
+        end = int(p_index)                                  # research: the window ends before P
     end = min(end, len(series))
     lo = max(0, end - int(params.tp_origin_candles) - 1)
     if end - lo < 1:

@@ -200,6 +200,11 @@ class ConfirmationParams:
                                         # since the touch (a wick through a swing low for a long, the body closing back above it): the
                                         # liquidity is taken, then price shifts (Max, 7 October: "marktstructuur en liquiditeit")
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
+    stop_window_includes_sweep: bool = False   # research (14 October): with search_from_reentry the stop window starts at the re-entry candle;
+                                        # True also takes the candles wholly outside the zone right before it (the sweep of P), so the stop
+                                        # sits beyond that sweep instead of inside it
+    touch_age_from_first_visit: bool = False   # research (14 October): the 24 h touch rule counts from the zone's FIRST visit, not from the
+                                        # current one (a timely zone stays tradable on a later visit; allow_retest decides whether it trades)
     search_from_reentry: bool = True    # the confirmation search starts at price's latest entry into the zone within the open visit, not at the
                                         # visit's first touch: a zone can be left and re-entered while the visit stays open, and the shift and the
                                         # sweep extreme belong to the last approach (his EURUSD short of 11 Nov 2025: the 4H zone touched on 7 Nov,
@@ -287,6 +292,10 @@ class RiskParams:
     tp_fixed_rr: float = 0.0            # 0 = off; else the target sits this many R beyond the entry (R = the sizing distance) whatever the policy finds
                                         # tp_policy pullback_origin: the extreme from the zone's P candle to the touch, the high (long) / low (short)
                                         # the move back into the zone started from (Max, 7 October: "de vorige high die iets triggerde")
+    tp_origin_includes_p: bool = True   # research (14 October): the origin window ends with the P candle; False ends it before P, so a zone whose
+                                        # P set the 30-candle extreme falls back to the nearest liquidity instead of a target a few pips past its edge
+    short_stop_spread: bool = False     # research (14 October): a short's stop one typical spread beyond the extreme (it triggers on the ask), as a
+                                        # long's stop sits on the bid extreme it triggers on
     tp_origin_candles: int = 30         # tp_policy impulse_origin: the target is the extreme of this many zone-timeframe candles before the zone formed,
                                         # i.e. the low (short) / high (long) the move that created the zone started from: "stop loss op de low en take profit
                                         # bij de vorige high" (A 00:43:39, 01:09:01, 01:20:52, 02:45:57), the previous higher low whose break is the

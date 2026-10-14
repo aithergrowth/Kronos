@@ -202,6 +202,7 @@ class VisitState:
     visits: int = 0
     visit_start_ts: Optional[pd.Timestamp] = None
     invalid: bool = False
+    first_touch_ts: Optional[pd.Timestamp] = None   # the first visit's first touch (research: touch_age_from_first_visit)
 
     def step(self, poi: POI, hi: float, lo: float, close: float, ts, ext: float, check_invalid: bool) -> None:
         if poi.direction is Bias.BULLISH:
@@ -215,6 +216,8 @@ class VisitState:
             return
         if not self.inside and touches:
             self.inside, self.visits, self.visit_start_ts = True, self.visits + 1, ts
+            if self.first_touch_ts is None:
+                self.first_touch_ts = ts
         elif self.inside and left:
             self.inside, self.visit_start_ts = False, None
 

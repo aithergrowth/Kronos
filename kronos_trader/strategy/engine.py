@@ -520,7 +520,11 @@ class StrategyEngine:
                 continue
             limit_h = s.confirmation.reversal_max_touch_age_hours if reversal else s.confirmation.max_touch_age_hours
             if limit_h > 0 and poi.created_at is not None:
-                waited = touch_age_hours(poi.created_at, poi.timeframe, touch_ts)
+                first = touch_ts
+                if getattr(s.confirmation, "touch_age_from_first_visit", False):
+                    state = tracker.states.get(poi.key)
+                    first = getattr(state, "first_touch_ts", None) or touch_ts
+                waited = touch_age_hours(poi.created_at, poi.timeframe, first)
                 if waited > limit_h:
                     analysis.rejections.append(f"{label}: touched {waited:.0f} h after it formed (max {limit_h:g} h): a spent zone")
                     continue
