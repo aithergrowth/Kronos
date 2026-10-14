@@ -177,6 +177,11 @@ class Backtester:
             filled = candle.high + bid_off >= limit
             target = candle.low + ask_off <= setup.take_profit
             stopped = candle.high + ask_off >= setup.stop
+        if pd.Timestamp(candle.timestamp) >= pending["expires"]:
+            # the whole candle lies after the expiry: the order was gone before it opened (the invariants check of
+            # 14 October: a Monday candle gapping through a limit that expired on Friday was filled)
+            outcome("limit: expired unfilled")
+            return None, "limit entry: expired unfilled"
         if not filled:
             if target:
                 outcome("limit: the target traded first")

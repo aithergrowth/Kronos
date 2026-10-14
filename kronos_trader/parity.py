@@ -170,6 +170,18 @@ def _flatten(doc: Any, prefix: str = "") -> Dict[str, Any]:
     return {prefix[:-1]: doc}
 
 
+def settings_new_keys_only(live_doc: Dict[str, Any], ours: Dict[str, Any]) -> int:
+    """How many settings this check knows that the window's start record does not, when that is the ONLY difference
+    (a pull that added knobs at their defaults, 14 October: 17 new keys, 0 changed); 0 when any value differs or when
+    nothing differs."""
+    a = _flatten(json.loads(json.dumps(live_doc, default=str)))
+    b = _flatten(json.loads(json.dumps(ours, default=str)))
+    changed = [k for k in set(a) & set(b) if a[k] != b[k]]
+    gone = [k for k in a if k not in b]
+    new = [k for k in b if k not in a]
+    return len(new) if new and not changed and not gone else 0
+
+
 def settings_diff(live_doc: Dict[str, Any], ours: Dict[str, Any], limit: int = 12) -> List[str]:
     """The settings that differ between a window's start record and this check (keys as section.name)."""
     a = _flatten(json.loads(json.dumps(live_doc, default=str)))
@@ -767,6 +779,11 @@ def run_parity(journal_path, week: str = "auto", start=None, end=None, markets=N
         resolved, sha = settings_fingerprint(settings)
         if rec is not None and rec.settings_sha and sha == rec.settings_sha:
             mp.settings_note = f"identical to the window's (settings {sha[:12]})"
+        elif rec is not None and settings_new_keys_only(rec.settings, resolved):
+            n = settings_new_keys_only(rec.settings, resolved)
+            mp.settings_note = (f"identical to the window's but for {n} new setting(s) this code adds at their defaults "
+                                f"(window {rec.settings_sha[:12] or '?'}, this check {sha[:12]})")
+            mp.settings_diff = settings_diff(rec.settings, resolved)
         elif rec is not None:
             mp.settings_note = f"NOT identical to the window's (window {rec.settings_sha[:12] or '?'}, this check {sha[:12]})"
             mp.settings_diff = settings_diff(rec.settings, resolved)

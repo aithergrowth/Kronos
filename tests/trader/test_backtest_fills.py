@@ -134,6 +134,20 @@ def test_a_limit_entry_is_missed_when_the_target_trades_first_or_it_expires(scen
     assert r2.trades == [] and r2.guard_reasons.get("limit entry: expired unfilled") == 1
 
 
+def test_a_limit_that_expired_over_a_closure_is_not_filled_by_the_first_candle_after_it(scenario):
+    """A buy limit valid 60 minutes from Friday 09:00; the next candle after 09:30 is Monday's, which gaps through the limit:
+    the order expired on Friday, so nothing fills (the invariants check of 14 October found one such fill)."""
+    setup = _setup(scenario, 1.1300)
+    import pandas as pd
+    from kronos_trader.core import CandleSeries as CS
+    rows = [("2024-01-05 09:00", 1.1000, 1.1005, 1.0995, 1.1000), ("2024-01-05 09:15", 1.1000, 1.1004, 1.0996, 1.1000),
+            ("2024-01-05 09:30", 1.1000, 1.1004, 1.0996, 1.1000), ("2024-01-08 09:00", 1.0960, 1.1310, 1.0955, 1.1300)]
+    df = pd.DataFrame(rows, columns=["timestamp", "open", "high", "low", "close"]); df["timestamp"] = pd.to_datetime(df["timestamp"]); df["volume"] = 0.0
+    data = MultiTimeframeData({T.MIN_15: CS(df, T.MIN_15, "EURUSD")})
+    result = Backtester(_limit_settings(minutes=60), data, "EURUSD", step_tf=T.MIN_15, engine=StaleEngine(setup)).run()
+    assert result.trades == [] and result.guard_reasons.get("limit entry: expired unfilled") == 1
+
+
 def test_a_limit_fill_whose_candle_also_reaches_the_stop_is_a_loss(scenario):
     setup = _setup(scenario, 1.1300)
     rows = [(1.1000, 1.1005, 1.0995, 1.1000), (1.0990, 1.0992, 1.0940, 1.0945), (1.0945, 1.1310, 1.0940, 1.1300)]

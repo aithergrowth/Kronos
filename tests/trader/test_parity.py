@@ -108,6 +108,15 @@ def test_settings_diff_names_the_changed_keys():
     assert any(d.startswith("extra.x") for d in diff) and not any("min_rr" in d for d in diff)
 
 
+def test_new_settings_at_their_defaults_are_not_a_different_profile():
+    from kronos_trader.parity import settings_new_keys_only
+    window = {"risk": {"risk_pct": 1.5, "min_rr": 1.0}}
+    assert settings_new_keys_only(window, {"risk": {"risk_pct": 1.5, "min_rr": 1.0, "tp_buffer_fraction": 0.0}}) == 1
+    assert settings_new_keys_only(window, {"risk": {"risk_pct": 1.25, "min_rr": 1.0, "tp_buffer_fraction": 0.0}}) == 0   # a value changed
+    assert settings_new_keys_only(window, {"risk": {"risk_pct": 1.5}}) == 0                                               # a key gone
+    assert settings_new_keys_only(window, window) == 0
+
+
 def _journal(tmp_path):
     j = Journal(tmp_path / "trades.csv")
     t = pd.Timestamp("2026-10-06 08:00")
