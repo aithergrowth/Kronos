@@ -1262,7 +1262,8 @@ class LiveRunner:
             params = setup_risk(params, setup.poi.timeframe if setup is not None else None,
                                 setup.bias_combo if setup is not None else None,
                                 confirmation_label(setup.confirmation) if setup is not None else None,
-                                getattr(setup, "neutral_timeframes", ()) if setup is not None else ())
+                                getattr(setup, "neutral_timeframes", ()) if setup is not None else (),
+                                getattr(setup, "aligned_count", 0) if setup is not None else 0)
             return float(self.broker.equity()) * params.risk_pct / 100.0
         except Exception:
             return None
@@ -1341,7 +1342,7 @@ class LiveRunner:
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         risk_params = setup_risk(stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size),
                                  setup.poi.timeframe, setup.bias_combo, confirmation_label(setup.confirmation),
-                                 getattr(setup, "neutral_timeframes", ()))
+                                 getattr(setup, "neutral_timeframes", ()), getattr(setup, "aligned_count", 0))
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
                                                                 self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:
@@ -1660,9 +1661,11 @@ class LiveRunner:
             return
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
         hold = self.settings.exits.max_hold_hours
+        ts_hours = float(getattr(self.settings.exits, "time_stop_hours", 0.0) or 0.0)
+        ts_r = float(getattr(self.settings.exits, "time_stop_r", -0.5))
         weekend = self.settings.prop_firm.weekend_close
         day_close = getattr(self.settings.exits, "day_close", "")
-        if (hold or weekend or day_close) and not callable(getattr(self.broker, "on_candle", None)):
+        if (hold or ts_hours or weekend or day_close) and not callable(getattr(self.broker, "on_candle", None)):
             from .strategy.exits import day_close_cutoff_after, weekend_cutoff_after
             now = self.clock()
             for pid, pos in list(open_by_id.items()):
@@ -1670,6 +1673,9 @@ class LiveRunner:
                     continue
                 if hold and now - pd.Timestamp(pos.opened_at) >= pd.Timedelta(hours=float(hold)):
                     reason, why = "time", f"after {hold:g} h"
+                elif ts_hours and now - pd.Timestamp(pos.opened_at) >= pd.Timedelta(hours=float(ts_hours)) and self._r_now(pos) is not None \
+                        and self._r_now(pos) <= float(ts_r):
+                    reason, why = "time_stop", f"at {self._r_now(pos):+.2f}R after {ts_hours:g} h (time stop under {ts_r:+g}R)"
                 elif day_close and now >= day_close_cutoff_after(pos.opened_at, day_close, self.settings.session.timezone):
                     reason, why = "day_close", f"before the daily break ({day_close} {self.settings.session.timezone})"
                 elif weekend and now >= weekend_cutoff_after(pos.opened_at, weekend):
@@ -1743,6 +1749,14 @@ class LiveRunner:
                 pos.breakeven_done = True
                 self.note("breakeven", id=pos.id, stop=float(pos.entry))
                 self.notifier.send(f"🔒 {self.symbol}: stop moved to break-even on {pos.id} ({pos.breakeven_r:.0f}R reached)")
+
+    def _r_now(self, pos) -> Optional[float]:
+        """The position's R at the price it would close at now (the bid for a long, the ask for a short); None without a price."""
+        try:
+            price = self.broker.fill_price(self.symbol, Direction.SHORT if pos.direction is Direction.LONG else Direction.LONG)
+        except Exception:
+            return None
+        return float(pos.r_at(float(price))) if pos.risk_distance > 0 else None
 
     def report_closes(self) -> None:
         if self.broker is None:

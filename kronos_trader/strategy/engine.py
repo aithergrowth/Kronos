@@ -42,7 +42,7 @@ from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
 from .poi import current_visit, map_pois, poi_scan, update_poi_status, VisitTracker
-from .risk import build_setup, combo_label, confirmation_label, setup_risk
+from .risk import atr, build_setup, combo_label, confirmation_label, setup_risk
 from .structure import StructureAnalysis, analyze_structure
 
 
@@ -446,6 +446,17 @@ class StrategyEngine:
                     return analysis
                 diagnostic = True
 
+        # research (14 October): no trade against the sign of the daily close change over trend_filter_days ------------------
+        days = int(getattr(s.bias, "trend_filter_days", 0) or 0)
+        if not reversal_only and days > 0 and Timeframe.D_1 in views and len(views[Timeframe.D_1]) > days:
+            closes = views[Timeframe.D_1].close
+            change = float(closes[-1] - closes[-1 - days])
+            if change * direction.sign < 0:
+                analysis.rejections.append(f"against the {days}-day trend ({change:+.5g} over the last {days} daily closes)")
+                if assume_direction is None:
+                    return analysis
+                diagnostic = True
+
         # a quiet market: the day's average 4H range low against the last 60 days --------------------------------------
         if s.confirmation.min_volatility_percentile > 0 and Timeframe.H_4 in views:
             rank = volatility_percentile(views[Timeframe.H_4])
@@ -560,21 +571,46 @@ class StrategyEngine:
                     f"{label}: touched at {touch_ts}, waiting for confirmation on {'/'.join(tf.label for tf in conf_tfs)}")
                 continue
 
+            # research (14 October): no entry on a climax candle (the confirmation's body over max_body_atr ATR14 of its timeframe)
+            body_cap = float(getattr(s.confirmation, "max_body_atr", 0.0) or 0.0)
+            if body_cap > 0 and confirmation.timeframe in views:
+                cs = views[confirmation.timeframe]
+                k = min(int(confirmation.index), len(cs) - 1)
+                ref = atr(cs.head(k) if k > 0 else cs) if k >= 15 else None
+                body = abs(float(cs.close[k]) - float(cs.open[k]))
+                if ref is not None and body > body_cap * ref:
+                    analysis.rejections.append(f"{label}: a climax candle (body {body / ref:.1f} ATR14 of the {confirmation.timeframe.label}, "
+                                               f"max {body_cap:g})")
+                    continue
+
             # 5: the setup ---------------------------------------------------------------
             entry = spec.round_price(confirmation.close)
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             neutral = tuple(tf.label for tf in decision.neutral)
             setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
                                          setup_risk(s.risk, poi.timeframe, combo,
-                                                    confirmation_label(confirmation), neutral), equity,
+                                                    confirmation_label(confirmation), neutral, len(decision.aligned)), equity,
                                          breakeven_trigger_r(poi.timeframe, s.exits), protection_level=protection, touch_ts=touch_ts)
             if setup is None:
                 note = f" [stop would be {spec.round_price(protection)} = {stop_detail.get('stop_basis')}]" if diagnostic else ""
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}{note}")
                 continue
+            # research (14 October): a stop under min_stop_atr ATR14 of min_stop_atr_tf is index noise (EURUSD: 1 of 20 won)
+            floor = float(getattr(s.risk, "min_stop_atr", 0.0) or 0.0)
+            if floor > 0:
+                try:
+                    atr_tf = Timeframe.parse(str(getattr(s.risk, "min_stop_atr_tf", "1H") or "1H"))
+                except Exception:
+                    atr_tf = Timeframe.H_1
+                ref = atr(views[atr_tf]) if atr_tf in views else None
+                if ref is not None and abs(setup.entry - setup.stop) < floor * ref:
+                    analysis.rejections.append(f"{label}: stop {abs(setup.entry - setup.stop) / ref:.2f} ATR14 of the {atr_tf.label} "
+                                               f"(min {floor:g})")
+                    continue
             setup.touched_at = pd.Timestamp(touch_ts)
             setup.bias_combo = combo
             setup.neutral_timeframes = neutral
+            setup.aligned_count = len(decision.aligned)
             setup.visit_number = visits
             if s.risk.stop_basis == "confirmation":      # the stop sits beyond the extreme since the (re-)entry, not behind a P
                 stop_detail = {"stop_tf": confirmation.timeframe.label, "stop_p_open": None, "stop_p_close": None,

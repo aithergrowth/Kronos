@@ -306,6 +306,12 @@ class PaperBroker(Broker):
             if hold and pos.opened_at is not None and pd.Timestamp(close_ts) - pos.opened_at >= pd.Timedelta(hours=float(hold)):
                 closed.append(self.close_position(pos.id, "time", float(candle.close), close_ts, market=True))
                 continue
+            ts_hours = float(getattr(self.settings.exits, "time_stop_hours", 0.0) or 0.0)
+            if ts_hours and pos.opened_at is not None and pd.Timestamp(close_ts) - pos.opened_at >= pd.Timedelta(hours=ts_hours):
+                exit_now = candle.close + (bid_off if pos.direction is Direction.LONG else ask_off)
+                if pos.risk_distance > 0 and pos.r_at(exit_now) <= float(getattr(self.settings.exits, "time_stop_r", -0.5)):
+                    closed.append(self.close_position(pos.id, "time_stop", float(candle.close), close_ts, market=True))
+                    continue
             day_close = getattr(self.settings.exits, "day_close", "")
             if day_close and pos.opened_at is not None and pd.Timestamp(close_ts) >= day_close_cutoff_after(
                     pos.opened_at, day_close, self.settings.session.timezone):

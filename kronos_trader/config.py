@@ -126,6 +126,8 @@ class StructureParams:
 @dataclass
 class BiasParams:
     liquidity_lookback: int = 80        # ASSUMPTION: a sweep older than this no longer drives the liquidity view
+    trend_filter_days: int = 0          # research (14 October): 0 = off; else no trade against the sign of the daily close change over
+                                        # this many closed daily candles
     balance_violation: str = "flip"     # when P breaks: "flip" = continuation in the break direction (A 01:41:49), "neutral" = 50/50
     balance_view: str = "last_gap"      # last_gap: the most recent balance level formed gives the view; last_tested: the most recent balance
                                         # level price has traded into ("een balance level wat we hier hebben getest", A 00:57:51) gives it, held
@@ -200,6 +202,8 @@ class ConfirmationParams:
                                         # since the touch (a wick through a swing low for a long, the body closing back above it): the
                                         # liquidity is taken, then price shifts (Max, 7 October: "marktstructuur en liquiditeit")
     opposing_gap_lookback: int = 60     # how far before the touch the opposing balance level may have formed
+    max_body_atr: float = 0.0           # research (14 October): 0 = off; else no entry on a confirmation candle whose body exceeds this many
+                                        # ATR14 of its timeframe (a climax candle)
     stop_window_includes_sweep: bool = False   # research (14 October): with search_from_reentry the stop window starts at the re-entry candle;
                                         # True also takes the candles wholly outside the zone right before it (the sweep of P), so the stop
                                         # sits beyond that sweep instead of inside it
@@ -315,6 +319,10 @@ class RiskParams:
                                         # edge price enters by (an entry outside the zone counts as 0): deeper, the P is a few pips away and the stop
                                         # has no room ("kan je stoploss nog wat ruimte geven", A 00:31:22; his entries sit at the zone's edge,
                                         # docs/dossiers/SOURCE_TRADES.md). R6: entries deeper than half the zone 48 trades, 12 % won
+    min_stop_atr: float = 0.0           # research (14 October): 0 = off; else a setup whose stop distance is under this many ATR14 of
+    min_stop_atr_tf: str = "1H"         # min_stop_atr_tf is refused (EURUSD: 1 of 20 such trades won in both periods together)
+    aligned_count_risk_multiplier: Dict[int, float] = field(default_factory=dict)   # research (14 October): {5: 0.25}: a trade with that
+                                        # many bias timeframes aligned (all five = a late entry) at that multiple of the stake
     max_entry_outside: float = 0.0      # 0 = off; else with entry_outside_zone the shift's close may lie at most this fraction of the zone's height
                                         # outside it (beyond the edge price left by). His entries sit 1.5-1.6 pips from the zone's edge (suite
                                         # readings C, D); the live replay of Aug-Sep 2026 entered 39 pips under a 61-pip 4H zone (14 Sep) and
@@ -378,6 +386,8 @@ class ExitParams:
     partials: bool = False              # rule: no partials
     breakeven_offset_pips: float = 0.0  # 0 = exact entry
     max_hold_hours: float = 0.0         # 0 = off; else a trade still open this many hours after its fill is closed at the market
+    time_stop_hours: float = 0.0        # research (14 October): 0 = off; else a trade still open this many hours after its fill AND at or
+    time_stop_r: float = -0.5           # under time_stop_r at a candle close is closed at the market (a winner runs on)
     day_close: str = ""                 # "" = off; "22:10": every open position is closed at the market at that clock (session.timezone)
                                         # each day, before the daily break. Set it to the last candle before the broker's break (the data:
                                         # NAS100 stops 22:15 Amsterdam, gold 23:00; the backtest closes on the first candle opening at or

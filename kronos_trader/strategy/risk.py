@@ -270,7 +270,7 @@ def fallback_target(
 
 
 def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None,
-               confirmation: Optional[str] = None, neutral: Iterable[str] = ()) -> RiskParams:
+               confirmation: Optional[str] = None, neutral: Iterable[str] = (), aligned: int = 0) -> RiskParams:
     """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
     4H zone at twice the stake, BTC at half), the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
     timeframes joined by +, as ``TradeSetup.bias_combo``), the confirmation type's ``confirmation_risk_multiplier``
@@ -287,7 +287,21 @@ def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional
         mult *= float(params.combo_risk_multiplier.get(combo, 1.0))
     if confirmation and getattr(params, "confirmation_risk_multiplier", None):
         mult *= float(params.confirmation_risk_multiplier.get(confirmation, 1.0))
+    if aligned and getattr(params, "aligned_count_risk_multiplier", None):
+        table = {int(k): float(v) for k, v in params.aligned_count_risk_multiplier.items()}
+        mult *= table.get(int(aligned), 1.0)
     return params if mult == 1.0 else replace(params, risk_pct=params.risk_pct * mult)
+
+
+def atr(series, candles: int = 14) -> Optional[float]:
+    """The average true range of the last ``candles`` closed candles of ``series`` (None with too few)."""
+    n = len(series)
+    if n < candles + 1:
+        return None
+    high, low, close = series.high[-candles:], series.low[-candles:], series.close[-candles - 1:-1]
+    tr = [max(h - l, abs(h - c), abs(l - c)) for h, l, c in zip(high, low, close)]
+    value = float(sum(tr) / len(tr))
+    return value if value > 0 else None
 
 
 def confirmation_label(confirmation) -> str:
