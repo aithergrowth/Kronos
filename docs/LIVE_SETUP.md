@@ -432,3 +432,46 @@ The challenge runs on the firm's platform, not on IBKR. MetaTrader 5 is
 supported through `MT5Broker` (`--broker mt5`, Windows, `MT5_LOGIN`,
 `MT5_PASSWORD`, `MT5_SERVER`). cTrader or MatchTrader adapters are built once
 the firm is chosen.
+
+## The dashboard (14 October)
+
+One page in the browser with what the FTMO windows are doing, read from the
+files they write next to the journal (`journal_ftmo\`) and from `charts\`:
+no terminal, no Telegram, no network, nothing of the windows is changed, so
+it can run while they trade. Start it with
+
+```
+scripts\dashboard.bat
+```
+
+(ACCOUNT and PRODUCT come from `scripts\ftmo_local.bat`, as for the other
+scripts). It builds `journal_ftmo\dashboard\index.html` every minute, serves
+it on <http://127.0.0.1:8765/> (this computer only) and opens the browser
+once; the page reloads itself every minute. Close the window to stop it. By
+hand, from the Kronos folder:
+
+```
+python -m kronos_trader dashboard --journal journal_ftmo/trades.csv --charts charts --out journal_ftmo/dashboard/index.html --every 60 --serve 8765 --account-size 10000 --product ftmo_2step
+```
+
+Without `--every` and `--serve` it builds the page once; the file can be
+opened directly as well.
+
+What it shows, top to bottom: the account size, the product and the code
+commit each window runs (from its newest start record, with a warning when
+the windows differ or one runs local changes); a card per market from its
+heartbeat with the minutes since its last scan, its state and detail, red
+when the last scan is more than 5 minutes ago or did not run through (the
+watchdog's own limit); the open positions and the resting limits as the
+journal knows them (a fill without a later close, a limit without a later
+cancel, gone, expiry or fill); today's and this week's closed trades with R,
+P&L and the running totals (the FTMO day, Europe/Prague); the room under the
+guard's floors from `guard_day_start.json` and `guard_day_high.json`, with
+today's closes from the journal as the estimate of what is left (the
+terminal's equity decides, the 22:05 report has it); the last briefing per
+market with its decision; the last 60 journal events, newest first; the two
+newest chart images per market (copied into `journal_ftmo\dashboard\charts\`
+so the served page finds them); the first 30 lines of the newest parity
+report; and when the page was written. A missing file renders as "no data
+yet", never as an error. Nothing secret is on the page: the start record's
+settings and command stay in the file, and no environment variable is read.

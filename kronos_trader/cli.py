@@ -849,6 +849,13 @@ def cmd_journal(args) -> int:
     return 0
 
 
+def cmd_dashboard(args) -> int:
+    """One HTML page of what the live windows are doing, from the files next to the journal and the charts folder
+    (reads only: no terminal, no Telegram, no network); with --every rebuilt in a loop, with --serve on 127.0.0.1."""
+    from .dashboard import run
+    return run(args)
+
+
 def cmd_feed_test(args) -> int:
     settings = _load_settings(args)
     symbol = _ensure_symbol(settings, args.symbol)
@@ -1090,6 +1097,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("journal", help="win rate, expectancy and R:R of the forward test from journal/trades.csv")
     sp.add_argument("--path", default="journal/trades.csv")
     sp.set_defaults(func=cmd_journal)
+    sp = sub.add_parser("dashboard", help="one local HTML page of what the live windows do: heartbeats, open positions and "
+                        "limits, the day's and week's closes, the guard room, briefings, events, charts, parity (reads only)")
+    sp.add_argument("--journal", default="journal_ftmo/trades.csv", help="the windows' journal: their other files sit next to it")
+    sp.add_argument("--charts", default="charts", help="the folder the windows draw their chart images in (live.charts_dir)")
+    sp.add_argument("--out", default="journal_ftmo/dashboard/index.html", help="where the page goes; --serve hands out its folder")
+    sp.add_argument("--every", type=float, help="seconds between builds (without it: one build, unless --serve)")
+    sp.add_argument("--serve", type=int, help="also serve the page on http://127.0.0.1:<port>/ (this computer only)")
+    sp.add_argument("--account-size", type=float, help="the account's initial balance (the guard's floors are %% of it)")
+    sp.add_argument("--product", default="ftmo_2step", help="the floors: ftmo_2step or ftmo_1step")
+    sp.set_defaults(func=cmd_dashboard)
     sp = sub.add_parser("histdata", help="free HistData.com 1-minute history: past years whole, this year by month; builds the cache")
     sp.add_argument("--symbol", required=True)
     sp.add_argument("--pair", help="HistData pair name (default: the symbol)")
