@@ -106,6 +106,23 @@ def test_the_briefing_carries_the_stake_the_room_and_what_a_trade_needs_and_the_
     assert sum(m.startswith("☀️") for m in late.sent) == 1 and not any(m.startswith("🕐") for m in late.sent)
 
 
+def test_a_failing_notice_never_blocks_the_setup(setup):
+    """The pre-mortem's point: the notices run before the setup; one that raises must not cost the entry."""
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    notifier = TelegramNotifier(dry_run=True)
+    views = _views()
+    runner = LiveRunner(_settings(), "EURUSD", lambda: views, broker=broker, notifier=notifier, engine=FakeEngine(setup),
+                        dry_run=False, clock=lambda: NOW, require_approval=False)
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("a bug in a notice")
+    runner.announce_poi_touch = boom
+    runner.announce_near_misses = boom
+    runner.step(T0)
+    assert len(broker.open_positions()) == 1 and any("filled" in m for m in notifier.sent)
+
+
 def test_chart_context_gives_the_previous_closed_day_and_the_window_spans(setup):
     views = _views(hourly=True, daily=True)
     rows = [(100, 102, 98, 101), (100, 102, 98, 101), (101, 109, 100, 105)]                 # the last day is still forming at T0

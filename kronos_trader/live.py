@@ -443,12 +443,18 @@ class LiveRunner:
         if self.deferred and self.broker is not None and not self.dry_run:
             self.retry_deferred(now)
         self.report_closes()
-        self.morning_briefing(analysis, now)
-        self.evening_summary(now)
-        self.announce_poi_touch(analysis, now)
-        self.midday_check(analysis, now)
-        self.announce_near_misses(analysis, now)
-        self.announce_approach(analysis, now)
+        # the notices, each on its own: a bug in one of them must never reach the setup below (the pre-mortem of 14 October:
+        # a notice that raised would have skipped handle_signal while the window looked alive)
+        for name, notice in (("morning briefing", lambda: self.morning_briefing(analysis, now)),
+                             ("evening summary", lambda: self.evening_summary(now)),
+                             ("zone touch", lambda: self.announce_poi_touch(analysis, now)),
+                             ("midday check", lambda: self.midday_check(analysis, now)),
+                             ("near misses", lambda: self.announce_near_misses(analysis, now)),
+                             ("approach", lambda: self.announce_approach(analysis, now))):
+            try:
+                notice()
+            except Exception as exc:
+                print(f"[live] {self.symbol}: the {name} notice failed ({exc})")
         if analysis.has_valid_signal:
             self.handle_signal(analysis, now)
         elif self.notify_every_scan:
