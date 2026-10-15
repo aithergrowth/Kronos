@@ -165,8 +165,8 @@ class MT5Broker(Broker):
             return bool(self.mt5.initialize(**base))
         if self.mt5.initialize(**base):
             current = 0
-            for wait in (0, 2, 2, 2):                     # a terminal that is just starting logs in to its account first
-                if wait:
+            for wait in (0,) + (2,) * 30:                 # a terminal that is just starting logs in to its account first:
+                if wait:                                  # as long as initialize() itself waits (60 s) before credentials
                     self._sleep(wait)
                 info = self.mt5.account_info()
                 current = int(getattr(info, "login", 0) or 0) if info is not None else 0
@@ -182,6 +182,11 @@ class MT5Broker(Broker):
             if current and (term is None or getattr(term, "connected", True)):
                 return True
             self.mt5.shutdown()
+        else:
+            err = self.mt5.last_error()
+            if (err[0] if isinstance(err, (tuple, list)) and err else err) != -6:
+                return False                              # no answer (IPC, not found): its account is unknown, so no
+                                                          # credentials go out blind; connect() waits and asks again
         return bool(self.mt5.initialize(**base, **creds))
 
     def disconnect(self) -> None:
@@ -550,12 +555,18 @@ class MT5Broker(Broker):
                 if not self._initialize(getattr(self, "terminal_path", None), creds):
                     return False, f"MT5 not reachable ({self.mt5.last_error()})"
                 info = self.mt5.account_info()
+            except RuntimeError as exc:                   # _initialize refused another account: say that, not "unreachable"
+                return False, str(exc)
             except Exception as exc:
                 return False, f"MT5 not reachable ({exc})"
             if info is None:
                 return False, "MT5 not reachable (terminal closed or restarting)"
         expected = getattr(self, "account_login", None)
         got = int(getattr(info, "login", 0) or 0)
+        if not expected and got:
+            # the terminal had no account when the window connected (still logging in): the first one it shows is this
+            # window's, so a later switch is noticed (15 October fix check: the check was blind for such a window)
+            self.account_login = expected = got
         if expected and got and got != expected:
             return False, f"MT5 is logged in to account {got}, this window trades {expected}: not trading"
         term = self.mt5.terminal_info()
@@ -799,8 +810,9 @@ class MT5Broker(Broker):
             err = mt5.last_error()                                   # the send's own error: the lookup's calls replace it
             ticket = self._placed_limit_ticket(symbol, request)      # the server may hold it: find it, never send it twice
             if not ticket:
-                raise RuntimeError(f"{symbol} limit order: no answer from the terminal (retcode "
-                                   f"{getattr(result, 'retcode', None)}, {err}) and not found on the server within "
+                what = ("no answer from the terminal" if result is None else
+                        f"the request timed out on the server (retcode {result.retcode} {getattr(result, 'comment', '')})")
+                raise RuntimeError(f"{symbol} limit order: {what} ({err}) and not found on the server within "
                                    f"{2 * self.retry_seconds:g} s; not sent again - it may still appear there")
         elif result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not ticket:
             raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
@@ -833,6 +845,9 @@ class MT5Broker(Broker):
             text = str(text or "")
             return not comment or text == comment or (len(text) >= 4 and comment.startswith(text))
 
+        def same_exits(x) -> bool:                   # the stop and the target the request carried
+            return all(abs(float(getattr(x, k, 0.0) or 0.0) - float(request[k])) <= tolerance for k in ("sl", "tp"))
+
         for attempt in range(max(1, int(tries))):
             try:
                 orders = self._server_limits(symbol)
@@ -842,7 +857,7 @@ class MT5Broker(Broker):
                      if str(o.ticket) not in self._limits and int(o.type) == int(request["type"])
                      and abs(float(o.price_open) - float(request["price"])) <= tolerance
                      and abs(float(getattr(o, "volume_initial", 0.0) or getattr(o, "volume_current", 0.0)) - volume) < 1e-9
-                     and same_comment(getattr(o, "comment", ""))]
+                     and same_comment(getattr(o, "comment", "")) and same_exits(o)]
             if found:
                 return int(max(found, key=lambda o: int(getattr(o, "time_setup", 0) or 0)).ticket)
             try:
@@ -852,7 +867,7 @@ class MT5Broker(Broker):
             opened = [p for p in positions
                       if int(getattr(p, "magic", 0)) == int(self.magic) and str(p.ticket) not in self._positions
                       and int(p.type) == side and abs(float(p.volume) - volume) < 1e-9
-                      and same_comment(getattr(p, "comment", ""))]
+                      and same_comment(getattr(p, "comment", "")) and same_exits(p)]
             if opened:
                 p = max(opened, key=lambda p: int(getattr(p, "time", 0) or 0))
                 return int(getattr(p, "identifier", 0) or p.ticket)

@@ -1338,8 +1338,9 @@ class LiveRunner:
         now = self.clock()
         if not ok:
             if self._link_down is None:
-                self._link_down, self._link_down_since = reason, now
+                self._link_down_since = now
                 print(f"[live] {self.symbol}: {reason}; waiting, trying again every scan")
+            self._link_down = reason                      # the heartbeat (and the watchdog) say the current reason
             minutes = (now - self._link_down_since) / pd.Timedelta(minutes=1)
             if not self._link_told and minutes >= self.link_quiet_minutes:
                 self._link_told = True
@@ -1738,13 +1739,16 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             return (f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                     f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
+        planned_lots = lots
         floored, floor_note = self._floored_lots(price, setup.stop, lots, equity, risk_params, self._min_stop_pips())
         if floor_note:
             risk_amount *= floored / lots
             lots = floored
         if lots <= 0:
-            self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
-            return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
+            why = ("the minimum stop's lots are under the minimum lot" if floor_note else
+                   "stop too wide for the minimum lot at this price")
+            self.note("not_executed", now, id=sid, price=float(price), reason=why)
+            return f"⛔ {self.symbol}: not executed - {why} at {price:.{self.spec.price_decimals}f}"
         frac = float(getattr(self.settings.risk, "limit_entry_fraction", 0.0) or 0.0)
         at_level = str(getattr(self.settings.risk, "limit_entry_at", "") or "")
         if frac > 0 or at_level == "break_level":        # the same checks at the market price first, as the backtest makes them
@@ -1766,7 +1770,7 @@ class LiveRunner:
                           f"{lots:.2f} lots wanted, {room[0]:.3f} fit")
                 return (f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot "
                         f"({room[1]:,.0f} available, {self.spec.min_lot:g} lots needed)")
-            margin_note += f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
+            margin_note += f" (margin: lots cut from {lots:.2f}, risk {100 * fit / planned_lots:.0f} % of planned)"
             resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
             risk_amount *= fit / lots
             lots = fit
@@ -1830,14 +1834,18 @@ class LiveRunner:
             lots = floored
             self._limit_note = floor_note
         if lots <= 0:
-            self.note("not_executed", now, id=sid, price=float(limit), reason="limit: stop too wide for the minimum lot")
-            return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at the limit {limit:.{d}f}"
+            why = ("the minimum stop's lots are under the minimum lot" if floor_note else
+                   "stop too wide for the minimum lot")
+            self.note("not_executed", now, id=sid, price=float(limit), reason=f"limit: {why}")
+            return f"⛔ {self.symbol}: not executed - {why} at the limit {limit:.{d}f}"
         room = self.margin_room(setup.direction, limit)
         if room is not None and lots > room[0] + 1e-9:
             fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
             if fit < self.spec.min_lot:
                 self.note("not_executed", now, id=sid, price=float(limit), reason=f"limit: margin {room[1]:,.0f} available")
                 return f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot ({room[1]:,.0f} available)"
+            self._limit_note = "; ".join(x for x in (self._limit_note, f"lots {lots:.2f} -> {fit:.2f}: margin "
+                                                     f"({room[1]:,.0f} available)") if x)
             risk_amount *= fit / lots
             lots = fit
         expires = pd.Timestamp(now) + pd.Timedelta(minutes=int(self.settings.risk.limit_entry_minutes))
@@ -1849,6 +1857,11 @@ class LiveRunner:
                       "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value})
         except Exception as exc:
             self.note("not_executed", now, id=sid, reason=f"limit order failed: {exc}")
+            if "not sent again" in str(exc):             # a lost reply: the order may still reach the server and fill
+                mark_traded = getattr(self.engine, "mark_traded", None)
+                if mark_traded is not None:
+                    mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
+                    self.save_traded()
             return f"⛔ {self.symbol}: limit order failed - {exc}"
         return "limit", order, sid
 
@@ -2165,7 +2178,15 @@ class LiveRunner:
                 self.notifier.send(f"💸 {self.symbol}: fill confirmed @ {current.entry:.{d}f}  (id {pid})")
         lowest = self._exit_series(views)
         last = lowest.last if lowest is not None else None
+        listed_before, self._positions_listed = getattr(self, "_positions_listed", False), True
         for pos in open_by_id.values():
+            if (pos.id not in self.known_positions and pos.id not in self.limits and listed_before   # a recorded limit's
+                    and pos.meta.get("restored")):                                              # fill is manage_limits'
+                self.note("found", self.clock(), id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
+                          stop=float(pos.stop), lots=float(pos.lots), note="on the server without this window's record")
+                self.notifier.send(f"⚠️ {self.symbol}: position {pos.id} ({pos.direction.name} {pos.lots:.2f} lots @ "
+                                   f"{pos.entry:.{d}f}) is on the server without this window's record (a lost order "
+                                   f"reply?); its exits are managed from now on")
             self.known_positions.setdefault(pos.id, pos)
             if getattr(pos, "status", "filled") != "filled":
                 continue

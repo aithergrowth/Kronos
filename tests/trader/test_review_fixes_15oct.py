@@ -595,3 +595,162 @@ def test_the_morning_room_line_adds_the_room_after_every_open_stop(setup):
     runner, notifier = _runner(setup, flat, require_approval=False)
     runner.step(NOW)
     assert not any("Na alle open stops" in m for m in notifier.sent)
+
+
+# ---------------------------------------------------------------- 10. the second fix check (fixcheck2): the residuals
+class Starting(FakeMT5):
+    """A terminal on account ``on``. ``busy``: the next N initialize calls answer IPC timeout. ``logs_in_after``: it is
+    starting and reaches its account only after that many seconds of the broker's own pauses. ``refuses``: initialize
+    without credentials answers -6 (authorization failed)."""
+
+    def __init__(self, on, busy=0, logs_in_after=0.0, refuses=False):
+        super().__init__()
+        self.on, self.busy, self.after, self.refuses = on, busy, logs_in_after, refuses
+        self.waited, self.calls, self.err = 0.0, [], (1, "Success")
+
+    def initialize(self, **kwargs):
+        self.calls.append(dict(kwargs))
+        if self.busy:
+            self.busy -= 1
+            self.err = (-10005, "IPC timeout")
+            return False
+        if "login" in kwargs:
+            self.on, self.after, self.refuses = kwargs["login"], 0.0, False   # logs it in: a switch when on another
+        elif self.refuses:
+            self.err = (-6, "Terminal: Authorization failed")
+            return False
+        self.err = (1, "Success")
+        return True
+
+    def last_error(self):
+        return self.err
+
+    def account_info(self):
+        if self.waited < self.after or self.refuses:
+            return None
+        return SimpleNamespace(login=self.on, server="X", currency="USD", balance=10000.0, equity=10000.0, leverage=100,
+                               trade_mode=0)
+
+    def terminal_info(self):
+        return SimpleNamespace(connected=self.waited >= self.after, trade_allowed=True)
+
+
+def _broker_on(terminal, monkeypatch):
+    _env(monkeypatch)                                          # the demo login still set, MT5_PATH on the FTMO terminal
+    broker = MT5Broker(Settings(), api=terminal, clock=lambda: NOW, connect=False)
+
+    def pause(seconds):
+        terminal.waited += seconds
+    broker._sleep = pause
+    return broker
+
+
+def test_a_terminal_that_did_not_answer_or_is_still_starting_never_gets_the_credentials(monkeypatch):
+    busy = Starting(on=55556666, busy=1)                       # one IPC timeout, then it answers with its own account
+    with pytest.raises(RuntimeError, match="not switching"):
+        _broker_on(busy, monkeypatch).connect()
+    assert busy.on == 55556666 and all("login" not in c for c in busy.calls)
+    slow = Starting(on=55556666, logs_in_after=20.0)           # a cold start: its own account after 20 s
+    with pytest.raises(RuntimeError, match="not switching"):
+        _broker_on(slow, monkeypatch).connect()
+    assert slow.on == 55556666 and all("login" not in c for c in slow.calls)
+    refused = Starting(on=0, refuses=True)                     # "authorization failed": the credentials log it in
+    broker = _broker_on(refused, monkeypatch)
+    broker.connect()
+    assert refused.calls[-1]["login"] == 11112222 and broker.account_login == 11112222
+
+
+def test_a_refused_reconnect_says_so_and_a_window_without_an_account_adopts_the_first_one(monkeypatch):
+    terminal = Starting(on=11112222)
+    broker = _broker_on(terminal, monkeypatch)
+    broker.connect()
+    terminal.on, real, first = 55556666, terminal.account_info, [True]
+
+    def info():                                                # the link dropped once; the terminal is back elsewhere
+        if first:
+            first.clear()
+            return None
+        return real()
+    terminal.account_info = info
+    ok, reason = broker.connection_ok()
+    assert not ok and reason.startswith("the MT5 terminal") and "not switching" in reason
+    late = Starting(on=0)                                      # connected while the terminal had no account yet ...
+    for key in ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"):
+        monkeypatch.delenv(key, raising=False)
+    broker = MT5Broker(Settings(), api=late, clock=lambda: NOW, connect=False)
+    broker._sleep = lambda s: None
+    broker.connect()
+    assert not broker.account_login                           # no account at connect: no check yet
+    late.on = 55556666                                         # ... its account shows: from now on it is this window's
+    assert broker.connection_ok() == (True, "ok") and broker.account_login == 55556666
+    late.on = 11112222
+    ok, reason = broker.connection_ok()
+    assert not ok and "this window trades 55556666" in reason
+
+
+def test_the_heartbeat_names_the_current_reason_of_an_outage(setup):
+    broker = PaperBroker(Settings())
+    runner, notifier = _runner(setup, broker)
+    reasons = iter([(False, "MT5 not reachable (terminal closed or restarting)"),
+                    (False, "MT5 is logged in to account 11112222, this window trades 55556666: not trading")])
+    broker.connection_ok = lambda: next(reasons)
+    runner.connection_ok()
+    runner.connection_ok()
+    assert "logged in to account 11112222" in runner._link_down
+
+
+def test_a_lost_limit_reply_uses_the_visit_and_an_unknown_fill_is_said_once(setup, tmp_path):
+    from tests.trader.test_live import _limit_runner
+    runner, broker, notifier = _limit_runner(setup, tmp_path)
+    marked = []
+    runner.engine.mark_traded = lambda *a: marked.append(a)
+
+    def lost(*args, **kwargs):
+        raise RuntimeError("EURUSD limit order: no answer from the terminal ((-10005, 'IPC timeout')) and not found on "
+                           "the server within 2 s; not sent again - it may still appear there")
+    broker.place_limit_order = lost
+    runner.step(NOW)
+    assert len(marked) == 1 and runner.limits == {}             # the visit counts as used, as a placed limit does
+    # the order reached the server after all and filled: a position this window has no record of
+    pos = broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0949, 1.1200, 500.0, 0.0051, 4.0, price=1.1, ts=NOW)
+    pos.meta["restored"] = True
+    views = runner.fetch()
+    runner.manage_positions(views)
+    runner.manage_positions(views)
+    found = [m for m in notifier.sent if "without this window's record" in m]
+    assert len(found) == 1 and pos.id in found[0]
+    rows = pd.read_csv(tmp_path / "journal" / "trades.csv")
+    assert (rows["event"] == "found").sum() == 1
+
+
+def test_the_lookup_never_adopts_a_position_with_other_exits(monkeypatch):
+    monkeypatch.setattr(MT5Broker, "retry_seconds", 0.0)
+
+    class Lookalike(LostReply):
+        """The lost order never reached the server; an earlier position of the same size and comment, with other
+        exits, is open and untracked (a restart)."""
+
+        def __init__(self, **kw):
+            super().__init__(placed=False, **kw)
+            self.positions.append(SimpleNamespace(ticket=900, identifier=900, symbol="EURUSD", type=self.POSITION_TYPE_BUY,
+                                                  volume=1.0, price_open=1.0995, sl=1.0900, tp=1.1300, time=0,
+                                                  magic=20260930, comment="4HPOI balance_shift L", profit=0.0, swap=0.0))
+    with pytest.raises(RuntimeError, match="not sent again"):
+        _place(Lookalike(expiration_mode=1 | 4))
+
+
+def test_a_floored_order_cut_by_the_margin_states_the_share_of_the_planned_lots(setup):
+    settings = Settings()
+    settings.risk.min_stop_pips = 8.0
+    settings.live.journal_path = "journal_floor_margin/trades.csv"
+    broker = PaperBroker(settings, use_spread=False)
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.1, 1.0951, 1.0951)]          # 2 pips left: 33.33 -> 11.11 lots
+    fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    notifier = TelegramNotifier(dry_run=True)
+    runner = LiveRunner(settings, "EURUSD", fetch, broker=broker, notifier=notifier, engine=FakeEngine(setup),
+                        dry_run=False, clock=lambda: NOW, require_approval=False)
+    runner.margin_room = lambda direction, price: (1.0, 500.0)                      # 1 lot fits
+    runner.step(NOW)
+    fill = [m for m in notifier.sent if "filled" in m][0]
+    assert broker.open_positions()[0].lots == pytest.approx(1.0)
+    assert "lots 33.33 -> 11.11" in fill and "(margin: lots cut from 11.11, risk 3 % of planned)" in fill

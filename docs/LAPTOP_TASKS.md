@@ -36,7 +36,8 @@ de re-entry" en het doel met "de oorsprong van de beweging"? Zeg precies wat afw
 ```
 Weekreview. Alleen lezen. 1) Leg het nieuwste rapport in journal_ftmo\parity uit: elk signaal dat geen match is, met de
 reden; is er een "live only" of "outcome differs" die op een bug wijst? 2) Uit journal_ftmo\trades.csv: alle trades van
-deze week met R na kosten, winrate, gemiddelde winst en verlies in R, en de dagen zonder trade. 3) Uit het forward-report:
+deze week met R na kosten, winrate, gemiddelde winst en verlies in R, en de dagen zonder trade. 3) Uit het forward-report
+(met MT5_PATH op de FTMO-terminal en MT5_LOGIN, MT5_PASSWORD en MT5_SERVER uit de omgeving van dit proces):
 spread en slippage per trade tegen de aannames (EURUSD 1 pip, goud 2 pips, NAS 1.5 punt, BTC 15 dollar, plus commissie).
 4) Wat ging anders dan verwacht? Sla op in kronos_notes\week_<maandag>.md.
 ```
@@ -75,7 +76,8 @@ size). Then:
 
 ```
 Alleen lezen. Hoeveel handelsdagen telt de FTMO-challenge tot nu toe (dagen met een geopende positie, Praagse tijd) in
-journal_ftmo\trades.csv en in het forward-report? Wat is de gesloten balans en wat staat er open? Zijn alle vier de
+journal_ftmo\trades.csv en in het forward-report (met MT5_PATH op de FTMO-terminal en MT5_LOGIN, MT5_PASSWORD en
+MT5_SERVER uit de omgeving van dit proces)? Wat is de gesloten balans en wat staat er open? Zijn alle vier de
 vensters gestopt (geen verse heartbeat_*.json)?
 ```
 

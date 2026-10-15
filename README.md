@@ -320,7 +320,7 @@ pip install -r kronos_trader/requirements.txt
 python -m pytest                                   # rule tests
 python -m kronos_trader backtest --symbol 09988 --csv finetune_csv/data/HK_ali_09988_kline_5min_all.csv --base-tf 5m --step-tf 15m --start 2024-01-01
 python -m kronos_trader scan --symbol EURUSD --data-dir data/tv_cache --forecasts
-python -m kronos_trader parity --journal journal_ftmo/trades.csv   # the live week against the backtest on the same candles
+python -m kronos_trader parity --journal journal_ftmo/trades.csv   # the live week against the backtest (on the laptop: scripts\parity_week.bat, which clears the MT5 login variables)
 ```
 
 Read [`docs/STRATEGY.md`](docs/STRATEGY.md) (rules → code, assumptions, open questions),
