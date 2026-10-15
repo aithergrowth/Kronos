@@ -525,18 +525,36 @@ def _forward_record(settings: Settings, journal_path, since=None, product: str =
     if connect is None:
         from .execution.mt5 import MT5Broker
         connect = lambda: MT5Broker(settings)
+    initial = float(account_size or settings.account_size)
     broker = connect()
     try:
         deals = deals_from_mt5(broker, since)
         account = account_from_mt5(broker)
+        if not _lists_a_trade(deals) and abs(float(account["balance"]) - initial) > 0.01:
+            # money moved but no trade is listed: a deal history the terminal has not loaded yet answers "not found" too
+            # (15 October fix check), and read as empty it gave the day's start without its losses: ask again, then fail
+            _pause(2.0)
+            deals = deals_from_mt5(broker, since)
+            if not _lists_a_trade(deals):
+                raise RuntimeError(f"MT5 lists no trade while the balance is {float(account['balance']):,.2f} against "
+                                   f"{initial:,.2f}: the deal history is not loaded, the day's result is unknown")
     finally:
         broker.disconnect()
     rec = reconcile(journal, deals, magic=broker.magic)
-    initial = float(account_size or settings.account_size)
     now = now if now is not None else pd.Timestamp.now("UTC").tz_localize(None)
     return {"journal": journal, "since": since, "deals": deals, "account": account, "rec": rec, "summary": summary(rec),
             "status": funding_status(account, deals, PRODUCTS[product], initial, now), "initial": initial,
             "product": PRODUCTS[product], "now": now}
+
+
+def _lists_a_trade(deals: pd.DataFrame) -> bool:
+    from .forward import SELL
+    return bool(len(deals)) and bool((deals["type"] <= SELL).any())
+
+
+def _pause(seconds: float) -> None:          # the tests replace it
+    import time
+    time.sleep(seconds)
 
 
 def _day_message(record: dict, target_pct: float = 0.0) -> str:

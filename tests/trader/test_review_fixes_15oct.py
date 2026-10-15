@@ -376,6 +376,43 @@ def test_the_day_report_reads_a_flat_account_and_a_phase_without_deals():
         account_from_mt5(MT5Broker(Settings(), api=Broken(), clock=lambda: NOW))
 
 
+def test_the_day_report_fails_when_the_balance_moved_and_no_trade_is_listed(monkeypatch, tmp_path):
+    """fixcheck guard_arith: a deal history not loaded yet also answers "not found"; read as empty it gave the day's start
+    without the day's loss (500 left today instead of 200). Money moved and no trade listed: asked again, then an error."""
+    from kronos_trader import cli
+
+    class Unloaded(LimitMT5):
+        def __init__(self, balance):
+            super().__init__()
+            self.balance, self.asked = balance, 0
+
+        def last_error(self):
+            return (-4, "Terminal: Not found")
+
+        def account_info(self):
+            info = super().account_info()
+            info.balance, info.equity = self.balance, self.balance
+            return info
+
+        def positions_get(self, symbol=None):
+            return None
+
+        def history_deals_get(self, *args, position=None, ticket=None):
+            self.asked += 1
+            return None
+    monkeypatch.setattr(cli, "_pause", lambda s: None)
+    settings = Settings()
+    moved = Unloaded(settings.account_size - 300.0)
+    with pytest.raises(RuntimeError, match="deal history is not loaded"):
+        cli._forward_record(settings, tmp_path / "trades.csv", NOW - pd.Timedelta(days=2), "ftmo_2step",
+                            connect=lambda: MT5Broker(settings, api=moved, clock=lambda: NOW), now=NOW)
+    assert moved.asked == 2
+    flat = Unloaded(settings.account_size)                             # a phase without a trade yet: read as it is
+    record = cli._forward_record(settings, tmp_path / "trades.csv", NOW - pd.Timedelta(days=2), "ftmo_2step",
+                                 connect=lambda: MT5Broker(settings, api=flat, clock=lambda: NOW), now=NOW)
+    assert len(record["deals"]) == 0 and flat.asked == 1
+
+
 # ---------------------------------------------------------------- 8. a terminal is never switched to another account
 from tests.trader.test_mt5 import FakeMT5  # noqa: E402
 
