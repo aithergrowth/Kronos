@@ -103,3 +103,36 @@ def test_the_live_runner_applies_the_time_stop_on_a_real_broker(scenario):
     runner.clock = lambda: NOW + pd.Timedelta(hours=4, minutes=1)
     runner.step(NOW + pd.Timedelta(hours=4, minutes=1))
     assert broker.open_positions() == [] and any(c.reason == "time_stop" for c in broker.closed)
+
+
+def test_the_far_target_stake_is_off_by_default_and_capped():
+    from kronos_trader.config import RiskParams
+    from kronos_trader.core import Timeframe as TF
+    assert RiskParams().far_target_rr == 0.0
+    off = RiskParams(risk_pct=1.5)
+    assert setup_risk(off, TF.H_1, rr=5.0).risk_pct == pytest.approx(1.5)                       # off: the R:R changes nothing
+    on = RiskParams(risk_pct=1.5, far_target_rr=3.0, zone_risk_multiplier={"4H": 2.0}, neutral_bias_risk_multiplier={"1M": 0.5})
+    assert setup_risk(on, TF.H_1, rr=3.5).risk_pct == pytest.approx(3.0)                         # a far target: x2
+    assert setup_risk(on, TF.H_1, rr=2.9).risk_pct == pytest.approx(1.5)                         # under the threshold: as before
+    assert setup_risk(on, TF.H_4, rr=4.0).risk_pct == pytest.approx(3.0)                         # a 4H zone is at the cap already
+    assert setup_risk(on, TF.H_1, neutral=("1M",), rr=4.0).risk_pct == pytest.approx(1.5)       # a 50/50 month: 0.75 -> 1.5
+    on.far_target_max_multiple = 1.5
+    assert setup_risk(on, TF.H_1, rr=4.0).risk_pct == pytest.approx(2.25)                        # the cap as a multiple of risk_pct
+
+
+def test_the_live_stake_follows_the_far_target(scenario):
+    from kronos_trader.core import Confirmation, ConfirmationType, TradeSetup
+    from kronos_trader.live import LiveRunner
+    from kronos_trader.notify import TelegramNotifier
+    from kronos_trader.strategy import analyze_structure, map_pois
+    from tests.trader.test_live import FakeEngine, NOW
+    poi = map_pois(analyze_structure(scenario), current_price=101.0)[0]
+    conf = Confirmation(ConfirmationType.BS, T.MIN_15, 9, pd.Timestamp("2026-10-01 08:45"), Bias.BULLISH, 1.1050, 1.0950, 1.1000)
+    far = TradeSetup("EURUSD", Direction.LONG, poi, conf, 1.1000, 1.0949, 1.1200, 0.0052, 0.02, 3.85, 1.92, 1000.0, 4.0, "1H liquidity")
+    s = Settings(); s.risk.risk_pct = 1.5; s.risk.zone_risk_multiplier = {}
+    broker = PaperBroker(s); broker.set_price("EURUSD", 1.1)
+    runner = LiveRunner(s, "EURUSD", lambda: {}, broker=broker, notifier=TelegramNotifier(dry_run=True),
+                        engine=FakeEngine(far, signal_on_first_call=False), clock=lambda: NOW)
+    assert runner.stake_params(far).risk_pct == pytest.approx(1.5)                               # the knob off
+    s.risk.far_target_rr = 3.0
+    assert far.rr == pytest.approx(3.85) and runner.stake_params(far).risk_pct == pytest.approx(3.0)

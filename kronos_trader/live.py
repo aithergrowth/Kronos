@@ -1548,7 +1548,8 @@ class LiveRunner:
                             setup.bias_combo if setup is not None else None,
                             confirmation_label(setup.confirmation) if setup is not None else None,
                             getattr(setup, "neutral_timeframes", ()) if setup is not None else (),
-                            getattr(setup, "aligned_count", 0) if setup is not None else 0)
+                            getattr(setup, "aligned_count", 0) if setup is not None else 0,
+                            rr=getattr(setup, "rr", 0.0) if setup is not None else 0.0)
         target = self.target_state()
         if target is not None and target[0] == "finish":
             params = replace(params, risk_pct=float(self.settings.prop_firm.finish_risk_pct))
@@ -1647,7 +1648,8 @@ class LiveRunner:
         if stepped < base.risk_pct:
             parts.append("near the target" if balance is not None and balance >= self.settings.account_size else "balance below the start")
         if stepped > 0 and abs(risk_params.risk_pct / stepped - 1.0) > 1e-9:
-            parts.append(f"x{risk_params.risk_pct / stepped:g} for its zone, its bias combination, its confirmation, a 50/50 timeframe or the profile's stake")
+            parts.append(f"x{risk_params.risk_pct / stepped:g} for its zone, its bias combination, its confirmation, a 50/50 timeframe, "
+                         f"a far target or the profile's stake")
         return f" ({risk_params.risk_pct:g} % on this trade: {', '.join(parts) or 'adjusted'})"
 
     def _open_locked(self, setup: TradeSetup, now: pd.Timestamp):

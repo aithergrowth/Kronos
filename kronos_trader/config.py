@@ -327,6 +327,13 @@ class RiskParams:
                                         # docs/dossiers/SOURCE_TRADES.md). R6: entries deeper than half the zone 48 trades, 12 % won
     min_stop_atr: float = 0.0           # research (14 October): 0 = off; else a setup whose stop distance is under this many ATR14 of
     min_stop_atr_tf: str = "1H"         # min_stop_atr_tf is refused (EURUSD: 1 of 20 such trades won in both periods together)
+    far_target_rr: float = 0.0          # 15 October (Max: "bouw maar als knop die standaard uit staat"): 0 = off; else a setup whose
+                                        # planned R:R is at least this gets far_target_multiplier on its stake, never above
+    far_target_multiplier: float = 2.0  # far_target_max_multiple x the (laddered) risk_pct. The far targets win less often and pay more
+    far_target_max_multiple: float = 2.0  # (2024-26 / 2017-23, R a trade: gold +1.58 / +0.23 against +0.28 / -0.24 for the rest, NAS100
+                                        # +1.50 / +1.15 against +0.54 / -0.06); the 2-Step replay at 3 on gold and NAS100: 2026 starts
+                                        # within 6 weeks 54 -> 71 %, funded +5.0 -> +6.1 %/month, but both phases 94 -> 90 % (80 -> 66 % at
+                                        # 0.25R costs): faster when it goes well, more stalls when not. Meant for the funded account
     aligned_count_risk_multiplier: Dict[int, float] = field(default_factory=dict)   # research (14 October): {5: 0.25}: a trade with that
                                         # many bias timeframes aligned (all five = a late entry) at that multiple of the stake
     max_entry_outside: float = 0.0      # 0 = off; else with entry_outside_zone the shift's close may lie at most this fraction of the zone's height

@@ -192,7 +192,7 @@ class Backtester:
             return pending, None
         risk_params = setup_risk(stepped_risk(s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
                                  confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ()),
-                                 getattr(setup, "aligned_count", 0))
+                                 getattr(setup, "aligned_count", 0), rr=getattr(setup, "rr", 0.0))
         ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * risk_params.risk_pct / 100.0)
         if not ok:
             outcome(f"limit: guard: {reason}")
@@ -279,7 +279,7 @@ class Backtester:
                 ok, reason = guard.can_open(broker, now, self.symbol, new_risk=broker.equity() * setup_risk(stepped_risk(
                     s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
                     confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ()),
-                    getattr(setup, "aligned_count", 0)).risk_pct / 100.0)
+                    getattr(setup, "aligned_count", 0), rr=getattr(setup, "rr", 0.0)).risk_pct / 100.0)
                 if not ok:
                     log["outcome"] = f"guard: {reason}"
                     rejected += 1
@@ -294,7 +294,7 @@ class Backtester:
                     price_now, setup.stop, setup.take_profit, broker.equity(), spec,
                     setup_risk(stepped_risk(s.risk, broker.balance(), s.account_size), setup.poi.timeframe, setup.bias_combo,
                                confirmation_label(setup.confirmation), getattr(setup, "neutral_timeframes", ()),
-                               getattr(setup, "aligned_count", 0)))
+                               getattr(setup, "aligned_count", 0), rr=getattr(setup, "rr", 0.0)))
                 if wrong_side or rr_now < s.risk.min_rr or lots_now <= 0:
                     rejected += 1
                     reason = ("price moved: wrong side of the stop" if wrong_side else

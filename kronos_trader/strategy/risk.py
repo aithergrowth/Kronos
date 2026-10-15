@@ -270,7 +270,7 @@ def fallback_target(
 
 
 def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None,
-               confirmation: Optional[str] = None, neutral: Iterable[str] = (), aligned: int = 0) -> RiskParams:
+               confirmation: Optional[str] = None, neutral: Iterable[str] = (), aligned: int = 0, rr: float = 0.0) -> RiskParams:
     """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
     4H zone at twice the stake, BTC at half), the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
     timeframes joined by +, as ``TradeSetup.bias_combo``), the confirmation type's ``confirmation_risk_multiplier``
@@ -290,6 +290,10 @@ def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional
     if aligned and getattr(params, "aligned_count_risk_multiplier", None):
         table = {int(k): float(v) for k, v in params.aligned_count_risk_multiplier.items()}
         mult *= table.get(int(aligned), 1.0)
+    far = float(getattr(params, "far_target_rr", 0.0) or 0.0)
+    if far > 0 and rr and float(rr) >= far:         # a far target (planned R:R ``rr``): more stake, never over the cap, never less
+        cap = float(getattr(params, "far_target_max_multiple", 2.0) or 2.0)
+        mult = max(mult, min(mult * float(getattr(params, "far_target_multiplier", 2.0) or 1.0), cap))
     return params if mult == 1.0 else replace(params, risk_pct=params.risk_pct * mult)
 
 

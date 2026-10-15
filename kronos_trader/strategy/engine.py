@@ -42,7 +42,7 @@ from .bias import combine_biases, timeframe_bias
 from .confirmation import allowed_confirmation_timeframes, find_confirmation
 from .exits import breakeven_trigger_r
 from .poi import current_visit, map_pois, poi_scan, update_poi_status, VisitTracker
-from .risk import atr, build_setup, combo_label, confirmation_label, setup_risk
+from .risk import atr, build_setup, combo_label, confirmation_label, setup_risk, size_position
 from .structure import StructureAnalysis, analyze_structure
 
 
@@ -620,10 +620,16 @@ class StrategyEngine:
                     continue
             protection, stop_detail = self._protection(poi, direction, touch_ts, structures)
             neutral = tuple(tf.label for tf in decision.neutral)
-            setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures,
-                                         setup_risk(s.risk, poi.timeframe, combo,
-                                                    confirmation_label(confirmation), neutral, len(decision.aligned)), equity,
+            stake = setup_risk(s.risk, poi.timeframe, combo, confirmation_label(confirmation), neutral, len(decision.aligned))
+            setup, reasons = build_setup(symbol, spec, direction, poi, confirmation, entry, structures, stake, equity,
                                          breakeven_trigger_r(poi.timeframe, s.exits), protection_level=protection, touch_ts=touch_ts)
+            if setup is not None and float(getattr(s.risk, "far_target_rr", 0.0) or 0.0) > 0:
+                far = setup_risk(s.risk, poi.timeframe, combo, confirmation_label(confirmation), neutral, len(decision.aligned),
+                                 rr=setup.rr)
+                if far.risk_pct != stake.risk_pct:       # research knob (15 October): a far target sized on its larger stake
+                    lots, risk_amount, _, _ = size_position(equity, setup.entry, setup.stop, spec, far)
+                    if lots > 0:
+                        setup.lots, setup.risk_amount = lots, risk_amount
             if setup is None:
                 note = f" [stop would be {spec.round_price(protection)} = {stop_detail.get('stop_basis')}]" if diagnostic else ""
                 analysis.rejections.append(f"{label}: {'; '.join(reasons)}{note}")

@@ -192,3 +192,7 @@ Nothing in the live profiles (frozen on 13 October). On the branch, for the next
   `scripts/ftmo_local.bat`): at the target no new trade once four trading days are logged (FTMO's days, Prague
   calendar, from the terminal's deal history), 0.1 % a trade until they are; the open positions run; a 🏁 message once
   a day and a line in the morning check.
+- 15 October: `risk.far_target_rr` (off; with `far_target_multiplier` 2.0 and `far_target_max_multiple` 2.0): a setup whose
+  planned R:R is at least that risks double, never above twice the laddered stake; the engine, the backtester and the
+  live window size on it alike. Meant for the funded account (the challenge replay: faster when it goes well, more stalls
+  when not); the profiles do not set it.
