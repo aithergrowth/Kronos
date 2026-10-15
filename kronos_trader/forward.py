@@ -52,14 +52,23 @@ PRODUCTS: Dict[str, Product] = {
 
 # ------------------------------------------------------------------ reading the terminal (read only)
 
+def _nothing_found(broker, what: str) -> tuple:
+    """An empty answer when the terminal said "nothing matched" (NOT_FOUND, -4), else the error (15 October stack review:
+    the day report's readers raised on a flat account and on a phase without deals, where mt5.py already read it so)."""
+    listed = getattr(broker, "_listed", None)
+    if callable(listed):
+        return listed(None, what)
+    raise RuntimeError(f"MT5 did not return {what}: {broker.mt5.last_error()}")
+
+
 def deals_from_mt5(broker, since: pd.Timestamp, until: Optional[pd.Timestamp] = None) -> pd.DataFrame:
     """The account's deals from ``since`` (naive UTC) on, every magic number, as a frame with ``DEAL_COLUMNS`` (UTC)."""
     mt5 = broker.mt5
     start = pd.Timestamp(since) + broker.server_offset() - pd.Timedelta(days=1)       # server time, a day early
     end = (pd.Timestamp(until) if until is not None else pd.Timestamp.now()) + pd.Timedelta(days=2)
     raw = mt5.history_deals_get(start.to_pydatetime(), end.to_pydatetime())
-    if raw is None:
-        raise RuntimeError(f"MT5 did not return the deal history: {mt5.last_error()}")
+    if raw is None:            # the FTMO terminal answers "nothing matched" with None and (-4, Not found): no deal yet, no error
+        raw = _nothing_found(broker, "the deal history")
     rows = []
     for d in raw:
         name = str(getattr(d, "symbol", "") or "")
@@ -83,8 +92,8 @@ def account_from_mt5(broker) -> Dict[str, Any]:
     if info is None:
         raise RuntimeError(f"MT5 did not return the account: {mt5.last_error()}")
     raw = mt5.positions_get()
-    if raw is None:
-        raise RuntimeError(f"MT5 did not list the open positions: {mt5.last_error()}")
+    if raw is None:            # a flat account: None and (-4, Not found) on build 6244 (the 22:05 report failed on it)
+        raw = _nothing_found(broker, "the open positions")
     from .core.types import Direction
     positions = []
     for p in raw:

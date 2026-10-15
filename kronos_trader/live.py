@@ -1686,6 +1686,10 @@ class LiveRunner:
             self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             return (f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                     f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
+        refused = self._stop_too_near(price, setup.stop, lots)
+        if refused:
+            self.note("not_executed", now, id=sid, price=float(price), reason=refused)
+            return f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}: {refused}"
         if lots <= 0:
             self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
@@ -1725,6 +1729,19 @@ class LiveRunner:
             return f"⛔ {self.symbol}: order failed - {exc}"
         return pos, sid, risk_amount, risk_params, resized, margin_note
 
+    def _stop_too_near(self, price: float, stop: float, lots: float) -> str:
+        """Why an order at ``price`` must not go out because its stop lies under half the profile's minimum distance, or
+        "". The engine keeps every stop at least ``risk.min_stop_pips`` from the confirmation close, but the order goes
+        out up to a minute later at the tick and is sized on the distance left: a price that ran almost to the stop gave
+        a 1-pip stop at four times the lots, a trade the research never took (15 October stack review). Half the minimum
+        leaves the normal slip of a pip or two alone."""
+        minimum = float(getattr(self.settings.risk, "min_stop_pips", 0.0) or 0.0)
+        distance = abs(float(price) - float(stop)) / self.spec.pip_size
+        if minimum <= 0 or distance >= 0.5 * minimum:
+            return ""
+        return (f"the stop is {distance:.1f} pips away, under half the {minimum:g}-pip minimum "
+                f"({lots:.2f} lots on it); the setup is left")
+
     # ------------------------------------------------------------ limit entries (risk.limit_entry_fraction)
     def _place_limit(self, setup: TradeSetup, now: pd.Timestamp, sid: str, price: float, frac: float, risk_params, at_level: str = ""):
         """Inside the account lock: a limit ``frac`` of the way from the executable price back toward the stop, or on the
@@ -1740,6 +1757,10 @@ class LiveRunner:
         if rr < self.settings.risk.min_rr:
             self.note("not_executed", now, id=sid, price=float(limit), rr=float(rr), reason="limit: R:R below minimum")
             return f"⛔ {self.symbol}: not executed - R:R at the limit {limit:.{d}f} is 1:{rr:.1f} (min {self.settings.risk.min_rr:g})"
+        refused = self._stop_too_near(limit, setup.stop, lots)
+        if refused:
+            self.note("not_executed", now, id=sid, price=float(limit), reason=f"limit: {refused}")
+            return f"⛔ {self.symbol}: not executed - at the limit {limit:.{d}f}: {refused}"
         if lots <= 0:
             self.note("not_executed", now, id=sid, price=float(limit), reason="limit: stop too wide for the minimum lot")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at the limit {limit:.{d}f}"
@@ -2031,14 +2052,24 @@ class LiveRunner:
                     reason, why = "weekend", f"before the weekend (Friday {weekend} New York)"
                 else:
                     continue
+                retry_at = pos.meta.get(f"{reason}_exit_retry_at")
+                if retry_at is not None and now < retry_at:
+                    continue
                 try:
                     self.broker.close_position(pid, reason, ts=now)
                     open_by_id.pop(pid)
                     self.note(f"{reason}_exit", now, id=pid, note=why)
                 except Exception as exc:
+                    # three quick tries, then every 15 minutes: a market that is closed (NAS100's 48 h exit falling on a
+                    # Saturday) refused about 2,000 closes a weekend at one a scan, and FTMO counts server requests
+                    # ("hyperactivity", 15 October stack review)
+                    tries = int(pos.meta.get(f"{reason}_exit_tries", 0)) + 1
+                    pos.meta[f"{reason}_exit_tries"] = tries
+                    pos.meta[f"{reason}_exit_retry_at"] = now + pd.Timedelta(minutes=1 if tries < 3 else 15)
                     if not pos.meta.get(f"{reason}_exit_failed_sent"):
                         pos.meta[f"{reason}_exit_failed_sent"] = True
-                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying every scan")
+                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying again (every 15 min "
+                                           f"after three tries)")
         d = self.spec.price_decimals
         for pid in list(self.unconfirmed):
             current = open_by_id.get(pid)
@@ -2051,10 +2082,8 @@ class LiveRunner:
                 self.unconfirmed.pop(pid)
                 self.note("fill_confirmed", id=pid, entry=float(current.entry))
                 self.notifier.send(f"💸 {self.symbol}: fill confirmed @ {current.entry:.{d}f}  (id {pid})")
-        lowest = views[min(views)]
-        if len(lowest) == 0:
-            return
-        last = lowest.last
+        lowest = self._exit_series(views)
+        last = lowest.last if lowest is not None else None
         for pos in open_by_id.values():
             self.known_positions.setdefault(pos.id, pos)
             if getattr(pos, "status", "filled") != "filled":
@@ -2068,17 +2097,28 @@ class LiveRunner:
                 continue
             if pos.breakeven_r <= 0 or pos.risk_distance <= 0:
                 continue                                   # no trigger or no risk known: never move a stop on a guess
+            if last is None:
+                continue                                   # no fresh bars from the terminal in this scan: the check waits
             retry_at = pos.meta.get("breakeven_retry_at")
             if retry_at is not None and last.timestamp < retry_at:
                 continue
             # every candle since the last look (or the fill), not only the newest: a touch of the trigger in the last
-            # seconds of a candle between two polls, or while the window was down, counts as in the backtest
-            since = pos.meta.get("be_checked_until") or pos.opened_at
+            # seconds of a candle between two polls, or while the window was down, counts as in the backtest. Never a
+            # candle that opened before the fill, and never candles older than the last look (15 October stack review: a
+            # scan on the cached candles of 1 October set the checkpoint back, and the next scan read 41 hours of candles
+            # from before the fill and moved the stop on a high it never saw)
+            checked = pos.meta.get("be_checked_until")
+            since = checked or pos.opened_at
+            if since is not None and pos.opened_at is not None:
+                since = max(pd.Timestamp(since), pd.Timestamp(pos.opened_at))
             k0 = len(lowest) - 1
             if since is not None:
-                k0 = min(max(0, lowest.index_at_or_after(pd.Timestamp(since))), len(lowest) - 1)
+                k0 = lowest.index_at_or_after(pd.Timestamp(since))
+                if k0 >= len(lowest):
+                    continue                               # no candle since the last look (or since the fill) yet
             extreme = float(lowest.high[k0:].max()) if pos.direction.sign > 0 else float(lowest.low[k0:].min())
-            pos.meta["be_checked_until"] = last.timestamp               # the newest candle may still be forming: again next scan
+            # the newest candle may still be forming: again next scan; the checkpoint only moves forward
+            pos.meta["be_checked_until"] = last.timestamp if checked is None else max(pd.Timestamp(checked), last.timestamp)
             # once the trigger was reached, a refused move is tried again every 15 minutes whatever price does since:
             # the trigger is history, the move is still owed
             if pos.meta.get("breakeven_pending") or breakeven_reached(pos.direction, pos.entry, pos.risk_distance, extreme,
@@ -2098,6 +2138,21 @@ class LiveRunner:
                 pos.breakeven_done = True
                 self.note("breakeven", id=pos.id, stop=float(pos.entry))
                 self.notifier.send(f"🔒 {self.symbol}: stop moved to break-even on {pos.id} ({pos.breakeven_r:.0f}R reached)")
+
+    def _exit_series(self, views: Dict[Timeframe, CandleSeries]) -> Optional[CandleSeries]:
+        """The candles the break-even check reads: the lowest timeframe whose bars came from the terminal (or the feed) in
+        this scan and are not stale. Never the TradingView cache: when MT5's 5m and 15m bars failed, the check read the
+        cache's 15m candles of 1 October and moved stops to break-even on prices long gone (15 October stack review). None
+        when no such timeframe exists: the check waits for the next scan."""
+        report = getattr(self.fetch, "report", None)
+        sources = dict(getattr(report, "sources", None) or {})
+        live = [tf for tf, series in views.items() if len(series) and sources.get(tf, "broker") != "cache"]
+        if not live:
+            return None
+        tf = min(live)
+        if tf in (self.stale or {}):
+            return None
+        return views[tf]
 
     def _r_now(self, pos) -> Optional[float]:
         """The position's R at the price it would close at now (the bid for a long, the ask for a short); None without a price."""

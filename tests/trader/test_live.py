@@ -580,7 +580,8 @@ def test_a_refused_break_even_move_does_not_stop_the_scan(setup):
     runner.step(NOW)
     pos = broker.open_positions()[0]
     pos.breakeven_r = 0.5                                          # 1.10005 + 0.5 x 0.00515 = 1.1026: reached by 1.104
-    rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.104, 1.099, 1.1)]
+    pos.opened_at = pd.Timestamp("2026-10-01 08:15")              # the candles below come after the fill: since 15 October
+    rows = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.104, 1.099, 1.1)]   # a candle that opened before it never counts
     runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(rows, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
 
     def refuse(position_id, stop):
@@ -816,6 +817,7 @@ def test_a_refused_break_even_is_retried_without_a_new_trigger(setup):
     runner.step(NOW)
     pos = broker.open_positions()[0]
     pos.breakeven_r = 0.5
+    pos.opened_at = pd.Timestamp("2026-10-01 08:15")              # the candles come after the fill (15 October)
     high = [(1.1, 1.101, 1.099, 1.1)] * 2 + [(1.1, 1.104, 1.099, 1.1)]
     flat = [(1.1, 1.101, 1.099, 1.1)] * 3
     runner.fetch = lambda: {T.MIN_15: CandleSeries.from_records(high, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}

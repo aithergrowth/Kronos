@@ -42,6 +42,7 @@ def utc_now() -> pd.Timestamp:
 HOUR = pd.Timedelta(1, unit="h")
 INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
 INVALID_EXPIRATION = 10022  # TRADE_RETCODE_INVALID_EXPIRATION: the server does not take this order expiry
+TIMEOUT = 10012             # TRADE_RETCODE_TIMEOUT: no answer in time; the server may have taken the request
 NOT_FOUND = -4              # RES_E_NOT_FOUND: newer terminals (build 6244, FTMO, 6 October) answer a filter that matches nothing
                             # (no position, no pending order, no deal yet) with None and this code instead of an empty tuple
 NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
@@ -625,7 +626,8 @@ class MT5Broker(Broker):
                     pos.meta.pop("entry_unconfirmed", None)
             if not pos.breakeven_done and pos.stop and pos.direction.sign * (pos.stop - pos.entry) >= 0:
                 pos.breakeven_done = True                    # the stop already sits at or beyond the entry
-            out.append(pos)
+            pos.meta["swap"] = float(getattr(p, "swap", 0.0) or 0.0)   # accrued financing: in FTMO's equity, so in the guard's
+            out.append(pos)                                            # worst case (15 October stack review)
         self._sync_closed()
         return out
 
@@ -760,18 +762,45 @@ class MT5Broker(Broker):
                 result = mt5.order_send({**base, "type_filling": mode})
                 if result is None or result.retcode != INVALID_FILL:
                     break
-            if result is not None and result.retcode != INVALID_EXPIRATION:
-                break                                    # a refused expiry time: good till cancelled, the window cancels it
-        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not getattr(result, "order", 0):
+            # only an explicit refusal of the expiry time sends the good-till-cancelled copy (the window cancels it). A lost
+            # reply is no refusal: before 15 October a None sent the copy as well, and when the server had taken the first
+            # one two full-size limits rested for one setup, twice the risk the guard had checked (stack review)
+            if result is None or result.retcode != INVALID_EXPIRATION:
+                break
+        ticket = int(getattr(result, "order", 0) or 0) if result is not None else 0
+        if result is None or result.retcode == TIMEOUT:
+            ticket = self._placed_limit_ticket(symbol, request)      # the server may hold it: find it, never send it twice
+            if not ticket:
+                raise RuntimeError(f"{symbol} limit order: no answer from the terminal (retcode "
+                                   f"{getattr(result, 'retcode', None)}, {mt5.last_error()}) and no such order resting; "
+                                   f"not sent again")
+        elif result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not ticket:
             raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
                                f"{getattr(result, 'comment', '')} {mt5.last_error()}")
-        order = LimitOrder(id=str(result.order), symbol=symbol.upper(), direction=direction, lots=float(lots), price=float(price),
+        order = LimitOrder(id=str(ticket), symbol=symbol.upper(), direction=direction, lots=float(lots), price=float(price),
                            stop=float(stop), take_profit=float(take_profit), risk_amount=float(risk_amount),
                            risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
                            placed_at=pd.Timestamp(ts) if ts is not None else self.clock(), expires_at=pd.Timestamp(expires_at),
                            meta=dict(meta or {}))
         self._limits[order.id] = order
         return order
+
+    def _placed_limit_ticket(self, symbol: str, request: dict) -> int:
+        """The ticket of a resting limit that matches ``request`` (this program's magic, type, price, volume and comment)
+        and that this window does not track yet: what a lost reply may have left on the server. 0 when none is found or
+        the terminal cannot list its orders."""
+        try:
+            orders = self._server_limits(symbol)
+        except Exception:
+            return 0
+        info = self.mt5.symbol_info(request["symbol"])
+        point = float(getattr(info, "point", 0.0) or 0.0) or 1e-9
+        found = [o for o in orders
+                 if str(o.ticket) not in self._limits and int(o.type) == int(request["type"])
+                 and abs(float(o.price_open) - float(request["price"])) <= point / 2
+                 and abs(float(getattr(o, "volume_current", 0.0) or getattr(o, "volume_initial", 0.0)) - float(request["volume"])) < 1e-9
+                 and (not request.get("comment") or str(getattr(o, "comment", "")) == str(request["comment"]))]
+        return int(max(found, key=lambda o: int(getattr(o, "time_setup", 0) or 0)).ticket) if found else 0
 
     def _server_limits(self, symbol: Optional[str] = None) -> list:
         get = getattr(self.mt5, "orders_get", None)

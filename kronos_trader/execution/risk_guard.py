@@ -140,9 +140,19 @@ class RiskGuard:
     def open_risk(broker: Broker) -> float:
         """What the open positions lose together if every one of them is stopped out (account currency); a stop at or
         beyond the entry counts as no loss."""
-        total = 0.0
+        return RiskGuard.open_risk_detail(broker)[0]
+
+    @staticmethod
+    def open_risk_detail(broker: Broker) -> Tuple[float, List[str], float]:
+        """``open_risk`` with what it could not price and the accrued swaps: (the loss at every stop, the positions and
+        limits whose loss at the stop is unknown, the negative swaps the open positions carry). A position or limit with a
+        stop on the losing side whose loss neither the server's price nor the recorded risk gives used to count as no risk
+        (a NAS100 position seen from another window when ``order_calc_profit`` did not answer); since 15 October it is
+        named, and ``can_open`` refuses until it can be priced (stack review)."""
+        total, unpriced, swaps = 0.0, [], 0.0
         pnl_for = getattr(broker, "pnl_for", None)
         for pos in broker.open_positions():
+            swaps += min(0.0, float((getattr(pos, "meta", None) or {}).get("swap", 0.0) or 0.0))
             if not pos.stop or pos.direction.sign * (pos.stop - pos.entry) >= 0:
                 continue
             loss = None
@@ -153,11 +163,17 @@ class RiskGuard:
                     loss = None
             if loss is None or loss <= 0:
                 loss = float(getattr(pos, "risk_amount", 0.0) or 0.0)
+            if loss <= 0:
+                unpriced.append(f"{pos.symbol} {pos.id}")
             total += max(0.0, loss)
         limits = getattr(broker, "limit_orders", None)
         if callable(limits):                             # a resting limit entry carries its whole risk until it is gone
-            total += sum(max(0.0, float(o.risk_amount or 0.0)) for o in limits())
-        return total
+            for o in limits():
+                risk = float(o.risk_amount or 0.0)
+                if risk <= 0 and o.stop and o.direction.sign * (o.stop - o.price) < 0:
+                    unpriced.append(f"{o.symbol} limit {o.id}")
+                total += max(0.0, risk)
+        return total, unpriced, swaps
 
     def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None,
                  new_risk: float = 0.0) -> Tuple[bool, str]:
@@ -183,7 +199,12 @@ class RiskGuard:
         if self.drawdown_pct(equity) >= p.max_drawdown_pct:
             self.halted_reason = f"drawdown {self.drawdown_pct(equity):.2f}% reached the {p.max_drawdown_pct}% limit"
             return False, self.halted_reason
-        worst = self.last_balance - self.open_risk(broker) - max(0.0, float(new_risk or 0.0))
+        open_risk, unpriced, swaps = self.open_risk_detail(broker)
+        if unpriced:
+            return False, (f"the loss at the stop of {', '.join(unpriced)} could not be computed (no price from the terminal); "
+                           f"no new trade until it can")
+        # FTMO's equity carries the open positions' swaps: the worst case does too (a NAS100 4H long pays 0.4 % a night)
+        worst = self.last_balance + swaps - open_risk - max(0.0, float(new_risk or 0.0))
         worst_day = (self.day_start_balance - worst) / self.account_size * 100.0
         if worst_day >= p.daily_loss_limit_pct:
             return False, (f"daily loss would reach {worst_day:.2f}% if the open trades and this one were stopped out "
