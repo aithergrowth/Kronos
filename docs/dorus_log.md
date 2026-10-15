@@ -107,18 +107,21 @@
 - EURUSD ✅ eens (no trade): W and D bearish; the CPI drop to 1.1113 is fully retraced and the 4H turned bullish (BMS
   through 1.12114 at 03:00 Amsterdam), the 1H 50/50 (the bearish gap 1.12195-1.12230 still open). The engine refuses
   both sides (the 4H against the short, the week and day against the long). Trade: only once the 4H closes back below
-  1.1155 and a fresh 1H supply forms. Missed chance: a short from the old supply 1.1245-1.1263 after a sweep of the
+  1.1155 and a fresh 1H supply forms (corrected 09:40 from the engine's own what-if: the 1H and 4H turn after a sweep
+  of 1.12428 and a close back under 1.1208; the near supplies are spent, so a fresh one is needed). Missed chance: a short from the old supply 1.1245-1.1263 after a sweep of the
   overnight high 1.1243; blocked by the zone's age (formed 7 October, 24 h rule) and the 4H veto.
 - XAUUSD ✅ eens (wait): M, W and D bearish, the 4H 50/50, the 1H bullish since the BMS through 4,155.84 at 04:00
   Amsterdam; price 4,136 inside both the fresh 4H supply 4,105-4,156 (formed yesterday) and the fresh 1H demand
-  4,111-4,156. The rally broke the 1H against the short: the zone is run into, not yet tested. Trade: a short once the
-  1H turns bearish (a 1H close under 4,128, then 4,111) with a 5m shift inside the 4H supply, target the CPI low
-  4,073-4,080. Missed chance: a short after a sweep of 4,160 with a 15m shift; blocked by the required 1H.
+  4,111-4,156. The rally broke the 1H against the short: the zone is run into, not yet tested. Trade (corrected 09:40:
+  the reading by eye said a 1H close under 4,128 or 4,111; the engine's own what-if says the 1H turns bearish only after
+  a sweep of the 1H high 4,161.8 and then a close under 4,111.3 (the gap's P), or without the sweep a close under the CPI
+  low 4,073): then a short from the 4H supply on a 5m shift, target the CPI low 4,073-4,080. Missed chance: a short
+  after a sweep of 4,160 with a 15m shift before the close under 4,111; blocked by the required 1H.
 - NAS100 ✅ eens (no trade today): a one-way drop of about 1,000 points since the CPI (efficiency 0.65) into the old
   weekly and daily demand 29,466-29,728 (spent by age); W bullish, M and D 50/50, 4H and 1H bearish: fewer than three
-  timeframes agree. Trade (from tomorrow): if the day closes bearish, a D+4H+1H short from the fresh 4H supply
-  29,963-30,126 or the 1H supply 30,160-30,305 on a 5m shift, target 29,466. Missed chance: none Dorus would take
-  today (no buying into a displacement, no selling into higher-timeframe demand).
+  timeframes agree. No short while the week reads bullish, whatever the day does (corrected 09:40: the profile's weekly
+  veto, no_trade_against 1W; the morning text said a bearish day close would allow a D+4H+1H short). Missed chance:
+  none Dorus would take today (no buying into a displacement, no selling into higher-timeframe demand).
 - BTCUSD ✅ eens (wait): M and W bullish, D, 4H and 1H bearish (BOS through 80,948 overnight): a D+4H+1H scalp short
   (half stake). Price 80,500-80,950, far under the fresh 4H supply 81,999-83,844 and the 1H supply 83,012-83,844.
   Trade: a pullback into 82,000-83,844 in a window with a 5m shift, target the night low 80,150. On Bitstamp's UTC
