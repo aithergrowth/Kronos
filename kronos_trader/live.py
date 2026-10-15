@@ -658,7 +658,45 @@ class LiveRunner:
                     lines.append("🎯 Voor een trade: eerst een verse zone in de richting van de bias")
         except Exception as exc:
             print(f"[live] {self.symbol}: briefing plan line failed ({exc})")
+        try:        # no trade allowed: what would have to close where (15 October, Max: "maar ondertussen zegt die geen trade")
+            if not analysis.decision.tradable:
+                lines += self.turn_lines(analysis, now, zones)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: briefing turn line failed ({exc})")
         return lines
+
+    def turn_lines(self, analysis: Analysis, now: pd.Timestamp, zones: Optional[list] = None) -> List[str]:
+        """What would have to close where before the bias allows a trade: the engine's own bias code asked with the
+        forming candle closed at trial prices (strategy/whatif.py), first the side the higher timeframes lean to, with
+        the zone it would trade from; the other side only when an intraday close turns it."""
+        from .core.types import Bias
+        from .notify.formatting import _price, plain_decision, zone_kind, zone_line
+        from .strategy.whatif import Turn, turn_text, turning_closes
+        if not self._views or analysis.decision.tradable:
+            return []
+        reason = analysis.decision.reason or ""
+        lean = Bias.BEARISH if reason.startswith("bearish") else Bias.BULLISH if reason.startswith("bullish") else None
+        directions = (lean, lean.opposite) if lean is not None else (Bias.BEARISH, Bias.BULLISH)
+        price = float(analysis.price)
+        result = turning_closes(self._views, {tf: b.bias for tf, b in analysis.biases.items()}, self.settings,
+                                pd.Timestamp(now), price, directions=directions,
+                                full=(lean,) if lean is not None else directions)
+        zones = self.chart_zones(analysis) if zones is None else zones
+        lines: List[str] = []
+        for direction in directions:
+            r = result.get(direction)
+            side = "short" if direction is Bias.BEARISH else "long"
+            if isinstance(r, Turn):
+                near = [p for p in zones if p.direction is direction]
+                zone = None
+                if near:
+                    p = min(near, key=lambda z: 0.0 if z.contains(price) else min(abs(price - z.low), abs(price - z.high)))
+                    where = zone_line(p, price, self.spec).split(" · ")[-1]
+                    zone = f"{p.timeframe.label} {zone_kind(p)} {_price(p.low, self.spec)}–{_price(p.high, self.spec)} ({where})"
+                lines.append("🎯 Trade als: " + turn_text(r, lambda x: _price(x, self.spec), zone))
+            elif r is not None:
+                lines.append(f"🚫 Geen {side} in zicht: {plain_decision(r, emoji=False).split(': ', 1)[-1]}")
+        return lines or ["🎯 Geen trade in zicht: geen slot binnen drie gemiddelde candles draait de richting"]
 
     def announce_near_misses(self, analysis: Analysis, now: Optional[pd.Timestamp] = None) -> None:
         """A zone in play (price in it, or entered earlier) and the engine refused the trade for a reason worth knowing: the
