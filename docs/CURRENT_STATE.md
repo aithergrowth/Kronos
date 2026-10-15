@@ -204,6 +204,10 @@ The research of 15 October is in `docs/research/2026-10-15/`. `TOO_STRICT_NL.md`
 rules are too strict: no; almost every loosening loses R on 2024-2026 and in 2026 alone, and the live set passed phase 1
 from every 2026 start within 60 days (median 24). `BIAS_RELIABILITY.md` asks how reliable the bias is: the live bias is
 read exactly as tested, but on its own it hardly predicts the direction (a gate, not a forecast); the edge is the entry's.
+`MORE_TRADES_NL.md` (Dutch) looks for more trades without looser rules: of 9 extra markets on the unchanged profiles
+only USDCAD and GER40 pass Max's bar, as chance would give, and each raises the stalled challenge starts from 7 to 33; no
+second setup type passes once it shares the account. A third ladder step (0.25 % from -8 %) took the stalled starts
+from 7 to 0 without slowing any fast pass or breaching a limit: open for Max (it needs `PRODUCT=ftmo_2step`).
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
