@@ -101,3 +101,27 @@
   quarter stake, NAS100 waits for the 1H and 4H to turn, BTC reads bearish-scalp on the window's candles. The day's
   research (the README's 14 October evening section): nothing changes in the challenge; the gold 10:00-11:00 cut and
   the EURUSD 14:30-16:00 cut are the two decisions for the next restart after it.
+
+## 2026-10-15 (Thursday)
+
+- EURUSD ✅ eens (no trade): W and D bearish; the CPI drop to 1.1113 is fully retraced and the 4H turned bullish (BMS
+  through 1.12114 at 03:00 Amsterdam), the 1H 50/50 (the bearish gap 1.12195-1.12230 still open). The engine refuses
+  both sides (the 4H against the short, the week and day against the long). Trade: only once the 4H closes back below
+  1.1155 and a fresh 1H supply forms. Missed chance: a short from the old supply 1.1245-1.1263 after a sweep of the
+  overnight high 1.1243; blocked by the zone's age (formed 7 October, 24 h rule) and the 4H veto.
+- XAUUSD ✅ eens (wait): M, W and D bearish, the 4H 50/50, the 1H bullish since the BMS through 4,155.84 at 04:00
+  Amsterdam; price 4,136 inside both the fresh 4H supply 4,105-4,156 (formed yesterday) and the fresh 1H demand
+  4,111-4,156. The rally broke the 1H against the short: the zone is run into, not yet tested. Trade: a short once the
+  1H turns bearish (a 1H close under 4,128, then 4,111) with a 5m shift inside the 4H supply, target the CPI low
+  4,073-4,080. Missed chance: a short after a sweep of 4,160 with a 15m shift; blocked by the required 1H.
+- NAS100 ✅ eens (no trade today): a one-way drop of about 1,000 points since the CPI (efficiency 0.65) into the old
+  weekly and daily demand 29,466-29,728 (spent by age); W bullish, M and D 50/50, 4H and 1H bearish: fewer than three
+  timeframes agree. Trade (from tomorrow): if the day closes bearish, a D+4H+1H short from the fresh 4H supply
+  29,963-30,126 or the 1H supply 30,160-30,305 on a 5m shift, target 29,466. Missed chance: none Dorus would take
+  today (no buying into a displacement, no selling into higher-timeframe demand).
+- BTCUSD ✅ eens (wait): M and W bullish, D, 4H and 1H bearish (BOS through 80,948 overnight): a D+4H+1H scalp short
+  (half stake). Price 80,500-80,950, far under the fresh 4H supply 81,999-83,844 and the 1H supply 83,012-83,844.
+  Trade: a pullback into 82,000-83,844 in a window with a 5m shift, target the night low 80,150. On Bitstamp's UTC
+  candles; the window reads FTMO's (the day cut at 17:00 New York).
+- News: US PPI and retail sales 14:30 Amsterdam (blackout 14:00-15:00 for all four markets). Data: TradingView 08:35,
+  BTC from Bitstamp. Code 26fce7a on the laptop since 14 October evening (target 10 %, stop at the target on).
