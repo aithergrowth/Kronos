@@ -456,13 +456,19 @@ def test_a_terminal_on_another_account_is_refused_never_logged_in_to_ours(monkey
     assert ftmo.on == 55556666 and all("login" not in c and "password" not in c for c in ftmo.calls)
 
 
-def test_credentials_log_in_only_a_terminal_without_an_account_or_its_server(monkeypatch):
+def test_credentials_only_log_a_terminal_in_again_to_the_account_it_shows(monkeypatch):
     _env(monkeypatch)
-    for terminal in (Terminal(on=0), Terminal(on=11112222, connected=False)):
-        broker = MT5Broker(Settings(), api=terminal, clock=lambda: NOW, connect=False)
-        broker._sleep = lambda s: None
+    again = Terminal(on=11112222, connected=False)             # on MT5_LOGIN without its server: the same account
+    broker = MT5Broker(Settings(), api=again, clock=lambda: NOW, connect=False)
+    broker._sleep = lambda s: None
+    broker.connect()
+    assert again.calls[-1]["login"] == 11112222 and broker.account_login == 11112222
+    blind = Terminal(on=0)                                     # no account to read: refused, never logged in blind
+    broker = MT5Broker(Settings(), api=blind, clock=lambda: NOW, connect=False)
+    broker._sleep = lambda s: None
+    with pytest.raises(RuntimeError, match="shows no account after a minute"):
         broker.connect()
-        assert terminal.calls[-1]["login"] == 11112222 and broker.account_login == 11112222
+    assert all("login" not in c for c in blind.calls)
     on_it = Terminal(on=11112222)                              # already there: attached, no credentials sent
     broker = MT5Broker(Settings(), api=on_it, clock=lambda: NOW, connect=False)
     broker.connect()
@@ -654,10 +660,14 @@ def test_a_terminal_that_did_not_answer_or_is_still_starting_never_gets_the_cred
     with pytest.raises(RuntimeError, match="not switching"):
         _broker_on(slow, monkeypatch).connect()
     assert slow.on == 55556666 and all("login" not in c for c in slow.calls)
-    refused = Starting(on=0, refuses=True)                     # "authorization failed": the credentials log it in
-    broker = _broker_on(refused, monkeypatch)
-    broker.connect()
-    assert refused.calls[-1]["login"] == 11112222 and broker.account_login == 11112222
+    slower = Starting(on=55556666, logs_in_after=75.0)        # slower than the minute: refused, not switched
+    with pytest.raises(RuntimeError, match="shows no account after a minute"):
+        _broker_on(slower, monkeypatch).connect()
+    assert slower.on == 55556666 and all("login" not in c for c in slower.calls)
+    refused = Starting(on=0, refuses=True)                     # "authorization failed": refused with what to do
+    with pytest.raises(RuntimeError, match="Authorization failed.*log it in by hand"):
+        _broker_on(refused, monkeypatch).connect()
+    assert all("login" not in c for c in refused.calls)
 
 
 def test_a_refused_reconnect_says_so_and_a_window_without_an_account_adopts_the_first_one(monkeypatch):

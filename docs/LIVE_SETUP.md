@@ -74,8 +74,8 @@ and the demo's login out of it: `Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:
 (the line `start_ftmo.bat` shows on line 25; the script itself clears them). With the demo's login still set, the
 command used to log the FTMO terminal in to the demo, and the four windows stopped trading until it was logged back by
 hand. Since 15 October the command refuses that when the terminal answers with its own account ("logged in to account
-..., MT5_LOGIN is ...: not switching it"), and it sends the login only to a terminal that has none after a minute; still,
-clear the variables first.
+..., MT5_LOGIN is ...: not switching it"), and it never sends the login to a terminal whose account it cannot read
+(still starting after a minute, or at "authorization failed"); still, clear the variables first.
 
 **FTMO's spreads.** `mt5-spreads` puts the server's spread per market beside the backtest's and the 30 % cap: now
 (`--minutes 10`), or for a past day's session windows from the terminal's tick history (`--day 2026-10-07`), so nobody
@@ -242,7 +242,8 @@ When `mt5-test` fails:
   in (red connection icon bottom right, the Journal tab says why). Wrong or
   investor password, or the demo account expired: log in again under File,
   Login to Trade Account, or open a new demo account under File, Open an
-  Account, and update `MT5_LOGIN` / `MT5_PASSWORD` (new window afterwards).
+  Account, and update `MT5_LOGIN` / `MT5_PASSWORD` (new window afterwards). Since 15 October a window never logs
+  such a terminal in by itself (it cannot see which account it is on): log it in by hand once.
 
 ## 2. Telegram (10 minutes)
 

@@ -158,35 +158,46 @@ class MT5Broker(Broker):
         ``initialize`` logs whatever terminal it reaches in to that account: a manual command run with the demo login
         still set would log the FTMO terminal in to the demo, and the four windows would stop trading ("logged in to
         account X, this window trades Y") until Max logged it back in by hand. So the terminal is attached with the path
-        alone first. On the login asked for, that is the connection; with no account, or on that login without its trade
-        server, the credentials log it in (the same account, nothing switches); on another account it is refused."""
+        alone, and the credentials go out only to log it in again to the account it already shows (on MT5_LOGIN but
+        without its trade server). A terminal on another account is refused; one whose account cannot be read (still
+        starting after a minute, "authorization failed") is refused too, never logged in blind (the fix checks of 15
+        October: a cold start slower than the wait, or an IPC timeout, took the demo login). An attach that gets no
+        answer returns False: connect() waits and asks again."""
         base: Dict[str, Any] = {"path": path} if path else {}
         if not creds:
             return bool(self.mt5.initialize(**base))
-        if self.mt5.initialize(**base):
-            current = 0
-            for wait in (0,) + (2,) * 30:                 # a terminal that is just starting logs in to its account first:
-                if wait:                                  # as long as initialize() itself waits (60 s) before credentials
-                    self._sleep(wait)
-                info = self.mt5.account_info()
-                current = int(getattr(info, "login", 0) or 0) if info is not None else 0
-                if current:
-                    break
-            if current and current != int(creds["login"]):
-                self.mt5.shutdown()
-                raise RuntimeError(f"the MT5 terminal {path or '(the running one)'} is logged in to account {current}, "
-                                   f"MT5_LOGIN is {creds['login']}: not switching it (that would take it off its own "
-                                   f"account). Clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER to use account {current}, "
-                                   f"or set MT5_PATH to the terminal of login {creds['login']}")
-            term = self.mt5.terminal_info() if current else None
-            if current and (term is None or getattr(term, "connected", True)):
-                return True
-            self.mt5.shutdown()
-        else:
+        where = f"the MT5 terminal {path or '(the running one)'}"
+        if not self.mt5.initialize(**base):
             err = self.mt5.last_error()
             if (err[0] if isinstance(err, (tuple, list)) and err else err) != -6:
-                return False                              # no answer (IPC, not found): its account is unknown, so no
-                                                          # credentials go out blind; connect() waits and asks again
+                return False                              # no answer (IPC, not found): connect() waits and asks again
+            raise RuntimeError(f"MT5 initialize failed for login {creds['login']} on {creds.get('server')}: {where} "
+                               f"answers {err} (Authorization failed: it shows no account). The credentials are never "
+                               f"sent to a terminal whose account cannot be read: log it in by hand (File > Login to "
+                               f"Trade Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER")
+        current = 0
+        for wait in (0,) + (2,) * 30:                     # a terminal that is just starting logs in to its account first
+            if wait:
+                self._sleep(wait)
+            info = self.mt5.account_info()
+            current = int(getattr(info, "login", 0) or 0) if info is not None else 0
+            if current:
+                break
+        if current and current != int(creds["login"]):
+            self.mt5.shutdown()
+            raise RuntimeError(f"{where} is logged in to account {current}, MT5_LOGIN is {creds['login']}: not switching "
+                               f"it (that would take it off its own account). Clear MT5_LOGIN, MT5_PASSWORD and "
+                               f"MT5_SERVER to use account {current}, or set MT5_PATH to the terminal of login "
+                               f"{creds['login']}")
+        if not current:
+            self.mt5.shutdown()
+            raise RuntimeError(f"{where} shows no account after a minute: the credentials are never sent to a terminal "
+                               f"whose account cannot be read. Log it in by hand (File > Login to Trade Account) to "
+                               f"{creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER")
+        term = self.mt5.terminal_info()
+        if term is None or getattr(term, "connected", True):
+            return True
+        self.mt5.shutdown()                               # on MT5_LOGIN without its server: log in again, the same account
         return bool(self.mt5.initialize(**base, **creds))
 
     def disconnect(self) -> None:
