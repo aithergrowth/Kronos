@@ -2140,3 +2140,21 @@ the EURUSD day-open drift (flips one hour later); the consecutive-loss, cushion,
 double-stake weekend filter (the full Friday close is no worse and removes the whole tail); a minimum R:R of 3 (keeps
 the R, empties the challenge); the stake and protection ladders beyond the current one (all 99-100 % funded in
 sample, 3-7 % out of sample: market composition is the only lever that moves the out-of-sample number).
+
+### Trading at night (15 October)
+
+Max: "heb je ook gekeken naar handelen in de nacht?" The four live profiles with the entry windows off (24 hours; the
+news blackout kept), both periods, BTC on the candles FTMO's server stamps, cut by the Amsterdam hour of the entry,
+after 0.10R a trade (and 0.20R outside the day windows, where spreads widen):
+
+| Market | Live profile (09-11, 13-17) | 24 hours | of which 22:00-09:00 | 17:00-22:00 |
+|---|---|---|---|---|
+| EURUSD 2024-26 / 2017-23 | +39.5R / -1.2R | -2.1R / -7.0R | 53 tr, 13 % won, -32.2R / 121 tr, -33.8R | +2.7R / +9.4R |
+| Gold | +71.8R / -62.2R | +29.7R / -195.3R | 109 tr, +7.1R (-3.8R at double costs) / 313 tr, -67.5R | -23.0R / -50.9R |
+| NAS100 | +32.9R / +28.8R | +1.1R / -0.3R | 36 tr, -3.3R / 82 tr, -13.3R | -0.5R / -7.0R |
+| BTC | +22.8R / -3.8R | -8.1R / -67.8R | 137 tr, -8.0R / 160 tr, -22.1R | -10.7R / -23.9R |
+
+The night loses or adds nothing on every market in both periods, and it costs the day as well: a zone traded at
+night is spent for the morning (gold's day-window trades fall from +71.8R to +45.3R in the 24-hour run). The only
+positive slice is EURUSD's evening (+0.13R / +0.17R a trade, +0.7R / +4.0R at double costs), too thin to open a
+window for. The entry windows stay as they are.
