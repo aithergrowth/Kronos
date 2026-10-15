@@ -1766,7 +1766,10 @@ class LiveRunner:
             return (f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                     f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
         planned_lots = lots
-        floored, floor_note = self._floored_lots(price, setup.stop, lots, equity, risk_params, self._min_stop_pips())
+        floor = self._min_stop_pips()
+        if abs(price - setup.stop) >= 0.5 * floor * self.spec.pip_size:
+            floor = 0.0                                  # frozen sizing: only a stop under half the minimum (the stated fix)
+        floored, floor_note = self._floored_lots(price, setup.stop, lots, equity, risk_params, floor)
         if floor_note:
             risk_amount *= floored / lots
             lots = floored
@@ -1854,7 +1857,10 @@ class LiveRunner:
             return f"⛔ {self.symbol}: not executed - R:R at the limit {limit:.{d}f} is 1:{rr:.1f} (min {self.settings.risk.min_rr:g})"
         # the research's smallest limit stop: the fraction's share of the minimum (on the balance level: no floor known)
         share = 0.0 if mode == "limit break_level" else 1.0 - (frac if frac > 0 else 0.25)
-        floored, floor_note = self._floored_lots(limit, setup.stop, lots, equity, risk_params, share * self._min_stop_pips())
+        floor = share * self._min_stop_pips()
+        if abs(limit - setup.stop) >= 0.5 * self._min_stop_pips() * self.spec.pip_size:
+            floor = 0.0                                  # frozen sizing: only a stop under half the minimum (the stated fix)
+        floored, floor_note = self._floored_lots(limit, setup.stop, lots, equity, risk_params, floor)
         if floor_note:
             risk_amount *= floored / lots
             lots = floored

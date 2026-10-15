@@ -209,8 +209,10 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
 - **The guard.** The worst case counts the swap the open positions have accrued (FTMO's equity does). A position or
   limit whose loss at the stop the terminal cannot price refuses new entries until it can. The morning check adds the
   room after every open stop ("Na alle open stops"), the number the guard decides on.
-- **Sizing.** When price ran toward the stop before the order went out, the lots are held to those of the profile's
-  minimum stop (the fraction's share of it for a limit); the stop stays and the trade is taken.
+- **Sizing.** When price ran so far toward the stop before the order went out that the stop lies under half the
+  profile's minimum, the lots are held to those of the minimum stop (the fraction's share of it for a limit); the stop
+  stays and the trade is taken. Above half the minimum the sizing is the running code's (frozen); holding every order
+  to the minimum's lots (about 1 in 5 EURUSD trades, a median 10 % smaller) is Max's decision.
 - **Exits.** Break-even reads only fresh bars from the terminal (never the TradingView cache, never a candle before the
   fill, a market fill's own candle included). A refused time exit is retried every scan while the market trades and
   every 15 minutes while it is shut. The exits run even in a scan where the account read fails.

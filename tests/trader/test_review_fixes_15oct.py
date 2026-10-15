@@ -267,6 +267,22 @@ def test_a_stop_that_shrank_before_the_order_is_taken_on_the_lots_of_the_minimum
     assert not any("minimum" in m for m in notifier.sent)
 
 
+def test_a_stop_still_over_half_the_minimum_is_sized_as_before(setup):
+    """The final fix check (N3): the lots floor acts only where the stated fix acted, a stop under half of
+    risk.min_stop_pips at the order price. An ordinary slip toward a stop at the minimum keeps the lots of the running
+    code (the profiles' sizing is frozen during the challenge; the full floor is Max's decision)."""
+    from kronos_trader.strategy.risk import size_position
+    runner, broker, notifier = _shrunk(setup, 1.0955)                   # market: 6 pips left of the 8-pip minimum
+    pos = broker.open_positions()[0]
+    assert pos.lots == pytest.approx(size_position(broker.equity(), 1.0955, 1.0949, runner.spec, runner.stake_params(setup))[0])
+    assert not any("minimum" in m for m in notifier.sent)
+    runner, broker, notifier = _shrunk(setup, 1.0955, frac=0.25)        # limit: 4.5 pips at the limit, over half of 8
+    order = broker.limit_orders("EURUSD")[0]
+    assert order.lots == pytest.approx(size_position(broker.equity(), order.price, 1.0949, runner.spec,
+                                                     runner.stake_params(setup))[0])
+    assert not any("minimum" in m for m in notifier.sent)
+
+
 def test_a_limit_is_held_to_the_fractions_share_of_the_minimum(setup):
     from kronos_trader.strategy.risk import size_position
     runner, broker, notifier = _shrunk(setup, 1.0953, frac=0.25)        # the limit a pip toward the stop: 3 pips left
