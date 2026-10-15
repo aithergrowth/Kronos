@@ -200,6 +200,11 @@ Nothing in the live profiles (frozen on 13 October). On the branch, for the next
 
 ## 15 October: the stack review and its fixes (the restart of 15 October, evening)
 
+The research of 15 October is in `docs/research/2026-10-15/`. `TOO_STRICT_NL.md` (Dutch, for Max) asks whether the
+rules are too strict: no; almost every loosening loses R on 2024-2026 and in 2026 alone, and the live set passed phase 1
+from every 2026 start within 60 days (median 24). `BIAS_RELIABILITY.md` asks how reliable the bias is: the live bias is
+read exactly as tested, but on its own it hardly predicts the direction (a gate, not a forecast); the edge is the entry's.
+
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
 
