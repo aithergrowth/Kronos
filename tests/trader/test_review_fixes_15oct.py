@@ -677,8 +677,8 @@ def test_a_terminal_that_did_not_answer_or_is_still_starting_never_gets_the_cred
     with pytest.raises(RuntimeError, match="not switching"):
         _broker_on(slow, monkeypatch).connect()
     assert slow.on == 55556666 and all("login" not in c for c in slow.calls)
-    slower = Starting(on=55556666, logs_in_after=75.0)        # slower than the minute: refused, not switched
-    with pytest.raises(RuntimeError, match="shows no account after a minute"):
+    slower = Starting(on=55556666, logs_in_after=75.0)        # slower than the minute: asked again (fixcheck4), then it
+    with pytest.raises(RuntimeError, match="not switching"):  # shows its own account: refused, not switched
         _broker_on(slower, monkeypatch).connect()
     assert slower.on == 55556666 and all("login" not in c for c in slower.calls)
     refused = Starting(on=0, refuses=True)                     # "authorization failed": refused with what to do

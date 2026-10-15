@@ -76,9 +76,10 @@ class TerminalRefused(RuntimeError):
     """The terminal is not used: it is on another account, or its account cannot be read. The message says what to do
     from the command line; ``short`` is the line a running window shows (its heartbeat, its Telegram)."""
 
-    def __init__(self, text: str, short: str):
+    def __init__(self, text: str, short: str, retry: bool = False):
         super().__init__(text)
         self.short = short
+        self.retry = retry          # no account yet (a terminal still logging in): connect() waits and asks again
 
 
 class MT5Broker(Broker):
@@ -107,6 +108,8 @@ class MT5Broker(Broker):
         self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
         self.account_login: Optional[int] = None
         self._adopted: Optional[int] = None        # the account connection_ok took on (none when the window connected)
+        self.attaches = 0                         # re-attachments by connection_ok (a restarted terminal): the runner
+                                                  # lists the positions twice again before an entry (fixcheck4)
         self._sleep = time.sleep                  # the pause between connection attempts (tests replace it)
         if connect:
             self.connect()
@@ -144,10 +147,20 @@ class MT5Broker(Broker):
                 self._sleep(wait)
             ipc_only = True
             for candidate in attempts:
-                if self._initialize(candidate, creds):
+                try:
+                    attached = self._initialize(candidate, creds)
+                except TerminalRefused as exc:
+                    if not exc.retry or wait == 60:
+                        raise
+                    errors.append(f"{candidate or 'running terminal'}: {exc.short}")   # still logging in: wait, ask again
+                    continue
+                if attached:
                     self.terminal_path = candidate
                     info = self.mt5.account_info()
-                    self.account_login = int(getattr(info, "login", 0) or 0) if info is not None else None
+                    # with credentials _initialize saw MT5_LOGIN on the terminal: that is this window's account, whatever
+                    # this read answers (fixcheck4: a None here left a demo window to take on any account later)
+                    self.account_login = (int(creds["login"]) if creds else
+                                          int(getattr(info, "login", 0) or 0) if info is not None else None)
                     connected = True
                     break
                 err = self.mt5.last_error()
@@ -209,7 +222,8 @@ class MT5Broker(Broker):
             raise TerminalRefused(f"{where} shows no account after a minute: the credentials are never sent to a "
                                   f"terminal whose account cannot be read. Log it in by hand (File > Login to Trade "
                                   f"Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER",
-                                  f"MT5 shows no account after a minute: log the terminal in to {creds['login']} by hand")
+                                  f"MT5 shows no account after a minute: log the terminal in to {creds['login']} by hand",
+                                  retry=True)
         term = self.mt5.terminal_info()
         if term is None or getattr(term, "connected", True):
             return True
@@ -497,7 +511,9 @@ class MT5Broker(Broker):
         meta: Dict[str, Any] = {"comment": comment, "restored": True}
         if poi_tf is not None:
             meta["poi_tf"] = poi_tf.label
-        opener = self._opening_limit(p.ticket)           # a limit fill, whatever the server kept of the comment (fixcheck2 s12)
+        # a limit fill, whatever the server kept of the comment (fixcheck2 s12); the history keys it by the position's
+        # identifier, which is the opening order's ticket even when the server gave the position another ticket (fixcheck4)
+        opener = self._opening_limit(getattr(p, "identifier", 0) or p.ticket)
         if opener:
             meta["limit_id"] = opener
         return Position(id=str(p.ticket), symbol=symbol, direction=direction, lots=float(p.volume),
@@ -599,6 +615,7 @@ class MT5Broker(Broker):
                     creds = {"login": int(login), "password": password, "server": server}
                 if not self._initialize(getattr(self, "terminal_path", None), creds):
                     return False, f"MT5 not reachable ({self.mt5.last_error()})"
+                self.attaches += 1                        # a re-attached terminal, even when this call says ok
                 info = self.mt5.account_info()
             except TerminalRefused as exc:                # another account, or none to read: a window says it in a line
                 return False, exc.short                   # (fixcheck3: the command line's advice reached the heartbeat)

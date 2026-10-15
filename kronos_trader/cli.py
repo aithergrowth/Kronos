@@ -671,7 +671,7 @@ def cmd_watchdog(args) -> int:
 
         tz = settings.session.timezone
         also.append(DailyJob(args.report_at, tz, day_report, state_path=folder / "day_report.json",
-                             on_fail=lambda err: notifier.send(f"📒 The day report could not be built from MT5 ({err}); the guard in the windows is not affected.")))
+                             on_fail=lambda err: notifier.send(f"📒 The day report could not be built from MT5 ({err}); the windows use the same terminal: check them.")))
         print(f"day report: every day at {args.report_at} {tz} ({args.product}, account {args.account_size or settings.account_size:,.0f})")
     dog.run_forever(args.every, also=also)
     return 0

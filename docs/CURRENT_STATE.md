@@ -207,9 +207,11 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
   sent a second time; its zone visit counts as used. A resting limit of the window's market that it has no record of
   is cancelled at every scan; a position on the server it has no record of, opened since the window started, is said
   once on Telegram (its journal row carries the risk, so the forward record counts its R). A limit whose history says
-  filled before its position is listed is asked again next scan, not reported "closed again". After a start, or when the
-  link comes back, an entry waits until the positions have been listed twice: a terminal that has just started can list
-  none yet, and read so a second trade went through the per-market cap.
+  filled before its position is listed is asked again next scan, not reported "closed again". After a start, when the
+  link comes back, or when the window attached a restarted terminal again (also inside one check that never showed the
+  link down), an entry waits until the positions have been listed twice: a terminal that has just started can list
+  none yet, and read so a second trade went through the per-market cap. While it waits, the window's own resting limit
+  is never read as gone and no unrecorded limit is cancelled (an unsynced listing cancelled the window's own limit).
 - **The guard.** The worst case counts the swap the open positions have accrued (FTMO's equity does). A position or
   limit whose loss at the stop the terminal cannot price refuses new entries until it can. The morning check adds the
   room after every open stop ("Na alle open stops"), the number the guard decides on.
@@ -237,4 +239,4 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
 - **Open, for Max to decide:** counting the coming night's swap (a NAS100 4H long into the Friday rollover), the
   finish stake of 0.1 % against the 0.01-lot minimum, an equity protector, a remote pause and automatic window
   restarts. The tests that pin each fix are in `tests/trader/test_review_fixes_15oct.py`,
-  `tests/trader/test_fixcheck3_15oct.py` and `tests/trader/test_whatif_15oct.py`.
+  `tests/trader/test_fixcheck3_15oct.py`, `tests/trader/test_fixcheck4_15oct.py` and `tests/trader/test_whatif_15oct.py`.

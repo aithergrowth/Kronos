@@ -371,6 +371,8 @@ class LiveRunner:
         # second position through the per-market cap, and the guard counted no open risk (fixcheck3). An entry waits for
         # a second listing
         self._listings: Optional[int] = None
+        self._account_start = getattr(broker, "account_login", None)   # the account the window connected on (none: the
+        self._account_told = False                                        # terminal showed none; the first one is said)
         self.link_quiet_minutes: float = 5.0                # a shorter outage stays off Telegram: FTMO's server restarts
                                                             # every night at 23:00 Amsterdam for about a minute
         self._feed_down: bool = False                       # the lowest timeframe went quiet during the session
@@ -1300,23 +1302,35 @@ class LiveRunner:
         cache_dir = Path(self.settings.live.journal_path).parent if self.settings.live.journal_path else None
         max_age = pd.Timedelta(int(n.refresh_minutes), unit="min")
         failed = []
+        fresh: List[Tuple[pd.Timestamp, pd.Timestamp]] = []    # the spans of the weeks read fresh in this refresh
         for week in ("thisweek", "nextweek"):          # next week's file is often missing (404) until late in the week
             cache = cache_dir / f"forexfactory_{week}.csv" if cache_dir is not None else None
             try:
                 if cache is not None and cache.exists() and time.time() - cache.stat().st_mtime < max_age.total_seconds():
-                    calendar.add(load_events(cache))
+                    events = load_events(cache)
+                    calendar.add(events)
+                    if events:
+                        fresh.append((min(e.time for e in events), max(e.time for e in events)))
                     continue
                 events = fetch_forexfactory(week)
                 calendar.add(events)
-                if cache is not None:
-                    save_events(events, cache)
+                if events:
+                    fresh.append((min(e.time for e in events), max(e.time for e in events)))
             except Exception as exc:
                 failed.append(f"{week}: {exc}")
                 if cache is not None and cache.exists():  # an older saved week still blocks its releases (stack review B1:
-                    try:                                  # a restart during an outage used to ignore it); past ones block nothing
-                        calendar.add(load_events(cache))
+                    try:                                  # a restart during an outage used to ignore it); past ones block nothing.
+                        # never inside a week read fresh: last week's "nextweek" file is this week as it was listed then,
+                        # and an event moved or dropped since would block its old slot all week (fixcheck4)
+                        calendar.add([e for e in load_events(cache) if not any(lo <= e.time <= hi for lo, hi in fresh)])
                     except Exception:
                         pass
+                continue
+            if cache is not None:
+                try:                                      # a file another window holds open is no failed refresh
+                    save_events(events, cache)
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: the ForexFactory week was read but not saved ({exc})")
         if len(failed) == 2 and self._news_warned != now.date():
             self._news_warned = now.date()            # once a day is enough: the loaded calendar covers the gap
             last = max((e.time for e in getattr(calendar, "events", []) or []), default=None)
@@ -1364,15 +1378,19 @@ class LiveRunner:
         check = getattr(self.broker, "connection_ok", None)
         if not callable(check):
             return True
-        account = getattr(self.broker, "account_login", None)
+        attaches = getattr(self.broker, "attaches", None)
         try:
             ok, reason = check()
         except Exception as exc:
             ok, reason = False, str(exc)
         now = self.clock()
         taken = getattr(self.broker, "account_login", None)
-        if ok and not account and taken:                  # connected while the terminal showed no account: say which one
+        if ok and not self._account_start and taken and not self._account_told:
+            self._account_told = True                     # connected while the terminal showed no account: say which one,
             self.notifier.send(f"ℹ️ {self.symbol}: MT5 toont nu account {taken}; dit venster handelt vanaf nu op dat account.")
+        if self._listings is not None and attaches is not None and getattr(self.broker, "attaches", None) != attaches:
+            self._listings = 0                            # re-attached (a restarted terminal), also inside one check that
+                                                          # said ok and never showed the link down (fixcheck4)
         if not ok:
             if self._link_down is None:
                 self._link_down_since = now
@@ -1988,8 +2006,11 @@ class LiveRunner:
         that reached the server while its reply was lost (the setup was then reported as failed and never counted)."""
         if self.broker is None or self.dry_run:
             return
+        # a terminal that has just (re)started may list no orders yet: no stray sweep and no "gone" until the positions were
+        # listed twice (fixcheck4: its own resting limit read "gone" and the next scan cancelled it as a stray)
+        held = self._entries_held()
         try:
-            for order in self.broker.limit_orders(self.symbol):
+            for order in ([] if held else self.broker.limit_orders(self.symbol)):
                 if order.id in self.limits:
                     continue
                 when = "at the start" if not self._limits_checked else "now"
@@ -2010,7 +2031,8 @@ class LiveRunner:
                     continue
                 self.note("limit_cancelled", now, id=order.id, reason=f"no record of it ({when})")
                 self.notifier.send(f"🚫 {self.symbol}: limit {order.id} cancelled {when} - this window has no record of it")
-            self._limits_checked = True
+            if not held:
+                self._limits_checked = True
         except Exception as exc:
             print(f"[live] {self.symbol}: could not check the resting limit orders ({exc})")
         changed = False
@@ -2053,6 +2075,8 @@ class LiveRunner:
             if state == "filled":
                 self.limits.pop(oid); changed = True
                 self._limit_filled(oid, info, pos, now)
+            elif state == "gone" and held:
+                continue                                  # not listed by a terminal that may not be synced: ask again
             elif state == "gone" and info.get("cancel_reason"):
                 self.limits.pop(oid); changed = True
                 self.note("limit_cancelled", now, id=oid, reason=info["cancel_reason"])
@@ -2262,7 +2286,8 @@ class LiveRunner:
             # one opened before this window started is a restored one, even when the first listing missed it (fixcheck3)
             opened_since_start = pos.opened_at is not None and pd.Timestamp(pos.opened_at) >= self._started_at
             if (pos.id not in self.known_positions and pos.id not in self.limits and listed_before   # a recorded limit's
-                    and pos.meta.get("restored") and opened_since_start):                        # fill is manage_limits'
+                    and str(pos.meta.get("limit_id", "")) not in self.limits                     # fill (by its order) is
+                    and pos.meta.get("restored") and opened_since_start):                        # manage_limits'
                 # its risk and target as a fill row has them: the forward record counts its R (fixcheck3)
                 self.note("found", self.clock(), id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
                           stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots),
