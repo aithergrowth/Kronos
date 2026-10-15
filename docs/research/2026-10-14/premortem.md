@@ -183,11 +183,15 @@ position's loss from its entry to its stop by the server's own profit calculatio
 (`:139-160`); an unknown day start refuses (`:172-173`), a stopless position refuses (`live.py:1511-1515`), a limit
 resting in the market refuses (`:1518-1525`). Equity at the stop equals balance minus the loss from entry, so the
 worst case is FTMO's number up to three omissions: (a) commissions and swaps ($3 a lot round turn on EURUSD, 0.0325 %
-a side on BTC, gold's swap a few dollars a night: under 0.1 % of the account); (b) slippage and gaps beyond the stop;
+a side on BTC, gold's swap a few dollars a night: under 0.1 % of the account; not so NAS100: a 4H long pays 0.34-0.41 %
+a night and 1.0-1.24 % on the triple night, which the guard counts as accrued since 15 October, stack review A2);
+(b) slippage and gaps beyond the stop;
 (c) **positions not opened by the windows**: `open_positions` keeps only this program's magic number
 (`mt5.py:597`), so a manual position carries no risk and takes no slot in the guard (the day report does count it,
 `forward.py:248-251`). The buffer between the guard's 4 % and FTMO's 5 % is 1 % of the account, $100; between 9.5 %
-and 10 % only $50, but by then the ladder has the stake at 0.5 % (`strategy/risk.py:329-331`).
+and 10 % only $50, and between -5.5 % and -6 % the ladder still has the base at 1.0 % (`strategy/risk.py:329-331`): two
+4H trades at 2 % each are admitted from -5.5 %, and a gap of a quarter stop past both stops breaks the 10 % (stack
+review of 15 October, A20).
 
 **Numbers** (prop_firm.md 3.1, 3.2). At the live stakes 239 FTMO days with a closed trade: 7 days at -3.3 % (a single
 4H loss), one at -6.6 % (two EURUSD 4H longs, the second refused by the worst-case check: 6 %); after a 4H loss the

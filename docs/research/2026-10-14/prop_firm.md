@@ -37,8 +37,10 @@ The replay agrees with the README's challenge numbers in shape (2024-25 starts f
 
 The guard already matches the day definition (`prop_firm.day_timezone: Europe/Prague`), FTMO's balance-based midnight
 reset (`day_start_balance` is the closed balance) and the static floor (`drawdown_basis: initial`). Its worst-case check
-bounds the open risk at any moment to under 4 % of the initial balance, so a position carried over midnight can never
-breach the 5 % day by its stop alone; only a gap or slippage through a stop can.
+bounds the open risk at any moment to under 4 % of the initial balance, so one position carried over midnight cannot
+breach the 5 % day by its stop alone; only a gap or slippage through a stop can. With a second position, or a NAS100
+position's swaps over several nights, the margin is smaller (stack review of 15 October, A2 and A20; the guard counts
+the accrued swap since then).
 
 ## 2. What fails challenges (public evidence)
 

@@ -124,8 +124,9 @@ Only outside the sessions (after 17:30, before 08:30 or at the weekend). Max clo
 Controleer de herstart. Lees de nieuwste journal_ftmo\starts\*.json per markt: dezelfde commit voor alle vier, zonder
 local changes, account_size 10000, risk_pct 1.5, max_open_trades 2, max_open_per_symbol 2 bij EURUSD en 1 bij de rest,
 min_rr EURUSD 1.0, XAUUSD 0.8, NAS100 0.8, BTCUSD 0.5, en (met STOP_AT_TARGET) risk.target_pct 10 en prop_firm.stop_at_target
-true. Zijn de heartbeats vers? Staat in elk venster "telegram=on"? (Een start stuurt zelf geen Telegram-bericht, behalve een
-ℹ️ als MT5's contract anders is dan het profiel; het eerste bericht is de ☀️-ochtendcheck van 08:45.)
+true. Zijn de heartbeats vers? Staat in elk venster "telegram=on"? (Een herstart op een werkdag na 08:45 stuurt meteen de
+☀️-ochtendcheck van elke markt, met grafiek, en na 22:00 ook de avondsamenvatting: dat hoort zo, het zijn de berichten van
+die dag. Verder alleen een ℹ️ als MT5's contract anders is dan het profiel.)
 ```
 
 ## Dates to keep in mind (Max; nothing for Claude Code to do)
