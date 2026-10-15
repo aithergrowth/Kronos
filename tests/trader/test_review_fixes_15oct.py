@@ -507,8 +507,9 @@ def test_a_reconnect_never_switches_the_terminal_either(monkeypatch):
         return real()
     terminal.account_info = info
     ok, reason = broker.connection_ok()
-    assert not ok and "not switching" in reason and terminal.on == 55556666
-    assert all("login" not in c for c in terminal.calls[1:])
+    # a window says it in a line, as after a switch in place; the command line's advice stays with connect() (fixcheck3)
+    assert (ok, reason) == (False, "MT5 is logged in to account 55556666, this window trades 11112222: not trading")
+    assert terminal.on == 55556666 and all("login" not in c for c in terminal.calls[1:])
 
 
 # ---------------------------------------------------------------- 9. the smaller live-path fixes (A10, A12, A15, A17, A19, A28)
@@ -699,7 +700,7 @@ def test_a_refused_reconnect_says_so_and_a_window_without_an_account_adopts_the_
         return real()
     terminal.account_info = info
     ok, reason = broker.connection_ok()
-    assert not ok and reason.startswith("the MT5 terminal") and "not switching" in reason
+    assert (ok, reason) == (False, "MT5 is logged in to account 55556666, this window trades 11112222: not trading")
     late = Starting(on=0)                                      # connected while the terminal had no account yet ...
     for key in ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER"):
         monkeypatch.delenv(key, raising=False)
@@ -712,6 +713,7 @@ def test_a_refused_reconnect_says_so_and_a_window_without_an_account_adopts_the_
     late.on = 11112222
     ok, reason = broker.connection_ok()
     assert not ok and "this window trades 55556666" in reason
+    assert "first account the terminal showed" in reason and "restart the window if 11112222" in reason
 
 
 def test_the_heartbeat_names_the_current_reason_of_an_outage(setup):

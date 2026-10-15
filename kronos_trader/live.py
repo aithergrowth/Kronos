@@ -365,6 +365,12 @@ class LiveRunner:
         self._link_down: Optional[str] = None               # why the broker link is down, while it is
         self._link_down_since: Optional[pd.Timestamp] = None
         self._link_told = False                             # the down message went out (so the back message goes too)
+        self._started_at: pd.Timestamp = self.clock()       # positions opened before this window started are restored ones
+        # position listings since run_forever started or the link came back (None: not counted, a scan run by hand). The
+        # first listing after a terminal (re)start can come before the account's positions are in: read as empty it let a
+        # second position through the per-market cap, and the guard counted no open risk (fixcheck3). An entry waits for
+        # a second listing
+        self._listings: Optional[int] = None
         self.link_quiet_minutes: float = 5.0                # a shorter outage stays off Telegram: FTMO's server restarts
                                                             # every night at 23:00 Amsterdam for about a minute
         self._feed_down: bool = False                       # the lowest timeframe went quiet during the session
@@ -456,7 +462,7 @@ class LiveRunner:
         self.last_analysis = analysis
         self.save_visits(now)
         self.process_decisions(now)
-        if self.deferred and self.broker is not None and not self.dry_run:
+        if self.deferred and self.broker is not None and not self.dry_run and not self._entries_held():
             self.retry_deferred(now)
         self.report_closes()
         # the notices, each on its own: a bug in one of them must never reach the setup below (the pre-mortem of 14 October:
@@ -1204,6 +1210,7 @@ class LiveRunner:
 
     def run_forever(self, poll_seconds: Optional[int] = None) -> None:
         poll = poll_seconds or self.settings.live.poll_seconds
+        self._listings = 0
         while True:
             state, detail = "ok", ""
             try:
@@ -1357,11 +1364,15 @@ class LiveRunner:
         check = getattr(self.broker, "connection_ok", None)
         if not callable(check):
             return True
+        account = getattr(self.broker, "account_login", None)
         try:
             ok, reason = check()
         except Exception as exc:
             ok, reason = False, str(exc)
         now = self.clock()
+        taken = getattr(self.broker, "account_login", None)
+        if ok and not account and taken:                  # connected while the terminal showed no account: say which one
+            self.notifier.send(f"ℹ️ {self.symbol}: MT5 toont nu account {taken}; dit venster handelt vanaf nu op dat account.")
         if not ok:
             if self._link_down is None:
                 self._link_down_since = now
@@ -1379,7 +1390,13 @@ class LiveRunner:
             else:
                 print(f"[live] {self.symbol}: connected again after {minutes:.0f} min")
             self._link_down, self._link_down_since, self._link_told = None, None, False
+            if self._listings is not None:
+                self._listings = 0                        # a restarted terminal: its positions are listed twice again
         return ok
+
+    def _entries_held(self) -> bool:
+        """No entry until the positions were listed twice since run_forever started or the link came back (``_listings``)."""
+        return self._listings is not None and self._listings < 2 and self.broker is not None
 
     def stale_text(self) -> str:
         return ", ".join(f"{tf.label} {_age_text(age)} old" for tf, age in sorted(self.stale.items()))
@@ -1417,6 +1434,11 @@ class LiveRunner:
         key = (setup.poi.key, str(setup.confirmation.timestamp))
         sid = short_id_for(key)
         if key in self.seen or sid in self.seen_ids:
+            return
+        if self._entries_held():
+            # not marked seen: the next scan, with a second listing of the positions, acts on it
+            print(f"[live] {self.symbol}: setup {sid} waits a scan: positions listed {self._listings}x since the start or "
+                  f"the reconnect")
             return
         self.seen.add(key)
         self.seen_ids[sid] = str(now)
@@ -1775,8 +1797,8 @@ class LiveRunner:
             lots = floored
         if lots <= 0:
             why = ("the minimum stop's lots are under the minimum lot" if floor_note else
-                   "stop too wide for the minimum lot at this price")
-            self.note("not_executed", now, id=sid, price=float(price), reason=why)
+                   "stop too wide for the minimum lot")
+            self.note("not_executed", now, id=sid, price=float(price), reason=why if floor_note else f"{why} at this price")
             return f"⛔ {self.symbol}: not executed - {why} at {price:.{self.spec.price_decimals}f}"
         frac = float(getattr(self.settings.risk, "limit_entry_fraction", 0.0) or 0.0)
         at_level = str(getattr(self.settings.risk, "limit_entry_at", "") or "")
@@ -2173,6 +2195,8 @@ class LiveRunner:
         if self.broker is None or not views:
             return
         open_by_id = {p.id: p for p in self.broker.open_positions(self.symbol)}
+        if self._listings is not None:
+            self._listings += 1
         hold = self.settings.exits.max_hold_hours
         ts_hours = float(getattr(self.settings.exits, "time_stop_hours", 0.0) or 0.0)
         ts_r = float(getattr(self.settings.exits, "time_stop_r", -0.5))
@@ -2235,10 +2259,14 @@ class LiveRunner:
         last = lowest.last if lowest is not None else None
         listed_before, self._positions_listed = getattr(self, "_positions_listed", False), True
         for pos in open_by_id.values():
+            # one opened before this window started is a restored one, even when the first listing missed it (fixcheck3)
+            opened_since_start = pos.opened_at is not None and pd.Timestamp(pos.opened_at) >= self._started_at
             if (pos.id not in self.known_positions and pos.id not in self.limits and listed_before   # a recorded limit's
-                    and pos.meta.get("restored")):                                              # fill is manage_limits'
+                    and pos.meta.get("restored") and opened_since_start):                        # fill is manage_limits'
+                # its risk and target as a fill row has them: the forward record counts its R (fixcheck3)
                 self.note("found", self.clock(), id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
-                          stop=float(pos.stop), lots=float(pos.lots), note="on the server without this window's record")
+                          stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots),
+                          risk=float(pos.risk_amount), note="on the server without this window's record")
                 self.notifier.send(f"⚠️ {self.symbol}: position {pos.id} ({pos.direction.name} {pos.lots:.2f} lots @ "
                                    f"{pos.entry:.{d}f}) is on the server without this window's record (a lost order "
                                    f"reply?); its exits are managed from now on")

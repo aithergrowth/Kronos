@@ -72,6 +72,15 @@ def terminal_candidates() -> List[str]:
     return found
 
 
+class TerminalRefused(RuntimeError):
+    """The terminal is not used: it is on another account, or its account cannot be read. The message says what to do
+    from the command line; ``short`` is the line a running window shows (its heartbeat, its Telegram)."""
+
+    def __init__(self, text: str, short: str):
+        super().__init__(text)
+        self.short = short
+
+
 class MT5Broker(Broker):
     def __init__(self, settings: Optional[Settings] = None, params: Optional[MT5Params] = None,
                  api=None, connect: bool = True, clock=None):
@@ -88,6 +97,7 @@ class MT5Broker(Broker):
         self.clock = clock or utc_now
         self._positions: Dict[str, Position] = {}
         self._limits: Dict[str, LimitOrder] = {}          # limit entries this window placed (what the server cannot tell back)
+        self._unlisted: Dict[str, pd.Timestamp] = {}      # filled limits whose position is not listed yet: since when
         self._closed: List[ClosedTrade] = []
         self._close_cursor = 0
         self._offset: Optional[pd.Timedelta] = None
@@ -96,6 +106,7 @@ class MT5Broker(Broker):
         self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
         self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
         self.account_login: Optional[int] = None
+        self._adopted: Optional[int] = None        # the account connection_ok took on (none when the window connected)
         self._sleep = time.sleep                  # the pause between connection attempts (tests replace it)
         if connect:
             self.connect()
@@ -171,10 +182,12 @@ class MT5Broker(Broker):
             err = self.mt5.last_error()
             if (err[0] if isinstance(err, (tuple, list)) and err else err) != -6:
                 return False                              # no answer (IPC, not found): connect() waits and asks again
-            raise RuntimeError(f"MT5 initialize failed for login {creds['login']} on {creds.get('server')}: {where} "
-                               f"answers {err} (Authorization failed: it shows no account). The credentials are never "
-                               f"sent to a terminal whose account cannot be read: log it in by hand (File > Login to "
-                               f"Trade Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER")
+            raise TerminalRefused(f"MT5 initialize failed for login {creds['login']} on {creds.get('server')}: {where} "
+                                  f"answers {err} (Authorization failed: it shows no account). The credentials are never "
+                                  f"sent to a terminal whose account cannot be read: log it in by hand (File > Login to "
+                                  f"Trade Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER",
+                                  f"MT5 shows no account (authorization failed): log the terminal in to {creds['login']} "
+                                  f"by hand")
         current = 0
         for wait in (0,) + (2,) * 30:                     # a terminal that is just starting logs in to its account first
             if wait:
@@ -185,15 +198,18 @@ class MT5Broker(Broker):
                 break
         if current and current != int(creds["login"]):
             self.mt5.shutdown()
-            raise RuntimeError(f"{where} is logged in to account {current}, MT5_LOGIN is {creds['login']}: not switching "
-                               f"it (that would take it off its own account). Clear MT5_LOGIN, MT5_PASSWORD and "
-                               f"MT5_SERVER to use account {current}, or set MT5_PATH to the terminal of login "
-                               f"{creds['login']}")
+            raise TerminalRefused(f"{where} is logged in to account {current}, MT5_LOGIN is {creds['login']}: not "
+                                  f"switching it (that would take it off its own account). Clear MT5_LOGIN, MT5_PASSWORD "
+                                  f"and MT5_SERVER to use account {current}, or set MT5_PATH to the terminal of login "
+                                  f"{creds['login']}",
+                                  f"MT5 is logged in to account {current}, this window trades {creds['login']}: not "
+                                  f"trading")
         if not current:
             self.mt5.shutdown()
-            raise RuntimeError(f"{where} shows no account after a minute: the credentials are never sent to a terminal "
-                               f"whose account cannot be read. Log it in by hand (File > Login to Trade Account) to "
-                               f"{creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER")
+            raise TerminalRefused(f"{where} shows no account after a minute: the credentials are never sent to a "
+                                  f"terminal whose account cannot be read. Log it in by hand (File > Login to Trade "
+                                  f"Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER",
+                                  f"MT5 shows no account after a minute: log the terminal in to {creds['login']} by hand")
         term = self.mt5.terminal_info()
         if term is None or getattr(term, "connected", True):
             return True
@@ -584,7 +600,9 @@ class MT5Broker(Broker):
                 if not self._initialize(getattr(self, "terminal_path", None), creds):
                     return False, f"MT5 not reachable ({self.mt5.last_error()})"
                 info = self.mt5.account_info()
-            except RuntimeError as exc:                   # _initialize refused another account: say that, not "unreachable"
+            except TerminalRefused as exc:                # another account, or none to read: a window says it in a line
+                return False, exc.short                   # (fixcheck3: the command line's advice reached the heartbeat)
+            except RuntimeError as exc:
                 return False, str(exc)
             except Exception as exc:
                 return False, f"MT5 not reachable ({exc})"
@@ -596,8 +614,14 @@ class MT5Broker(Broker):
             # the terminal had no account when the window connected (still logging in): the first one it shows is this
             # window's, so a later switch is noticed (15 October fix check: the check was blind for such a window)
             self.account_login = expected = got
+            self._adopted = got
+            print(f"[mt5] the terminal shows account {got} ({getattr(info, 'server', '')}): this window trades it from now on")
         if expected and got and got != expected:
-            return False, f"MT5 is logged in to account {got}, this window trades {expected}: not trading"
+            # a taken-on account is refused for good as well: say that it was taken on, and the two ways out (fixcheck3)
+            hint = (f" ({expected} is the first account the terminal showed after this window started: log the terminal "
+                    f"back in to {expected}, or restart the window if {got} is the account to trade)"
+                    if self._adopted == expected else "")
+            return False, f"MT5 is logged in to account {got}, this window trades {expected}: not trading{hint}"
         term = self.mt5.terminal_info()
         if term is not None and not getattr(term, "connected", True):
             return False, "MT5 is not connected to its trade server"
@@ -839,9 +863,9 @@ class MT5Broker(Broker):
             err = mt5.last_error()                                   # the send's own error: the lookup's calls replace it
             ticket = self._placed_limit_ticket(symbol, request)      # the server may hold it: find it, never send it twice
             if not ticket:
-                what = ("no answer from the terminal" if result is None else
+                what = (f"no answer from the terminal ({err})" if result is None else      # a 10012 reply's own error
                         f"the request timed out on the server (retcode {result.retcode} {getattr(result, 'comment', '')})")
-                raise RuntimeError(f"{symbol} limit order: {what} ({err}) and not found on the server within "
+                raise RuntimeError(f"{symbol} limit order: {what} and not found on the server within "
                                    f"{2 * self.retry_seconds:g} s; not sent again - it may still appear there")
         elif result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not ticket:
             raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
@@ -971,9 +995,19 @@ class MT5Broker(Broker):
             except Exception:
                 hist = []
             if hist and int(getattr(hist[-1], "state", -1)) == getattr(self.mt5, "ORDER_STATE_FILLED", 4):
+                pid = str(int(getattr(hist[-1], "position_id", 0) or 0) or oid)
+                # the terminal does not update at once: its history can say FILLED before the position is listed. Closed
+                # again only when a deal closed it; else no answer, the runner asks again next scan (fixcheck3: a fill
+                # read as "closed again" and, after a restart, a false "found" alarm on the next scan)
+                try:
+                    closed = any(d.entry == self.mt5.DEAL_ENTRY_OUT for d in (self.mt5.history_deals_get(position=int(pid)) or ()))
+                except Exception:
+                    closed = False
+                if not closed and self.clock() - self._unlisted.setdefault(oid, self.clock()) < pd.Timedelta(minutes=2):
+                    raise RuntimeError(f"limit {oid} filled, its position {pid} is not listed yet")
+                self._unlisted.pop(oid, None)             # closed, or still unlisted after 2 minutes: read as before
                 # filled and closed again between two scans: tracked from its order so that recent_closes reports the close
                 known = self._limits.pop(oid, None)
-                pid = str(int(getattr(hist[-1], "position_id", 0) or 0) or oid)
                 if known is not None and pid not in self._positions:
                     entry, opened = known.price, known.placed_at
                     try:

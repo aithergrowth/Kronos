@@ -205,7 +205,11 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
 
 - **Orders.** A limit order whose reply is lost is looked up on the server for 2 s (an instant fill included) and never
   sent a second time; its zone visit counts as used. A resting limit of the window's market that it has no record of
-  is cancelled at every scan; a position on the server it has no record of is said once on Telegram.
+  is cancelled at every scan; a position on the server it has no record of, opened since the window started, is said
+  once on Telegram (its journal row carries the risk, so the forward record counts its R). A limit whose history says
+  filled before its position is listed is asked again next scan, not reported "closed again". After a start, or when the
+  link comes back, an entry waits until the positions have been listed twice: a terminal that has just started can list
+  none yet, and read so a second trade went through the per-market cap.
 - **The guard.** The worst case counts the swap the open positions have accrued (FTMO's equity does). A position or
   limit whose loss at the stop the terminal cannot price refuses new entries until it can. The morning check adds the
   room after every open stop ("Na alle open stops"), the number the guard decides on.
@@ -216,12 +220,15 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
 - **Exits.** Break-even reads only fresh bars from the terminal (never the TradingView cache, never a candle before the
   fill, a market fill's own candle included). A refused time exit is retried every scan while the market trades and
   every 15 minutes while it is shut. The exits run even in a scan where the account read fails.
-- **The terminal.** A window never logs a terminal in to another account: credentials go only to a terminal without an
-  account (after a minute) or on that same login without its server; a terminal on another login is refused. A window
-  that connected before the terminal had an account adopts the first one it shows.
+- **The terminal.** A window never logs a terminal in to another account, and never sends credentials to a terminal
+  whose account it cannot read (still starting after a minute, or at "authorization failed": log it in by hand);
+  credentials only log a terminal in again to the login it shows when it lost its server. A terminal on another login
+  is refused, in one line on the heartbeat and Telegram. A window that connected before the terminal had an account
+  adopts the first one it shows and says which on Telegram.
 - **Messages and records.** Guard refusals are journaled; a close without a price books the closing deal's; the 22:05
-  report reads a flat account, and fails loudly when money moved and no trade is listed (an unloaded history). The
-  heartbeat names the current reason of an outage.
+  report reads a flat account, and fails loudly only when money moved and the deal history lists nothing at all (an
+  unloaded history; a balance correction or trades before the range are read). `ftmo_report.bat` opens the page only
+  when that run wrote it. The heartbeat names the current reason of an outage.
 - **The morning check's "Trade als" line:** what the next hour's close would have to be for a trade (with the 4H and
   the day when they close with it), as a band where a close beyond it reads 50/50 again; nothing about a later close,
   which depends on the hours in between.
@@ -229,5 +236,5 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
   back on the saved week.
 - **Open, for Max to decide:** counting the coming night's swap (a NAS100 4H long into the Friday rollover), the
   finish stake of 0.1 % against the 0.01-lot minimum, an equity protector, a remote pause and automatic window
-  restarts. The tests that pin each fix are in `tests/trader/test_review_fixes_15oct.py` and
-  `tests/trader/test_whatif_15oct.py`.
+  restarts. The tests that pin each fix are in `tests/trader/test_review_fixes_15oct.py`,
+  `tests/trader/test_fixcheck3_15oct.py` and `tests/trader/test_whatif_15oct.py`.

@@ -18,5 +18,6 @@ set MT5_PASSWORD=
 set MT5_SERVER=
 set "PY=.\.venv\Scripts\python.exe"
 %PY% -m kronos_trader --config config/dorus_live.yaml forward-report --journal journal_ftmo/trades.csv --product %PRODUCT% --account-size %ACCOUNT% --mt5-names NAS100=%NAS_NAME%,BTCUSD=%BTC_NAME%
-if exist "journal_ftmo\report\forward_report.html" start "" "journal_ftmo\report\forward_report.html"
+rem only a report this run wrote: after a refused read the page of the last good run would show its figures as tonight's
+if not errorlevel 1 if exist "journal_ftmo\report\forward_report.html" start "" "journal_ftmo\report\forward_report.html"
 pause

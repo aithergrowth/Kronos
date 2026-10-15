@@ -532,12 +532,14 @@ def _forward_record(settings: Settings, journal_path, since=None, product: str =
         account = account_from_mt5(broker)
         if not _lists_a_trade(deals) and abs(float(account["balance"]) - initial) > 0.01:
             # money moved but no trade is listed: a deal history the terminal has not loaded yet answers "not found" too
-            # (15 October fix check), and read as empty it gave the day's start without its losses: ask again, then fail
+            # (15 October fix check), and read as empty it gave the day's start without its losses: ask again, then fail.
+            # A loaded history holds the account's deposit: only one without any deal is unloaded (fixcheck3: a balance
+            # correction, trades before the range, --since or another --account-size read as "not loaded")
             _pause(2.0)
+            if not len(deals_from_mt5(broker, pd.Timestamp("2000-01-01"))):
+                raise RuntimeError(f"MT5 lists no deal at all while the balance is {float(account['balance']):,.2f} "
+                                   f"against {initial:,.2f}: the deal history is not loaded, the day's result is unknown")
             deals = deals_from_mt5(broker, since)
-            if not _lists_a_trade(deals):
-                raise RuntimeError(f"MT5 lists no trade while the balance is {float(account['balance']):,.2f} against "
-                                   f"{initial:,.2f}: the deal history is not loaded, the day's result is unknown")
     finally:
         broker.disconnect()
     rec = reconcile(journal, deals, magic=broker.magic)
@@ -669,7 +671,7 @@ def cmd_watchdog(args) -> int:
 
         tz = settings.session.timezone
         also.append(DailyJob(args.report_at, tz, day_report, state_path=folder / "day_report.json",
-                             on_fail=lambda err: notifier.send(f"📒 The day report could not read the account from MT5 ({err}).")))
+                             on_fail=lambda err: notifier.send(f"📒 The day report could not be built from MT5 ({err}); the guard in the windows is not affected.")))
         print(f"day report: every day at {args.report_at} {tz} ({args.product}, account {args.account_size or settings.account_size:,.0f})")
     dog.run_forever(args.every, also=also)
     return 0

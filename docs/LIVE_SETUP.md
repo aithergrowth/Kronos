@@ -75,7 +75,10 @@ and the demo's login out of it: `Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:
 command used to log the FTMO terminal in to the demo, and the four windows stopped trading until it was logged back by
 hand. Since 15 October the command refuses that when the terminal answers with its own account ("logged in to account
 ..., MT5_LOGIN is ...: not switching it"), and it never sends the login to a terminal whose account it cannot read
-(still starting after a minute, or at "authorization failed"); still, clear the variables first.
+(still starting after a minute, or at "authorization failed"); still, clear the variables first. A window that started
+while the terminal showed no account trades the first one it shows and says so once on Telegram ("MT5 toont nu account
+..."): check that number. After its start, and after the link comes back, a window takes its first entry only once it
+has listed the positions twice (a scan later): a terminal that has just started can list none yet.
 
 **FTMO's spreads.** `mt5-spreads` puts the server's spread per market beside the backtest's and the 30 % cap: now
 (`--minutes 10`), or for a past day's session windows from the terminal's tick history (`--day 2026-10-07`), so nobody

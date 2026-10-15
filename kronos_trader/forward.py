@@ -144,7 +144,8 @@ def reconcile(journal: pd.DataFrame, deals: pd.DataFrame, magic: Optional[int] =
     id; its ``setup`` row (the id in the fill's note) gives the plan, the last ``start`` row of the symbol before the
     fill the code. ``source`` is "bot" for a journal match or the bot's magic number, else "other"."""
     trades = deals[deals["type"].isin([BUY, SELL]) & (deals["position_id"] > 0)] if len(deals) else deals
-    fills = journal[journal["event"].isin(["filled", "submitted"])] if len(journal) else journal
+    # "found": a position on the server without the window's record (a lost order reply), with its risk since fixcheck3
+    fills = journal[journal["event"].isin(["filled", "submitted", "found"])] if len(journal) else journal
     fills = fills.drop_duplicates("id", keep="first").set_index("id") if len(fills) else fills
     setups = journal[journal["event"] == "setup"].drop_duplicates("id", keep="last").set_index("id") if len(journal) else journal
     starts = journal[journal["event"] == "start"].sort_values("time") if len(journal) else journal
