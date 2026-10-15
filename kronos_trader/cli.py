@@ -479,7 +479,9 @@ def cmd_live(args) -> int:
         steps += (f", half from +{settings.risk.target_pct - settings.risk.target_protect_pct:g}% (target +{settings.risk.target_pct:g}%)")
     print(f"guard: account {settings.account_size:,.0f}, risk {settings.risk.risk_pct}% a trade{steps}, stop at a day of -{pf.daily_loss_limit_pct}%{month} "
           f"or -{pf.max_drawdown_pct}% from the {dict(initial='start', peak='peak', day_high='highest day-start balance').get(pf.drawdown_basis, pf.drawdown_basis)}, max {pf.max_open_trades} open "
-          f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else ""))
+          f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else "")
+          + (f"; at the target +{settings.risk.target_pct:g}% no new trade after {pf.min_trading_days} trading days "
+             f"({pf.finish_risk_pct:g}% a trade before)" if pf.stop_at_target else ""))
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
             balance = float(broker.balance())
