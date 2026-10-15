@@ -470,10 +470,28 @@ class MT5Broker(Broker):
         meta: Dict[str, Any] = {"comment": comment, "restored": True}
         if poi_tf is not None:
             meta["poi_tf"] = poi_tf.label
+        opener = self._opening_limit(p.ticket)           # a limit fill, whatever the server kept of the comment (fixcheck2 s12)
+        if opener:
+            meta["limit_id"] = opener
         return Position(id=str(p.ticket), symbol=symbol, direction=direction, lots=float(p.volume),
                         entry=entry, stop=sl, take_profit=float(p.tp or 0.0), opened_at=self.to_utc(p.time),
                         risk_amount=risk_amount, risk_distance=risk_distance, breakeven_r=breakeven_r, initial_stop=initial,
                         meta=meta)
+
+    def _opening_limit(self, ticket) -> str:
+        """The ticket of the limit order that opened position ``ticket`` ("" for a market order or when unknown)."""
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is None:
+            return ""
+        try:
+            orders = list(get(position=int(ticket)) or [])
+        except Exception:
+            return ""
+        kinds = {getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2), getattr(self.mt5, "ORDER_TYPE_SELL_LIMIT", 3)}
+        for o in orders:
+            if int(getattr(o, "type", -1)) in kinds:
+                return str(getattr(o, "ticket", "") or "")
+        return ""
 
     def _original_stop(self, ticket) -> Optional[float]:
         """The stop of the order that opened position ``ticket`` (history_orders_get), None when the terminal cannot say."""
@@ -1011,8 +1029,10 @@ class MT5Broker(Broker):
             pnl = float(getattr(p, "profit", 0.0) or 0.0) + self._deal_pnl(deals)  # profit and the entry's commission
         # a reply without a price (15 October stack review, A19) booked exit 0: the closing deal's price, else the request's
         exit_price = float(getattr(result, "price", 0.0) or 0.0)
-        if exit_price <= 0:
-            outs = [d for d in deals if d.entry == mt5.DEAL_ENTRY_OUT and float(getattr(d, "price", 0.0) or 0.0) > 0]
+        if exit_price <= 0:                 # the reply's own deal, else the newest closing deal, else the request's price
+            own = [d for d in deals if int(getattr(d, "ticket", 0) or 0) == int(getattr(result, "deal", 0) or -1)]
+            outs = own or [d for d in deals if d.entry == mt5.DEAL_ENTRY_OUT and float(getattr(d, "price", 0.0) or 0.0) > 0]
+            outs = [d for d in outs if float(getattr(d, "price", 0.0) or 0.0) > 0]
             exit_price = float(outs[-1].price) if outs else float(request["price"])
         return self._finish(pos, exit_price, reason, ts, pnl)
 

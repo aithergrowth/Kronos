@@ -792,3 +792,75 @@ def test_a_failed_forexfactory_read_falls_back_on_the_saved_week_whatever_its_ag
     LiveRunner(settings, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), engine=engine,
                clock=lambda: NOW).refresh_news(NOW)
     assert [e.title for e in added] == ["Retail Sales MoM"]
+
+
+# ---------------------------------------------------------------- 12. the loop changes' check (fixcheck2 loop_changes)
+def test_a_feed_outage_while_the_market_trades_does_not_slow_a_refused_exit(setup):
+    """No fresh bars (the feed failed) reads as 'shut', but only the server's 10018 is a closed market: a close refused
+    with 10021 (no quotes) is tried every scan, so a funded Friday close is not pushed past the close."""
+    class Refusing(Server):
+        tries = 0
+
+        def close_position(self, *args, **kwargs):
+            Refusing.tries += 1
+            if Refusing.tries <= 3:
+                raise RuntimeError("close failed: retcode 10021 No quotes")
+            return super().close_position(*args, **kwargs)
+    settings = Settings()
+    settings.exits.max_hold_hours = 1.0
+    broker = Refusing(settings)
+    broker.set_price("EURUSD", 1.1)
+    broker.place_market_order("EURUSD", Direction.LONG, 1.0, 1.0949, 1.1200, 1000.0, 0.0051, 4.0, price=1.1,
+                              ts=NOW - pd.Timedelta(hours=2))
+    clock = {"now": NOW}
+    runner = LiveRunner(settings, "EURUSD", lambda: {}, broker=broker, notifier=TelegramNotifier(dry_run=True),
+                        engine=FakeEngine(setup), dry_run=False, clock=lambda: clock["now"], require_approval=False)
+    views = {T.MIN_15: CandleSeries.from_records([(1.1, 1.101, 1.099, 1.1)] * 3, T.MIN_15, start="2026-10-01 08:15", symbol="EURUSD")}
+    for minute in range(6):
+        clock["now"] = NOW + pd.Timedelta(minutes=minute)
+        runner.stale = {T.MIN_15: pd.Timedelta(hours=1)}               # the feed is down: no fresh bars
+        runner.manage_positions(views)
+    assert Refusing.tries == 4 and broker.open_positions() == []
+
+
+def test_a_stray_limit_whose_cancel_is_refused_backs_off(setup, tmp_path):
+    from tests.trader.test_live import _limit_runner
+    runner, broker, notifier = _limit_runner(setup, tmp_path)
+    runner.engine.calls = 1                                             # no signal: only the sweep runs
+    stray = broker.place_limit_order("EURUSD", Direction.LONG, 0.5, 1.0950, 1.0900, 1.1100, 250.0, 0.005, 4.0,
+                                     NOW + pd.Timedelta(hours=1), ts=NOW)
+    asked = []
+
+    def refused(order_id):
+        asked.append(order_id)
+        raise RuntimeError("retcode 10018 Market closed")
+    broker.cancel_limit = refused
+    for minute in range(30):
+        runner.manage_limits(NOW + pd.Timedelta(minutes=minute))
+    assert len(asked) == 4                                              # minutes 0, 1, 2 and 17 (not 30 requests)
+    assert len([m for m in notifier.sent if f"limit {stray.id} is not this window's" in m]) == 1
+
+
+def test_the_room_after_the_stops_never_shows_more_than_the_equity_room_nor_with_a_stopless_position(setup):
+    broker = PaperBroker(Settings())
+    broker.set_price("EURUSD", 1.1)
+    pos = broker.place_market_order("EURUSD", Direction.SHORT, 1.0, 1.11, 1.09, 1000.0, 0.0101, 4.0, price=1.1, ts=NOW)
+    pos.stop = 0.0                                                      # a position without a stop: no room to show
+    runner, notifier = _runner(setup, broker, require_approval=False)
+    runner.step(NOW)
+    morning = [m for m in notifier.sent if m.startswith("☀️")]
+    assert len(morning) == 1 and "Na alle open stops" not in morning[0]
+
+
+def test_a_restored_limit_fill_is_known_as_one_from_the_order_history():
+    """After a restart a limit fill is told from a market fill by the order that opened it, not only by its comment
+    (a server may cut the comment): break-even then never reads its own candle from before the fill."""
+    api = LimitMT5()
+    broker = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    order = broker.place_limit_order("EURUSD", Direction.LONG, 1.0, 1.0990, 1.0950, 1.1200, 344.0, 0.0041, 4.0,
+                                     NOW + pd.Timedelta(hours=4), meta={"comment": "4HPOI balance_shift L"}, ts=NOW)
+    api.fill(int(order.id))
+    api.positions[-1].comment = "4HPOI"                                 # the server kept only part of it
+    restarted = MT5Broker(Settings(), api=api, clock=lambda: NOW)
+    pos = restarted.open_positions("EURUSD")[0]
+    assert pos.meta.get("restored") and pos.meta.get("limit_id") == order.id

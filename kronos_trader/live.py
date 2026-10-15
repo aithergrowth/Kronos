@@ -440,14 +440,18 @@ class LiveRunner:
                 print(f"[live] {self.symbol}: guard update failed ({exc})")
         # exits first and on their own: a failing analysis (an engine error on one day's data), or an account the terminal
         # did not give this once, must not keep a trade past its time limit, its weekend close or its break-even
+        exits_failed = False
         try:
             self.manage_positions(views)
             self.manage_limits(now)
             self.report_closes()
         except Exception as exc:
+            exits_failed = True
             self.report_loop_error(exc)
         if unread is not None:
-            raise RuntimeError(f"the account could not be read ({unread!r}); the exits were handled, no entry this scan")
+            raise RuntimeError(f"the account could not be read ({unread!r}); "
+                               f"{'the exits failed as well (see the error before)' if exits_failed else 'the exits were handled'}, "
+                               f"no entry this scan")
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
         self.save_visits(now)
@@ -634,6 +638,8 @@ class LiveRunner:
                 lines.append(f"🛡 Ruimte: vandaag nog {day_room:.1f}% (grens {g.params.daily_loss_limit_pct:g}%), totaal nog "
                              f"{total_room:.1f}% (grens {g.params.max_drawdown_pct:g}%) · balans {balance:,.0f}, equity {equity:,.0f}")
                 room = g.worst_case_room(self.broker) if self.broker is not None else None
+                if room is not None:            # the guard also refuses on the equity: never more room than that line shows
+                    room = (min(room[0], day_room), min(room[1], total_room))
                 if room is not None and abs(room[0] - day_room) >= 0.05:       # open stops or swaps: what the guard decides on
                     lines.append(f"🛡 Na alle open stops: vandaag nog {room[0]:.1f}%, totaal nog {room[1]:.1f}% "
                                  f"(daarop beslist de bewaker over een nieuwe trade)")
@@ -1254,11 +1260,20 @@ class LiveRunner:
         import traceback
         traceback.print_exception(type(exc), exc, exc.__traceback__)
         text, now = f"{type(exc).__name__}: {exc}", time.time()
-        last = self._loop_error
-        if last is not None and last[0] == text and now - last[1] < 1800:
-            self._loop_error = (text, last[1], last[2] + 1)
+        # one throttle per error text (fixcheck2 loop_changes s06 b: two errors alternating in one scan, the exits' and
+        # the unread account's, reset a single remembered text every call and sent two messages a minute)
+        seen = getattr(self, "_loop_errors", None)
+        if seen is None:
+            seen = self._loop_errors = {}
+        last = seen.get(text)
+        if last is not None and now - last[0] < 1800:
+            last[1] += 1
+            self._loop_error = (text, last[0], last[1])
             return
-        again = f" (also {last[2]}x since the last message)" if last is not None and last[0] == text and last[2] else ""
+        again = f" (also {last[1]}x since the last message)" if last is not None and last[1] else ""
+        for old in [k for k, v in seen.items() if now - v[0] > 86400]:
+            seen.pop(old)
+        seen[text] = [now, 0]
         self._loop_error = (text, now, 0)
         self.notifier.send(f"⚠️ {self.symbol}: live loop error: {exc}{again}")
 
@@ -1660,7 +1675,7 @@ class LiveRunner:
             self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {have} van {p.min_trading_days} handelsdagen. "
                                f"Nieuwe trades op {p.finish_risk_pct:g}% tot de {p.min_trading_days} dagen er zijn.")
 
-    NO_PLANNED_RISK = "the trade's risk could not be computed (the terminal did not answer); not executed, next scan again"
+    NO_PLANNED_RISK = "the trade's risk could not be computed (the terminal did not answer); not executed (this setup is not retried)"
 
     def _can_open(self, setup: TradeSetup, now: pd.Timestamp) -> Tuple[bool, str]:
         """The guard's answer for ``setup``, a refusal when its risk is unknown or a position of the account has no stop
@@ -1918,7 +1933,9 @@ class LiveRunner:
             rows = [{"id": oid, **{k: (str(v) if isinstance(v, pd.Timestamp) else v) for k, v in info.items()}}
                     for oid, info in self.limits.items()]
             self.limits_path.parent.mkdir(parents=True, exist_ok=True)
-            self.limits_path.write_text(json.dumps(rows), encoding="utf-8")
+            tmp = self.limits_path.with_suffix(".tmp")       # a window killed mid-write must not lose its limits' records
+            tmp.write_text(json.dumps(rows), encoding="utf-8")
+            os.replace(tmp, self.limits_path)
         except Exception as exc:
             print(f"[live] {self.symbol}: could not write {self.limits_path} ({exc})")
 
@@ -1948,14 +1965,20 @@ class LiveRunner:
                 if order.id in self.limits:
                     continue
                 when = "at the start" if not self._limits_checked else "now"
+                retry = getattr(self, "_stray_retry", {}).get(order.id)
+                if retry is not None and now < retry[1]:
+                    continue                    # a refused cancel backs off as a refused close does (fixcheck2 s04 a)
                 try:
                     self.broker.cancel_limit(order.id)
                 except Exception as exc:
-                    print(f"[live] {self.symbol}: cancel of the unrecorded limit {order.id} failed ({exc}); trying again next scan")
+                    tries = (retry[0] if retry is not None else 0) + 1
+                    self.__dict__.setdefault("_stray_retry", {})[order.id] = (
+                        tries, now + pd.Timedelta(minutes=15 if tries >= 3 else 1))
+                    print(f"[live] {self.symbol}: cancel of the unrecorded limit {order.id} failed ({exc}); trying again later")
                     if order.id not in self._stray_warned:
                         self._stray_warned.add(order.id)
                         self.notifier.send(f"⚠️ {self.symbol}: limit {order.id} is not this window's and could not be "
-                                           f"cancelled ({exc}); trying again every scan, look at MT5's Trade tab")
+                                           f"cancelled ({exc}); trying again (every 15 min after three tries), look at MT5's Trade tab")
                     continue
                 self.note("limit_cancelled", now, id=order.id, reason=f"no record of it ({when})")
                 self.notifier.send(f"🚫 {self.symbol}: limit {order.id} cancelled {when} - this window has no record of it")
@@ -1968,8 +1991,8 @@ class LiveRunner:
         if target is not None:          # a limit placed before the target stands carries the full stake: only finish-sized ones stay
             try:
                 finish_cap = float(self.broker.equity()) * float(self.settings.prop_firm.finish_risk_pct) / 100.0 * 1.05
-            except Exception:
-                finish_cap = 0.0
+            except Exception:   # the equity unread (since A15 this runs in such a scan): the balance target_state just read
+                finish_cap = float(target[2]) * float(self.settings.prop_firm.finish_risk_pct) / 100.0 * 1.05
         for oid, info in list(self.limits.items()):
             try:
                 state, pos = self.broker.limit_state(oid)
@@ -1984,9 +2007,15 @@ class LiveRunner:
                     continue
                 try:
                     self.broker.cancel_limit(oid)
-                    state, pos = self.broker.limit_state(oid)       # it may have filled while it was being cancelled
                 except Exception as exc:
                     print(f"[live] {self.symbol}: cancel of limit {oid} failed ({exc}); trying again next scan")
+                    continue
+                info["cancel_reason"] = reason                      # a later "gone" is this cancel (fixcheck2 s07 a)
+                try:
+                    state, pos = self.broker.limit_state(oid)       # it may have filled while it was being cancelled
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: limit {oid} cancelled ({reason}), its state unknown ({exc}); asking again next scan")
+                    changed = True
                     continue
                 if state != "filled":
                     self.limits.pop(oid); changed = True
@@ -1996,6 +2025,10 @@ class LiveRunner:
             if state == "filled":
                 self.limits.pop(oid); changed = True
                 self._limit_filled(oid, info, pos, now)
+            elif state == "gone" and info.get("cancel_reason"):
+                self.limits.pop(oid); changed = True
+                self.note("limit_cancelled", now, id=oid, reason=info["cancel_reason"])
+                self.notifier.send(f"🚫 {self.symbol}: limit {oid} cancelled - {info['cancel_reason']}")
             elif state == "gone":
                 self.limits.pop(oid); changed = True
                 self.note("limit_gone", now, id=oid, reason="no longer on the server, not filled")
@@ -2158,8 +2191,11 @@ class LiveRunner:
                 else:
                     continue
                 retry_at = pos.meta.get(f"{reason}_exit_retry_at")
-                if shut and retry_at is not None and now < retry_at:
-                    continue                               # backs off only while the market is shut: fresh bars, try now
+                # backs off only while the market is shut AND the server said so (10018): a feed that failed while the
+                # market trades reads as shut too, and a funded Friday close refused for 3 minutes then waited 15
+                # (fixcheck2 loop_changes s11 D)
+                if shut and pos.meta.get(f"{reason}_exit_closed") and retry_at is not None and now < retry_at:
+                    continue
                 try:
                     self.broker.close_position(pid, reason, ts=now)
                     open_by_id.pop(pid)
@@ -2170,7 +2206,9 @@ class LiveRunner:
                     # ("hyperactivity", 15 October stack review)
                     tries = int(pos.meta.get(f"{reason}_exit_tries", 0)) + 1
                     pos.meta[f"{reason}_exit_tries"] = tries
-                    pos.meta[f"{reason}_exit_retry_at"] = now + pd.Timedelta(minutes=15 if shut and tries >= 3 else 1)
+                    closed = "retcode 10018" in str(exc)          # TRADE_RETCODE_MARKET_CLOSED
+                    pos.meta[f"{reason}_exit_closed"] = closed
+                    pos.meta[f"{reason}_exit_retry_at"] = now + pd.Timedelta(minutes=15 if shut and closed and tries >= 3 else 1)
                     if not pos.meta.get(f"{reason}_exit_failed_sent"):
                         pos.meta[f"{reason}_exit_failed_sent"] = True
                         self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying again every scan "

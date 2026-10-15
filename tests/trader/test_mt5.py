@@ -706,7 +706,8 @@ class LimitMT5(EuroAccountMT5):
     def _drop(self, order, state):
         self.orders.remove(order)
         self.history.append(SimpleNamespace(ticket=order.ticket, position_id=order.ticket if state == self.ORDER_STATE_FILLED else 0,
-                                            state=state, sl=order.sl, time_setup=order.time_setup, time_setup_msc=0))
+                                            state=state, sl=order.sl, time_setup=order.time_setup, time_setup_msc=0,
+                                            type=order.type))
 
     def orders_get(self, symbol=None):
         return [o for o in self.orders if symbol is None or o.symbol == symbol]

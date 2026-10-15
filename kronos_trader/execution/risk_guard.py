@@ -182,6 +182,10 @@ class RiskGuard:
         loss is unknown."""
         if not self.day_known:
             return None
+        # a position without a stop loses without limit, and the window refuses every entry while one is open
+        # (LiveRunner._can_open): no room to show (fixcheck2 loop_changes s09 b)
+        if any(getattr(p, "status", "filled") == "filled" and not p.stop for p in broker.open_positions()):
+            return None
         open_risk, unpriced, swaps = self.open_risk_detail(broker)
         if unpriced:
             return None
@@ -201,7 +205,8 @@ class RiskGuard:
         self.update(ts, equity, balance() if callable(balance) else None)
         p = self.params
         if not self.day_known or (p.monthly_loss_limit_pct and not self.month_known):
-            return False, "the day's start balance is unknown (the terminal's trade history did not answer); asking again every scan"
+            return False, ("the day's start balance is unknown (the terminal's trade history did not answer); no entry until it is "
+                           "known, asked again every scan")
         limits = broker.limit_orders if callable(getattr(broker, "limit_orders", None)) else (lambda symbol=None: [])
         if len(broker.open_positions()) + len(limits()) >= p.max_open_trades:
             return False, f"max {p.max_open_trades} open trade(s) per account (resting limit entries count)"
