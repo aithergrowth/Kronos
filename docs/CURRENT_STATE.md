@@ -197,3 +197,35 @@ Nothing in the live profiles (frozen on 13 October). On the branch, for the next
   planned R:R is at least that risks double, never above twice the laddered stake; the engine, the backtester and the
   live window size on it alike. Meant for the funded account (the challenge replay: faster when it goes well, more stalls
   when not); the profiles do not set it.
+
+## 15 October: the stack review and its fixes (the restart of 15 October, evening)
+
+Every component of the live system was reviewed and each finding attacked by an independent check (three stack
+reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
+
+- **Orders.** A limit order whose reply is lost is looked up on the server for 2 s (an instant fill included) and never
+  sent a second time; its zone visit counts as used. A resting limit of the window's market that it has no record of
+  is cancelled at every scan; a position on the server it has no record of is said once on Telegram.
+- **The guard.** The worst case counts the swap the open positions have accrued (FTMO's equity does). A position or
+  limit whose loss at the stop the terminal cannot price refuses new entries until it can. The morning check adds the
+  room after every open stop ("Na alle open stops"), the number the guard decides on.
+- **Sizing.** When price ran toward the stop before the order went out, the lots are held to those of the profile's
+  minimum stop (the fraction's share of it for a limit); the stop stays and the trade is taken.
+- **Exits.** Break-even reads only fresh bars from the terminal (never the TradingView cache, never a candle before the
+  fill, a market fill's own candle included). A refused time exit is retried every scan while the market trades and
+  every 15 minutes while it is shut. The exits run even in a scan where the account read fails.
+- **The terminal.** A window never logs a terminal in to another account: credentials go only to a terminal without an
+  account (after a minute) or on that same login without its server; a terminal on another login is refused. A window
+  that connected before the terminal had an account adopts the first one it shows.
+- **Messages and records.** Guard refusals are journaled; a close without a price books the closing deal's; the 22:05
+  report reads a flat account, and fails loudly when money moved and no trade is listed (an unloaded history). The
+  heartbeat names the current reason of an outage.
+- **The morning check's "Trade als" line:** what the next hour's close would have to be for a trade (with the 4H and
+  the day when they close with it), as a band where a close beyond it reads 50/50 again; nothing about a later close,
+  which depends on the hours in between.
+- **The news calendar** reaches 31 December (rows checked against the publishers); a failed ForexFactory read falls
+  back on the saved week.
+- **Open, for Max to decide:** counting the coming night's swap (a NAS100 4H long into the Friday rollover), the
+  finish stake of 0.1 % against the 0.01-lot minimum, an equity protector, a remote pause and automatic window
+  restarts. The tests that pin each fix are in `tests/trader/test_review_fixes_15oct.py` and
+  `tests/trader/test_whatif_15oct.py`.
