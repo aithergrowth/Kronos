@@ -175,6 +175,21 @@ class RiskGuard:
                 total += max(0.0, risk)
         return total, unpriced, swaps
 
+    def worst_case_room(self, broker: Broker) -> Optional[Tuple[float, float]]:
+        """``(day, total)``: the room left under the day and total limits, in % of the account, that ``can_open`` decides
+        on: the closed balance with the accrued swaps, less what every open trade and resting limit loses at its stop
+        (15 October stack review, A22: the morning line read the equity alone). None while the day's start or a stop's
+        loss is unknown."""
+        if not self.day_known:
+            return None
+        open_risk, unpriced, swaps = self.open_risk_detail(broker)
+        if unpriced:
+            return None
+        worst = self.last_balance + swaps - open_risk
+        p = self.params
+        return (p.daily_loss_limit_pct - (self.day_start_balance - worst) / self.account_size * 100.0,
+                p.max_drawdown_pct - (self.drawdown_base() - worst) / self.account_size * 100.0)
+
     def can_open(self, broker: Broker, ts: pd.Timestamp, symbol: Optional[str] = None,
                  new_risk: float = 0.0) -> Tuple[bool, str]:
         """``new_risk`` is what the new trade loses at its stop (account currency). The day and static limits are checked

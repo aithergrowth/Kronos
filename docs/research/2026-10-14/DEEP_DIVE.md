@@ -290,7 +290,8 @@ every market is blacked out 14:00-16:00 Amsterdam instead of 14:00-15:00 (item 8
   trades 25, +0.74R a trade against +0.76R elsewhere (out of sample 31, +0.29R against -0.02R): no rule. Nothing in the
   repository sets `MT5_SERVER_OFFSET_HOURS` (`ftmo_local.bat` is git-ignored and must not either). Assumed, not
   verifiable here: FTMO's server follows the US switch.
-- Action: Monday 26 October 09:00-09:15 Amsterdam, read-only: `mt5-test --symbol EURUSD --tf 5m` must print `+3.0 h`
+- Action: Monday 26 October 09:00-09:15 Amsterdam, read-only (MT5_PATH on the FTMO terminal, MT5_LOGIN, MT5_PASSWORD
+  and MT5_SERVER removed from the process first, as `start_ftmo.bat` does): `mt5-test --symbol EURUSD --tf 5m` must print `+3.0 h`
   (`+2.0 h` on 2 November) and the last bar's UTC time on the current five-minute boundary; the four heartbeats with
   `stale` empty and `last_candle` within ten minutes; the 22:00-22:03 console lines on 26 October (`connected again
   after 1 min` = server midnight at 22:00 Amsterdam); the Account MetriX reset countdown pointing at midnight Prague;

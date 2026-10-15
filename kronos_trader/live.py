@@ -349,7 +349,8 @@ class LiveRunner:
         self.deferred: Dict[str, PendingSetup] = {}      # entries the account lock held up: retried every scan until expiry
         self._last_scan_ok: Optional[pd.Timestamp] = None   # for the heartbeat: the last scan that ran through
         self.limits: Dict[str, Dict[str, Any]] = {}      # resting limit entries: order id -> what is needed to watch them
-        self._limits_checked = False                     # the first scan cancels resting limits this window has no record of
+        self._limits_checked = False                     # every scan cancels resting limits this window has no record of
+        self._stray_warned: set = set()                  # unrecorded limits whose cancel failed, said once on Telegram
         self.known_positions: Dict[str, Position] = {}
         self.unconfirmed: Dict[str, Position] = {}       # submitted orders whose fill is not confirmed yet
         self.last_analysis: Optional[Analysis] = None
@@ -425,22 +426,28 @@ class LiveRunner:
         self.check_feed(views, now)
         self.check_algo_trading(now)
         self.refresh_news(now)
-        equity = self.broker.equity() if self.broker is not None else self.settings.account_size
-        if self.broker is not None:
+        unread: Optional[Exception] = None
+        try:
+            equity = self.broker.equity() if self.broker is not None else self.settings.account_size
+        except Exception as exc:         # the terminal did not give the account this once (15 October stack review, A15)
+            equity, unread = None, exc
+        if self.broker is not None and equity is not None:
             try:
                 self.guard.update(now, equity, self.broker.balance())
                 self.sync_day_start()
                 self.save_day_high()
             except Exception as exc:     # a feed hiccup must not stop the loop; the guard re-checks before any order
                 print(f"[live] {self.symbol}: guard update failed ({exc})")
-        # exits first and on their own: a failing analysis (an engine error on one day's data) must not keep a trade past
-        # its time limit, its weekend close or its break-even
+        # exits first and on their own: a failing analysis (an engine error on one day's data), or an account the terminal
+        # did not give this once, must not keep a trade past its time limit, its weekend close or its break-even
         try:
             self.manage_positions(views)
             self.manage_limits(now)
             self.report_closes()
         except Exception as exc:
             self.report_loop_error(exc)
+        if unread is not None:
+            raise RuntimeError(f"the account could not be read ({unread!r}); the exits were handled, no entry this scan")
         analysis = self.engine.analyze(self.symbol, views, equity=equity, now=now, compute_forecasts=False)
         self.last_analysis = analysis
         self.save_visits(now)
@@ -626,6 +633,10 @@ class LiveRunner:
                 total_room = g.params.max_drawdown_pct - g.drawdown_pct(equity)
                 lines.append(f"🛡 Ruimte: vandaag nog {day_room:.1f}% (grens {g.params.daily_loss_limit_pct:g}%), totaal nog "
                              f"{total_room:.1f}% (grens {g.params.max_drawdown_pct:g}%) · balans {balance:,.0f}, equity {equity:,.0f}")
+                room = g.worst_case_room(self.broker) if self.broker is not None else None
+                if room is not None and abs(room[0] - day_room) >= 0.05:       # open stops or swaps: what the guard decides on
+                    lines.append(f"🛡 Na alle open stops: vandaag nog {room[0]:.1f}%, totaal nog {room[1]:.1f}% "
+                                 f"(daarop beslist de bewaker over een nieuwe trade)")
         except Exception as exc:
             print(f"[live] {self.symbol}: briefing stake line failed ({exc})")
         try:        # the windows and what a trade needs
@@ -1370,6 +1381,8 @@ class LiveRunner:
             return
         ok, reason = self._can_open(setup, now)
         if not ok:
+            # journaled too (15 October stack review, A10): the weekly parity check and the evening prompt read the refusal
+            self.note("not_executed", now, id=sid, reason=reason, **sf)
             self.notifier.send_setup(setup, forecast, self.spec)
             self.notifier.send(f"⛔ {self.symbol}: setup NOT executable - {reason}")
             return
@@ -1680,16 +1693,17 @@ class LiveRunner:
         from .strategy.risk import confirmation_label, resize_at, setup_risk, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
         risk_params = self.stake_params(setup)
-        lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
+        equity = self.broker.equity()
+        lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, equity,
                                                                 self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:
             self.note("not_executed", now, id=sid, price=float(price), rr=float(rr_now), reason="price moved, R:R below minimum")
             return (f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}, "
                     f"R:R now 1:{rr_now:.1f} (min {self.settings.risk.min_rr:.0f})")
-        refused = self._stop_too_near(price, setup.stop, lots)
-        if refused:
-            self.note("not_executed", now, id=sid, price=float(price), reason=refused)
-            return f"⛔ {self.symbol}: not executed - price moved to {price:.{self.spec.price_decimals}f}: {refused}"
+        floored, floor_note = self._floored_lots(price, setup.stop, lots, equity, risk_params, self._min_stop_pips())
+        if floor_note:
+            risk_amount *= floored / lots
+            lots = floored
         if lots <= 0:
             self.note("not_executed", now, id=sid, price=float(price), reason="stop too wide for the minimum lot at this price")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at {price:.{self.spec.price_decimals}f}"
@@ -1698,12 +1712,14 @@ class LiveRunner:
         if frac > 0 or at_level == "break_level":        # the same checks at the market price first, as the backtest makes them
             return self._place_limit(setup, now, sid, price, frac, risk_params, at_level)
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
+        if floor_note:
+            resized += f"; {floor_note}"
         if risk_params.risk_pct != self.settings.risk.risk_pct:
             finishing = self.target_state()
             resized += (f"; risk {risk_params.risk_pct:g} % (the phase's target stands: the finish stake)"
                         if finishing is not None and finishing[0] == "finish" else
                         f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)")
-        margin_note = ""
+        margin_note = f" ({floor_note})" if floor_note else ""
         room = self.margin_room(setup.direction, price)
         if room is not None and lots > room[0] + 1e-9:
             fit = round(math.floor(room[0] / self.spec.lot_step + 1e-9) * self.spec.lot_step, 4)
@@ -1712,7 +1728,7 @@ class LiveRunner:
                           f"{lots:.2f} lots wanted, {room[0]:.3f} fit")
                 return (f"⛔ {self.symbol}: not executed - not enough margin for the minimum lot "
                         f"({room[1]:,.0f} available, {self.spec.min_lot:g} lots needed)")
-            margin_note = f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
+            margin_note += f" (margin: lots cut from {lots:.2f}, risk {100 * fit / lots:.0f} % of planned)"
             resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
             risk_amount *= fit / lots
             lots = fit
@@ -1729,18 +1745,27 @@ class LiveRunner:
             return f"⛔ {self.symbol}: order failed - {exc}"
         return pos, sid, risk_amount, risk_params, resized, margin_note
 
-    def _stop_too_near(self, price: float, stop: float, lots: float) -> str:
-        """Why an order at ``price`` must not go out because its stop lies under half the profile's minimum distance, or
-        "". The engine keeps every stop at least ``risk.min_stop_pips`` from the confirmation close, but the order goes
-        out up to a minute later at the tick and is sized on the distance left: a price that ran almost to the stop gave
-        a 1-pip stop at four times the lots, a trade the research never took (15 October stack review). Half the minimum
-        leaves the normal slip of a pip or two alone."""
-        minimum = float(getattr(self.settings.risk, "min_stop_pips", 0.0) or 0.0)
-        distance = abs(float(price) - float(stop)) / self.spec.pip_size
-        if minimum <= 0 or distance >= 0.5 * minimum:
-            return ""
-        return (f"the stop is {distance:.1f} pips away, under half the {minimum:g}-pip minimum "
-                f"({lots:.2f} lots on it); the setup is left")
+    def _min_stop_pips(self) -> float:
+        return float(getattr(self.settings.risk, "min_stop_pips", 0.0) or 0.0)
+
+    def _floored_lots(self, price: float, stop: float, lots: float, equity: float, risk_params, floor_pips: float):
+        """``(lots, note)``: the lots, at most those of a stop ``floor_pips`` away, and a note when that cut them. The
+        engine keeps every stop at least ``risk.min_stop_pips`` from the confirmation close, but the order goes out up to a
+        minute later at the tick and was sized on the distance left: a price that ran almost to the stop gave a 0.8-pip
+        stop at twice the lots, a stop the research never took (15 October stack review, A7). The stop stays where it is
+        and the trade is taken, as the backtest takes it; only its size is held to the research's smallest stop, so the
+        money at the stop comes out under the budget, never over it."""
+        pip = self.spec.pip_size
+        distance = abs(float(price) - float(stop))
+        if floor_pips <= 0 or lots <= 0 or pip <= 0 or distance >= floor_pips * pip - 1e-12:
+            return lots, ""
+        from .strategy.risk import size_position
+        far = float(price) - floor_pips * pip if float(stop) < float(price) else float(price) + floor_pips * pip
+        floored = size_position(equity, float(price), far, self.spec, risk_params)[0]
+        if floored >= lots - 1e-9:
+            return lots, ""
+        return floored, (f"lots {lots:.2f} -> {floored:.2f}: the stop is {distance / pip:.1f} pips away, sized on the "
+                         f"{floor_pips:g}-pip minimum")
 
     # ------------------------------------------------------------ limit entries (risk.limit_entry_fraction)
     def _place_limit(self, setup: TradeSetup, now: pd.Timestamp, sid: str, price: float, frac: float, risk_params, at_level: str = ""):
@@ -1752,15 +1777,20 @@ class LiveRunner:
         raw, mode = limit_entry_price(setup, price, frac, at_level)
         limit = self.spec.round_price(raw)
         self._limit_mode = mode
-        lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, self.broker.equity(),
+        self._limit_note = ""
+        equity = self.broker.equity()
+        lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, equity,
                                                             self.spec, risk_params)
         if rr < self.settings.risk.min_rr:
             self.note("not_executed", now, id=sid, price=float(limit), rr=float(rr), reason="limit: R:R below minimum")
             return f"⛔ {self.symbol}: not executed - R:R at the limit {limit:.{d}f} is 1:{rr:.1f} (min {self.settings.risk.min_rr:g})"
-        refused = self._stop_too_near(limit, setup.stop, lots)
-        if refused:
-            self.note("not_executed", now, id=sid, price=float(limit), reason=f"limit: {refused}")
-            return f"⛔ {self.symbol}: not executed - at the limit {limit:.{d}f}: {refused}"
+        # the research's smallest limit stop: the fraction's share of the minimum (on the balance level: no floor known)
+        share = 0.0 if mode == "limit break_level" else 1.0 - (frac if frac > 0 else 0.25)
+        floored, floor_note = self._floored_lots(limit, setup.stop, lots, equity, risk_params, share * self._min_stop_pips())
+        if floor_note:
+            risk_amount *= floored / lots
+            lots = floored
+            self._limit_note = floor_note
         if lots <= 0:
             self.note("not_executed", now, id=sid, price=float(limit), reason="limit: stop too wide for the minimum lot")
             return f"⛔ {self.symbol}: not executed - stop too wide for the minimum lot at the limit {limit:.{d}f}"
@@ -1800,11 +1830,13 @@ class LiveRunner:
         mode = getattr(self, "_limit_mode", "") or f"limit {float(self.settings.risk.limit_entry_fraction):g}"
         where = "on the balance level the shift closed through" if mode == "limit break_level" else \
             f"{float(mode.split()[1]) if len(mode.split()) > 1 else 0:.0%} back toward the stop"
+        floor_note = getattr(self, "_limit_note", "")
         self.note("limit_placed", now, id=order.id, direction=order.direction.name, entry=float(order.price), stop=float(order.stop),
                   take_profit=float(order.take_profit), lots=float(order.lots), risk=float(order.risk_amount),
-                  note=f"setup {sid}; {mode}; valid until {order.expires_at:%H:%M} UTC")
+                  note=f"setup {sid}; {mode}; valid until {order.expires_at:%H:%M} UTC" + (f"; {floor_note}" if floor_note else ""))
         self.notifier.send(f"📌 {self.symbol} {side} LIMIT {order.lots:.2f} lots @ {order.price:.{d}f} ({where})  SL {order.stop:.{d}f}  "
-                           f"TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until {order.expires_at:%H:%M} UTC (id {order.id})")
+                           f"TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until {order.expires_at:%H:%M} UTC (id {order.id})"
+                           + (f"\n({floor_note})" if floor_note else ""))
 
     def load_limits(self) -> None:
         if self.limits_path is None or not self.limits_path.exists():
@@ -1844,20 +1876,30 @@ class LiveRunner:
 
     def manage_limits(self, now: pd.Timestamp) -> None:
         """Every scan: a filled limit becomes a trade like a market fill; one past its time or whose target traded first is
-        cancelled; one the server dropped is reported. At the first scan, a resting limit of this market the window has no
-        record of (left from before a restart without its file) is cancelled."""
+        cancelled; one the server dropped is reported. A resting limit of this market the window has no record of is
+        cancelled, at every scan (15 October stack review, A12): one left from before a restart without its file, or one
+        that reached the server while its reply was lost (the setup was then reported as failed and never counted)."""
         if self.broker is None or self.dry_run:
             return
-        if not self._limits_checked:
+        try:
+            for order in self.broker.limit_orders(self.symbol):
+                if order.id in self.limits:
+                    continue
+                when = "at the start" if not self._limits_checked else "now"
+                try:
+                    self.broker.cancel_limit(order.id)
+                except Exception as exc:
+                    print(f"[live] {self.symbol}: cancel of the unrecorded limit {order.id} failed ({exc}); trying again next scan")
+                    if order.id not in self._stray_warned:
+                        self._stray_warned.add(order.id)
+                        self.notifier.send(f"⚠️ {self.symbol}: limit {order.id} is not this window's and could not be "
+                                           f"cancelled ({exc}); trying again every scan, look at MT5's Trade tab")
+                    continue
+                self.note("limit_cancelled", now, id=order.id, reason=f"no record of it ({when})")
+                self.notifier.send(f"🚫 {self.symbol}: limit {order.id} cancelled {when} - this window has no record of it")
             self._limits_checked = True
-            try:
-                for order in self.broker.limit_orders(self.symbol):
-                    if order.id not in self.limits:
-                        self.broker.cancel_limit(order.id)
-                        self.note("limit_cancelled", now, id=order.id, reason="no record of it at the start")
-                        self.notifier.send(f"🚫 {self.symbol}: limit {order.id} cancelled at the start - this window has no record of it")
-            except Exception as exc:
-                print(f"[live] {self.symbol}: could not check the resting limit orders ({exc})")
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not check the resting limit orders ({exc})")
         changed = False
         target = self.target_state() if self.limits else None
         finish_cap = None
@@ -2038,6 +2080,7 @@ class LiveRunner:
         if (hold or ts_hours or weekend or day_close) and not callable(getattr(self.broker, "on_candle", None)):
             from .strategy.exits import day_close_cutoff_after, weekend_cutoff_after
             now = self.clock()
+            shut = self._exit_series(views) is None      # no fresh bars from the terminal: the market is shut (or the feed down)
             for pid, pos in list(open_by_id.items()):
                 if getattr(pos, "status", "filled") != "filled" or pos.opened_at is None:
                     continue
@@ -2053,8 +2096,8 @@ class LiveRunner:
                 else:
                     continue
                 retry_at = pos.meta.get(f"{reason}_exit_retry_at")
-                if retry_at is not None and now < retry_at:
-                    continue
+                if shut and retry_at is not None and now < retry_at:
+                    continue                               # backs off only while the market is shut: fresh bars, try now
                 try:
                     self.broker.close_position(pid, reason, ts=now)
                     open_by_id.pop(pid)
@@ -2065,11 +2108,11 @@ class LiveRunner:
                     # ("hyperactivity", 15 October stack review)
                     tries = int(pos.meta.get(f"{reason}_exit_tries", 0)) + 1
                     pos.meta[f"{reason}_exit_tries"] = tries
-                    pos.meta[f"{reason}_exit_retry_at"] = now + pd.Timedelta(minutes=1 if tries < 3 else 15)
+                    pos.meta[f"{reason}_exit_retry_at"] = now + pd.Timedelta(minutes=15 if shut and tries >= 3 else 1)
                     if not pos.meta.get(f"{reason}_exit_failed_sent"):
                         pos.meta[f"{reason}_exit_failed_sent"] = True
-                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying again (every 15 min "
-                                           f"after three tries)")
+                        self.notifier.send(f"⚠️ {self.symbol}: closing {pid} {why} failed ({exc}); trying again every scan "
+                                           f"while the market trades, every 15 min while it is shut")
         d = self.spec.price_decimals
         for pid in list(self.unconfirmed):
             current = open_by_id.get(pid)
@@ -2108,9 +2151,14 @@ class LiveRunner:
             # scan on the cached candles of 1 October set the checkpoint back, and the next scan read 41 hours of candles
             # from before the fill and moved the stop on a high it never saw)
             checked = pos.meta.get("be_checked_until")
-            since = checked or pos.opened_at
-            if since is not None and pos.opened_at is not None:
-                since = max(pd.Timestamp(since), pd.Timestamp(pos.opened_at))
+            opened = pd.Timestamp(pos.opened_at) if pos.opened_at is not None else None
+            if opened is not None and not pos.meta.get("limit_id") and not str(pos.meta.get("comment", "")).endswith(" L"):
+                start = opened.floor(f"{lowest.timeframe.minutes}min")
+                if opened - start <= pd.Timedelta(seconds=90):     # a market fill at the scan after a close: its own candle
+                    opened = start                                 # counts, as in the backtest (entry at that candle's open)
+            since = checked or opened
+            if since is not None and opened is not None:
+                since = max(pd.Timestamp(since), opened)
             k0 = len(lowest) - 1
             if since is not None:
                 k0 = lowest.index_at_or_after(pd.Timestamp(since))

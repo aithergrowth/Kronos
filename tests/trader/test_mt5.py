@@ -146,7 +146,8 @@ def broker(monkeypatch):
 
 
 def test_initialize_uses_the_environment(broker):
-    assert broker.mt5.init_kwargs == {"login": 11112222, "password": "pw", "server": "MetaQuotes-Demo"}
+    # the terminal is already on MT5_LOGIN: attached without the credentials, nothing to log in (15 October, F6)
+    assert broker.mt5.init_kwargs == {} and broker.account_login == 11112222
     d = broker.diagnostics()
     assert d["server"] == "MetaQuotes-Demo" and d["currency"] == "EUR" and d["connected"] and d["equity"] == 50010.0
 

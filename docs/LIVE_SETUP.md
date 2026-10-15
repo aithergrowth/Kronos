@@ -69,7 +69,11 @@ with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in fro
 Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
 each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from
 -3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). With two terminals installed, every manual MT5 command needs the terminal first:
-`$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window.
+`$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window,
+and the demo's login out of it: `Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue`
+(the line `start_ftmo.bat` runs). With the demo's login still set, the command used to log the FTMO terminal in to the
+demo, and the four windows stopped trading until it was logged back by hand; since 15 October a window refuses that
+("logged in to account ..., MT5_LOGIN is ...: not switching it"), so the command stops instead.
 
 **FTMO's spreads.** `mt5-spreads` puts the server's spread per market beside the backtest's and the 30 % cap: now
 (`--minutes 10`), or for a past day's session windows from the terminal's tick history (`--day 2026-10-07`), so nobody
@@ -98,7 +102,8 @@ trades with R after costs and how far each fill was off the plan, what is open a
 of the day and of the total under FTMO's floors, the distance to the target (10 %, or `TARGET` in `ftmo_local.bat`)
 and the trading days. The 22:00 messages of the windows stay: they are per market and from the journal. By hand, with
 the same text: `.\.venv\Scripts\python.exe -m kronos_trader forward-report --journal journal_ftmo/trades.csv
---account-size 10000 --mt5-names NAS100=US100.cash --telegram --tag FTMO --target-pct 10` (MT5_PATH set first, see above).
+--account-size 10000 --mt5-names NAS100=US100.cash --telegram --tag FTMO --target-pct 10` (MT5_PATH set and the login
+variables removed first, see above).
 
 **When the whole computer stops.** The watchdog cannot say that its own computer is off, asleep or offline. A free
 check at healthchecks.io can: the watchdog calls its address every 5 minutes, and when the calls stop it sends a

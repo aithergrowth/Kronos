@@ -11,7 +11,9 @@ Each prompt starts in `C:\Users\maxge\Kronos`. Reports go to `C:\Users\maxge\kro
 
 ```
 Dagstatus. Alleen lezen. 1) Zijn de vier heartbeat_*.json in journal_ftmo jonger dan 5 minuten, status ok? 2) Draai het
-forward-report zoals scripts\ftmo_report.bat het doet, zonder de pause en zonder de browser: balans, trades van vandaag
+forward-report zoals scripts\ftmo_report.bat het doet, zonder de pause en zonder de browser, met MT5_PATH op
+"C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe" en MT5_LOGIN, MT5_PASSWORD en MT5_SERVER uit de
+omgeving van dit proces (net als het script): balans, trades van vandaag
 met R na kosten, open posities en limits, de ruimte tot de FTMO-grenzen (dag en totaal). 3) Staan er vandaag regels
 not_executed, skipped, stale, deferred, did_not_fill, limit_gone, breakeven_failed of no_stop in journal_ftmo\trades.csv?
 Geef ze met de reden. 4) Vergelijk elke trade van vandaag met het setup-bericht: instap, stop, doel, lots. Sla op in
@@ -23,7 +25,8 @@ kronos_notes\dag_<datum>.md en vat samen in tien regels.
 ```
 Trade-check van de laatste fill in journal_ftmo\trades.csv. Alleen lezen. Geef: markt, richting, zone (timeframe,
 prijzen, wanneer ontstaan, wanneer voor het eerst aangeraakt), bevestiging (type, timeframe, tijd), instap, stop,
-doel, R:R, lots, risico in dollars, en de spread/slippage uit het forward-report (scripts\ftmo_report.bat zonder pause).
+doel, R:R, lots, risico in dollars, en de spread/slippage uit het forward-report (scripts\ftmo_report.bat zonder pause,
+met MT5_PATH op de FTMO-terminal en MT5_LOGIN, MT5_PASSWORD en MT5_SERVER uit de omgeving van dit proces).
 Open de nieuwste chart van die markt in charts\ en beschrijf wat erop staat. Klopt de stop met "achter de sweep sinds
 de re-entry" en het doel met "de oorsprong van de beweging"? Zeg precies wat afwijkt.
 ```

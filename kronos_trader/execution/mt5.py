@@ -104,9 +104,10 @@ class MT5Broker(Broker):
     def connect(self) -> None:
         """Attach to the terminal (MT5_PATH, else the running one, else the usual install paths) and log in.
 
-        The account comes from MT5_LOGIN / MT5_PASSWORD / MT5_SERVER when all three are set and is passed to
-        ``initialize`` itself, so a terminal that sits at "authorization failed" on its last account (password not
-        saved, demo expired) still connects with ours. Without them the terminal's current account is used.
+        The account comes from MT5_LOGIN / MT5_PASSWORD / MT5_SERVER when all three are set. They are passed to
+        ``initialize`` only when the terminal has no account (it sits at "authorization failed": password not saved,
+        demo expired) or is on that same login without its server; a terminal on another account is refused, never
+        switched (``_initialize``). Without them the terminal's current account is used.
         """
         p = self.params
         path = os.environ.get(p.path_env)
@@ -132,10 +133,7 @@ class MT5Broker(Broker):
                 self._sleep(wait)
             ipc_only = True
             for candidate in attempts:
-                kwargs: Dict[str, Any] = dict(creds)
-                if candidate:
-                    kwargs["path"] = candidate
-                if self.mt5.initialize(**kwargs):
+                if self._initialize(candidate, creds):
                     self.terminal_path = candidate
                     info = self.mt5.account_info()
                     self.account_login = int(getattr(info, "login", 0) or 0) if info is not None else None
@@ -154,6 +152,37 @@ class MT5Broker(Broker):
                                "the same user (not one of them as administrator), set MT5_PATH to the full path of "
                                "terminal64.exe, and check MT5_LOGIN / MT5_PASSWORD (the master password, not the "
                                "investor one) / MT5_SERVER on 'Authorization failed'")
+
+    def _initialize(self, path: Optional[str], creds: Dict[str, Any]) -> bool:
+        """``initialize`` that never switches a terminal's account (15 October stack review, F6). With credentials,
+        ``initialize`` logs whatever terminal it reaches in to that account: a manual command run with the demo login
+        still set would log the FTMO terminal in to the demo, and the four windows would stop trading ("logged in to
+        account X, this window trades Y") until Max logged it back in by hand. So the terminal is attached with the path
+        alone first. On the login asked for, that is the connection; with no account, or on that login without its trade
+        server, the credentials log it in (the same account, nothing switches); on another account it is refused."""
+        base: Dict[str, Any] = {"path": path} if path else {}
+        if not creds:
+            return bool(self.mt5.initialize(**base))
+        if self.mt5.initialize(**base):
+            current = 0
+            for wait in (0, 2, 2, 2):                     # a terminal that is just starting logs in to its account first
+                if wait:
+                    self._sleep(wait)
+                info = self.mt5.account_info()
+                current = int(getattr(info, "login", 0) or 0) if info is not None else 0
+                if current:
+                    break
+            if current and current != int(creds["login"]):
+                self.mt5.shutdown()
+                raise RuntimeError(f"the MT5 terminal {path or '(the running one)'} is logged in to account {current}, "
+                                   f"MT5_LOGIN is {creds['login']}: not switching it (that would take it off its own "
+                                   f"account). Clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER to use account {current}, "
+                                   f"or set MT5_PATH to the terminal of login {creds['login']}")
+            term = self.mt5.terminal_info() if current else None
+            if current and (term is None or getattr(term, "connected", True)):
+                return True
+            self.mt5.shutdown()
+        return bool(self.mt5.initialize(**base, **creds))
 
     def disconnect(self) -> None:
         self.mt5.shutdown()
@@ -512,15 +541,13 @@ class MT5Broker(Broker):
             try:
                 # the terminal this process started on, nothing else: another terminal on the laptop (FTMO beside the
                 # demo) must never be logged in to this account or traded from this window
-                kwargs: Dict[str, Any] = {}
+                creds: Dict[str, Any] = {}
                 p = self.params
                 login, password, server = (os.environ.get(p.login_env), os.environ.get(p.password_env),
                                            os.environ.get(p.server_env))
                 if login and password and server:
-                    kwargs = {"login": int(login), "password": password, "server": server}
-                if getattr(self, "terminal_path", None):
-                    kwargs["path"] = self.terminal_path
-                if not self.mt5.initialize(**kwargs):
+                    creds = {"login": int(login), "password": password, "server": server}
+                if not self._initialize(getattr(self, "terminal_path", None), creds):
                     return False, f"MT5 not reachable ({self.mt5.last_error()})"
                 info = self.mt5.account_info()
             except Exception as exc:
@@ -769,11 +796,12 @@ class MT5Broker(Broker):
                 break
         ticket = int(getattr(result, "order", 0) or 0) if result is not None else 0
         if result is None or result.retcode == TIMEOUT:
+            err = mt5.last_error()                                   # the send's own error: the lookup's calls replace it
             ticket = self._placed_limit_ticket(symbol, request)      # the server may hold it: find it, never send it twice
             if not ticket:
                 raise RuntimeError(f"{symbol} limit order: no answer from the terminal (retcode "
-                                   f"{getattr(result, 'retcode', None)}, {mt5.last_error()}) and no such order resting; "
-                                   f"not sent again")
+                                   f"{getattr(result, 'retcode', None)}, {err}) and not found on the server within "
+                                   f"{2 * self.retry_seconds:g} s; not sent again - it may still appear there")
         elif result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not ticket:
             raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
                                f"{getattr(result, 'comment', '')} {mt5.last_error()}")
@@ -785,22 +813,52 @@ class MT5Broker(Broker):
         self._limits[order.id] = order
         return order
 
-    def _placed_limit_ticket(self, symbol: str, request: dict) -> int:
-        """The ticket of a resting limit that matches ``request`` (this program's magic, type, price, volume and comment)
-        and that this window does not track yet: what a lost reply may have left on the server. 0 when none is found or
-        the terminal cannot list its orders."""
+    def _placed_limit_ticket(self, symbol: str, request: dict, tries: int = 10) -> int:
+        """The ticket of what a lost reply may have left on the server: a resting limit that matches ``request`` (this
+        program's magic, type, price within half a tick, volume as placed, comment) and that this window does not track,
+        or the position such a limit opened at once (MT5 gives it the order's ticket as its identifier). The terminal can
+        list either a moment after the lost reply: asked ``tries`` times, 0.2 s apart. 0 when nothing is found."""
+        mt5 = self.mt5
         try:
-            orders = self._server_limits(symbol)
+            info = mt5.symbol_info(request["symbol"])
         except Exception:
-            return 0
-        info = self.mt5.symbol_info(request["symbol"])
+            info = None
         point = float(getattr(info, "point", 0.0) or 0.0) or 1e-9
-        found = [o for o in orders
-                 if str(o.ticket) not in self._limits and int(o.type) == int(request["type"])
-                 and abs(float(o.price_open) - float(request["price"])) <= point / 2
-                 and abs(float(getattr(o, "volume_current", 0.0) or getattr(o, "volume_initial", 0.0)) - float(request["volume"])) < 1e-9
-                 and (not request.get("comment") or str(getattr(o, "comment", "")) == str(request["comment"]))]
-        return int(max(found, key=lambda o: int(getattr(o, "time_setup", 0) or 0)).ticket) if found else 0
+        tolerance = max(point, float(getattr(info, "trade_tick_size", 0.0) or 0.0)) / 2 + 1e-12
+        volume, comment = float(request["volume"]), str(request.get("comment") or "")
+        side = getattr(mt5, "POSITION_TYPE_BUY", 0) if int(request["type"]) == getattr(mt5, "ORDER_TYPE_BUY_LIMIT", 2) \
+            else getattr(mt5, "POSITION_TYPE_SELL", 1)
+
+        def same_comment(text) -> bool:              # equal, or cut short by the server
+            text = str(text or "")
+            return not comment or text == comment or (len(text) >= 4 and comment.startswith(text))
+
+        for attempt in range(max(1, int(tries))):
+            try:
+                orders = self._server_limits(symbol)
+            except Exception:
+                orders = []
+            found = [o for o in orders
+                     if str(o.ticket) not in self._limits and int(o.type) == int(request["type"])
+                     and abs(float(o.price_open) - float(request["price"])) <= tolerance
+                     and abs(float(getattr(o, "volume_initial", 0.0) or getattr(o, "volume_current", 0.0)) - volume) < 1e-9
+                     and same_comment(getattr(o, "comment", ""))]
+            if found:
+                return int(max(found, key=lambda o: int(getattr(o, "time_setup", 0) or 0)).ticket)
+            try:
+                positions = self._listed(mt5.positions_get(symbol=request["symbol"]), "the open positions")
+            except Exception:
+                positions = ()
+            opened = [p for p in positions
+                      if int(getattr(p, "magic", 0)) == int(self.magic) and str(p.ticket) not in self._positions
+                      and int(p.type) == side and abs(float(p.volume) - volume) < 1e-9
+                      and same_comment(getattr(p, "comment", ""))]
+            if opened:
+                p = max(opened, key=lambda p: int(getattr(p, "time", 0) or 0))
+                return int(getattr(p, "identifier", 0) or p.ticket)
+            if attempt + 1 < tries:
+                time.sleep(0.2 * self.retry_seconds)
+        return 0
 
     def _server_limits(self, symbol: Optional[str] = None) -> list:
         get = getattr(self.mt5, "orders_get", None)
@@ -849,7 +907,9 @@ class MT5Broker(Broker):
         oid = str(order_id)
         if any(str(o.ticket) == oid for o in self._server_limits()):
             return "pending", None
-        for p in self.mt5.positions_get() or []:
+        # a failed listing is no answer (15 October stack review, A17): read as "no position" it reported a fill that is
+        # still open as "filled and closed again"
+        for p in self._listed(self.mt5.positions_get(), "the open positions"):
             if str(p.ticket) == oid or str(getattr(p, "identifier", "")) == oid:
                 pos = self._positions.get(str(p.ticket)) or self._position_from_mt5(p)
                 known = self._limits.pop(oid, None)
@@ -934,7 +994,12 @@ class MT5Broker(Broker):
             pnl = self._deal_pnl(deals)                                          # the entry and the close: both commissions
         else:                                                                     # not in the history yet: the position's
             pnl = float(getattr(p, "profit", 0.0) or 0.0) + self._deal_pnl(deals)  # profit and the entry's commission
-        return self._finish(pos, float(result.price), reason, ts, pnl)
+        # a reply without a price (15 October stack review, A19) booked exit 0: the closing deal's price, else the request's
+        exit_price = float(getattr(result, "price", 0.0) or 0.0)
+        if exit_price <= 0:
+            outs = [d for d in deals if d.entry == mt5.DEAL_ENTRY_OUT and float(getattr(d, "price", 0.0) or 0.0) > 0]
+            exit_price = float(outs[-1].price) if outs else float(request["price"])
+        return self._finish(pos, exit_price, reason, ts, pnl)
 
     def recent_closes(self) -> List[ClosedTrade]:
         self._sync_closed()

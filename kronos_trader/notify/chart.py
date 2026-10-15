@@ -71,6 +71,7 @@ def render_chart(
     horizon = max((len(p) for p in paths), default=0)
     x_right = n - 1 + max(horizon, 1) + 1
 
+    plt.close("all")             # a chart that failed half-way left its figure open (15 October stack review, A28)
     fig, ax = plt.subplots(figsize=(11, 6), dpi=130)
     fig.patch.set_facecolor("white")
     d = price_decimals
