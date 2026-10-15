@@ -9,7 +9,7 @@ from kronos_trader.execution import PaperBroker
 from kronos_trader.live import LiveRunner
 from kronos_trader.notify import TelegramNotifier
 from kronos_trader.strategy import analyze_structure, combine_biases, timeframe_bias
-from kronos_trader.strategy.whatif import Turn, turn_text, turning_closes
+from kronos_trader.strategy.whatif import Turn, _closes_at, _Trial, turn_text, turning_closes
 from tests.trader.conftest import SWEEP_BREAK_ROWS
 from tests.trader.test_live import FakeEngine, setup  # noqa: F401  (the setup fixture lives there)
 
@@ -98,7 +98,7 @@ def test_the_morning_check_says_what_would_turn_it_and_survives_a_failure(setup,
     runner.step(NOW)
     morning = [m for m in sent.sent if m.startswith("☀️")]
     assert len(morning) == 1 and "❌ geen short: wacht tot de 1H meedraait" in morning[0]
-    assert "🎯 Trade als: de 1H veegt 113.0" in morning[0] and "→ short" in morning[0]
+    assert "🎯 Trade als om 09:00: de 1H veegt 113.0" in morning[0] and "→ short" in morning[0]   # the hour closing 07:00 UTC
 
     import kronos_trader.strategy.whatif as whatif
 
@@ -111,3 +111,58 @@ def test_the_morning_check_says_what_would_turn_it_and_survives_a_failure(setup,
     runner2.step(NOW)
     morning = [m for m in sent2.sent if m.startswith("☀️")]
     assert len(morning) == 1 and "🕘 Vensters" in morning[0] and "Trade als" not in morning[0]
+
+
+# ---------------------------------------------------------------- the fix check of 15 October: exact, banded, honest
+def test_a_band_is_named_when_a_close_farther_out_no_longer_turns_it():
+    """BTC's profile (a shift flips the balance, a broken P reads 50/50): under the gap's far edge the hour turns, under
+    its P it reads 50/50 again, so 'sluit onder X' would be false for most closes under X."""
+    s = _settings()
+    s.bias.shift_flips_balance, s.bias.balance_violation = True, "neutral"
+    turn = turning_closes({T.H_1: _hourly()}, BIASES, s, NOW, 112.2)[Bias.BEARISH]
+    assert isinstance(turn, Turn) and turn.until is not None and turn.until < turn.close
+    hour = lambda close: timeframe_bias(analyze_structure(_closed_with(_hourly(), close, turn.sweep * 1.000001), s.structure), s.bias).bias
+    inside, beyond = (turn.close + turn.until) / 2, turn.until - 0.2
+    assert combine_biases({**BIASES, T.H_1: hour(inside)}, s.bias).direction is Bias.BEARISH
+    assert not combine_biases({**BIASES, T.H_1: hour(beyond)}, s.bias).tradable
+    assert "sluit tussen 106.00 en 105.00" in turn_text(turn, lambda p: f"{p:.2f}")
+
+
+def test_a_turn_at_the_price_names_where_the_band_starts():
+    """At 104.50 a sweep of 113 and a close at the price already turn the hour: the line names the start of the band
+    above the price (a close under 105.00), not the price."""
+    s = _settings()
+    turn = turning_closes({T.H_1: _hourly()}, BIASES, s, NOW, 104.5, directions=(Bias.BEARISH,))[Bias.BEARISH]
+    assert isinstance(turn, Turn) and turn.sweep is not None and turn.distance_atr < 0 and turn.close > 104.5
+    hour = lambda close: timeframe_bias(analyze_structure(_closed_with(_hourly(), close, turn.sweep * 1.000001), s.structure), s.bias).bias
+    assert hour(turn.close - 0.02) is Bias.BEARISH and hour(turn.close + 0.1) is not Bias.BEARISH
+
+
+def _flat(tf, start, n, forming=True):
+    rows = [(100.0, 100.5, 99.5, 100.0)] * (n + (1 if forming else 0))
+    return CandleSeries.from_records(rows, tf, start=start, symbol="EURUSD")
+
+
+def test_only_the_next_close_is_asked_with_what_closes_with_it():
+    s = _settings()
+    now = pd.Timestamp("2026-10-01 07:30")                     # the 07:00 hour is forming, it closes at 08:00
+    h1 = _flat(T.H_1, "2026-09-29 07:00", 48)                  # 48 closed hours, the 07:00 one forming
+    h4_with = _flat(T.H_4, "2026-09-28 04:00", 18)             # the 04:00 4H forming: it closes at 08:00 as well
+    h4_later = _flat(T.H_4, "2026-09-28 06:00", 18)            # a 4H that closes at 10:00
+    for h4, expected in ((h4_with, (T.H_1, T.H_4)), (h4_later, (T.H_1,))):
+        raw = {T.H_1: h1, T.H_4: h4}
+        trials = {tf: _Trial(series, now, s) for tf, series in raw.items()}
+        at, scen = _closes_at(raw, trials, {T.H_1: Bias.NEUTRAL, T.H_4: Bias.NEUTRAL}, now)
+        assert at == pd.Timestamp("2026-10-01 08:00") and scen == expected
+    week = _flat(T.W_1, "2026-07-30 08:00", 8)                 # a week that closes at 08:00 too: no exact answer
+    raw = {T.H_1: h1, T.W_1: week}
+    trials = {T.H_1: _Trial(h1, now, s)}
+    assert _closes_at(raw, trials, {T.H_1: Bias.NEUTRAL, T.W_1: Bias.BEARISH}, now) == (None, ())
+
+
+def test_a_cut_search_says_nothing_about_what_it_did_not_try(setup):
+    s = _settings()
+    cut = turning_closes({T.H_1: _hourly()}, BIASES, s, NOW, 112.2, budget_s=0.0)
+    assert cut == {} and not cut.complete
+    full = turning_closes({T.H_1: _hourly()}, BIASES, s, NOW, 112.2)
+    assert full.complete and full.at == pd.Timestamp("2026-10-01 07:00")

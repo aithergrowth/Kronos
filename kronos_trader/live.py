@@ -666,11 +666,12 @@ class LiveRunner:
         return lines
 
     def turn_lines(self, analysis: Analysis, now: pd.Timestamp, zones: Optional[list] = None) -> List[str]:
-        """What would have to close where before the bias allows a trade: the engine's own bias code asked with the
-        forming candle closed at trial prices (strategy/whatif.py), first the side the higher timeframes lean to, with
-        the zone it would trade from; the other side only when an intraday close turns it."""
+        """What the next hour's close would have to be before the bias allows a trade: the engine's own bias code asked
+        with the forming candles closed at trial prices (strategy/whatif.py), the side the higher timeframes lean to
+        first, with the zone it would trade from. Nothing when the search was cut short; a line that no close near the
+        price turns it only when the search was complete (15 October fix check)."""
         from .core.types import Bias
-        from .notify.formatting import _price, plain_decision, zone_kind, zone_line
+        from .notify.formatting import _price, zone_kind, zone_line
         from .strategy.whatif import Turn, turn_text, turning_closes
         if not self._views or analysis.decision.tradable:
             return []
@@ -679,13 +680,15 @@ class LiveRunner:
         directions = (lean, lean.opposite) if lean is not None else (Bias.BEARISH, Bias.BULLISH)
         price = float(analysis.price)
         result = turning_closes(self._views, {tf: b.bias for tf, b in analysis.biases.items()}, self.settings,
-                                pd.Timestamp(now), price, directions=directions,
-                                full=(lean,) if lean is not None else directions)
+                                pd.Timestamp(now), price, directions=directions)
+        at = getattr(result, "at", None)
+        when = ""
+        if at is not None:
+            when = f"{pd.Timestamp(at).tz_localize('UTC').tz_convert(self.settings.session.timezone):%H:%M}"
         zones = self.chart_zones(analysis) if zones is None else zones
         lines: List[str] = []
         for direction in directions:
             r = result.get(direction)
-            side = "short" if direction is Bias.BEARISH else "long"
             if isinstance(r, Turn):
                 near = [p for p in zones if p.direction is direction]
                 zone = None
@@ -693,10 +696,11 @@ class LiveRunner:
                     p = min(near, key=lambda z: 0.0 if z.contains(price) else min(abs(price - z.low), abs(price - z.high)))
                     where = zone_line(p, price, self.spec).split(" · ")[-1]
                     zone = f"{p.timeframe.label} {zone_kind(p)} {_price(p.low, self.spec)}–{_price(p.high, self.spec)} ({where})"
-                lines.append("🎯 Trade als: " + turn_text(r, lambda x: _price(x, self.spec), zone))
-            elif r is not None:
-                lines.append(f"🚫 Geen {side} in zicht: {plain_decision(r, emoji=False).split(': ', 1)[-1]}")
-        return lines or ["🎯 Geen trade in zicht: geen slot binnen drie gemiddelde candles draait de richting"]
+                lines.append(f"🎯 Trade als{' om ' + when if when else ''}: " + turn_text(r, lambda x: _price(x, self.spec), zone))
+        if not lines and getattr(result, "complete", False) and when:
+            lines.append(f"🎯 Bij de sluiting van {when} laat geen koers binnen drie gemiddelde candles van de prijs een "
+                         f"trade toe")
+        return lines
 
     def announce_near_misses(self, analysis: Analysis, now: Optional[pd.Timestamp] = None) -> None:
         """A zone in play (price in it, or entered earlier) and the engine refused the trade for a reason worth knowing: the
@@ -1286,10 +1290,17 @@ class LiveRunner:
                     save_events(events, cache)
             except Exception as exc:
                 failed.append(f"{week}: {exc}")
+                if cache is not None and cache.exists():  # an older saved week still blocks its releases (stack review B1:
+                    try:                                  # a restart during an outage used to ignore it); past ones block nothing
+                        calendar.add(load_events(cache))
+                    except Exception:
+                        pass
         if len(failed) == 2 and self._news_warned != now.date():
             self._news_warned = now.date()            # once a day is enough: the loaded calendar covers the gap
+            last = max((e.time for e in getattr(calendar, "events", []) or []), default=None)
             print(f"[live] {self.symbol}: news calendar refresh failed ({'; '.join(failed)}); using the events already "
-                  f"loaded (data/calendar/high_impact.csv, extended from the TradingView calendar when it runs out)")
+                  f"loaded (data/calendar/high_impact.csv and the saved ForexFactory weeks"
+                  f"{f', to {last:%Y-%m-%d}' if last is not None else ''})")
 
     def stale_timeframes(self, views: Dict[Timeframe, CandleSeries], now: pd.Timestamp) -> Dict[Timeframe, pd.Timedelta]:
         """Timeframes whose newest candle closed more than ``live.max_data_age_bars`` candles before ``now``."""

@@ -2890,9 +2890,57 @@ time,currency,importance,title
 2026-11-06 13:30,USD,1,Non Farm Payrolls
 2026-11-06 13:30,USD,1,Unemployment Rate
 2026-11-06 15:00,USD,1,Michigan Consumer Sentiment Prel
+2026-11-09 07:00,EUR,1,Balance of Trade
 2026-11-10 13:30,USD,1,Core Inflation Rate MoM
 2026-11-10 13:30,USD,1,Core Inflation Rate YoY
 2026-11-10 13:30,USD,1,Inflation Rate MoM
 2026-11-10 13:30,USD,1,Inflation Rate YoY
 2026-11-12 15:00,USD,1,Existing Home Sales
 2026-11-13 13:30,USD,1,PPI MoM
+2026-11-17 10:00,EUR,1,ZEW Economic Sentiment Index
+2026-11-17 13:30,USD,1,Retail Sales MoM
+2026-11-18 13:30,USD,1,Building Permits Prel
+2026-11-18 13:30,USD,1,Housing Starts
+2026-11-18 19:00,USD,1,FOMC Minutes
+2026-11-23 08:30,EUR,1,S&P Global Manufacturing PMI Flash
+2026-11-24 09:00,EUR,1,Ifo Business Climate
+2026-11-25 13:30,USD,1,Core PCE Price Index MoM
+2026-11-25 13:30,USD,1,Durable Goods Orders MoM
+2026-11-25 13:30,USD,1,GDP Growth Rate QoQ 2nd Est
+2026-11-25 13:30,USD,1,Personal Income MoM
+2026-11-25 13:30,USD,1,Personal Spending MoM
+2026-11-26 07:00,EUR,1,GfK Consumer Confidence
+2026-11-27 07:45,EUR,1,Inflation Rate YoY Prel
+2026-11-30 13:00,EUR,1,Inflation Rate YoY Prel
+2026-12-01 10:00,EUR,1,Inflation Rate YoY Flash
+2026-12-01 15:00,USD,1,ISM Manufacturing PMI
+2026-12-01 15:00,USD,1,JOLTs Job Openings
+2026-12-03 15:00,USD,1,ISM Services PMI
+2026-12-04 13:30,USD,1,Non Farm Payrolls
+2026-12-04 13:30,USD,1,Unemployment Rate
+2026-12-04 15:00,USD,1,Michigan Consumer Sentiment Prel
+2026-12-09 07:00,EUR,1,Balance of Trade
+2026-12-09 15:00,USD,1,Existing Home Sales
+2026-12-09 19:00,USD,1,FOMC Economic Projections
+2026-12-09 19:00,USD,1,Fed Interest Rate Decision
+2026-12-09 19:30,USD,1,Fed Press Conference
+2026-12-10 13:30,USD,1,Core Inflation Rate MoM
+2026-12-10 13:30,USD,1,Core Inflation Rate YoY
+2026-12-10 13:30,USD,1,Inflation Rate MoM
+2026-12-10 13:30,USD,1,Inflation Rate YoY
+2026-12-15 10:00,EUR,1,ZEW Economic Sentiment Index
+2026-12-15 13:30,USD,1,PPI MoM
+2026-12-16 13:30,USD,1,Retail Sales MoM
+2026-12-17 09:00,EUR,1,Ifo Business Climate
+2026-12-17 13:15,EUR,1,Deposit Facility Rate
+2026-12-17 13:15,EUR,1,ECB Interest Rate Decision
+2026-12-17 13:30,USD,1,Building Permits Prel
+2026-12-17 13:30,USD,1,Housing Starts
+2026-12-17 13:45,EUR,1,ECB Press Conference
+2026-12-18 07:00,EUR,1,GfK Consumer Confidence
+2026-12-23 13:30,USD,1,Core PCE Price Index MoM
+2026-12-23 13:30,USD,1,Durable Goods Orders MoM
+2026-12-23 13:30,USD,1,GDP Growth Rate QoQ Final
+2026-12-23 13:30,USD,1,Personal Income MoM
+2026-12-23 13:30,USD,1,Personal Spending MoM
+2026-12-30 19:00,USD,1,FOMC Minutes

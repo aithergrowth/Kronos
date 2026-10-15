@@ -754,3 +754,41 @@ def test_a_floored_order_cut_by_the_margin_states_the_share_of_the_planned_lots(
     fill = [m for m in notifier.sent if "filled" in m][0]
     assert broker.open_positions()[0].lots == pytest.approx(1.0)
     assert "lots 33.33 -> 11.11" in fill and "(margin: lots cut from 11.11, risk 3 % of planned)" in fill
+
+
+# ---------------------------------------------------------------- 11. the news calendar reaches the end of the year
+def test_the_seeded_calendar_blacks_out_the_releases_after_13_november():
+    """Stack review B1: the file ended on 13 November, after which only ForexFactory's "High" rows blocked entries (none
+    at all with ForexFactory down). The rows to 31 December are checked against the publishers (BLS, Census, BEA, the
+    Fed, the ECB, Eurostat, Destatis, INSEE)."""
+    from pathlib import Path
+    from kronos_trader.data.calendar import NewsCalendar, load_events
+    events = load_events(Path(__file__).resolve().parents[2] / "data" / "calendar" / "high_impact.csv")
+    cal = NewsCalendar(events)
+    assert max(e.time for e in events) >= pd.Timestamp("2026-12-30")
+    for ts, title in (("2026-11-17 13:20", "Retail Sales MoM"), ("2026-12-04 13:20", "Non Farm Payrolls"),
+                      ("2026-12-09 19:10", "Fed Interest Rate Decision"), ("2026-12-10 13:45", "Core Inflation Rate MoM")):
+        hit = cal.blackout("EURUSD", pd.Timestamp(ts))
+        assert hit is not None and hit.currency == "USD", ts
+    assert cal.blackout("EURUSD", pd.Timestamp("2026-12-17 13:00")).title in ("Deposit Facility Rate", "ECB Interest Rate Decision")
+    assert cal.blackout("EURUSD", pd.Timestamp("2026-11-17 12:00")) is None
+
+
+
+def test_a_failed_forexfactory_read_falls_back_on_the_saved_week_whatever_its_age(tmp_path, monkeypatch):
+    import os
+    from types import SimpleNamespace
+    from kronos_trader.data import calendar as cal
+    saved = cal.NewsEvent(pd.Timestamp("2026-11-20 13:30"), "USD", "Retail Sales MoM", 1)
+    cal.save_events([saved], tmp_path / "forexfactory_nextweek.csv")
+    os.utime(tmp_path / "forexfactory_nextweek.csv", (0, 0))                   # four days old: too old to count as fresh
+    monkeypatch.setattr(cal, "fetch_forexfactory",
+                        lambda week="thisweek", **kw: (_ for _ in ()).throw(RuntimeError("ForexFactory calendar 429")))
+    settings = Settings()
+    settings.live.journal_path = str(tmp_path / "trades.csv")
+    settings.news.enabled, settings.news.forexfactory = True, True
+    added = []
+    engine = SimpleNamespace(calendar=SimpleNamespace(add=lambda ev: added.extend(ev)), traded={})
+    LiveRunner(settings, "EURUSD", lambda: {}, notifier=TelegramNotifier(dry_run=True), engine=engine,
+               clock=lambda: NOW).refresh_news(NOW)
+    assert [e.title for e in added] == ["Retail Sales MoM"]

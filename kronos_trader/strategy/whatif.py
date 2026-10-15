@@ -1,14 +1,16 @@
-"""What would have to close where for the bias to allow a trade (15 October, Max: "maar ondertussen zegt die geen
+"""What the next close would have to be for the bias to allow a trade (15 October, Max: "maar ondertussen zegt die geen
 trade": the morning check said "geen short" and not what it waits for).
 
-For the messages only: nothing here feeds a decision. The engine's own code is asked. The candle that is forming on a
-timeframe is closed at a trial price (its open, high and low so far are kept, so a wick it already made still counts),
-that timeframe is read again with ``timeframe_bias``, and ``combine_biases`` says whether the decision would then allow
-a trade in that direction. The nearest such close, searched up to ``max_atr`` average candles away, is the answer. A
-second trial lets the candle first take the nearest resting liquidity on the other side (a wick through it, the sweep
-Dorus waits for) before it closes: a sweep turns the liquidity view, so the close that turns the timeframe can then be
-much nearer. Reading it by eye goes wrong: the morning review of 15 October put gold's turn at a 1H close under 4,128,
-where the engine needs either a close under the CPI low 4,073 or a sweep of 4,160 first.
+For the messages only: nothing here feeds a decision. The engine's own code is asked. The candle forming on the hour
+(and on the four hours and the day when they close with it) is closed at a trial price (its open, high and low so far
+are kept, so a wick it already made still counts), those timeframes are read again with ``timeframe_bias``, and
+``combine_biases`` says whether the decision would then allow a trade in that direction. The answer is the band of
+such closes nearest to the price, searched up to ``max_atr`` average candles away: where it starts and, when a close
+farther out no longer turns it (a close beyond a gap's P reads 50/50 on BTC), where it ends. A second trial lets the
+candle first take the nearest resting liquidity on the other side (a wick through it, the sweep Dorus waits for)
+before it closes. Only the next close is asked: a later 4H or day close depends on the hours in between, which no
+trial knows (15 October fix check). Reading it by eye goes wrong: the morning review of 15 October put gold's turn at
+a 1H close under 4,128, where the engine needed a sweep of 4,160 first.
 """
 from __future__ import annotations
 
@@ -24,13 +26,6 @@ from ..core.types import Bias, BiasDecision
 from .bias import combine_biases, timeframe_bias
 from .structure import analyze_structure
 
-# the closes that can come first: the hour, the four hours, both at once, the day, all three
-SCENARIOS: Tuple[Tuple[Timeframe, ...], ...] = (
-    (Timeframe.H_1,), (Timeframe.H_4,), (Timeframe.H_1, Timeframe.H_4), (Timeframe.D_1,),
-    (Timeframe.H_1, Timeframe.H_4, Timeframe.D_1),
-)
-
-
 @dataclass(frozen=True)
 class Turn:
     """Closes of ``timeframes`` at ``close`` (or beyond it) turn the decision into a trade in ``direction``; with
@@ -38,10 +33,21 @@ class Turn:
 
     timeframes: Tuple[Timeframe, ...]
     direction: Bias
-    close: float
+    close: float                 # the nearest close that turns it
     distance_atr: float          # from the current price, in average candles (ATR14) of the largest timeframe
     decision: BiasDecision
     sweep: Optional[float] = None
+    until: Optional[float] = None          # a close beyond this no longer turns it (None: none within the search)
+    at: Optional[pd.Timestamp] = None      # when that close comes (UTC)
+
+
+class WhatIf(dict):
+    """``turning_closes``' answer: per direction a ``Turn``, or the decision at the farthest close tried. ``complete`` is
+    False when the time budget cut the search or nothing could be tried (then nothing may be said about what is not
+    in it); ``at`` is the close it is about (UTC)."""
+
+    complete: bool = False
+    at: Optional[pd.Timestamp] = None
 
 
 def _atr(series: CandleSeries, n: int = 14) -> float:
@@ -94,92 +100,124 @@ class _Trial:
         return self._cache[key]
 
 
+def _closes_at(raw: Dict[Timeframe, CandleSeries], trials: Dict[Timeframe, "_Trial"], biases, now: pd.Timestamp):
+    """The next hour's close and the tried timeframes that close with it (the hour; the four hours and the day when it
+    is their last hour), or ``(None, ())`` when that moment changes a vote that is not tried (the week or the month
+    closing then too) or the hour cannot be tried."""
+    if Timeframe.H_1 not in trials:
+        return None, ()
+    at = trials[Timeframe.H_1].stamp + Timeframe.H_1.delta()
+    for tf, series in raw.items():
+        if tf in biases and tf not in trials and len(series.closed_as_of(at)) > len(series.closed_as_of(now)):
+            return None, ()
+    return at, tuple(sorted(tf for tf, trial in trials.items() if trial.stamp + tf.delta() == at))
+
+
 def turning_closes(raw: Dict[Timeframe, CandleSeries], biases: Dict[Timeframe, Bias], settings, now: pd.Timestamp,
-                   price: float, max_atr: float = 3.0, step_atr: float = 0.25, refine: int = 6, budget_s: float = 20.0,
-                   scenarios: Iterable[Tuple[Timeframe, ...]] = SCENARIOS,
-                   directions: Iterable[Bias] = (Bias.BEARISH, Bias.BULLISH),
-                   full: Iterable[Bias] = (Bias.BEARISH, Bias.BULLISH)) -> Dict[Bias, Union[Turn, BiasDecision]]:
-    """Per direction the nearest close that turns the decision into a trade (an intraday turn, the hour or the four
-    hours, before one that needs the day's close; then the nearest close; then the fewest timeframes), or, when none
-    within ``max_atr`` does, the decision at the farthest close tried (what still blocks it, e.g. a weekly veto).
-    ``raw`` are the feed's candles (the forming candle included), ``biases`` the readings the decision was made from.
-    A direction not in ``full`` is tried on the intraday closes only and left out when none turns it (the side the
-    higher timeframes lean against is worth a line only when it is near). The sweep trial runs on the intraday closes
-    only: a day that sweeps one side and closes beyond the other is no level to watch. Stops after ``budget_s``
-    seconds with what it has: a briefing must never hold the loop up."""
+                   price: float, max_atr: float = 3.0, step_atr: float = 0.25, fine_atr: float = 0.1, refine: int = 6,
+                   budget_s: float = 20.0, scenarios: Optional[Iterable[Tuple[Timeframe, ...]]] = None,
+                   directions: Iterable[Bias] = (Bias.BEARISH, Bias.BULLISH), full=None) -> "WhatIf":
+    """Per direction the band of closes of the next hour (with the four hours and the day when they close with it)
+    that turns the decision into a trade: its nearest edge (``Turn.close``) and, when a close farther out no longer
+    turns it, its far edge (``Turn.until``); or, when no close within ``max_atr`` average candles turns it, the
+    decision at the farthest close tried. Only that close is exact: every other vote stays as it is until then (15
+    October fix check: a later 4H or day close was tried with the hours in between frozen, and the engine refused
+    such levels when they came). ``raw`` are the feed's candles (the forming candle included), ``biases`` the readings
+    the decision was made from. A second trial lets the candle first take the nearest resting liquidity on the other
+    side. Stops after ``budget_s`` seconds; ``WhatIf.complete`` then says the answer is partial. ``scenarios`` replaces
+    the next close (tests); ``full`` is accepted and not used."""
     b = settings.bias
     t0 = time.monotonic()
+    out = WhatIf()
     mirrored = set(b.mirror_timeframes) if getattr(b, "mirror_symbol", None) else set()
-    scenarios = tuple(scenarios)
     trials: Dict[Timeframe, _Trial] = {}
-    for tf in sorted({tf for scen in scenarios for tf in scen}):
+    wanted = {Timeframe.H_1, Timeframe.H_4, Timeframe.D_1} if scenarios is None else {tf for s in scenarios for tf in s}
+    for tf in sorted(wanted):
         if tf in raw and tf not in mirrored and len(raw[tf].closed_as_of(now)) >= 10:
             trials[tf] = _Trial(raw[tf], now, settings)
-    out: Dict[Bias, Union[Turn, BiasDecision]] = {}
-    full = set(full)
+    if scenarios is None:
+        out.at, scen = _closes_at(raw, trials, biases, pd.Timestamp(now))
+        scenarios = (scen,) if scen else ()
+    scenarios = tuple(scenarios)
+    cut, evaluated = False, False
     for direction in directions:
         sign = -1.0 if direction is Bias.BEARISH else 1.0
         found = []
         blocked: Optional[BiasDecision] = None
         named: Optional[BiasDecision] = None      # a refusal that names this side (a veto, a missing timeframe) beats a count
         for scen in scenarios:
-            daily = Timeframe.D_1 in scen
-            if not all(tf in trials for tf in scen) or (daily and direction not in full):
+            if not scen or not all(tf in trials for tf in scen):
                 continue
             unit = trials[max(scen)].atr
             if unit <= 0:
                 continue
-            sweeps = [] if daily else [trials[tf].resting(direction, price) for tf in scen]
+            sweeps = [trials[tf].resting(direction, price) for tf in scen]
             sweeps = [x for x in sweeps if x is not None and abs(x - price) <= max_atr * unit]
             variants = [None] + ([max(sweeps) if direction is Bias.BEARISH else min(sweeps)] if sweeps else [])
             for sweep in variants:
                 if time.monotonic() - t0 > budget_s:
+                    cut = True
                     break
+                evaluated = True
                 wick = None if sweep is None else sweep + sign * -1e-6 * max(abs(sweep), 1.0)
 
-                def decide(x: float) -> BiasDecision:
+                def decide(x: float, scen=scen, wick=wick, unit=unit, sign=sign) -> BiasDecision:
                     close = price + sign * x * unit
                     votes = dict(biases)
                     for tf in scen:
-                        if direction is Bias.BEARISH:
-                            votes[tf] = trials[tf].bias_at(close, high=wick)
-                        else:
-                            votes[tf] = trials[tf].bias_at(close, low=wick)
+                        votes[tf] = (trials[tf].bias_at(close, high=wick) if sign < 0 else trials[tf].bias_at(close, low=wick))
                     return combine_biases(votes, b)
 
-                def allows(d: BiasDecision) -> bool:
+                def allows(d: BiasDecision, direction=direction) -> bool:
                     return d.tradable and d.direction is direction
+
+                def edge(ok: float, no: float) -> float:
+                    """The turning close nearest to ``no`` between ``ok`` (turns) and ``no`` (does not)."""
+                    for _ in range(refine):
+                        mid = (ok + no) / 2
+                        if allows(decide(mid)):
+                            ok = mid
+                        else:
+                            no = mid
+                    return ok
+
+                def walk(start: float, step: float) -> Optional[float]:
+                    """From ``start`` (turns) outward by ``step`` until a close no longer turns: the last one that does;
+                    None when every close up to ``max_atr`` turns."""
+                    x = start
+                    while abs(x + step) <= max_atr + 1e-9:
+                        if not allows(decide(x + step)):
+                            return edge(x, x + step)
+                        x += step
+                    return None
 
                 prev, hit, last = None, None, None
                 for k in range(0, int(round(max_atr / step_atr)) + 1):
                     last = decide(k * step_atr)
                     if allows(last):
-                        hit = (k * step_atr, last)
+                        hit = k * step_atr
                         break
                     if last.reason.startswith(f"{direction}:"):
                         named = last
                     prev = k * step_atr
                 if hit is None:
                     if sweep is None and last is not None:
-                        blocked = last                    # the scenarios run small to large: the last one holds most
+                        blocked = last
                     continue
-                x, d = hit
-                if prev is not None:                      # the turn lies between the last step that did not and this one
-                    lo, hi = prev, x
-                    for _ in range(refine):
-                        mid = (lo + hi) / 2
-                        dm = decide(mid)
-                        if allows(dm):
-                            hi, d = mid, dm
-                        else:
-                            lo = mid
-                    x = hi
-                found.append(Turn(tuple(scen), direction, price + sign * x * unit, x, d, sweep))
+                if prev is None:                      # closing at the price already turns it: where does the band start?
+                    near = walk(0.0, -fine_atr)
+                    near = -max_atr if near is None else near
+                else:
+                    near = edge(hit, prev)
+                far = walk(max(near, hit), fine_atr)
+                found.append(Turn(tuple(scen), direction, price + sign * near * unit, near, decide(near), sweep,
+                                  None if far is None else price + sign * far * unit, out.at))
         if found:
             found.sort(key=lambda t: (Timeframe.D_1 in t.timeframes, abs(t.close - price), len(t.timeframes), t.sweep is not None))
             out[direction] = found[0]
-        elif (named or blocked) is not None and direction in full:
+        elif (named or blocked) is not None:
             out[direction] = named or blocked
+    out.complete = evaluated and not cut
     return out
 
 
@@ -202,4 +240,6 @@ def turn_text(turn: Turn, price_text, zone_text: Optional[str] = None) -> str:
         first = f"de {who} {'vegen' if plural else 'veegt'} {price_text(turn.sweep)} weg en {'sluiten' if plural else 'sluit'}"
     else:
         first = f"de {who} {'sluiten' if plural else 'sluit'}"
-    return f"{first} {way} {price_text(turn.close)} → {side} {where}"
+    level = f"{way} {price_text(turn.close)}" if turn.until is None else \
+        f"tussen {price_text(turn.close)} en {price_text(turn.until)}"     # beyond the band the bias reads 50/50 again
+    return f"{first} {level} → {side} {where}"
