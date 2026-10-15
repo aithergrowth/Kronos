@@ -406,6 +406,11 @@ def live_settings(args) -> Tuple[Settings, str]:
         settings.risk.target_protect_pct = float(args.protect_pct)
     if settings.risk.target_protect_pct and not settings.risk.target_pct:
         raise SystemExit("--protect-pct needs the phase's target: --target-pct 10 (2-Step phase 1) or 5 (the verification)")
+    if getattr(args, "stop_at_target", False):
+        if settings.risk.target_pct:
+            settings.prop_firm.stop_at_target = True
+        else:                                   # a window that does not start is worse than the option staying off
+            print("[live] --stop-at-target needs the phase's target (--target-pct 10, or 5 in the verification): it stays off")
     if getattr(args, "product", None):
         apply_product(settings, args.product)
     if getattr(args, "journal", None):
@@ -998,6 +1003,9 @@ def build_parser() -> argparse.ArgumentParser:
                     "10, then 5 in the verification); used by --protect-pct")
     sp.add_argument("--protect-pct", type=float, help="within this many %% of --target-pct every trade risks half of the stake "
                     "(risk.target_protect_pct), e.g. 4")
+    sp.add_argument("--stop-at-target", action="store_true", help="with --target-pct: once the closed balance stands at the target "
+                    "no new trade when the minimum trading days are done (prop_firm.min_trading_days, 4), else the finish stake "
+                    "(prop_firm.finish_risk_pct, 0.1 %%); the open positions run")
     sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 9.5 %% from the start) or "
                     "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)

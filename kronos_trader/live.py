@@ -23,7 +23,7 @@ import math
 import os
 import time
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
@@ -408,10 +408,15 @@ class LiveRunner:
         self._approached: Dict[str, object] = {}            # zone key -> local date of its approach notice
         self._midday_on: Optional[object] = None            # local date of the last midday check
         self._last_briefing_at: Optional[pd.Timestamp] = None
+        self._target_told: Optional[str] = None             # the day and state of the last target notice of this window
+        self._scan_id = 0                                   # one target state per scan (target_state's cache key)
+        self._target_cache: Optional[Tuple[int, Any]] = None
+        self._days_known: Optional[int] = None              # the highest trading-day count read (days never go down)
 
     # ------------------------------------------------------------ one tick
     def step(self, now: Optional[pd.Timestamp] = None) -> Analysis:
         now = pd.Timestamp(now) if now is not None else self.clock()
+        self._scan_id += 1
         views = self.fetch()
         self._views = views
         self.advance_paper(views, now)
@@ -450,7 +455,8 @@ class LiveRunner:
                              ("zone touch", lambda: self.announce_poi_touch(analysis, now)),
                              ("midday check", lambda: self.midday_check(analysis, now)),
                              ("near misses", lambda: self.announce_near_misses(analysis, now)),
-                             ("approach", lambda: self.announce_approach(analysis, now))):
+                             ("approach", lambda: self.announce_approach(analysis, now)),
+                             ("target", lambda: self.announce_target(now))):
             try:
                 notice()
             except Exception as exc:
@@ -604,7 +610,17 @@ class LiveRunner:
                 else:
                     ladder = f" (ladder: balans {100 * (balance / self.settings.account_size - 1):+.1f}% t.o.v. de start)"
                 multipliers = ", ".join(f"{getattr(k, 'label', k)}-zone ×{v:g}" for k, v in (getattr(base, "zone_risk_multiplier", {}) or {}).items())
-                lines.append(f"💰 Inzet: {pct:g}% = {equity * pct / 100:,.0f}{ladder}" + (f" · {multipliers}" if multipliers else ""))
+                target = self.target_state()
+                if target is not None and target[0] == "done":
+                    lines.append(f"🏁 Doel +{float(base.target_pct):g}% staat, {target[1]} handelsdagen: geen nieuwe trades; "
+                                 f"vraag de volgende fase aan zodra alles dicht is")
+                elif target is not None:
+                    pct = float(self.settings.prop_firm.finish_risk_pct)
+                    have = "?" if target[1] is None else target[1]
+                    lines.append(f"🏁 Doel +{float(base.target_pct):g}% staat, {have} van {self.settings.prop_firm.min_trading_days} "
+                                 f"handelsdagen: inzet {pct:g}% = {equity * pct / 100:,.0f} tot de dagen er zijn")
+                else:
+                    lines.append(f"💰 Inzet: {pct:g}% = {equity * pct / 100:,.0f}{ladder}" + (f" · {multipliers}" if multipliers else ""))
                 g = self.guard
                 day_room = g.params.daily_loss_limit_pct - g.daily_loss_pct(equity)
                 total_room = g.params.max_drawdown_pct - g.drawdown_pct(equity)
@@ -1334,6 +1350,10 @@ class LiveRunner:
             self.note("stale", now, id=sid, note=self.stale_text(), **sf)
             self.notifier.send(f"⏸ {self.symbol}: setup ignored, the data is stale ({self.stale_text()}); refresh the feed")
             return
+        target = self.target_state() if (self.broker is not None and not self.dry_run) else None
+        if target is not None and target[0] == "done":
+            self.note("not_executed", now, id=sid, reason="the phase's target stands with the trading days done", **sf)
+            return
         self.note("setup", now, id=sid, reason=setup.tp_source, **sf)
         calendar = getattr(self.engine, "calendar", None)
         if calendar is not None:
@@ -1488,28 +1508,103 @@ class LiveRunner:
         room = max(0.0, room)
         return room / per_lot, room
 
+    def target_state(self) -> Optional[Tuple[str, Optional[int], float]]:
+        """With prop_firm.stop_at_target and risk.target_pct: ``("done", days, balance)`` once the closed balance stands at
+        the phase's target and min_trading_days are logged, ``("finish", days, balance)`` while days are missing (None =
+        unknown, counted as missing); None when off, without a target, under it, or when the balance cannot be read."""
+        p, r = self.settings.prop_firm, self.settings.risk
+        if not getattr(p, "stop_at_target", False) or not r.target_pct or self.broker is None:
+            return None
+        if self._target_cache is not None and self._target_cache[0] == self._scan_id:
+            return self._target_cache[1]                  # one answer per scan: the guard and the order see the same state
+        try:
+            balance = float(self.broker.balance())
+        except Exception:
+            return None                                   # not cached: the next call asks again
+        result = None
+        if balance >= self.settings.account_size * (1.0 + float(r.target_pct) / 100.0):
+            counter = getattr(self.broker, "trading_days", None)
+            days = None
+            if callable(counter):
+                try:
+                    days = counter(p.day_timezone)
+                    days = int(days) if days is not None else None
+                except Exception:
+                    days = None
+            if days is not None:
+                self._days_known = max(days, self._days_known or 0)
+            days = self._days_known                       # a terminal that does not answer keeps the last count
+            state = "done" if days is not None and days >= int(p.min_trading_days) else "finish"
+            result = (state, days, balance)
+        self._target_cache = (self._scan_id, result)
+        return result
+
+    def stake_params(self, setup: Optional[TradeSetup] = None):
+        """The risk parameters of the next trade: the profile's risk lowered by risk.drawdown_steps, the setup's multipliers,
+        and the finish stake (prop_firm.finish_risk_pct) while the phase's target stands and trading days are missing."""
+        from .strategy.risk import confirmation_label, setup_risk, stepped_risk
+        params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
+        params = setup_risk(params, setup.poi.timeframe if setup is not None else None,
+                            setup.bias_combo if setup is not None else None,
+                            confirmation_label(setup.confirmation) if setup is not None else None,
+                            getattr(setup, "neutral_timeframes", ()) if setup is not None else (),
+                            getattr(setup, "aligned_count", 0) if setup is not None else 0)
+        target = self.target_state()
+        if target is not None and target[0] == "finish":
+            params = replace(params, risk_pct=float(self.settings.prop_firm.finish_risk_pct))
+        return params
+
     def planned_risk(self, setup: Optional[TradeSetup] = None) -> Optional[float]:
         """What the next trade risks at its stop (account currency): the profile's risk, lowered by risk.drawdown_steps, times
         the profile's stake and the setup's zone multiplier (setup B). ``None`` when the terminal did not answer: the
         guard's worst case then cannot be known, and the caller refuses the entry (8 October: a 0 here let a trade
         past the day's limit)."""
-        from .strategy.risk import confirmation_label, setup_risk, stepped_risk
         try:
-            params = stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size)
-            params = setup_risk(params, setup.poi.timeframe if setup is not None else None,
-                                setup.bias_combo if setup is not None else None,
-                                confirmation_label(setup.confirmation) if setup is not None else None,
-                                getattr(setup, "neutral_timeframes", ()) if setup is not None else (),
-                                getattr(setup, "aligned_count", 0) if setup is not None else 0)
-            return float(self.broker.equity()) * params.risk_pct / 100.0
+            return float(self.broker.equity()) * self.stake_params(setup).risk_pct / 100.0
         except Exception:
             return None
+
+    def announce_target(self, now: pd.Timestamp) -> None:
+        """Once a day for the account (the windows share a file next to the journal): the phase's target stands, and what
+        the windows do about it (prop_firm.stop_at_target)."""
+        target = self.target_state()
+        if target is None:
+            return
+        state, days, balance = target
+        p, goal = self.settings.prop_firm, float(self.settings.risk.target_pct)
+        day = pd.Timestamp(now).tz_localize("UTC").tz_convert(p.day_timezone).date()
+        key = f"{day}:{state}"
+        if self._target_told == key:
+            return
+        self._target_told = key
+        path = Path(self.settings.live.journal_path).parent / "target_notice.json" if self.settings.live.journal_path else None
+        if path is not None:
+            try:
+                with AccountLock(self.lock_path, timeout=3.0):    # read and write as one step: one message for the account
+                    if path.exists() and json.loads(path.read_text(encoding="utf-8")).get("key") == key:
+                        return                                # another window of the account said it today
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(json.dumps({"key": key, "by": self.symbol}), encoding="utf-8")
+            except Exception as exc:
+                print(f"[live] {self.symbol}: target notice file ({exc})")
+        self.note("target", now, note=f"{state}: balance {balance:,.2f}, {days if days is not None else '?'} trading day(s)")
+        if state == "done":
+            self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {days} handelsdagen. De bot opent niets nieuws "
+                               f"meer; open posities lopen af. Zodra alles dicht is: vraag in het FTMO-dashboard de volgende fase aan.")
+        else:
+            have = "?" if days is None else str(days)
+            self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {have} van {p.min_trading_days} handelsdagen. "
+                               f"Nieuwe trades op {p.finish_risk_pct:g}% tot de {p.min_trading_days} dagen er zijn.")
 
     NO_PLANNED_RISK = "the trade's risk could not be computed (the terminal did not answer); not executed, next scan again"
 
     def _can_open(self, setup: TradeSetup, now: pd.Timestamp) -> Tuple[bool, str]:
         """The guard's answer for ``setup``, a refusal when its risk is unknown or a position of the account has no stop
-        (the guard would count that position as no risk)."""
+        (the guard would count that position as no risk), or when the phase's target stands with the trading days done."""
+        target = self.target_state()
+        if target is not None and target[0] == "done":
+            return False, (f"the phase's target +{float(self.settings.risk.target_pct):g} % stands with {target[1]} trading day(s): "
+                           f"no new trade; the open ones run, then request the next phase")
         risk = self.planned_risk(setup)
         if risk is None:
             return False, self.NO_PLANNED_RISK
@@ -1538,6 +1633,11 @@ class LiveRunner:
         base = self.settings.risk
         if abs(risk_params.risk_pct - base.risk_pct) < 1e-12:
             return ""
+        target = self.target_state()
+        if target is not None and target[0] == "finish":
+            days = "?" if target[1] is None else target[1]
+            return (f" ({risk_params.risk_pct:g} % on this trade: the phase's target stands, {days} of "
+                    f"{self.settings.prop_firm.min_trading_days} trading days)")
         parts = []
         try:
             balance = float(self.broker.balance())
@@ -1577,9 +1677,7 @@ class LiveRunner:
                         f"stop distance (max {cap:.0%})")
         from .strategy.risk import confirmation_label, resize_at, setup_risk, stepped_risk
         wrong_side = (setup.direction.sign > 0 and price <= setup.stop) or (setup.direction.sign < 0 and price >= setup.stop)
-        risk_params = setup_risk(stepped_risk(self.settings.risk, self.broker.balance(), self.settings.account_size),
-                                 setup.poi.timeframe, setup.bias_combo, confirmation_label(setup.confirmation),
-                                 getattr(setup, "neutral_timeframes", ()), getattr(setup, "aligned_count", 0))
+        risk_params = self.stake_params(setup)
         lots, risk_amount, risk_distance, rr_now, _ = resize_at(price, setup.stop, setup.take_profit, self.broker.equity(),
                                                                 self.spec, risk_params)
         if wrong_side or rr_now < self.settings.risk.min_rr:
@@ -1595,7 +1693,10 @@ class LiveRunner:
             return self._place_limit(setup, now, sid, price, frac, risk_params, at_level)
         resized = f"; lots {setup.lots:.2f} -> {lots:.2f} at {price:.{self.spec.price_decimals}f}" if abs(lots - setup.lots) > 1e-9 else ""
         if risk_params.risk_pct != self.settings.risk.risk_pct:
-            resized += f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)"
+            finishing = self.target_state()
+            resized += (f"; risk {risk_params.risk_pct:g} % (the phase's target stands: the finish stake)"
+                        if finishing is not None and finishing[0] == "finish" else
+                        f"; risk {risk_params.risk_pct:g} % (drawdown steps, stake or zone multiplier)")
         margin_note = ""
         room = self.margin_room(setup.direction, price)
         if room is not None and lots > room[0] + 1e-9:
@@ -1735,6 +1836,13 @@ class LiveRunner:
             except Exception as exc:
                 print(f"[live] {self.symbol}: could not check the resting limit orders ({exc})")
         changed = False
+        target = self.target_state() if self.limits else None
+        finish_cap = None
+        if target is not None:          # a limit placed before the target stands carries the full stake: only finish-sized ones stay
+            try:
+                finish_cap = float(self.broker.equity()) * float(self.settings.prop_firm.finish_risk_pct) / 100.0 * 1.05
+            except Exception:
+                finish_cap = 0.0
         for oid, info in list(self.limits.items()):
             try:
                 state, pos = self.broker.limit_state(oid)
@@ -1743,6 +1851,8 @@ class LiveRunner:
                 continue
             if state == "pending":
                 reason = "expired" if now >= info["expires_at"] else "the target traded first" if self._target_traded(info) else None
+                if reason is None and target is not None and (target[0] == "done" or float(info.get("risk_amount", 0.0)) > finish_cap):
+                    reason = "the phase's target stands"
                 if reason is None:
                     continue
                 try:

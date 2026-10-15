@@ -94,6 +94,13 @@ class PaperBroker(Broker):
     def balance(self) -> float:
         return self._balance
 
+    def trading_days(self, tz: str = "Europe/Prague") -> int:
+        """The days with a trade opened (FTMO's trading days) on ``tz``'s calendar, from the closed and the open positions (a
+        restart keeps only the closes' P&L, so a restarted paper window counts fewer: the stop at the target then stays on
+        the finish stake, the safe side)."""
+        stamps = [t.opened_at for t in self.closed] + [p.opened_at for p in self.open_positions()]
+        return len({pd.Timestamp(s).tz_localize("UTC").tz_convert(tz).date() for s in stamps if s is not None and not pd.isna(s)})
+
     def realized_pnl_since(self, since: pd.Timestamp) -> float:
         """Closed P&L since ``since`` (naive UTC), the closes from before a restart included."""
         since = pd.Timestamp(since)

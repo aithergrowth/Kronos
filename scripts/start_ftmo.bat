@@ -17,6 +17,8 @@ rem   set "RISK=1.25"                                         risk a trade in %%
 rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
 rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
 rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
+rem   set "STOP_AT_TARGET=1"                                  with TARGET: at the target no new trade once 4 trading days are
+rem                                                           logged (before that 0.1 %% a trade); the open positions run
 rem   set "WATCHDOG_PING_URL=https://hc-ping.com/..."         the healthchecks.io check that says when the computer stops
 rem                                                           (docs/LIVE_SETUP.md "When the whole computer stops")
 rem To list the server's names, in PowerShell in the Kronos folder:
@@ -47,6 +49,7 @@ set "WEEKEND_CLOSE="
 set "PRODUCT="
 set "TARGET="
 set "PROTECT="
+set "STOP_AT_TARGET="
 if exist "%~dp0ftmo_local.bat" call "%~dp0ftmo_local.bat"
 set MT5_LOGIN=
 set MT5_PASSWORD=
@@ -61,6 +64,7 @@ if defined RISK set "COMMON=%COMMON% --risk-pct %RISK%"
 if defined PRODUCT set "COMMON=%COMMON% --product %PRODUCT%"
 if defined TARGET set "COMMON=%COMMON% --target-pct %TARGET%"
 if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
+if defined STOP_AT_TARGET set "COMMON=%COMMON% --stop-at-target"
 set "WATCH=--journal journal_ftmo/trades.csv --tag FTMO --expect EURUSD,XAUUSD,NAS100,BTCUSD --report-at 22:05 --account-size %ACCOUNT% --mt5-names NAS100=%NAS_NAME%,BTCUSD=%BTC_NAME%"
 if defined PRODUCT set "WATCH=%WATCH% --product %PRODUCT%"
 if defined TARGET set "WATCH=%WATCH% --target-pct %TARGET%"

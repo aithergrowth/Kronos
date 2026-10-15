@@ -188,3 +188,7 @@ Nothing in the live profiles (frozen on 13 October). On the branch, for the next
   (not -41.6R). BTC stays at half stake; the decision whether it stays at all comes after the laptop's spread
   measurement. The research of the day: `docs/backtests/winrate/README.md` (the 14 October evening section) and
   `docs/research/2026-10-14/`.
+- 15 October: the stop at the phase's target (`prop_firm.stop_at_target`, off; `STOP_AT_TARGET=1` with `TARGET=10` in
+  `scripts/ftmo_local.bat`): at the target no new trade once four trading days are logged (FTMO's days, Prague
+  calendar, from the terminal's deal history), 0.1 % a trade until they are; the open positions run; a 🏁 message once
+  a day and a line in the morning check.

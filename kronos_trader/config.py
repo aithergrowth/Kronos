@@ -439,6 +439,15 @@ class PropFirmParams:
                                         # free margin), lots cut to fit: two still fit, and a 1:2 crypto CFD is not refused; 0 = off
     weekend_close: str = ""             # "" = off; "16:45": every position closed at Friday 16:45 New York and no new one until
                                         # the Sunday 17:00 open (FTMO Account, Standard type: flat before the weekend)
+    stop_at_target: bool = False        # 15 October (the pre-mortem's second risk: the windows never read the target): with
+                                        # risk.target_pct set, once the closed balance stands at the phase's target no new trade
+                                        # opens when min_trading_days are logged (the open ones run to their stop or target; then
+                                        # the next phase is requested by hand), and every new trade risks finish_risk_pct while
+                                        # days are missing (a day counts at any size). The 2-Step replay: the target came before
+                                        # the fourth trading day in 31 % of the 2026 starts, trading on at full stake undid a pass
+                                        # within three days in 7-12 %. Off = the windows trade on at the full stake
+    min_trading_days: int = 4           # FTMO: days with a trade opened, on day_timezone's calendar
+    finish_risk_pct: float = 0.1        # the stake while the target stands and trading days are missing
 
 
 @dataclass

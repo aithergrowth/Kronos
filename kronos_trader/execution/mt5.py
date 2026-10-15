@@ -560,6 +560,24 @@ class MT5Broker(Broker):
     def balance(self) -> float:
         return float(self.mt5.account_info().balance)
 
+    def trading_days(self, tz: str = "Europe/Prague") -> Optional[int]:
+        """The days with a trade opened on this account (FTMO's trading days, any magic number, any size), counted on
+        ``tz``'s calendar; None when the terminal does not answer."""
+        deals = self.mt5.history_deals_get(pd.Timestamp("2000-01-01").to_pydatetime(),
+                                           (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        if deals is None:
+            err = self.mt5.last_error()
+            if not ((err[0] if isinstance(err, (tuple, list)) and err else err) == NOT_FOUND):
+                return None
+            deals = ()
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        entry_in = getattr(self.mt5, "DEAL_ENTRY_IN", 0)
+        times = [int(d.time) for d in deals if getattr(d, "type", None) in trade_types and getattr(d, "entry", entry_in) == entry_in]
+        if not times:
+            return 0
+        utc = self.stamps_to_utc(pd.Series(times)).dropna()     # a stamp in a daylight-saving gap or overlap comes back NaT
+        return int(pd.DatetimeIndex(utc).tz_localize("UTC").tz_convert(tz).normalize().nunique())
+
     def realized_pnl_since(self, since: pd.Timestamp) -> Optional[float]:
         """Closed P&L (profit, commission, swap, fee) of the account's trade deals since ``since`` (naive UTC); deposits
         and other balance operations are left out.  None when the terminal does not answer."""

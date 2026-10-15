@@ -61,8 +61,11 @@ vergelijking. Sla op in kronos_notes\kaarsen.md.
 
 ## When the account reaches +10 % (the windows do not stop by themselves)
 
-The windows never stop at the target: `TARGET` (when set in `ftmo_local.bat`) only drives the protect step, and the
-day report shows the distance. When the day report shows +10 % or more: with four trading days done, let the open
+Without `STOP_AT_TARGET` the windows never stop at the target: `TARGET` alone only drives the protect step, and the
+day report shows the distance. With `set "TARGET=10"` and `set "STOP_AT_TARGET=1"` in `scripts\ftmo_local.bat`
+(the verification: `TARGET=5`; a restart outside the sessions) the windows do it themselves: at the target no new
+trade once four trading days are logged, 0.1 % a trade until they are, the open positions run, and a 🏁 message
+says so once a day. By hand, without it: When the day report shows +10 % or more: with four trading days done, let the open
 positions finish, stop the windows outside the sessions and request the verification in the FTMO dashboard; with
 fewer than four days, Max decides between trading on and waiting (a day with a position opened counts, whatever its
 size). Then:
