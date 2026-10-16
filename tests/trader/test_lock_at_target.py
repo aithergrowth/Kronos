@@ -514,3 +514,14 @@ def test_parity_names_the_lock_on_a_locked_trade():
          "r": 0.69, "note": ""}])
     sig = live_side(journal, "EURUSD", NOW - pd.Timedelta(days=1), NOW + pd.Timedelta(days=1))["abcd1234"]
     assert sig.locked and sig.exit_reason == "take_profit"
+
+
+def test_start_ftmo_switches_it_with_lock_at_target():
+    raw = (ROOT / "scripts" / "start_ftmo.bat").read_bytes()
+    assert raw.count(b"\r\n") == raw.count(b"\n")                             # CRLF throughout
+    lines = raw.decode("utf-8").split("\r\n")
+    cleared = lines.index('set "LOCK_AT_TARGET="')
+    local = next(i for i, x in enumerate(lines) if "ftmo_local.bat\" call" in x)
+    flag = lines.index('if defined LOCK_AT_TARGET set "COMMON=%COMMON% --lock-at-target"')
+    assert cleared < local < flag and lines[flag - 1].startswith("if defined STOP_AT_TARGET")
+    assert any(x.startswith('rem   set "LOCK_AT_TARGET=1"') for x in lines)

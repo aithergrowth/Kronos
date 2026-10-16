@@ -13,12 +13,19 @@ rem   set "FUNDED=1"                                          once funded: 1.0 %
 rem   set "PRODUCT=ftmo_2step"                                the FTMO 2-Step: the guard stops at a -4 %% day and 9.5 %% under the
 rem                                                           start (without PRODUCT: the profiles' -4 %% day, -8 %%)
 rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: a -2.9 %% day and 9 %% under the highest day-start balance
-rem   set "RISK=1.25"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
-rem                                                           1.25 with ftmo_2step, 1.0 with ftmo_1step (README "1-Step or 2-Step")
+rem   set "RISK=1.75"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
+rem                                                           1.75 with ftmo_2step (option B, 16 October; 2.25 the faster one),
+rem                                                           1.0 with ftmo_1step (README "1-Step or 2-Step")
 rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
 rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
 rem   set "STOP_AT_TARGET=1"                                  with TARGET: at the target no new trade once 4 trading days are
 rem                                                           logged (before that 0.1 %% a trade); the open positions run
+rem   set "LOCK_AT_TARGET=1"                                  with TARGET: from the 4th trading day (the trade's own day counted)
+rem                                                           a trade takes profit where its close brings the closed balance to
+rem                                                           the target (+0.05 %%) after its costs, when that is nearer than its
+rem                                                           own target; once the target stands an open trade closes at
+rem                                                           break-even after costs or better. Set it with STOP_AT_TARGET
+rem   A switch is on with any value, 0 too: delete its line to switch it off.
 rem   set "WATCHDOG_PING_URL=https://hc-ping.com/..."         the healthchecks.io check that says when the computer stops
 rem                                                           (docs/LIVE_SETUP.md "When the whole computer stops")
 rem To list the server's names, in PowerShell in the Kronos folder:
@@ -50,6 +57,7 @@ set "PRODUCT="
 set "TARGET="
 set "PROTECT="
 set "STOP_AT_TARGET="
+set "LOCK_AT_TARGET="
 if exist "%~dp0ftmo_local.bat" call "%~dp0ftmo_local.bat"
 set MT5_LOGIN=
 set MT5_PASSWORD=
@@ -65,6 +73,7 @@ if defined PRODUCT set "COMMON=%COMMON% --product %PRODUCT%"
 if defined TARGET set "COMMON=%COMMON% --target-pct %TARGET%"
 if defined PROTECT set "COMMON=%COMMON% --protect-pct %PROTECT%"
 if defined STOP_AT_TARGET set "COMMON=%COMMON% --stop-at-target"
+if defined LOCK_AT_TARGET set "COMMON=%COMMON% --lock-at-target"
 set "WATCH=--journal journal_ftmo/trades.csv --tag FTMO --expect EURUSD,XAUUSD,NAS100,BTCUSD --report-at 22:05 --account-size %ACCOUNT% --mt5-names NAS100=%NAS_NAME%,BTCUSD=%BTC_NAME%"
 if defined PRODUCT set "WATCH=%WATCH% --product %PRODUCT%"
 if defined TARGET set "WATCH=%WATCH% --target-pct %TARGET%"
