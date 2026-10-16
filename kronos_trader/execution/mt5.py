@@ -105,6 +105,9 @@ class MT5Broker(Broker):
         self._offset: Optional[pd.Timedelta] = None
         self._offset_at: Optional[pd.Timestamp] = None
         self._filling: Dict[str, int] = {}       # per broker symbol: the filling mode the server accepted
+        # per broker symbol: (the round turn's commission per lot and price unit its last closed position paid, None before
+        # one; when read): the lock at the target counts it on an order (commission_estimate)
+        self._commission_rates: Dict[str, Tuple[Optional[float], pd.Timestamp]] = {}
         self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
         self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
         self.account_login: Optional[int] = None
@@ -735,6 +738,9 @@ class MT5Broker(Broker):
                 pos = self._positions[pid] = self._position_from_mt5(p)
             else:
                 pos.stop, pos.take_profit = float(p.sl or 0.0), float(p.tp or 0.0)
+                # the volume too: a part closed by hand in MT5 leaves fewer lots, which the guard's loss at the stop and the
+                # lock at the target price on (16 October review: the lock priced the old lots, half the distance)
+                pos.lots = float(getattr(p, "volume", pos.lots) or pos.lots)
                 if pos.status == "pending":                  # the order has become a position: confirmed
                     pos.entry, pos.status = float(p.price_open), "filled"
                     pos.meta.pop("entry_unconfirmed", None)
@@ -1118,10 +1124,12 @@ class MT5Broker(Broker):
                 float(getattr(info, "trade_freeze_level", 0) or 0) * point)
 
     def closing_costs(self, position: Position) -> Optional[float]:
-        """The exit deal's commission, taken as the entry deal's (read once from the history; where the whole round turn is
-        booked on the entry this over-counts a side, the safe way), and the accrued swap when it is negative
-        (``open_positions`` refreshes it). None while the entry deal is not in the history."""
-        if "entry_commission" not in position.meta:
+        """The exit deal's commission and the accrued swap when it is negative (``open_positions`` refreshes it). The exit's
+        commission is the entry deal's (read once from the history, per lot, so a position partly closed by hand counts
+        what is left; where the whole round turn is booked on the entry this over-counts a side, the safe way), or the rest
+        of the round turn the market's last closed position paid when that is more (a server that books it on the exit).
+        None while the entry deal is not in the history."""
+        if "entry_commission_per_lot" not in position.meta:
             try:
                 deals = list(self.mt5.history_deals_get(position=int(position.id)) or [])
             except Exception:
@@ -1129,10 +1137,53 @@ class MT5Broker(Broker):
             ins = [d for d in deals if d.entry != self.mt5.DEAL_ENTRY_OUT]
             if not ins:
                 return None
-            position.meta["entry_commission"] = sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0)
-                                                    for d in ins)
+            volume = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in ins) or float(position.lots)
+            paid = sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0) for d in ins)
+            position.meta["entry_commission_per_lot"] = abs(paid) / volume if volume > 0 else 0.0
+        lots = float(position.lots)
+        entry_side = float(position.meta["entry_commission_per_lot"]) * lots
+        round_turn = self.commission_estimate(position.symbol, lots, float(position.entry))
+        exit_side = entry_side if round_turn is None else max(entry_side, round_turn - entry_side)
         swap = float(position.meta.get("swap", 0.0) or 0.0)
-        return abs(float(position.meta["entry_commission"])) + max(0.0, -swap)
+        return exit_side + max(0.0, -swap)
+
+    def commission_estimate(self, symbol: str, lots: float, price: float) -> Optional[float]:
+        """The round turn's commission of ``lots`` at ``price`` as the market's last closed position on this account paid it:
+        all its deals, so it holds wherever the server books the commission (the entry, the exit or both), per lot and
+        price unit (FTMO's per-lot forex and its %-of-notional metals and crypto alike). None before the market's first
+        close, read again after 15 minutes; a rate found is kept."""
+        name = self.mt5_symbol(symbol)
+        now = self.clock()
+        known = self._commission_rates.get(name)
+        if known is None or (known[0] is None and now - known[1] >= pd.Timedelta(minutes=15)):
+            known = self._commission_rates[name] = (self._commission_rate(name), now)
+        return None if known[0] is None else known[0] * float(lots) * abs(float(price))
+
+    def _commission_rate(self, name: str) -> Optional[float]:
+        try:
+            deals = self.mt5.history_deals_get(pd.Timestamp("2000-01-01").to_pydatetime(),
+                                               (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        except Exception:
+            return None
+        out = self.mt5.DEAL_ENTRY_OUT
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        by_position: Dict[int, list] = {}
+        for d in deals or ():
+            if getattr(d, "symbol", None) == name and getattr(d, "type", None) in trade_types:
+                by_position.setdefault(int(d.position_id), []).append(d)
+        best: Optional[Tuple[int, float]] = None
+        for group in by_position.values():
+            ins = [d for d in group if d.entry != out]
+            volume = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in ins)
+            closed = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in group if d.entry == out)
+            notional = sum(float(getattr(d, "volume", 0.0) or 0.0) * abs(float(d.price)) for d in ins)
+            if volume <= 0 or closed < volume - 1e-9 or notional <= 0:
+                continue                                 # still open or partly closed: not a whole round turn
+            paid = -sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0) for d in group)
+            when = max(int(d.time) for d in group if d.entry == out)
+            if best is None or when > best[0]:
+                best = (when, max(0.0, paid) / notional)
+        return None if best is None else best[1]
 
     def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
         mt5 = self.mt5

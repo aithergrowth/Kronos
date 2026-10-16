@@ -422,10 +422,12 @@ def test_the_servers_stops_level(tmp_path):
     api.quotes["EURUSD"] = (1.10000, 1.10001)                                  # 0.00105 away: allowed
     _scan(runner, 1)
     assert api.positions[-1].tp == pytest.approx(1.10105)
-    api.stops_level, runner._scan_id = 110, runner._scan_id + 1               # an order: 1.10104 is 0.00104 from the bid
+    # an order of 2 lots counts 205, FTMO's documented round turn (2 x 5.00: no closed EURUSD trade on the account yet) and
+    # the open position's closing costs (4.20): 1.10111, 0.00111 from the bid
+    api.stops_level, runner._scan_id = 112, runner._scan_id + 1
     assert runner._order_lock(Direction.LONG, 1.10001, 2.0, 1.106, NOW) is None
     api.stops_level, runner._scan_id = 0, runner._scan_id + 1
-    assert runner._order_lock(Direction.LONG, 1.10001, 2.0, 1.106, NOW)[0] == pytest.approx(1.10104)
+    assert runner._order_lock(Direction.LONG, 1.10001, 2.0, 1.106, NOW)[0] == pytest.approx(1.10111)
 
 
 def test_a_resting_limit_on_mt5_is_moved_with_its_price_stop_and_expiry(tmp_path):
@@ -439,8 +441,9 @@ def test_a_resting_limit_on_mt5_is_moved_with_its_price_stop_and_expiry(tmp_path
     _scan(runner)
     req = api.requests[-1]
     assert (req["action"], req["order"], req["price"], req["sl"]) == (7, int(order.id), 1.099, 1.095)
-    assert req["tp"] == pytest.approx(1.10003) and req["type_time"] == api.ORDER_TIME_GTC     # 205 over 2 lots, no commission yet
-    assert api.orders[0].tp == pytest.approx(1.10003) and runner.limits[order.id]["take_profit"] == 1.11
+    # 205 and the fill's round turn (FTMO's documented 2 x 5.00 before the account's first EURUSD close) over 2 lots
+    assert req["tp"] == pytest.approx(1.10008) and req["type_time"] == api.ORDER_TIME_GTC
+    assert api.orders[0].tp == pytest.approx(1.10008) and runner.limits[order.id]["take_profit"] == 1.11
 
 
 def test_mt5_reads_the_days_dates_and_costs(tmp_path):

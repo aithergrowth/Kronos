@@ -143,6 +143,11 @@ class Broker(ABC):
         accrued so far; None when unknown."""
         return None
 
+    def commission_estimate(self, symbol: str, lots: float, price: float) -> Optional[float]:
+        """The round turn's commission (both sides, account currency) a position of ``lots`` at ``price`` will pay; None
+        when the broker cannot say."""
+        return None
+
     def trading_dates(self, tz: str = "Europe/Prague") -> Optional[set]:
         """The dates (``tz``'s calendar) with a trade opened on the account, FTMO's trading days; None when unknown."""
         return None

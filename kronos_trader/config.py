@@ -462,8 +462,8 @@ class PropFirmParams:
                                         # target, a trade of this window takes profit where its close brings the closed balance
                                         # to the target plus lock_buffer_pct after its costs, when that lies nearer than its own
                                         # target; set at the order and checked every scan, so a balance that moves (another
-                                        # trade closed, a limit filled later) is followed. Its costs: the exit's commission and
-                                        # a negative swap.
+                                        # trade closed, a limit filled later) is followed. Its costs: its round turn's
+                                        # commission, a negative swap, what closing the account's other open positions costs.
                                         # Once the target stands it does nothing: the open trades run to their own exits (the
                                         # review of 16 October: a break-even close there made the fourth day's finish-stake trade
                                         # one opened and closed for nothing, which Max turned down). Never farther than the

@@ -421,6 +421,21 @@ def target_lock_price(direction: Direction, entry: float, take_profit: float, ga
     return price if direction.sign * (take_profit - price) > 0 else None
 
 
+# FTMO's commission a side (docs/LIVE_SETUP.md, "FTMO's spreads"): forex 2.50 a lot, metals 0.0007 % and crypto 0.0325 % of
+# the notional, indices none. The lock at the target counts its round turn on an order until the market's first close on
+# the account shows what the server books (16 October review: an order that counted the profiles' none closed under the
+# target when its level traded before the next scan)
+FTMO_SIDE_COMMISSION: Dict[str, Tuple[float, float]] = {"XAUUSD": (0.0, 0.0007), "XAGUSD": (0.0, 0.0007),
+                                                         "BTCUSD": (0.0, 0.0325), "ETHUSD": (0.0, 0.0325)}
+
+
+def ftmo_round_turn(spec: SymbolSpec, price: float, lots: float) -> float:
+    """FTMO's documented round-turn commission of ``lots`` at ``price`` (account currency): a 100,000-unit contract is
+    forex, a market not in FTMO_SIDE_COMMISSION otherwise an index (none)."""
+    per_lot, pct = FTMO_SIDE_COMMISSION.get(spec.symbol.upper(), (2.5, 0.0) if spec.contract_size == 100_000.0 else (0.0, 0.0))
+    return 2.0 * float(lots) * (per_lot + pct / 100.0 * abs(float(price)) / spec.pip_size * spec.pip_value_per_lot)
+
+
 def shorten_target(entry: float, tp: float, direction: Direction, params: RiskParams, spec: SymbolSpec, source: str) -> Tuple[float, str]:
     """Research (14 October): the target ``tp_buffer_fraction`` of its distance back toward the entry (0.05: just short of the
     pool, where the literature places exits); unchanged when the knob is off."""

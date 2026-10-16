@@ -262,6 +262,10 @@ class PaperBroker(Broker):
         """The round turn's commission, which this broker books at the close (``commission``); no swap."""
         return self.commission(position.symbol, position.entry, position.lots)
 
+    def commission_estimate(self, symbol: str, lots: float, price: float) -> float:
+        """The round turn this broker books (``commission``)."""
+        return self.commission(symbol, price, lots)
+
     def close_position(self, position_id, reason="manual", price=None, ts=None, market=False) -> ClosedTrade:
         """Close at ``price`` (a stop or target level, already a bid/ask level) or, with ``market=True`` or no
         price, at the bid/ask built from that candle price for the position's side."""
