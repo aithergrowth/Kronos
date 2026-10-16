@@ -98,8 +98,12 @@ class PaperBroker(Broker):
         """The days with a trade opened (FTMO's trading days) on ``tz``'s calendar, from the closed and the open positions (a
         restart keeps only the closes' P&L, so a restarted paper window counts fewer: the stop at the target then stays on
         the finish stake, the safe side)."""
+        return len(self.trading_dates(tz))
+
+    def trading_dates(self, tz: str = "Europe/Prague") -> set:
+        """The dates ``trading_days`` counts."""
         stamps = [t.opened_at for t in self.closed] + [p.opened_at for p in self.open_positions()]
-        return len({pd.Timestamp(s).tz_localize("UTC").tz_convert(tz).date() for s in stamps if s is not None and not pd.isna(s)})
+        return {pd.Timestamp(s).tz_localize("UTC").tz_convert(tz).date() for s in stamps if s is not None and not pd.isna(s)}
 
     def realized_pnl_since(self, since: pd.Timestamp) -> float:
         """Closed P&L since ``since`` (naive UTC), the closes from before a restart included."""
@@ -243,6 +247,20 @@ class PaperBroker(Broker):
 
     def modify_stop(self, position_id: str, stop: float) -> None:
         self.positions[position_id].stop = float(stop)
+
+    def modify_take_profit(self, position_id: str, take_profit: float) -> None:
+        self.positions[position_id].take_profit = float(take_profit)
+
+    def modify_limit_take_profit(self, order_id: str, take_profit: float) -> None:
+        self.limits[str(order_id)].take_profit = float(take_profit)
+
+    def price_rules(self, symbol: str) -> Tuple[float, float, float]:
+        """The profile's price grid; no stops or freeze level."""
+        return 10.0 ** -self._spec(symbol).price_decimals, 0.0, 0.0
+
+    def closing_costs(self, position: Position) -> float:
+        """The round turn's commission, which this broker books at the close (``commission``); no swap."""
+        return self.commission(position.symbol, position.entry, position.lots)
 
     def close_position(self, position_id, reason="manual", price=None, ts=None, market=False) -> ClosedTrade:
         """Close at ``price`` (a stop or target level, already a bid/ask level) or, with ``market=True`` or no

@@ -411,6 +411,11 @@ def live_settings(args) -> Tuple[Settings, str]:
             settings.prop_firm.stop_at_target = True
         else:                                   # a window that does not start is worse than the option staying off
             print("[live] --stop-at-target needs the phase's target (--target-pct 10, or 5 in the verification): it stays off")
+    if getattr(args, "lock_at_target", False):
+        if settings.risk.target_pct:
+            settings.prop_firm.lock_at_target = True
+        else:
+            print("[live] --lock-at-target needs the phase's target (--target-pct 10, or 5 in the verification): it stays off")
     if getattr(args, "product", None):
         apply_product(settings, args.product)
     if getattr(args, "journal", None):
@@ -481,7 +486,10 @@ def cmd_live(args) -> int:
           f"or -{pf.max_drawdown_pct}% from the {dict(initial='start', peak='peak', day_high='highest day-start balance').get(pf.drawdown_basis, pf.drawdown_basis)}, max {pf.max_open_trades} open "
           f"({pf.max_open_per_symbol} per market)" + (f", flat by Friday {pf.weekend_close} New York" if pf.weekend_close else "")
           + (f"; at the target +{settings.risk.target_pct:g}% no new trade after {pf.min_trading_days} trading days "
-             f"({pf.finish_risk_pct:g}% a trade before)" if pf.stop_at_target else ""))
+             f"({pf.finish_risk_pct:g}% a trade before)" if pf.stop_at_target else "")
+          + (f"; lock at the target on: from the {pf.min_trading_days}th trading day (the trade's own day counted) a "
+             f"trade takes profit where the closed balance reaches +{settings.risk.target_pct:g}% (+{pf.lock_buffer_pct:g}% "
+             f"after its costs) when that is nearer than its own target" if pf.lock_at_target else ""))
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
             balance = float(broker.balance())
@@ -1022,12 +1030,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--drawdown-steps", help="risk.drawdown_steps in place of the profile's: level %%:risk %% pairs below the "
                     "start, e.g. --drawdown-steps=-3:0.5 (the = keeps the minus sign from reading as a flag); 'none' for none")
     sp.add_argument("--target-pct", type=float, help="the challenge phase's profit target in %% of the initial balance (FTMO 2-Step: "
-                    "10, then 5 in the verification); used by --protect-pct")
+                    "10, then 5 in the verification); used by --protect-pct, --stop-at-target and --lock-at-target")
     sp.add_argument("--protect-pct", type=float, help="within this many %% of --target-pct every trade risks half of the stake "
                     "(risk.target_protect_pct), e.g. 4")
     sp.add_argument("--stop-at-target", action="store_true", help="with --target-pct: once the closed balance stands at the target "
                     "no new trade when the minimum trading days are done (prop_firm.min_trading_days, 4), else the finish stake "
                     "(prop_firm.finish_risk_pct, 0.1 %%); the open positions run")
+    sp.add_argument("--lock-at-target", action="store_true", help="with --target-pct: once the phase has its minimum trading "
+                    "days (the trade's own day counted) a trade takes profit where its close brings the closed balance to the "
+                    "target (+prop_firm.lock_buffer_pct, after its costs) when that is nearer than its own target, checked "
+                    "every scan (prop_firm.lock_at_target)")
     sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 9.5 %% from the start) or "
                     "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)

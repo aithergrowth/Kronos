@@ -457,6 +457,22 @@ class PropFirmParams:
                                         # within three days in 7-12 %. Off = the windows trade on at the full stake
     min_trading_days: int = 4           # FTMO: days with a trade opened, on day_timezone's calendar
     finish_risk_pct: float = 0.1        # the stake while the target stands and trading days are missing
+    lock_at_target: bool = False        # 16 October, option B (Max: "Oké dan doen we B"): with risk.target_pct set and the
+                                        # phase's min_trading_days logged (the trade's own day counted), a trade of this window
+                                        # takes profit where its close brings the closed balance to the target plus
+                                        # lock_buffer_pct, after its costs (the exit's commission, a negative swap), when that
+                                        # lies nearer than its own target; set at the order and checked every scan, so a balance
+                                        # that moves (another trade closed, a limit filled later) is followed. Once the target
+                                        # stands it is break-even after costs: the last open trades close without a loss and the
+                                        # phase passes flat. Never farther than the trade's own target, never on the loss side,
+                                        # the stop untouched. 2-Step replay Feb 2024 - Sep 2026 without micro trades, option B's
+                                        # stakes: the lock takes both phases from 73 to 68 days at RISK 1.75 (72 -> 64 at 2.25,
+                                        # shuffled medians), 0 breaches; measured with stop_at_target on. Live only: a backtest
+                                        # runs one market and sees neither the account's balance nor its days. Off = every
+                                        # target as planned
+    lock_buffer_pct: float = 0.05       # how far past the target the lock aims, in % of account_size (5 on 10k): a close a few
+                                        # dollars short is no pass. The replay: 0.05 % costs 0.8 of the 6.6 days the lock gains
+                                        # (shuffled mean, RISK 1.75)
 
 
 @dataclass

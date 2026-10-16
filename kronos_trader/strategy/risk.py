@@ -396,6 +396,31 @@ def size_position(
     return round(lots, 4), risk_amount, risk_distance, stop_pips
 
 
+def tick_decimals(tick: float) -> int:
+    """The decimals a price on a ``tick`` grid needs (0.00001 -> 5, 0.25 -> 2, 1.0 -> 0)."""
+    d = 0
+    while d < 10 and abs(round(tick, d) - tick) > 1e-12:
+        d += 1
+    return d
+
+
+def target_lock_price(direction: Direction, entry: float, take_profit: float, gain_at_target: float, need: float,
+                      tick: float) -> Optional[float]:
+    """The lock at the phase's target (prop_firm.lock_at_target): the take-profit at which a trade from ``entry`` gains
+    ``need`` (account currency), when it gains ``gain_at_target`` at its own target ``take_profit``. On the line from the
+    entry to that target (a CFD's P&L is linear in the price), rounded away from the entry onto the ``tick`` grid and at
+    least a tick from it; None when the own target lies as near or nearer."""
+    if tick <= 0 or gain_at_target <= 0 or need >= gain_at_target:
+        return None
+    raw = entry + (take_profit - entry) * max(0.0, need) / gain_at_target
+    if direction.sign > 0:
+        price = max(math.ceil(raw / tick - 1e-9), math.floor(entry / tick + 1e-9) + 1) * tick
+    else:
+        price = min(math.floor(raw / tick + 1e-9), math.ceil(entry / tick - 1e-9) - 1) * tick
+    price = round(price, tick_decimals(tick))
+    return price if direction.sign * (take_profit - price) > 0 else None
+
+
 def shorten_target(entry: float, tp: float, direction: Direction, params: RiskParams, spec: SymbolSpec, source: str) -> Tuple[float, str]:
     """Research (14 October): the target ``tp_buffer_fraction`` of its distance back toward the entry (0.05: just short of the
     pool, where the literature places exits); unchanged when the knob is off."""

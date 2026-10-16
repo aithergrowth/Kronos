@@ -18,7 +18,7 @@ FIELDS = ["time", "symbol", "event", "id", "direction", "poi_tf", "confirmation"
           "lots", "risk", "price", "pnl", "r", "reason", "note"]
 EVENTS = ("briefing", "poi_touch", "setup", "approval_requested", "approved", "approved_late", "skipped", "expired",
           "not_executed", "filled", "submitted", "fill_confirmed", "did_not_fill", "breakeven", "closed", "stale", "deferred",
-          "start", "limit_placed", "limit_cancelled", "limit_gone")
+          "start", "limit_placed", "limit_cancelled", "limit_gone", "target_lock", "target_lock_exit", "target_lock_failed")
 
 
 def setup_id(key) -> str:

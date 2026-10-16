@@ -43,6 +43,7 @@ HOUR = pd.Timedelta(1, unit="h")
 INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
 INVALID_EXPIRATION = 10022  # TRADE_RETCODE_INVALID_EXPIRATION: the server does not take this order expiry
 TIMEOUT = 10012             # TRADE_RETCODE_TIMEOUT: no answer in time; the server may have taken the request
+NO_CHANGES = 10025          # TRADE_RETCODE_NO_CHANGES: the request asked for the levels the order already has
 NOT_FOUND = -4              # RES_E_NOT_FOUND: newer terminals (build 6244, FTMO, 6 October) answer a filter that matches nothing
                             # (no position, no pending order, no deal yet) with None and this code instead of an empty tuple
 NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
@@ -672,6 +673,11 @@ class MT5Broker(Broker):
     def trading_days(self, tz: str = "Europe/Prague") -> Optional[int]:
         """The days with a trade opened on this account (FTMO's trading days, any magic number, any size), counted on
         ``tz``'s calendar; None when the terminal does not answer."""
+        dates = self.trading_dates(tz)
+        return None if dates is None else len(dates)
+
+    def trading_dates(self, tz: str = "Europe/Prague") -> Optional[set]:
+        """The dates ``trading_days`` counts; None when the terminal does not answer."""
         deals = self.mt5.history_deals_get(pd.Timestamp("2000-01-01").to_pydatetime(),
                                            (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
         if deals is None:
@@ -683,9 +689,9 @@ class MT5Broker(Broker):
         entry_in = getattr(self.mt5, "DEAL_ENTRY_IN", 0)
         times = [int(d.time) for d in deals if getattr(d, "type", None) in trade_types and getattr(d, "entry", entry_in) == entry_in]
         if not times:
-            return 0
+            return set()
         utc = self.stamps_to_utc(pd.Series(times)).dropna()     # a stamp in a daylight-saving gap or overlap comes back NaT
-        return int(pd.DatetimeIndex(utc).tz_localize("UTC").tz_convert(tz).normalize().nunique())
+        return set(pd.DatetimeIndex(utc).tz_localize("UTC").tz_convert(tz).date)
 
     def realized_pnl_since(self, since: pd.Timestamp) -> Optional[float]:
         """Closed P&L (profit, commission, swap, fee) of the account's trade deals since ``since`` (naive UTC); deposits
@@ -1061,6 +1067,72 @@ class MT5Broker(Broker):
         tracked = self._positions.get(str(position_id))
         if tracked is not None:
             tracked.stop = float(stop)
+
+    def modify_take_profit(self, position_id: str, take_profit: float) -> None:
+        """TRADE_ACTION_SLTP with the position's own stop: a request without its sl would remove the stop."""
+        mt5 = self.mt5
+        p = next((x for x in mt5.positions_get() or [] if str(x.ticket) == str(position_id)), None)
+        if p is None:
+            raise KeyError(f"position {position_id} not found")
+        request = {"action": mt5.TRADE_ACTION_SLTP, "position": p.ticket, "symbol": p.symbol,
+                   "sl": float(p.sl or 0.0), "tp": float(take_profit), "magic": self.magic}
+        result = mt5.order_send(request)
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, NO_CHANGES):
+            raise RuntimeError(f"modify take-profit failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        tracked = self._positions.get(str(position_id))
+        if tracked is not None:
+            tracked.take_profit = float(take_profit)
+
+    def modify_limit_take_profit(self, order_id: str, take_profit: float) -> None:
+        """TRADE_ACTION_MODIFY of a resting limit with its own price, stop, time type and expiry, only the tp new."""
+        mt5 = self.mt5
+        o = next((x for x in self._server_limits() if str(x.ticket) == str(order_id)), None)
+        if o is None:
+            raise KeyError(f"limit {order_id} not found")
+        request = {"action": getattr(mt5, "TRADE_ACTION_MODIFY", 7), "order": int(o.ticket), "symbol": o.symbol,
+                   "price": float(o.price_open), "sl": float(o.sl or 0.0), "tp": float(take_profit),
+                   "type_time": int(getattr(o, "type_time", getattr(mt5, "ORDER_TIME_GTC", 0)) or 0),
+                   "expiration": int(getattr(o, "time_expiration", 0) or 0), "magic": self.magic}
+        result = mt5.order_send(request)
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED, NO_CHANGES):
+            raise RuntimeError(f"modify of limit {order_id} failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        known = self._limits.get(str(order_id))
+        if known is not None:
+            known.take_profit = float(take_profit)
+
+    def price_rules(self, symbol: str) -> Optional[Tuple[float, float, float]]:
+        """The server's tick (trade_tick_size, else the point) and its stops and freeze levels (in points) as prices."""
+        try:
+            info = self.mt5.symbol_info(self.mt5_symbol(symbol))
+        except Exception:
+            return None
+        if info is None:
+            return None
+        point = float(getattr(info, "point", 0.0) or 0.0)
+        tick = float(getattr(info, "trade_tick_size", 0.0) or 0.0) or point
+        if tick <= 0:
+            return None
+        return (tick, float(getattr(info, "trade_stops_level", 0) or 0) * point,
+                float(getattr(info, "trade_freeze_level", 0) or 0) * point)
+
+    def closing_costs(self, position: Position) -> Optional[float]:
+        """The exit deal's commission, taken as the entry deal's (read once from the history; where the whole round turn is
+        booked on the entry this over-counts a side, the safe way), and the accrued swap when it is negative
+        (``open_positions`` refreshes it). None while the entry deal is not in the history."""
+        if "entry_commission" not in position.meta:
+            try:
+                deals = list(self.mt5.history_deals_get(position=int(position.id)) or [])
+            except Exception:
+                return None
+            ins = [d for d in deals if d.entry != self.mt5.DEAL_ENTRY_OUT]
+            if not ins:
+                return None
+            position.meta["entry_commission"] = sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0)
+                                                    for d in ins)
+        swap = float(position.meta.get("swap", 0.0) or 0.0)
+        return abs(float(position.meta["entry_commission"])) + max(0.0, -swap)
 
     def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
         mt5 = self.mt5

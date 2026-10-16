@@ -403,11 +403,20 @@ class LiveRunner:
         self.paper_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"paper_{self.symbol}.json"
                                            if keep_paper_account and settings.live.journal_path
                                            and callable(getattr(broker, "restore", None)) else None)
+        # the lock at the phase's target (prop_firm.lock_at_target) moves a trade's take-profit: its own target, the last level
+        # the lock sent and whether Telegram heard of it are kept per position next to the journal, so a restart moves a lock
+        # back toward the trade's own target, never toward a lock price taken for its own
+        self.own_targets_path: Optional[Path] = (Path(settings.live.journal_path).parent / f"target_lock_{self.symbol}.json"
+                                                 if settings.live.journal_path else None)
+        self.own_targets: Dict[str, Dict[str, Any]] = {}
+        self._lock_cache: Optional[Tuple[int, Any]] = None  # the lock's account state, read once a scan
+        self._lock_retry: Dict[str, Tuple[int, pd.Timestamp]] = {}   # id -> (refusals, next try) of a refused move or close
         self.load_paper()
         self.load_traded()
         self.load_limits()
         self.load_seen()
         self.load_visits()
+        self.load_own_targets()
         self._briefed_on: Optional[object] = None          # local date of the last morning briefing
         self._summarized_on: Optional[object] = None       # local date of the last evening summary
         self._loop_error: Optional[Tuple[str, float, int]] = None   # (text, time sent, repeats since): one message per error
@@ -455,6 +464,10 @@ class LiveRunner:
             self.report_closes()
         except Exception as exc:
             exits_failed = True
+            self.report_loop_error(exc)
+        try:                             # on its own as well: a failing target lock never holds up the exits or an entry
+            self.manage_target_lock(now)
+        except Exception as exc:
             self.report_loop_error(exc)
         if unread is not None:
             raise RuntimeError(f"the account could not be read ({unread!r}); "
@@ -640,6 +653,16 @@ class LiveRunner:
                                  f"handelsdagen: inzet {pct:g}% = {equity * pct / 100:,.0f} tot de dagen er zijn")
                 else:
                     lines.append(f"💰 Inzet: {pct:g}% = {equity * pct / 100:,.0f}{ladder}" + (f" · {multipliers}" if multipliers else ""))
+                lock = self.target_lock_state()
+                if lock is not None:            # the lock at the phase's target (16 October): what it does today
+                    days = "?" if lock["days"] is None else lock["days"]
+                    need = self.settings.prop_firm.min_trading_days
+                    lines.append(f"🔐 Doel-lock aan ({days} van {need} handelsdagen): " + (
+                        f"vanaf de {need}e handelsdag (de dag van de trade telt mee) neemt een trade winst waar de gesloten "
+                        f"balans +{float(base.target_pct):g}% haalt, als dat dichter ligt dan zijn eigen doel; nog "
+                        f"{lock['goal'] - lock['balance']:,.0f} te gaan" if lock["balance"] < lock["goal"] else
+                        f"het doel staat; met de {need} dagen erbij sluit een open trade op break-even na kosten of beter, "
+                        f"zodat alles dicht gaat"))
                 g = self.guard
                 day_room = g.params.daily_loss_limit_pct - g.daily_loss_pct(equity)
                 total_room = g.params.max_drawdown_pct - g.drawdown_pct(equity)
@@ -1708,8 +1731,10 @@ class LiveRunner:
                 print(f"[live] {self.symbol}: target notice file ({exc})")
         self.note("target", now, note=f"{state}: balance {balance:,.2f}, {days if days is not None else '?'} trading day(s)")
         if state == "done":
+            runs = ("open posities sluiten op break-even na kosten of beter (doel-lock)" if getattr(p, "lock_at_target", False)
+                    else "open posities lopen af")
             self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {days} handelsdagen. De bot opent niets nieuws "
-                               f"meer; open posities lopen af. Zodra alles dicht is: vraag in het FTMO-dashboard de volgende fase aan.")
+                               f"meer; {runs}. Zodra alles dicht is: vraag in het FTMO-dashboard de volgende fase aan.")
         else:
             have = "?" if days is None else str(days)
             self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {have} van {p.min_trading_days} handelsdagen. "
@@ -1843,12 +1868,24 @@ class LiveRunner:
             resized += f"; lots {lots:.2f} -> {fit:.2f}: margin ({room[1]:,.0f} available)"
             risk_amount *= fit / lots
             lots = fit
+        # the lock at the phase's target: a nearer take-profit on the order, after the R:R checks above, which stay on the
+        # setup's own target (setup.take_profit is never changed: the journal's plan, a retry and the min R:R read it)
+        meta = {"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
+                "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value}
+        take_profit = setup.take_profit
+        try:
+            lock = self._order_lock(setup.direction, price, lots, setup.take_profit, now)
+        except Exception as exc:                         # the order goes out with its own target; the next scan tries again
+            print(f"[live] {self.symbol}: target lock for the order failed ({exc}); its own target goes out")
+            lock = None
+        if lock is not None:
+            take_profit = lock[0]
+            meta.update({"own_take_profit": float(setup.take_profit), "lock_need": float(lock[1]), "lock_days": int(lock[2])})
+            resized += f"; target lock: TP {setup.take_profit:.{self._lock_decimals()}f} -> {take_profit:.{self._lock_decimals()}f}"
         try:
             pos = self.broker.place_market_order(
-                self.symbol, setup.direction, lots, setup.stop, setup.take_profit, risk_amount,
-                risk_distance, setup.breakeven_r,
-                meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value}",
-                      "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value},
+                self.symbol, setup.direction, lots, setup.stop, take_profit, risk_amount,
+                risk_distance, setup.breakeven_r, meta=meta,
                 price=price, ts=self.fill_stamp(now), price_is_fill=True,
             )
         except Exception as exc:
@@ -1889,6 +1926,7 @@ class LiveRunner:
         limit = self.spec.round_price(raw)
         self._limit_mode = mode
         self._limit_note = ""
+        self._limit_locked = False
         equity = self.broker.equity()
         lots, risk_amount, risk_distance, rr, _ = resize_at(limit, setup.stop, setup.take_profit, equity,
                                                             self.spec, risk_params)
@@ -1921,9 +1959,20 @@ class LiveRunner:
             risk_amount *= fit / lots
             lots = fit
         expires = pd.Timestamp(now) + pd.Timedelta(minutes=int(self.settings.risk.limit_entry_minutes))
+        take_profit = setup.take_profit                  # the lock at the phase's target, after the R:R check on the own target
+        try:
+            lock = self._order_lock(setup.direction, limit, lots, setup.take_profit, now, reference=limit)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: target lock for the limit failed ({exc}); its own target goes out")
+            lock = None
+        self._limit_locked = lock is not None
+        if lock is not None:
+            take_profit = lock[0]
+            self._limit_note = "; ".join(x for x in (self._limit_note, f"target lock: TP {setup.take_profit:.{d}f} -> "
+                                                     f"{take_profit:.{self._lock_decimals()}f}") if x)
         try:
             order = self.broker.place_limit_order(
-                self.symbol, setup.direction, lots, limit, setup.stop, setup.take_profit, risk_amount, risk_distance,
+                self.symbol, setup.direction, lots, limit, setup.stop, take_profit, risk_amount, risk_distance,
                 setup.breakeven_r, expires, ts=self.fill_stamp(now),
                 meta={"comment": f"{setup.poi.timeframe.label}POI {setup.confirmation.type.value} L",
                       "poi_tf": setup.poi.timeframe.label, "confirmation": setup.confirmation.type.value})
@@ -1943,10 +1992,16 @@ class LiveRunner:
         if mark_traded is not None:                      # the zone's visit is used, filled or not (as the backtest counts it)
             mark_traded(self.symbol, setup.poi.key, getattr(setup, "visit_number", None))
             self.save_traded()
+        # "take_profit" stays the setup's own target (the "target traded first" cancel reads it, as the backtest's); a nearer
+        # one the lock at the phase's target put on the order is "lock_tp"
+        locked = bool(getattr(self, "_limit_locked", False))
         self.limits[order.id] = {"sid": sid, "direction": order.direction.name, "price": float(order.price),
-                                 "stop": float(order.stop), "take_profit": float(order.take_profit), "lots": float(order.lots),
+                                 "stop": float(order.stop), "lots": float(order.lots),
+                                 "take_profit": float(setup.take_profit if locked else order.take_profit),
                                  "risk_amount": float(order.risk_amount), "placed_at": pd.Timestamp(now),
                                  "expires_at": pd.Timestamp(order.expires_at)}
+        if locked:
+            self.limits[order.id].update({"lock_tp": float(order.take_profit), "lock_told": True})
         self.save_limits()
         d = self.spec.price_decimals
         side = "BUY" if order.direction is Direction.LONG else "SELL"
@@ -1957,9 +2012,12 @@ class LiveRunner:
         self.note("limit_placed", now, id=order.id, direction=order.direction.name, entry=float(order.price), stop=float(order.stop),
                   take_profit=float(order.take_profit), lots=float(order.lots), risk=float(order.risk_amount),
                   note=f"setup {sid}; {mode}; valid until {order.expires_at:%H:%M} UTC" + (f"; {floor_note}" if floor_note else ""))
+        dt = self._lock_decimals() if locked else d
         self.notifier.send(f"📌 {self.symbol} {side} LIMIT {order.lots:.2f} lots @ {order.price:.{d}f} ({where})  SL {order.stop:.{d}f}  "
-                           f"TP {order.take_profit:.{d}f}  risk {order.risk_amount:,.0f}  valid until {order.expires_at:%H:%M} UTC (id {order.id})"
-                           + (f"\n({floor_note})" if floor_note else ""))
+                           f"TP {order.take_profit:.{dt}f}  risk {order.risk_amount:,.0f}  valid until {order.expires_at:%H:%M} UTC (id {order.id})"
+                           + (f"\n({floor_note})" if floor_note else "")
+                           + (f"\n🔐 Doel-lock: TP op de prijs waar de gesloten balans +{float(self.settings.risk.target_pct):g}% "
+                              f"haalt (eigen doel {float(setup.take_profit):.{d}f}); de stop blijft" if locked else ""))
 
     def load_limits(self) -> None:
         if self.limits_path is None or not self.limits_path.exists():
@@ -2101,6 +2159,15 @@ class LiveRunner:
         if getattr(pos, "status", "filled") == "filled" and hasattr(self.broker, "pnl_for"):
             reconcile_risk(pos, self.broker, float(info["risk_amount"]))
         self.known_positions[pos.id] = pos
+        locked = info.get("lock_tp") is not None         # the lock's take-profit came with the fill: its own target goes along
+        if locked or info.get("lock_told"):
+            self.own_targets[pos.id] = {"take_profit": float(info["take_profit"]), "set": float(pos.take_profit) if locked else None,
+                                        "told": bool(info.get("lock_told"))}
+            self.save_own_targets()
+        if locked:
+            self.note("target_lock", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
+                      take_profit=float(pos.take_profit), lots=float(pos.lots),
+                      note=f"locked at the limit {oid}: own target {float(info['take_profit']):.{self._lock_decimals()}f}")
         self.note("filled", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry), stop=float(pos.stop),
                   take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
                   note=f"setup {info['sid']}; limit {oid}")
@@ -2165,16 +2232,33 @@ class LiveRunner:
         self.note("filled" if filled else "submitted", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
                   stop=float(pos.stop), take_profit=float(pos.take_profit), lots=float(pos.lots), risk=float(pos.risk_amount),
                   note=f"setup {sid}{resized}")
+        locked = self._lock_at_order(pos, now)
         if filled:
             stepped = self.stake_note(risk_params)
             self.notifier.send(f"💸 {self.symbol} {side} filled {pos.lots:.2f} lots @ {pos.entry:.{d}f}  "
                                f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  risk {pos.risk_amount:,.0f}{stepped}{margin_note}  "
-                               f"(id {pos.id})")
+                               f"(id {pos.id}){locked}")
         else:
             self.unconfirmed[pos.id] = pos
             self.notifier.send(f"📨 {self.symbol} {side} {pos.lots:.2f} lots submitted, fill not confirmed yet  "
-                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  (id {pos.id})")
+                               f"SL {pos.stop:.{d}f}  TP {pos.take_profit:.{d}f}  (id {pos.id}){locked}")
         return pos
+
+    def _lock_at_order(self, pos: Position, now: pd.Timestamp) -> str:
+        """A market order that went out with the lock's take-profit: the trade's own target recorded (a restart moves the lock
+        back toward it, never past it), a journal row, and the line for the fill message ("" without a lock)."""
+        own = pos.meta.get("own_take_profit")
+        if own is None:
+            return ""
+        self.own_targets[pos.id] = {"take_profit": float(own), "set": float(pos.take_profit), "told": True}
+        self.save_own_targets()
+        d = self._lock_decimals()
+        self.note("target_lock", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry),
+                  take_profit=float(pos.take_profit), lots=float(pos.lots),
+                  note=f"locked at the order: own target {float(own):.{d}f}; needs {float(pos.meta.get('lock_need', 0.0)):,.2f} "
+                       f"with costs; {pos.meta.get('lock_days', '?')} trading day(s)")
+        return (f"\n🔐 Doel-lock: TP op de prijs waar de gesloten balans +{float(self.settings.risk.target_pct):g}% haalt "
+                f"(eigen doel {float(own):.{d}f}); de stop blijft")
 
     # ------------------------------------------------------------ approvals
     def process_decisions(self, now: pd.Timestamp) -> None:
@@ -2377,6 +2461,340 @@ class LiveRunner:
             return None
         return float(pos.r_at(float(price))) if pos.risk_distance > 0 else None
 
+    # ------------------------------------------------------------ the lock at the phase's target (prop_firm.lock_at_target)
+    def target_lock_state(self, fresh: bool = False) -> Optional[Dict[str, Any]]:
+        """With prop_firm.lock_at_target and risk.target_pct: the closed ``balance``, the phase's ``target`` balance and the
+        ``goal`` the lock aims at (the target plus prop_firm.lock_buffer_pct of the account), the trading ``days`` (the
+        highest count read, as target_state keeps it; None = unknown) and their ``dates`` (None when the broker cannot list
+        them), on prop_firm.day_timezone's calendar. Read once a scan; ``fresh`` reads the balance again (an order inside
+        the account lock: another window may just have closed a trade). None when off or the balance cannot be read."""
+        p, r = self.settings.prop_firm, self.settings.risk
+        if not getattr(p, "lock_at_target", False) or not r.target_pct or self.broker is None:
+            return None
+        cached = self._lock_cache[1] if self._lock_cache is not None and self._lock_cache[0] == self._scan_id else None
+        if cached is not None and not fresh:
+            return cached
+        try:
+            balance = float(self.broker.balance())
+        except Exception:
+            return None
+        if cached is None:
+            count, dates = None, None
+            try:
+                lister = getattr(self.broker, "trading_dates", None)
+                dates = lister(p.day_timezone) if callable(lister) else None
+            except Exception:
+                dates = None
+            try:                                         # one read of the deal history where the broker lists the dates
+                counter = getattr(self.broker, "trading_days", None)
+                count = len(dates) if dates is not None else counter(p.day_timezone) if callable(counter) else None
+                count = int(count) if count is not None else None
+            except Exception:
+                count = None
+            if count is not None:
+                self._days_known = max(count, self._days_known or 0)
+            size = float(self.settings.account_size)
+            target = size * (1.0 + float(r.target_pct) / 100.0)
+            cached = {"target": target, "goal": target + size * float(p.lock_buffer_pct) / 100.0, "days": self._days_known,
+                      "dates": set(dates) if dates is not None else None}
+        state = {**cached, "balance": balance}
+        self._lock_cache = (self._scan_id, state)
+        return state
+
+    def _prague_day(self, ts) -> Any:
+        """The date of a naive UTC time on the firm's calendar (prop_firm.day_timezone); None without a time."""
+        if ts is None or pd.isna(ts):
+            return None
+        return pd.Timestamp(ts).tz_localize("UTC").tz_convert(self.settings.prop_firm.day_timezone).date()
+
+    def _lock_rules(self) -> Tuple[float, float, float]:
+        """``(tick, stops distance, freeze distance)`` of this market: the server's, else the profile's price grid; read once
+        a scan."""
+        cached = getattr(self, "_rules_cache", None)
+        if cached is not None and cached[0] == self._scan_id:
+            return cached[1]
+        rules = None
+        fn = getattr(self.broker, "price_rules", None)
+        if callable(fn):
+            try:
+                rules = fn(self.symbol)
+            except Exception:
+                rules = None
+        if not rules or not rules[0] or float(rules[0]) <= 0:
+            out = (10.0 ** -self.spec.price_decimals, 0.0, 0.0)
+        else:
+            out = (float(rules[0]), float(rules[1] or 0.0), float(rules[2] or 0.0))
+        self._rules_cache = (self._scan_id, out)
+        return out
+
+    def _cost_model(self, entry: float, lots: float) -> float:
+        """The profile's round-turn commission of ``lots`` at ``entry`` (SymbolSpec.commission_per_lot and commission_pct, none
+        on the live profiles): what an order's lock counts until the fill's own commission can be read."""
+        spec = self.spec
+        cost = float(spec.commission_per_lot) * lots
+        if spec.commission_pct:
+            cost += float(spec.commission_pct) / 100.0 * abs(entry) / spec.pip_size * spec.pip_value_per_lot * lots
+        return cost
+
+    def _closing_costs(self, pos: Position) -> float:
+        """What closing ``pos`` still costs: the broker's figure (MT5: the entry deal's commission again and a negative swap;
+        paper: the round turn it books at the close), else the profile's commission."""
+        fn = getattr(self.broker, "closing_costs", None)
+        costs = None
+        if callable(fn):
+            try:
+                costs = fn(pos)
+            except Exception:
+                costs = None
+        return max(0.0, float(costs)) if costs is not None else self._cost_model(float(pos.entry), float(pos.lots))
+
+    def lock_take_profit(self, direction: Direction, entry: float, lots: float, own_tp: float, costs: float, own_day,
+                         state: Dict[str, Any]) -> Tuple[Optional[float], float, Optional[int]]:
+        """``(price, need, days)`` for a trade of ``lots`` from ``entry`` whose own target is ``own_tp``: ``need`` is what its
+        close must bring for the closed balance to reach the lock's goal, after ``costs`` (never less than the costs: once
+        the target stands it is break-even after costs, never a level on the loss side), ``days`` the phase's trading days
+        with ``own_day`` counted (None: unknown), ``price`` the take-profit that nets ``need`` when the days are logged and
+        it lies nearer than the own target (None: the trade keeps its own target)."""
+        need = max(0.0, float(state["goal"]) - float(state["balance"])) + max(0.0, float(costs))
+        days = state.get("days")
+        dates = state.get("dates")
+        if days is not None and own_day is not None and dates is not None and own_day not in dates:
+            days += 1                                    # the trade's own day is not in the account's history yet
+        if days is None or days < int(self.settings.prop_firm.min_trading_days) or not own_tp or lots <= 0:
+            return None, need, days
+        pnl_for = getattr(self.broker, "pnl_for", None)
+        if callable(pnl_for):
+            gain = float(pnl_for(self.symbol, direction, float(entry), float(own_tp), float(lots)))
+        else:
+            gain = direction.sign * (float(own_tp) - float(entry)) / self.spec.pip_size * self.spec.pip_value_per_lot * lots
+        from .strategy.risk import target_lock_price
+        return target_lock_price(direction, float(entry), float(own_tp), gain, need, self._lock_rules()[0]), need, days
+
+    def _order_lock(self, direction: Direction, entry: float, lots: float, own_tp: float, now: pd.Timestamp,
+                    reference: Optional[float] = None) -> Optional[Tuple[float, float, int]]:
+        """``(price, need, days)`` of the lock for an order about to go out (inside the account lock, the balance read again;
+        the trade's own day is today), or None to send its own target: also when the price lies inside the server's stops
+        level from ``reference`` (the order's price for a limit; for a market order the price it would close at, which the
+        server checks a take-profit against), where the order would be refused: the first scan after the fill sets it."""
+        state = self.target_lock_state(fresh=True)
+        if state is None:
+            return None
+        price, need, days = self.lock_take_profit(direction, entry, lots, own_tp, self._cost_model(entry, lots),
+                                                  self._prague_day(now), state)
+        if price is None:
+            return None
+        if reference is None:
+            try:
+                reference = float(self.broker.fill_price(self.symbol, Direction.SHORT if direction is Direction.LONG else Direction.LONG))
+            except Exception:
+                reference = float(entry)
+        tick, stops, _freeze = self._lock_rules()
+        if direction.sign * (price - reference) < max(stops, tick) - 1e-12:
+            return None
+        return price, need, days
+
+    def manage_target_lock(self, now: pd.Timestamp) -> None:
+        """Every scan with prop_firm.lock_at_target: each filled position of this market (with a stop and a target) and each
+        of its resting limits gets the take-profit the lock wants, its own target or the lock's price (``lock_take_profit``),
+        sent to the server when it differs by a tick or more; a position whose lock price has already traded is closed at
+        the market. A balance that moved since the last scan (another trade closed, a limit filled later) moves the level
+        with it, and a restarted window treats the positions it finds the same way."""
+        if self.broker is None or self.dry_run:
+            return
+        state = self.target_lock_state()
+        if state is None:
+            return
+        listed = self.broker.open_positions(self.symbol)
+        changed = False
+        for pos in listed:
+            if getattr(pos, "status", "filled") == "filled" and pos.stop and pos.take_profit:
+                changed = self._lock_position(pos, state, now) or changed
+        limits_changed = False
+        for oid, info in list(self.limits.items()):
+            limits_changed = self._lock_limit(oid, info, state, now) or limits_changed
+        if limits_changed:
+            self.save_limits()
+        gone = set(self.own_targets) - {p.id for p in listed} - set(self.limits) - set(self.known_positions) - set(self.unconfirmed)
+        if gone and not self._entries_held():           # closed: their records go (never on a terminal's first listings)
+            for key in gone:
+                self.own_targets.pop(key, None)
+            changed = True
+        if changed:
+            self.save_own_targets()
+
+    def _own_record(self, pos: Position) -> Tuple[Dict[str, Any], bool]:
+        """``(record, changed)``: the position's own target, the last take-profit the lock sent and whether Telegram heard of
+        the lock. Made from the server's take-profit the first time (a trade the lock never moved carries its own); a
+        take-profit moved by hand since the lock's last move (neither the own target nor the lock's) is the trade's own
+        target from then on."""
+        tick = self._lock_rules()[0]
+        server = float(pos.take_profit)
+        rec = self.own_targets.get(pos.id)
+        if rec is None:
+            own = pos.meta.get("own_take_profit")
+            rec = self.own_targets[pos.id] = {"take_profit": float(own) if own else server, "set": None, "told": False}
+            return rec, True
+        sent = rec.get("set")
+        if abs(server - float(rec["take_profit"])) < 0.5 * tick or (sent is not None and abs(server - float(sent)) < 0.5 * tick):
+            return rec, False
+        rec["take_profit"], rec["set"] = server, None
+        return rec, True
+
+    def _lock_position(self, pos: Position, state: Dict[str, Any], now: pd.Timestamp) -> bool:
+        """One position: its take-profit as the lock wants it, or a close at the market when the lock's price has traded.
+        True when its record changed."""
+        rec, changed = self._own_record(pos)
+        retry = self._lock_retry.get(pos.id)
+        if retry is not None and now < retry[1]:
+            return changed
+        own = float(rec["take_profit"])
+        price, need, days = self.lock_take_profit(pos.direction, float(pos.entry), float(pos.lots), own,
+                                                  self._closing_costs(pos), self._prague_day(pos.opened_at), state)
+        if days is None:
+            return changed                               # the day count unknown: the take-profit on the server stays
+        tick, stops, _freeze = self._lock_rules()
+        want = own
+        if price is not None:
+            close_at = self._close_price(pos)
+            if close_at is not None and pos.direction.sign * (close_at - price) >= 0:
+                return self._lock_close(pos, price, close_at, need, days, state, now) or changed
+            if close_at is not None and pos.direction.sign * (price - close_at) < stops:
+                return changed                           # inside the stops level: not settable; a later scan closes it
+            want = price
+        if abs(want - float(pos.take_profit)) < 0.5 * tick:
+            return changed
+        try:
+            self.broker.modify_take_profit(pos.id, want)
+        except KeyError:
+            return changed                               # closed meanwhile: its close is reported
+        except Exception as exc:
+            self._lock_refused(pos.id, f"take-profit of {pos.id} to {want:.{self._lock_decimals()}f}", exc, now)
+            return changed
+        self._lock_retry.pop(pos.id, None)
+        rec["set"] = want if price is not None else None
+        self._lock_moved(pos.id, pos.direction, float(pos.entry), float(pos.lots), own, want, price is not None, need, days,
+                         state, rec, "told", now)
+        return True
+
+    def _lock_limit(self, oid: str, info: Dict[str, Any], state: Dict[str, Any], now: pd.Timestamp) -> bool:
+        """One resting limit: the lock's take-profit from its price and lots (its own day is today: a limit rests a few hours
+        inside the session), moved on the server; its own target stays in its record, so the "target traded first" cancel
+        keeps reading it as the backtest does. True when its record changed."""
+        retry = self._lock_retry.get(oid)
+        if retry is not None and now < retry[1]:
+            return False
+        direction = Direction[str(info["direction"])]
+        entry, lots, own = float(info["price"]), float(info["lots"]), float(info["take_profit"])
+        current = float(info.get("lock_tp") or own)
+        price, need, days = self.lock_take_profit(direction, entry, lots, own, self._cost_model(entry, lots),
+                                                  self._prague_day(now), state)
+        if days is None:
+            return False
+        tick, stops, _freeze = self._lock_rules()
+        want = price if price is not None and direction.sign * (price - entry) >= max(stops, tick) - 1e-12 else own
+        if abs(want - current) < 0.5 * tick:
+            return False
+        try:
+            self.broker.modify_limit_take_profit(oid, want)
+        except KeyError:
+            return False                                 # filled or gone meanwhile: manage_limits takes it next scan
+        except Exception as exc:
+            self._lock_refused(oid, f"take-profit of limit {oid} to {want:.{self._lock_decimals()}f}", exc, now)
+            return False
+        self._lock_retry.pop(oid, None)
+        locked = abs(want - own) >= 0.5 * tick
+        info["lock_tp"] = want if locked else None
+        self._lock_moved(oid, direction, entry, lots, own, want, locked, need, days, state, info, "lock_told", now)
+        return True
+
+    def _close_price(self, pos: Position) -> Optional[float]:
+        """The price ``pos`` would close at now (the bid for a long, the ask for a short); None without a quote."""
+        try:
+            return float(self.broker.fill_price(self.symbol, Direction.SHORT if pos.direction is Direction.LONG else Direction.LONG))
+        except Exception:
+            return None
+
+    def _lock_decimals(self) -> int:
+        from .strategy.risk import tick_decimals
+        return max(int(self.spec.price_decimals), tick_decimals(self._lock_rules()[0]))
+
+    def _lock_close(self, pos: Position, price: float, close_at: float, need: float, days: int, state: Dict[str, Any],
+                    now: pd.Timestamp) -> bool:
+        """The lock's price has traded already (between two scans, or before the take-profit could be set): the position
+        closes at the market. True when it closed."""
+        try:
+            self.broker.close_position(pos.id, "target_lock", ts=now)
+        except KeyError:
+            return False
+        except Exception as exc:
+            self._lock_refused(pos.id, f"close of {pos.id} at the market", exc, now)
+            return False
+        self._lock_retry.pop(pos.id, None)
+        self.own_targets.pop(pos.id, None)
+        d = self._lock_decimals()
+        self.note("target_lock_exit", now, id=pos.id, direction=pos.direction.name, entry=float(pos.entry), take_profit=float(price),
+                  price=float(close_at), lots=float(pos.lots),
+                  note=f"the lock's price had traded; needs {need:,.2f} for the goal {state['goal']:,.2f} (balance "
+                       f"{state['balance']:,.2f}); {days} trading day(s)")
+        self.notifier.send(f"🔐 {self.symbol}: {pos.id} gesloten met de doel-lock rond {close_at:.{d}f}: de prijs stond al voorbij "
+                           f"{price:.{d}f}, waar de gesloten balans +{float(self.settings.risk.target_pct):g}% haalt")
+        return True
+
+    def _lock_refused(self, key: str, what: str, exc: Exception, now: pd.Timestamp) -> None:
+        """A move or close the server refused (a freeze level, a market that is shut): three quick tries, then every 15
+        minutes, one message (FTMO counts server requests)."""
+        tries = self._lock_retry.get(key, (0, now))[0] + 1
+        self._lock_retry[key] = (tries, pd.Timestamp(now) + pd.Timedelta(minutes=15 if tries >= 3 else 1))
+        print(f"[live] {self.symbol}: target lock: {what} refused ({exc}); try {tries}")
+        if tries == 1:
+            self.note("target_lock_failed", now, id=key, reason=str(exc))
+            self.notifier.send(f"⚠️ {self.symbol}: doel-lock: {what} geweigerd ({exc}); de bot probeert het opnieuw, na drie "
+                               f"pogingen elke 15 min")
+
+    def _lock_moved(self, key: str, direction: Direction, entry: float, lots: float, own: float, tp: float, locked: bool,
+                    need: float, days: int, state: Dict[str, Any], rec: Dict[str, Any], told: str, now: pd.Timestamp) -> None:
+        """A take-profit the lock moved: a journal row every time, Telegram once a trade (``rec[told]``)."""
+        d = self._lock_decimals()
+        target = float(self.settings.risk.target_pct)
+        at_goal = float(state["balance"]) >= float(state["goal"])
+        self.note("target_lock", now, id=key, direction=direction.name, entry=float(entry), take_profit=float(tp), lots=float(lots),
+                  note=(f"{'locked' if locked else 'own target again'}: own target {own:.{d}f}; needs {need:,.2f} with costs for "
+                        f"the goal {state['goal']:,.2f} (balance {state['balance']:,.2f}); {days} trading day(s)"))
+        print(f"[live] {self.symbol}: target lock: {key} take-profit {tp:.{d}f} ({'locked' if locked else 'its own'}; own {own:.{d}f})")
+        if not locked or rec.get(told):
+            return
+        rec[told] = True
+        if at_goal:
+            self.notifier.send(f"🔐 {self.symbol}: het doel +{target:g}% staat (balans {state['balance']:,.0f}): TP van {key} van "
+                               f"{own:.{d}f} naar {tp:.{d}f}, break-even na kosten, zodat alles dicht gaat en de fase rond is; "
+                               f"de stop blijft")
+        else:
+            self.notifier.send(f"🔐 {self.symbol}: doel-lock op {key}: TP van {own:.{d}f} naar {tp:.{d}f}, de prijs waar de gesloten "
+                               f"balans +{target:g}% haalt (na kosten, {state['goal'] - state['target']:,.0f} marge); {days} "
+                               f"handelsdagen. Nooit verder dan zijn eigen doel; de stop blijft")
+
+    def load_own_targets(self) -> None:
+        if self.own_targets_path is None or not self.own_targets_path.exists():
+            return
+        try:
+            doc = json.loads(self.own_targets_path.read_text(encoding="utf-8"))
+            self.own_targets = {str(k): {"take_profit": float(v["take_profit"]),
+                                         "set": float(v["set"]) if v.get("set") is not None else None,
+                                         "told": bool(v.get("told"))} for k, v in dict(doc).items()}
+        except Exception as exc:     # a damaged file: the positions' take-profits on the server count as their own
+            print(f"[live] {self.symbol}: could not read {self.own_targets_path} ({exc})")
+
+    def save_own_targets(self) -> None:
+        if self.own_targets_path is None:
+            return
+        try:
+            self.own_targets_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.own_targets_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self.own_targets), encoding="utf-8")
+            os.replace(tmp, self.own_targets_path)
+        except Exception as exc:
+            print(f"[live] {self.symbol}: could not write {self.own_targets_path} ({exc})")
+
     def report_closes(self) -> None:
         if self.broker is None:
             return
@@ -2384,6 +2802,8 @@ class LiveRunner:
             if str(trade.symbol).upper() != self.symbol:
                 continue                                   # another window's trade on the same account: its window reports it
             self.known_positions.pop(trade.id, None)
+            if self.own_targets.pop(trade.id, None) is not None:
+                self.save_own_targets()
             self.note("closed", trade.closed_at, id=trade.id, direction=trade.direction.name, entry=float(trade.entry),
                       price=float(trade.exit), pnl=float(trade.pnl), r=float(trade.r), reason=trade.reason, lots=float(trade.lots))
             icon = "🎯" if trade.reason == "take_profit" else "🛑" if trade.reason == "stop" else "➖"

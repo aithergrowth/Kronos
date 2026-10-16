@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -123,6 +123,29 @@ class Broker(ABC):
 
     @abstractmethod
     def modify_stop(self, position_id: str, stop: float) -> None: ...
+
+    # the lock at the phase's target (prop_firm.lock_at_target, 16 October): brokers without these leave every target alone
+    def modify_take_profit(self, position_id: str, take_profit: float) -> None:
+        """Move an open position's take-profit; its stop stays."""
+        raise NotImplementedError(f"{type(self).__name__} cannot move a take-profit")
+
+    def modify_limit_take_profit(self, order_id: str, take_profit: float) -> None:
+        """Move a resting limit entry's take-profit; its price, stop and expiry stay."""
+        raise NotImplementedError(f"{type(self).__name__} cannot move a limit's take-profit")
+
+    def price_rules(self, symbol: str) -> Optional[Tuple[float, float, float]]:
+        """``(tick, stops distance, freeze distance)`` in price: the grid a level must sit on, how near the price a stop or
+        take-profit may be set, and how near it one can no longer be moved; None when the broker cannot say."""
+        return None
+
+    def closing_costs(self, position: Position) -> Optional[float]:
+        """What closing ``position`` still costs (account currency, positive): the exit's commission and a negative swap
+        accrued so far; None when unknown."""
+        return None
+
+    def trading_dates(self, tz: str = "Europe/Prague") -> Optional[set]:
+        """The dates (``tz``'s calendar) with a trade opened on the account, FTMO's trading days; None when unknown."""
+        return None
 
     @abstractmethod
     def close_position(self, position_id: str, reason: str = "manual", price: Optional[float] = None,
