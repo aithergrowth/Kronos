@@ -153,3 +153,22 @@ Bronnen (in de repository is niets veranderd):
 - /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/fast/combine/out/points.txt
 - /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/fast/skeptic/out/skeptic_table.txt
 - /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/fast (deelstudies: stakes, management, ftmo_rules, earlier_research)
+## Aanvulling: optie B zonder mini-trades
+
+Max wees de mini-trades af. Optie B is daarom opnieuw nagespeeld zonder mini-trades: de inzet (`RISK=2.25`, 4H ×1,25,
+BTC ×0,25) plus de lock. De handelsdagen komen dan alleen van de eigen trades van de bot. Dit is gerekend met dezelfde
+replay als de tegencontrole. Die geeft voor "nu" exact de cijfers uit de tabel hierboven.
+
+| | Nu | B zonder mini-trades | B met mini-trades |
+|---|---|---|---|
+| Fase 1, mediaan (echt / gehusseld) | 37 / 40 d | 32 / 32 d | 31 / 31 d |
+| Beide fases, mediaan (echt / gehusseld) | 73 / 76 d | 61 / 64 d | 53 / 58 d |
+| Starts in 2026: fase 1 / beide fases | 24 / 42 d | 20 / 37 d | 17 / 31 d |
+| Fase 1 binnen 30 dagen (echt) | 41,7 % | 48,4 % | 49,5 % |
+| Vastgelopen (echt, van 967 / gehusseld) | 7 / 3,1 % | 4 / 2,4 % | 4 / 2,3 % |
+| Breaches | 0 | 0 | 0 |
+
+Alleen de inzet, zonder lock: beide fases 65 dagen echt en 72 gehusseld, met 2,5 % vastgelopen. De lock levert dus
+ongeveer de helft van de winst. Winrate en R per trade blijven gelijk, want B kiest dezelfde trades. Gehusseld betekent
+200 maand-geschiedenissen (seed 7, zoals bij de tegencontrole), bij 0,10R kosten. Bronnen:
+`scratchpad/bnomicro/` (`run_b.py`, `summ_b.py`).
