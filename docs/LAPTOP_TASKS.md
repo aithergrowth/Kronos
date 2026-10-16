@@ -69,7 +69,10 @@ Without `STOP_AT_TARGET` the windows never stop at the target: `TARGET` alone on
 day report shows the distance. With `set "TARGET=10"` and `set "STOP_AT_TARGET=1"` in `scripts\ftmo_local.bat`
 (the verification: `TARGET=5`; a restart outside the sessions) the windows do it themselves: at the target no new
 trade once four trading days are logged, 0.1 % a trade until they are, the open positions run, and a 🏁 message
-says so once a day. By hand, without it: When the day report shows +10 % or more: with four trading days done, let the open
+says so once a day. With `set "LOCK_AT_TARGET=1"` as well (16 October, option B), from the fourth trading day a trade
+takes profit where its close brings the closed balance to the target (+0.05 %, after its costs) when that is nearer
+than its own target, and once the target stands an open position closes at break-even after costs or better; each lock
+is said once on Telegram (🔐). By hand, without it: When the day report shows +10 % or more: with four trading days done, let the open
 positions finish, stop the windows outside the sessions and request the verification in the FTMO dashboard; with
 fewer than four days, Max decides between trading on and waiting (a day with a position opened counts, whatever its
 size). Then:
@@ -119,14 +122,17 @@ Geef per punt ✅ of ⚠️.
 
 ## When the bot has to be restarted (Max does it; Claude Code checks)
 
-Only outside the sessions (after 17:30, before 08:30 or at the weekend). Max closes the five windows and runs
-`scripts\start_ftmo.bat`; then:
+Only outside the sessions (after 17:30, before 08:30 or at the weekend). Max closes the five windows, runs
+`git pull --ff-only` in the Kronos folder (a script whose own pull brings a new version of itself still runs its old
+text: a new switch such as `LOCK_AT_TARGET` would be missing on that first run) and then `scripts\start_ftmo.bat`; then:
 
 ```
 Controleer de herstart. Lees de nieuwste journal_ftmo\starts\*.json per markt: dezelfde commit voor alle vier, zonder
-local changes, account_size 10000, risk_pct 1.5, max_open_trades 2, max_open_per_symbol 2 bij EURUSD en 1 bij de rest,
-min_rr EURUSD 1.0, XAUUSD 0.8, NAS100 0.8, BTCUSD 0.5, en (met STOP_AT_TARGET) risk.target_pct 10 en prop_firm.stop_at_target
-true. Zijn de heartbeats vers? Staat in elk venster "telegram=on"? (Een herstart op een werkdag na 08:45 stuurt meteen de
+local changes, account_size 10000, risk_pct 1.75, max_open_trades 2, max_open_per_symbol 2 bij EURUSD en 1 bij de rest,
+min_rr EURUSD 1.0, XAUUSD 0.8, NAS100 0.8, BTCUSD 0.5, risk.zone_risk_multiplier {4H: 1.25} bij EURUSD, XAUUSD en NAS100,
+risk.stake_multiplier 0.25 bij BTCUSD, prop_firm.daily_loss_limit_pct 4.0 en max_drawdown_pct 9.5, en (met
+STOP_AT_TARGET en LOCK_AT_TARGET) risk.target_pct 10, prop_firm.stop_at_target true en prop_firm.lock_at_target true,
+met --lock-at-target in het command. Zijn de heartbeats vers? Staat in elk venster "telegram=on"? (Een herstart op een werkdag na 08:45 stuurt meteen de
 ☀️-ochtendcheck van elke markt, met grafiek, en na 22:00 ook de avondsamenvatting: dat hoort zo, het zijn de berichten van
 die dag. Verder alleen een ℹ️ als MT5's contract anders is dan het profiel.)
 ```

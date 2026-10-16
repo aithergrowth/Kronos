@@ -68,10 +68,13 @@ still open. Settings that are yours (another terminal path) go in `scripts\live_
 with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
 Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
 each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from
--3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). With two terminals installed, every manual MT5 command needs the terminal first:
+-3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). For the 2-Step since 16 October (option B):
+`set "RISK=1.75"`, `set "PRODUCT=ftmo_2step"`, `set "TARGET=10"` (5 in the verification), `set "STOP_AT_TARGET=1"` and
+`set "LOCK_AT_TARGET=1"` (the lock at the target, `docs/CURRENT_STATE.md` "16 October: option B"); a switch is on with
+any value, 0 too, so delete its line to switch it off. With two terminals installed, every manual MT5 command needs the terminal first:
 `$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window,
 and the demo's login out of it: `Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue`
-(the line `start_ftmo.bat` shows on line 25; the script itself clears them). With the demo's login still set, the
+(the line `start_ftmo.bat` shows on line 32; the script itself clears them). With the demo's login still set, the
 command used to log the FTMO terminal in to the demo, and the four windows stopped trading until it was logged back by
 hand. Since 15 October the command refuses that when the terminal answers with its own account ("logged in to account
 ..., MT5_LOGIN is ...: not switching it"), and it never sends the login to a terminal whose account it cannot read
@@ -399,10 +402,13 @@ windows the bot only manages what is open.
 
 Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
 at 5 % daily and 10 % total loss, the guard stops at 4 % a day and 8 % below
-the start; two open trades on the account, one per market; 1.5 % risk, 1.0 %
-from 3 % under the start and 0.5 % from 6 % (`risk.drawdown_steps`). A
-position never ties up more than 45 % of equity as margin (the lots are cut
-to fit).
+the start (the FTMO windows with `PRODUCT=ftmo_2step`: 4 % a day, 9.5 % below
+the start); two open trades on the account, one per market (EURUSD two since
+13 October); 1.5 % risk on the demo (FTMO: `RISK`, 1.75 since 16 October),
+1.0 % from 3 % under the start and 0.5 % from 6 % (`risk.drawdown_steps`); a
+4H zone on EURUSD, gold and NAS100 at 1.25 times the stake and BTC at a
+quarter (option B, 16 October). A position never ties up more than 45 % of
+equity as margin (the lots are cut to fit).
 
 ### The journal
 

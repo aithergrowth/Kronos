@@ -1,4 +1,4 @@
-# Kronos Trader: the current state (7 October 2026)
+# Kronos Trader: the current state (16 October 2026)
 
 What runs, with which settings, and what the evidence says. The profile files are the source of truth: every setting
 there carries its reason and date. Older pages describe how the rules came about: `docs/STRATEGY.md` starts from
@@ -48,7 +48,7 @@ in the MT5 terminal and tokens in environment variables.
 | Time limit | none | none | 48 hours | none |
 | Re-entry | after a stop in the same visit, and a second visit | a second visit (8 October), not after a stop in the same visit | no | no |
 | Entry order | limit 25 % of the way back toward the stop, valid 4 hours | market | limit, as EURUSD | market (paper on the demo) |
-| Stake (setup B) | a 4H zone twice | a 4H zone twice | a 4H zone twice | half |
+| Stake (option B, 16 October) | a 4H zone x1.25 (twice since setup B) | a 4H zone x1.25 | a 4H zone x1.25 | a quarter (half since setup B) |
 
 The EURUSD and NAS100 limit is sized on its smaller stop and cancelled at its expiry or when the target trades first; while it
 rests it holds the market's slot and its risk in the guard. Where the symbol takes an expiry time, the server also
@@ -60,12 +60,15 @@ and cancels, at its first scan, a resting limit of its market it has no record o
 
 - Stake 1.5 % of the current equity a trade on the demo, lowered to 1.0 % from -3 % and 0.5 % from -6 % below the
   start (the steps read the closed balance against the initial balance; the stake itself is on equity, stack review
-  of 15 October, A23). FTMO, setup B on the 2-Step: `RISK=1.5` (Max, 7 October, evening; 1.25 since 6 October) and
-  `PRODUCT=ftmo_2step` in `scripts/ftmo_local.bat`; a 4H zone on EURUSD, gold or NAS100 risks twice that, a BTC trade
-  half, and from -3 % below the start the base is 1.0 %, from -6 % 0.5 %. The challenge replay of tonight's set at
-  1.5 % against 1.25 %: the 2026 starts funded within 6 weeks 64 % (37 %), within 2 months 97 % (93 %); the 2024-25
-  starts within 3 months 52 % (50 %), failed 4 % (1 %); the average month +8.6 % (+7.2 %), the worst -6.0 % (-5.0 %);
-  at 1.75 % 7 % failed, at 2 % 17 %. (On the 1-Step:
+  of 15 October, A23). FTMO, option B on the 2-Step (Max, 16 October: "Oké dan doen we B"): `RISK=1.75` (1.5 since
+  7 October, evening; 2.25 is the faster choice) and `PRODUCT=ftmo_2step` in `scripts/ftmo_local.bat`; a 4H zone on
+  EURUSD, gold or NAS100 risks 1.25 times that (2.19 %; twice until 16 October), a BTC trade a quarter (half until
+  then), and from -3 % below the start the base is 1.0 %, from -6 % 0.5 %. With `TARGET=10`, `STOP_AT_TARGET=1` and
+  `LOCK_AT_TARGET=1` (the lock at the target, section "16 October: option B"). The challenge replay of 7 October's set
+  (4H zones x2, BTC half) at 1.5 % against 1.25 %: the 2026 starts funded within 6 weeks 64 % (37 %), within 2 months
+  97 % (93 %); the 2024-25 starts within 3 months 52 % (50 %), failed 4 % (1 %); the average month +8.6 % (+7.2 %), the
+  worst -6.0 % (-5.0 %); with the 4H zones x2, at 1.75 % 7 % failed, at 2 % 17 % (option B at 1.75 %: 1.4 % failed or
+  stalled, `docs/research/2026-10-16/CONVICTION_NL.md`). (On the 1-Step:
   `RISK=1.0`, `PRODUCT=ftmo_1step`.) `TARGET` and `PROTECT` (e.g. 10 and 4; 5 in the verification) halve the stake
   within `PROTECT` % of the phase's target (`risk.target_protect_pct`, off unless set).
 - The guard refuses a trade when the worst case (every open trade, every resting limit and the new one stopped out)
@@ -191,8 +194,9 @@ Nothing in the live profiles (frozen on 13 October). On the branch, for the next
   `docs/research/2026-10-14/`.
 - 15 October: the stop at the phase's target (`prop_firm.stop_at_target`, off; `STOP_AT_TARGET=1` with `TARGET=10` in
   `scripts/ftmo_local.bat`): at the target no new trade once four trading days are logged (FTMO's days, Prague
-  calendar, from the terminal's deal history), 0.1 % a trade until they are; the open positions run; a 🏁 message once
-  a day and a line in the morning check.
+  calendar, from the terminal's deal history), 0.1 % a trade until they are; the open positions run (with the lock at
+  the target of 16 October they close at break-even after costs or better); a 🏁 message once a day and a line in the
+  morning check.
 - 15 October: `risk.far_target_rr` (off; with `far_target_multiplier` 2.0 and `far_target_max_multiple` 2.0): a setup whose
   planned R:R is at least that risks double, never above twice the laddered stake; the engine, the backtester and the
   live window size on it alike. Meant for the funded account (the challenge replay: faster when it goes well, more stalls
@@ -222,7 +226,7 @@ histories and stresses. Raising `RISK` alone is slower: at `RISK=2` a 4H trade r
 refuses it. Option B (`RISK=2.25`, 4H x1.25, BTC x0.25, a 0.01-lot trade on each day without one until the four
 trading days are in, and a lock that aims the trade lifting the balance over the target at the target) takes both
 phases' median from 73 to 53 days at a fail-or-stall risk of 2.4 % against 2.9 %, and held in 41 of 45 stress sets.
-Open for Max: FTMO's OK on the small trades, the profile change and the unbuilt lock. Trade management, a sprint,
+Max chose B without the small trades on 16 October (section "16 October: option B"). Trade management, a sprint,
 PROTECT, the 1-Step and the Swing account are all slower.
 `TODAY_ODDS.md` answers "no trade again today?": on a morning with no market tradable at 08:35 after two empty
 weekdays a trade still came on 14 % of days (2026: 15 %), about 9-17 % with today's markets on the window's BTC
@@ -240,7 +244,8 @@ trades; only a far planned target holds, and it pays more while winning less oft
 on any flagged group is slower than the same risk spread over every trade, and without a floor it stalls 9 % of the
 starts (`far_target_rr` stays off). The lever is option B without micro trades: `RISK=2.25` (or 1.75), 4H x1.25,
 BTC x0.25 and the lock; at 1.75 both phases take 60 days (73 today) at 1.4 % fail-or-stall (2.9 %), and the profile
-change alone already gives 66 days at 1.5 %. Open for Max. On 2017-2023 (a check only) the strategy earned nothing.
+change alone already gives 66 days at 1.5 %. Max chose it on 16 October, at `RISK=1.75` (below). On 2017-2023 (a check
+only) the strategy earned nothing.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
@@ -282,3 +287,49 @@ reviews, two fix checks). Nothing in the profiles changed. What the windows do d
   finish stake of 0.1 % against the 0.01-lot minimum, an equity protector, a remote pause and automatic window
   restarts. The tests that pin each fix are in `tests/trader/test_review_fixes_15oct.py`,
   `tests/trader/test_fixcheck3_15oct.py`, `tests/trader/test_fixcheck4_15oct.py` and `tests/trader/test_whatif_15oct.py`.
+
+## 16 October: option B (Max: "Oké dan doen we B", without the small trades)
+
+For the next restart outside the sessions. The research: `docs/research/2026-10-16/FASTER_PASS_NL.md` (the addendum
+"optie B zonder mini-trades") and `CONVICTION_NL.md`.
+
+- **The stakes.** A 4H zone on EURUSD, gold and NAS100 risks 1.25 times `RISK` (twice since setup B), BTC trades at a
+  quarter of it (half). So a higher `RISK` fits the guard's 4 % day: at `RISK=1.75` a 4H trade risks 2.19 % (2.81 % at
+  2.25); with the old x2 a `RISK` of 2.25 made 4.5 % trades the guard refused. The profiles go first, `RISK` after.
+- **The lock at the target** (`prop_firm.lock_at_target`, off by default; `--lock-at-target`, `LOCK_AT_TARGET=1` in
+  `scripts\ftmo_local.bat`, only with `TARGET`). Once the phase has its four trading days (FTMO's, Prague calendar,
+  from the terminal's deal history; the trade's own day counted), a trade of the window takes profit at the price where
+  its close brings the closed balance to the target plus `lock_buffer_pct` (0.05 % of the account, 5 on 10k), when that
+  price lies nearer than its own target. The costs are inside the price: the exit's commission (taken as the entry
+  deal's, read from the history; an order counts the profile's, none on the live profiles, until its fill is in) and
+  a negative swap accrued so far; the spread needs nothing extra, because the level is set on the side the server checks
+  a take-profit against (the bid for a long, the ask for a short). The price is rounded away from the entry onto the
+  server's tick. It goes on the market order or the limit when it goes out (after the R:R check, which stays on the
+  setup's own target; a level inside the server's stops distance waits for the first scan), and every scan the window
+  checks its own positions and resting limits again: a balance that moved (another market's trade closed, a limit that
+  filled later) moves the level, back to the trade's own target when that is nearer, never past it. A level that traded
+  between two scans closes the position at the market. Once the target stands (another trade carried the balance over
+  it) the level is break-even after costs: the last open trades close without a loss and the phase passes flat; never a
+  take-profit on the loss side, and the stop never moves. A limit keeps its own target in its record for the "target
+  traded first" cancel, as the backtest does. The trades' own targets are kept in `target_lock_<symbol>.json` next to
+  the journal, so a restart treats its positions the same way; a target set by hand in MT5 becomes the trade's own.
+  Telegram says it once a trade (🔐), the journal on every move (`target_lock`, `target_lock_exit`,
+  `target_lock_failed`); a refused move is tried again a minute later, after three tries every 15 minutes, with one
+  message. The forward record measures a locked exit against the lock's level, the weekly parity check names the lock.
+  The backtester has no lock: it runs one market and sees neither the account's balance nor its trading days; the
+  evidence is the account replay of the research.
+- **What it is measured to do** (the 2-Step replay Feb 2024 - Sep 2026, without small trades, option B's stakes, 0.10R
+  costs): at `RISK=1.75` both phases take 73 days without the lock and 68 with it (shuffled medians; the real path 66
+  and 60, but the 60 rests on one cluster of July-August 2024 starts and is 65 with the 0.05 % buffer); at 2.25 72 -> 64
+  shuffled, 65 -> 61 on the real path. 0 FTMO breaches in every variant. Measured with `STOP_AT_TARGET=1`: set both.
+- **Max's question about adaptive risk-reward:** it stays. The stop sits beyond the low (the sweep extreme), the target
+  on the high the move started from, so every trade has its own R:R; the lock only shortens the target of the one trade
+  that would carry the account past the phase's target, from the fourth trading day on. In the replay at `RISK=1.75`
+  that touched 96 trades in 2.7 years, most of them gold.
+- **The restart** (Max, outside the sessions): close all five FTMO windows; in `scripts\ftmo_local.bat` set
+  `RISK=1.75`, keep `PRODUCT=ftmo_2step`, `TARGET=10` and `STOP_AT_TARGET=1`, add `LOCK_AT_TARGET=1`, no `PROTECT` (a
+  switch is on with any value, 0 too: delete a line to switch it off). Run `git pull --ff-only` in the Kronos folder
+  before `start_ftmo.bat`: the script's own pull runs the old script text, which has no `LOCK_AT_TARGET` line yet
+  (or run the script twice). Each window's guard line then names 1.75 % and the lock, the morning check
+  "4H-zone ×1.25" (BTC 0.4375 %) and a 🔐 line. In the verification `TARGET=5`; once funded, remove `RISK`, `TARGET`,
+  `STOP_AT_TARGET` and `LOCK_AT_TARGET`.
