@@ -227,6 +227,12 @@ PROTECT, the 1-Step and the Swing account are all slower.
 `TODAY_ODDS.md` answers "no trade again today?": on a morning with no market tradable at 08:35 after two empty
 weekdays a trade still came on 14 % of days (2026: 15 %), about 9-17 % with today's markets on the window's BTC
 candles; a third empty weekday is ordinary (40-50 % of empty runs), and 79 % of such runs end within 5 weekdays.
+`MORE_MARKETS_NL.md` (Dutch) screens 47 FTMO markets (21 forex pairs, 7 indices, 7 metals and commodities, 12 coins) on
+the nearest unchanged live profile: 3 pass Max's bar (USDCAD, GER40, ETHUSD) where chance gives 7.5, 0 pass a stricter
+bar, together they lose -0.25R a trade over 2,233 trades, and none improves the challenge replay. It repeats two
+points: measure FTMO's real spreads on the laptop (`mt5-spreads`; published figures put BTC near 59 USD and gold near
+34-45 cents against the backtest's 15 USD and 20 cents), and FTMO's FAQ allows ending an evaluation after 30 days
+without a trade, so a stalled start is a lost challenge.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
