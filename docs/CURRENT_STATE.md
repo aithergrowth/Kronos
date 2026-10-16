@@ -224,6 +224,9 @@ trading days are in, and a lock that aims the trade lifting the balance over the
 phases' median from 73 to 53 days at a fail-or-stall risk of 2.4 % against 2.9 %, and held in 41 of 45 stress sets.
 Open for Max: FTMO's OK on the small trades, the profile change and the unbuilt lock. Trade management, a sprint,
 PROTECT, the 1-Step and the Swing account are all slower.
+`TODAY_ODDS.md` answers "no trade again today?": on a morning with no market tradable at 08:35 after two empty
+weekdays a trade still came on 14 % of days (2026: 15 %), about 9-17 % with today's markets on the window's BTC
+candles; a third empty weekday is ordinary (40-50 % of empty runs), and 79 % of such runs end within 5 weekdays.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
