@@ -216,6 +216,14 @@ Max's bar where chance alone gives about 6; none makes the challenge clearly fas
 30 days: 72.5 % against 72.1 %), and an extra position beside a live trade makes phase 1 slower over 2024-2026. What the
 bot refuses loses (outside the windows -116.4R, the near-miss setups -34.4R). Only gold's zone-age refusals are worth
 watching. No live setting changed.
+`FASTER_PASS_NL.md` (Dutch) looks for a faster 2-Step pass: stake schedules, trade management, FTMO rule tricks and the
+earlier research, as a speed-versus-risk frontier with the account caps and the guard, and a skeptic on reshuffled
+histories and stresses. Raising `RISK` alone is slower: at `RISK=2` a 4H trade risks 4 % and the guard's day limit
+refuses it. Option B (`RISK=2.25`, 4H x1.25, BTC x0.25, a 0.01-lot trade on each day without one until the four
+trading days are in, and a lock that aims the trade lifting the balance over the target at the target) takes both
+phases' median from 73 to 53 days at a fail-or-stall risk of 2.4 % against 2.9 %, and held in 41 of 45 stress sets.
+Open for Max: FTMO's OK on the small trades, the profile change and the unbuilt lock. Trade management, a sprint,
+PROTECT, the 1-Step and the Swing account are all slower.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
