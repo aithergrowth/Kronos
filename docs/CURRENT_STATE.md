@@ -207,7 +207,15 @@ read exactly as tested, but on its own it hardly predicts the direction (a gate,
 `MORE_TRADES_NL.md` (Dutch) looks for more trades without looser rules: of 9 extra markets on the unchanged profiles
 only USDCAD and GER40 pass Max's bar, as chance would give, and each raises the stalled challenge starts from 7 to 33; no
 second setup type passes once it shares the account. A third ladder step (0.25 % from -8 %) took the stalled starts
-from 7 to 0 without slowing any fast pass or breaching a limit: open for Max (it needs `PRODUCT=ftmo_2step`).
+from 7 to 0 without slowing any fast pass or breaching a limit; Max declined it (too slow a fix for him).
+
+The research of 16 October is in `docs/research/2026-10-16/`. `EXTRA_TRADES_NL.md` (Dutch) looks for extra trades on
+the four live markets beside the live rules: 36 pre-registered rule sets (refused setups as small extra trades, adding to
+winners, session patterns such as the Asia range sweep and the NAS100 opening gap, daily and weekly swings). 5 pass
+Max's bar where chance alone gives about 6; none makes the challenge clearly faster (2026 starts passing phase 1 within
+30 days: 72.5 % against 72.1 %), and an extra position beside a live trade makes phase 1 slower over 2024-2026. What the
+bot refuses loses (outside the windows -116.4R, the near-miss setups -34.4R). Only gold's zone-age refusals are worth
+watching. No live setting changed.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
