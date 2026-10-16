@@ -13,9 +13,9 @@ rem   set "FUNDED=1"                                          once funded: 1.0 %
 rem   set "PRODUCT=ftmo_2step"                                the FTMO 2-Step: the guard stops at a -4 %% day and 9.5 %% under the
 rem                                                           start (without PRODUCT: the profiles' -4 %% day, -8 %%)
 rem   set "PRODUCT=ftmo_1step"                                the FTMO 1-Step: a -2.9 %% day and 9 %% under the highest day-start balance
-rem   set "RISK=1.75"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED);
-rem                                                           1.75 with ftmo_2step (option B, 16 October; 2.25 the faster one),
-rem                                                           1.0 with ftmo_1step (README "1-Step or 2-Step")
+rem   set "RISK=1.75"                                         risk a trade in %%, in place of the profiles' 1.5 (wins over FUNDED):
+rem                                                           1.75 with ftmo_2step once the pull brought option B's profiles (16
+rem                                                           October), 1.0 with ftmo_1step (README "1-Step or 2-Step")
 rem   set "TARGET=10"  /  set "PROTECT=4"                     the phase's target (2-Step: 10, in the verification 5) and, within
 rem                                                           PROTECT %% of it, half the stake (README "Stake near the target")
 rem   set "STOP_AT_TARGET=1"                                  with TARGET: at the target no new trade once 4 trading days are
@@ -23,8 +23,8 @@ rem                                                           logged (before tha
 rem   set "LOCK_AT_TARGET=1"                                  with TARGET: from the 4th trading day (the trade's own day counted)
 rem                                                           a trade takes profit where its close brings the closed balance to
 rem                                                           the target (+0.05 %%) after its costs, when that is nearer than its
-rem                                                           own target; once the target stands an open trade closes at
-rem                                                           break-even after costs or better. Set it with STOP_AT_TARGET
+rem                                                           own target; once the target stands it does nothing. Set it with
+rem                                                           STOP_AT_TARGET
 rem   A switch is on with any value, 0 too: delete its line to switch it off.
 rem   set "WATCHDOG_PING_URL=https://hc-ping.com/..."         the healthchecks.io check that says when the computer stops
 rem                                                           (docs/LIVE_SETUP.md "When the whole computer stops")

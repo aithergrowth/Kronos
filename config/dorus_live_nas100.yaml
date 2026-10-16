@@ -72,9 +72,9 @@ risk:
                                   # risks 1.25 times risk_pct, 2.19 % at RISK=1.75 (2.81 % at 2.25), under the guard's 4 % day:
                                   # at x2 a RISK of 2 made every 4H trade 4 % and the guard refused it. The 4H edge over the rest
                                   # rests on 28 trades 2024-2026 (docs/research/2026-10-16/CONVICTION_NL.md). 2-Step replay Feb
-                                  # 2024 - Sep 2026, no micro trades, with the lock at the target, RISK=1.75: both phases median
-                                  # 60 days (67 shuffled), failed or stalled 1.4 % of the shuffled starts, against 73 (75) days and
-                                  # 2.9 % at RISK=1.5 with x2 (docs/research/2026-10-16/FASTER_PASS_NL.md)
+                                  # 2024 - Sep 2026, no micro trades, RISK=1.75 with the lock at the target as built (0.05 %
+                                  # buffer): both phases median 65 days (68 shuffled) against 73 (75) at RISK=1.5 with x2; 60 (67)
+                                  # and 1.4 % failed or stalled with the research's lock, which had no buffer (CONVICTION_NL.md)
   limit_entry_fraction: 0.25      # 6 October, setup B (Max: go): no market order; a limit 25 % of the way from the signal's price back
   limit_entry_minutes: 240        # toward the stop, sized on that smaller stop, valid 4 hours, cancelled when the target trades first;
                                   # it holds the market's slot and its risk in the guard while it rests. 1 % units, guard off:

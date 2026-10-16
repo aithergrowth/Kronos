@@ -71,8 +71,8 @@ day report shows the distance. With `set "TARGET=10"` and `set "STOP_AT_TARGET=1
 trade once four trading days are logged, 0.1 % a trade until they are, the open positions run, and a 🏁 message
 says so once a day. With `set "LOCK_AT_TARGET=1"` as well (16 October, option B), from the fourth trading day a trade
 takes profit where its close brings the closed balance to the target (+0.05 %, after its costs) when that is nearer
-than its own target, and once the target stands an open position closes at break-even after costs or better; each lock
-is said once on Telegram (🔐). By hand, without it: When the day report shows +10 % or more: with four trading days done, let the open
+than its own target; once the target stands it does nothing and the open positions run; each lock is said once on
+Telegram (🔐). By hand, without it: When the day report shows +10 % or more: with four trading days done, let the open
 positions finish, stop the windows outside the sessions and request the verification in the FTMO dashboard; with
 fewer than four days, Max decides between trading on and waiting (a day with a position opened counts, whatever its
 size). Then:
@@ -124,7 +124,10 @@ Geef per punt ✅ of ⚠️.
 
 Only outside the sessions (after 17:30, before 08:30 or at the weekend). Max closes the five windows, runs
 `git pull --ff-only` in the Kronos folder (a script whose own pull brings a new version of itself still runs its old
-text: a new switch such as `LOCK_AT_TARGET` would be missing on that first run) and then `scripts\start_ftmo.bat`; then:
+text: a new switch such as `LOCK_AT_TARGET` would be missing on that first run) and then `scripts\start_ftmo.bat`. A
+higher `RISK` in `scripts\ftmo_local.bat` goes in only after the pull brought the profiles it was measured with (for
+option B: `git grep -F "{4H: 1.25}" config` prints three lines; on the old 4H x2 profiles `RISK=1.75` makes 3.5 % 4H
+trades the guard lets through). Then:
 
 ```
 Controleer de herstart. Lees de nieuwste journal_ftmo\starts\*.json per markt: dezelfde commit voor alle vier, zonder

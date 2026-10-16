@@ -78,7 +78,7 @@ risk:
                                   # quarter of the stake. Its R came from a few 2026 trades (2024 +2.9R, 2025 -2.8R, 2026 +52.9R)
                                   # and shrinks on the window's 17:00 New York candles (14 October). At FTMO's crypto margin the
                                   # 45 % cap cut 63 of 90 BTC trades at half the stake and RISK=1.5, 37 of 90 at a quarter and
-                                  # RISK=1.75 (docs/research/2026-10-16/FASTER_PASS_NL.md)
+                                  # RISK=1.75 (the research replay's BTC trades at 1:2; option B: FASTER_PASS_NL.md, 16 October)
   tp_policy: previous_extreme       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
                                   # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
                                   # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and

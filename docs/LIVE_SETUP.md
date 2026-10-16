@@ -68,8 +68,11 @@ still open. Settings that are yours (another terminal path) go in `scripts\live_
 with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
 Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
 each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from
--3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). For the 2-Step since 16 October (option B):
-`set "RISK=1.75"`, `set "PRODUCT=ftmo_2step"`, `set "TARGET=10"` (5 in the verification), `set "STOP_AT_TARGET=1"` and
+-3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). For the 2-Step since 16 October (option B),
+first `git pull --ff-only` in the Kronos folder (`start_ftmo.bat`'s own pull runs its old text, without the lock) and a
+check that it brought the new profiles: `git grep -F "{4H: 1.25}" config` prints three lines (on the old 4H x2 profiles
+a `RISK` of 1.75 makes 3.5 % 4H trades the guard lets through). Then `set "RISK=1.75"`, `set "PRODUCT=ftmo_2step"`,
+`set "TARGET=10"` (5 in the verification), `set "STOP_AT_TARGET=1"` and
 `set "LOCK_AT_TARGET=1"` (the lock at the target, `docs/CURRENT_STATE.md` "16 October: option B"); a switch is on with
 any value, 0 too, so delete its line to switch it off. With two terminals installed, every manual MT5 command needs the terminal first:
 `$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window,

@@ -1,6 +1,7 @@
 """The review of the lock at the phase's target (16 October, option B): one test per finding that was fixed. The lock aims
 the trade that lifts the closed balance over the target and does nothing once the target stands; it counts the fill's
 round turn and the other open positions' closing costs; a market order carries it only clear of the price."""
+from pathlib import Path
 from types import SimpleNamespace
 
 import pandas as pd
@@ -14,6 +15,8 @@ from kronos_trader.notify import TelegramNotifier
 from tests.trader.test_live import FakeEngine, NOW, setup  # noqa: F401  (the setup fixture lives there)
 from tests.trader.test_lock_at_target import (TODAY, AccountMT5, _earlier, _hold, _mt5, _paper, _rows, _scan,
                                               _settings)
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class BookingMT5(AccountMT5):
@@ -398,3 +401,16 @@ def test_a_close_at_the_lock_is_read_by_the_rest_of_the_scan(setup, tmp_path):
     ok, why = runner._can_open(setup, NOW)
     assert not ok and "target +10 % stands" in why
 
+
+# ------------------------------------------------------------------ the restart steps
+
+def test_the_restart_steps_pull_and_check_the_profiles_before_risk_goes_up():
+    """With the old 4H x2 profiles a RISK of 1.75 makes 3.5 % 4H trades the guard lets through: the steps pull first, check
+    that the profiles arrived and only then raise RISK; a second run of the script does not switch the lock on while the
+    first run's windows hold their window locks."""
+    for doc, steps in (("docs/CURRENT_STATE.md", "**The restart**"), ("docs/LIVE_SETUP.md", "For the 2-Step since 16 October")):
+        text = (ROOT / doc).read_text(encoding="utf-8")
+        part = text[text.index(steps):]
+        pull, check, risk = part.index("git pull --ff-only"), part.index('git grep -F "{4H: 1.25}" config'), part.index("RISK=1.75")
+        assert pull < check < risk and "3.5 %" in part, doc
+        assert "run the script twice" not in text, doc
