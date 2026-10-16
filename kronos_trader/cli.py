@@ -489,7 +489,7 @@ def cmd_live(args) -> int:
              f"({pf.finish_risk_pct:g}% a trade before)" if pf.stop_at_target else "")
           + (f"; lock at the target on: from the {pf.min_trading_days}th trading day (the trade's own day counted) a "
              f"trade takes profit where the closed balance reaches +{settings.risk.target_pct:g}% (+{pf.lock_buffer_pct:g}% "
-             f"after its costs) when that is nearer than its own target" if pf.lock_at_target else ""))
+             f"after its costs) when that is nearer than its own target, until the target stands" if pf.lock_at_target else ""))
     if broker is not None and args.broker in ("mt5", "ibkr"):
         try:
             balance = float(broker.balance())
@@ -1039,7 +1039,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--lock-at-target", action="store_true", help="with --target-pct: once the phase has its minimum trading "
                     "days (the trade's own day counted) a trade takes profit where its close brings the closed balance to the "
                     "target (+prop_firm.lock_buffer_pct, after its costs) when that is nearer than its own target, checked "
-                    "every scan (prop_firm.lock_at_target)")
+                    "every scan until the target stands (prop_firm.lock_at_target)")
     sp.add_argument("--product", help="the guard's limits for a funding product: ftmo_2step (4 %% a day, 9.5 %% from the start) or "
                     "ftmo_1step (2.9 %% a day, 9 %% under the highest day-start balance)")
     sp.set_defaults(func=cmd_live)

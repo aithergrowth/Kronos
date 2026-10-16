@@ -352,36 +352,36 @@ def test_a_target_set_by_hand_becomes_the_trades_own(setup, tmp_path):
 
 # ------------------------------------------------------------------ at the target, the market, the server
 
-def test_with_stop_at_target_the_target_standing_closes_the_rest_at_break_even_after_costs(setup, tmp_path):
-    """The phase's target stands with its days: no new trade (stop_at_target), and an open position's take-profit goes to
-    break-even after its costs (a tick past the entry here, no commission), never to the loss side; once its price
-    trades there it is closed at the market so the account is flat."""
-    runner, broker, notifier = _paper(setup, tmp_path, 11_050.0, 4, stop=True)
+def test_once_the_target_stands_the_lock_does_nothing(setup, tmp_path):
+    """The lock aims the trade that lifts the closed balance over the phase's target (option B as Max approved it, 16
+    October). Once the target stands (another market's trade carried it over) a locked position gets its own target back
+    and an open one keeps it, long and short; nothing is closed at the market, and stop_at_target refuses new trades."""
+    runner, broker, notifier = _paper(setup, tmp_path, 10_900.0, 4, stop=True)
     pos = _hold(broker)
+    _scan(runner)
+    assert pos.take_profit == pytest.approx(1.1035)                            # under the target: locked
+    broker._balance = 11_050.0
+    _scan(runner, 1)
+    assert pos.take_profit == 1.12 and pos.stop == pytest.approx(1.0949)
     ok, reason = runner._can_open(setup, NOW)
     assert not ok and "target +10 % stands" in reason
-    _scan(runner)
-    assert pos.take_profit == pytest.approx(1.10001) and pos.stop == pytest.approx(1.0949)
-    assert any("het doel +10% staat" in m for m in notifier.sent)
-    short = _hold(broker, Direction.SHORT)                                     # never on the loss side for a short either
-    _scan(runner, 1)
-    assert short.take_profit == pytest.approx(1.09999)
-    broker.set_price("EURUSD", 1.1002)                                         # the long's bid 1.10015: past its level
+    short = _hold(broker, Direction.SHORT)
+    broker.set_price("EURUSD", 1.1002)
     _scan(runner, 2)
-    assert pos.id not in {p.id for p in broker.open_positions()}
-    assert _rows(runner, "target_lock_exit").iloc[0].id == pos.id
-    runner.report_closes()
-    assert any(f"closed (target_lock)" in m for m in notifier.sent) and pos.id not in runner.own_targets
+    assert {p.id for p in broker.open_positions()} == {pos.id, short.id} and short.take_profit == pytest.approx(1.08)
+    assert _rows(runner, "target_lock_exit").empty and _rows(runner, "target_lock").iloc[-1].note.startswith("own target again")
+    assert not any("break-even" in m for m in notifier.sent)
 
 
-def test_with_stop_at_target_the_finish_stake_trade_on_the_fourth_day(setup, tmp_path):
-    """At the target with three days, the next setup takes the finish stake (0.1 %); its own day is the fourth, so it goes
-    out with its take-profit at break-even after costs: once it closes the account is flat and the phase passes."""
+def test_the_finish_stake_trade_keeps_its_own_target(setup, tmp_path):
+    """At the target with three days, the next setup takes the finish stake (0.1 %) with its own target: the lock never
+    turns it into a trade closed at break-even to log the fourth day, at the order or at a scan (the review of 16
+    October: Max turned such trades down)."""
     runner, broker, _ = _paper(setup, tmp_path, 11_050.0, 3, stop=True)
     pos = runner.execute(setup, None, NOW)
-    assert pos.lots == pytest.approx(0.02) and pos.take_profit == pytest.approx(1.10006)
-    runner, broker, _ = _paper(setup, tmp_path / "b", 11_050.0, 2, stop=True)  # two days: the fifth is far, no lock
-    assert runner.execute(setup, None, NOW).take_profit == 1.12
+    assert pos.lots == pytest.approx(0.02) and pos.take_profit == 1.12
+    _scan(runner)
+    assert broker.open_positions()[0].take_profit == 1.12
 
 
 def test_a_lock_price_traded_already_closes_at_the_market(setup, tmp_path):

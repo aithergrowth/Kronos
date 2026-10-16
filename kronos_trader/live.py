@@ -660,9 +660,8 @@ class LiveRunner:
                     lines.append(f"🔐 Doel-lock aan ({days} van {need} handelsdagen): " + (
                         f"vanaf de {need}e handelsdag (de dag van de trade telt mee) neemt een trade winst waar de gesloten "
                         f"balans +{float(base.target_pct):g}% haalt, als dat dichter ligt dan zijn eigen doel; nog "
-                        f"{lock['goal'] - lock['balance']:,.0f} te gaan" if lock["balance"] < lock["goal"] else
-                        f"het doel staat; met de {need} dagen erbij sluit een open trade op break-even na kosten of beter, "
-                        f"zodat alles dicht gaat"))
+                        f"{lock['goal'] - lock['balance']:,.0f} te gaan" if lock["balance"] < lock["target"] else
+                        f"het doel staat: de lock doet niets meer, open trades houden hun eigen doel"))
                 g = self.guard
                 day_room = g.params.daily_loss_limit_pct - g.daily_loss_pct(equity)
                 total_room = g.params.max_drawdown_pct - g.drawdown_pct(equity)
@@ -1731,10 +1730,8 @@ class LiveRunner:
                 print(f"[live] {self.symbol}: target notice file ({exc})")
         self.note("target", now, note=f"{state}: balance {balance:,.2f}, {days if days is not None else '?'} trading day(s)")
         if state == "done":
-            runs = ("open posities sluiten op break-even na kosten of beter (doel-lock)" if getattr(p, "lock_at_target", False)
-                    else "open posities lopen af")
             self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {days} handelsdagen. De bot opent niets nieuws "
-                               f"meer; {runs}. Zodra alles dicht is: vraag in het FTMO-dashboard de volgende fase aan.")
+                               f"meer; open posities lopen af. Zodra alles dicht is: vraag in het FTMO-dashboard de volgende fase aan.")
         else:
             have = "?" if days is None else str(days)
             self.notifier.send(f"🏁 Doel +{goal:g}% bereikt: balans {balance:,.0f}, {have} van {p.min_trading_days} handelsdagen. "
@@ -2551,16 +2548,19 @@ class LiveRunner:
     def lock_take_profit(self, direction: Direction, entry: float, lots: float, own_tp: float, costs: float, own_day,
                          state: Dict[str, Any]) -> Tuple[Optional[float], float, Optional[int]]:
         """``(price, need, days)`` for a trade of ``lots`` from ``entry`` whose own target is ``own_tp``: ``need`` is what its
-        close must bring for the closed balance to reach the lock's goal, after ``costs`` (never less than the costs: once
-        the target stands it is break-even after costs, never a level on the loss side), ``days`` the phase's trading days
-        with ``own_day`` counted (None: unknown), ``price`` the take-profit that nets ``need`` when the days are logged and
-        it lies nearer than the own target (None: the trade keeps its own target)."""
+        close must bring for the closed balance to reach the lock's goal, after ``costs``; ``days`` the phase's trading
+        days with ``own_day`` counted (None: unknown); ``price`` the take-profit that nets ``need`` while the closed balance
+        is under the phase's target, the days are logged and it lies nearer than the own target (None: the trade keeps its
+        own target). Once the target stands the lock does nothing, as Max approved it (16 October): the trade that lifts
+        the balance over the target aims at it, a trade opened or still open after that runs to its own exits (a trade
+        closed at break-even only to log a day is what he turned down)."""
         need = max(0.0, float(state["goal"]) - float(state["balance"])) + max(0.0, float(costs))
         days = state.get("days")
         dates = state.get("dates")
         if days is not None and own_day is not None and dates is not None and own_day not in dates:
             days += 1                                    # the trade's own day is not in the account's history yet
-        if days is None or days < int(self.settings.prop_firm.min_trading_days) or not own_tp or lots <= 0:
+        if (float(state["balance"]) >= float(state["target"]) or days is None
+                or days < int(self.settings.prop_firm.min_trading_days) or not own_tp or lots <= 0):
             return None, need, days
         pnl_for = getattr(self.broker, "pnl_for", None)
         if callable(pnl_for):
@@ -2650,7 +2650,7 @@ class LiveRunner:
         own = float(rec["take_profit"])
         price, need, days = self.lock_take_profit(pos.direction, float(pos.entry), float(pos.lots), own,
                                                   self._closing_costs(pos), self._prague_day(pos.opened_at), state)
-        if days is None:
+        if days is None and float(state["balance"]) < float(state["target"]):
             return changed                               # the day count unknown: the take-profit on the server stays
         tick, stops, _freeze = self._lock_rules()
         want = own
@@ -2688,7 +2688,7 @@ class LiveRunner:
         current = float(info.get("lock_tp") or own)
         price, need, days = self.lock_take_profit(direction, entry, lots, own, self._cost_model(entry, lots),
                                                   self._prague_day(now), state)
-        if days is None:
+        if days is None and float(state["balance"]) < float(state["target"]):
             return False
         tick, stops, _freeze = self._lock_rules()
         want = price if price is not None and direction.sign * (price - entry) >= max(stops, tick) - 1e-12 else own
@@ -2756,22 +2756,17 @@ class LiveRunner:
         """A take-profit the lock moved: a journal row every time, Telegram once a trade (``rec[told]``)."""
         d = self._lock_decimals()
         target = float(self.settings.risk.target_pct)
-        at_goal = float(state["balance"]) >= float(state["goal"])
+        days_text = "?" if days is None else days
         self.note("target_lock", now, id=key, direction=direction.name, entry=float(entry), take_profit=float(tp), lots=float(lots),
                   note=(f"{'locked' if locked else 'own target again'}: own target {own:.{d}f}; needs {need:,.2f} with costs for "
-                        f"the goal {state['goal']:,.2f} (balance {state['balance']:,.2f}); {days} trading day(s)"))
+                        f"the goal {state['goal']:,.2f} (balance {state['balance']:,.2f}); {days_text} trading day(s)"))
         print(f"[live] {self.symbol}: target lock: {key} take-profit {tp:.{d}f} ({'locked' if locked else 'its own'}; own {own:.{d}f})")
         if not locked or rec.get(told):
             return
         rec[told] = True
-        if at_goal:
-            self.notifier.send(f"🔐 {self.symbol}: het doel +{target:g}% staat (balans {state['balance']:,.0f}): TP van {key} van "
-                               f"{own:.{d}f} naar {tp:.{d}f}, break-even na kosten, zodat alles dicht gaat en de fase rond is; "
-                               f"de stop blijft")
-        else:
-            self.notifier.send(f"🔐 {self.symbol}: doel-lock op {key}: TP van {own:.{d}f} naar {tp:.{d}f}, de prijs waar de gesloten "
-                               f"balans +{target:g}% haalt (na kosten, {state['goal'] - state['target']:,.0f} marge); {days} "
-                               f"handelsdagen. Nooit verder dan zijn eigen doel; de stop blijft")
+        self.notifier.send(f"🔐 {self.symbol}: doel-lock op {key}: TP van {own:.{d}f} naar {tp:.{d}f}, de prijs waar de gesloten "
+                           f"balans +{target:g}% haalt (na kosten, {state['goal'] - state['target']:,.0f} marge); {days} "
+                           f"handelsdagen. Nooit verder dan zijn eigen doel; de stop blijft")
 
     def load_own_targets(self) -> None:
         if self.own_targets_path is None or not self.own_targets_path.exists():
