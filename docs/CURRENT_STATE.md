@@ -233,6 +233,14 @@ bar, together they lose -0.25R a trade over 2,233 trades, and none improves the 
 points: measure FTMO's real spreads on the laptop (`mt5-spreads`; published figures put BTC near 59 USD and gold near
 34-45 cents against the backtest's 15 USD and 20 cents), and FTMO's FAQ allows ending an evaluation after 30 days
 without a trade, so a stalled start is a lost challenge.
+`CONVICTION_NL.md` (Dutch) asks whether the bot can recognise its surest trades at entry and stake them higher
+(Max: "als we hele zekere trades hebben dan kan inzet en risk echt wel omhoog"; no micro trades). 1,006 tries
+(Dorus's pre-registered A+ plan, the Kronos forecast, 85 entry-time features, 711 stake settings): no rule finds surer
+trades; only a far planned target holds, and it pays more while winning less often (43 % against 56 %). A higher stake
+on any flagged group is slower than the same risk spread over every trade, and without a floor it stalls 9 % of the
+starts (`far_target_rr` stays off). The lever is option B without micro trades: `RISK=2.25` (or 1.75), 4H x1.25,
+BTC x0.25 and the lock; at 1.75 both phases take 60 days (73 today) at 1.4 % fail-or-stall (2.9 %), and the profile
+change alone already gives 66 days at 1.5 %. Open for Max. On 2017-2023 (a check only) the strategy earned nothing.
 
 Every component of the live system was reviewed and each finding attacked by an independent check (three stack
 reviews, two fix checks). Nothing in the profiles changed. What the windows do differently after the restart:
