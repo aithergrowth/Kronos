@@ -128,3 +128,33 @@
   candles; the window reads FTMO's (the day cut at 17:00 New York).
 - News: US PPI and retail sales 14:30 Amsterdam (blackout 14:00-15:00 for all four markets). Data: TradingView 08:35,
   BTC from Bitstamp. Code 26fce7a on the laptop since 14 October evening (target 10 %, stop at the target on).
+
+## 2026-10-16 (Friday)
+
+- EURUSD ✅ eens (wait): W and D bearish; the 4H and 1H bullish since the CPI drop was fully retraced (1H BOS 1.12245);
+  price 1.1234 just under equal highs at 1.1241 (15 and 16 October), inside the old 4H supplies 1.1203-1.1263 (spent by
+  age). The engine refuses both sides (the week against the long; the 4H veto and the 1H against the short). Trade: a
+  sweep of 1.1241-1.1243, then the 1H and 4H close back under about 1.1221 (the engine's what-if, the hours in between
+  frozen), a short from the fresh supply that leaves, on a 5m shift, target 1.1208 / 1.1153. Missed chance: a short
+  straight from the old supply after that sweep on a 15m shift; blocked by the zone's age (24 h rule) and the 4H veto.
+- XAUUSD ✅ eens (wait): M, W and D bearish; the 4H turned bullish yesterday evening (BMS through 4,161.77) and ran
+  through yesterday's fresh 4H supply 4,105-4,155; price 4,179 back at the top of the 4,066-4,230 range, under the old
+  supplies 4,185-4,275 (spent by age). Trade (the engine's what-if for the 09:00 close): the 1H sweeps 4,190.9 and
+  closes under 4,152.9, then a short from a fresh supply on a 5m shift, target 4,111 / 4,073. Missed chance: a short
+  from the old supply after a sweep of 4,186-4,205 with a 15m shift; blocked by the required 1H and the zone's age.
+- NAS100 ✅ eens (no trade): W bullish, D bearish (BMS 30,583), 4H 50/50, 1H bullish (BOS 30,023 after the sweep of
+  29,440 in the old weekly and daily demand); price 30,017 in the tradable 4H supply 29,963-30,126 and on the fresh 1H
+  demand 29,900-30,023. Week and day disagree: Dorus waits too. A long needs the 1H, 4H and day bullish (a close above
+  about 30,705); a short is blocked by the week. Missed chance: a long from that 1H demand on a 5m shift (W+1H), target
+  30,300-30,580; blocked by "fewer than 3 timeframes agree".
+- BTCUSD ⚠️ let op: M, W, 4H and 1H bullish after the sweep of 80,150 / 79,694 (1H BMS through 81,805), the day 50/50
+  (sell side swept, the bearish gap 83,462-85,121 still its last balance level); price 82,060 at the bottom of the
+  tradable 4H supply 81,999-83,844. Dorus: a long on a pullback into the 1H demand 80,020-81,805 with a 5m shift, target
+  83,000-83,850. The bot: not a valid combination without the day, which turns only on a close of about 85,100-85,600
+  (not today). The point: four of five bullish after a sweep and a shift is Dorus's long; this week's BTC longs without
+  the day all lost, so nothing changes. On Bitstamp's UTC candles; the window reads FTMO's.
+- News: no high-impact release today (Fed chair Warsh spoke at 05:30 Amsterdam, before the session). Data: TradingView
+  08:36, BTC from Bitstamp.
+- Week look-back (Friday): the missed chance that came back most often was "not a valid bias combination" (9 times
+  Monday-Thursday: BTC and NAS100 longs, gold shorts). Every long price reached would have been stopped (BTC fell to
+  79,694, NAS100 to 29,440); only gold fell, from 4,217 to 4,073, without the sweep of 4,230 the short waited for.
