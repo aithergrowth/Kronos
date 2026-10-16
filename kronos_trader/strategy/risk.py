@@ -271,10 +271,11 @@ def fallback_target(
 
 def setup_risk(params: RiskParams, zone_tf: Optional[Timeframe], combo: Optional[str] = None,
                confirmation: Optional[str] = None, neutral: Iterable[str] = (), aligned: int = 0, rr: float = 0.0) -> RiskParams:
-    """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (setup B: a
-    4H zone at twice the stake, BTC at half), the bias combination's ``combo_risk_multiplier`` (``combo``: the matched
-    timeframes joined by +, as ``TradeSetup.bias_combo``), the confirmation type's ``confirmation_risk_multiplier``
-    (``confirmation``: BS, BMS, BOS or first_candle, as ``confirmation_label``) and ``neutral_bias_risk_multiplier`` for
+    """``params`` with ``risk_pct`` times ``stake_multiplier``, the zone timeframe's ``zone_risk_multiplier`` (option B, 16
+    October: a 4H zone at 1.25 times the stake, BTC at a quarter), the bias combination's ``combo_risk_multiplier``
+    (``combo``: the matched timeframes joined by +, as ``TradeSetup.bias_combo``), the confirmation type's
+    ``confirmation_risk_multiplier`` (``confirmation``: BS, BMS, BOS or first_candle, as ``confirmation_label``) and
+    ``neutral_bias_risk_multiplier`` for
     each timeframe in ``neutral`` (the labels of the bias timeframes reading 50/50, as ``TradeSetup.neutral_timeframes``);
     ``params`` itself when all are 1."""
     mult = float(params.stake_multiplier or 1.0)

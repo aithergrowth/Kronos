@@ -360,9 +360,10 @@ class RiskParams:
                                         # het andere", A 01:50:31); "fixed" = the target sits tp_fallback_rr R beyond the entry. Setups whose own
                                         # target gives min_rr do not change
     tp_fallback_rr: float = 0.0
-    zone_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"4H": 2.0}: a zone of that timeframe risks
+    zone_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"4H": 1.25}: a zone of that timeframe risks
                                         # that multiple of risk_pct (after the drawdown steps). 6 October: 4H zones on EURUSD, gold
-                                        # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026)
+                                        # and NAS100 won 47 % / 64 % at +0.49R / +1.04R a trade (2017-2023 / 2024-2026), at 2.0;
+                                        # 1.25 since 16 October (option B), so a higher RISK still fits the guard's 4 % day
     combo_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"1D+1H": 0.75}: a trade the bias allowed
                                         # through that combination (the matched timeframes joined by +) risks that multiple as well
     confirmation_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"BOS": 0.5}: a trade entered on that
@@ -370,7 +371,8 @@ class RiskParams:
     neutral_bias_risk_multiplier: Dict[str, float] = field(default_factory=dict)   # e.g. {"1M": 0.5}: a trade taken while that
                                         # timeframe's bias reads 50/50 risks that multiple as well (8 October, Max: the long losing runs
                                         # came from trades with the month at 50/50, won 29-33 % against 50-60 %)
-    stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 on the FTMO 1-step: setup B)
+    stake_multiplier: float = 1.0       # the profile's stake as a multiple of risk_pct (BTC 0.5 since setup B, 6 October; 0.25
+                                        # since option B, 16 October)
     target_pct: float = 0.0             # the challenge phase's profit target in % of the initial balance (FTMO 2-Step: 10, then 5 in
                                         # the verification); 0 = none known. With target_protect_pct: within that many % of the target
     target_protect_pct: float = 0.0     # every trade risks at most half of risk_pct (multipliers on top), so a losing run near the
