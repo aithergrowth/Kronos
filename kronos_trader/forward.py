@@ -151,6 +151,8 @@ def reconcile(journal: pd.DataFrame, deals: pd.DataFrame, magic: Optional[int] =
     starts = journal[journal["event"] == "start"].sort_values("time") if len(journal) else journal
     closes = journal[journal["event"] == "closed"].drop_duplicates("id", keep="last").set_index("id") if len(journal) else journal
     moved = journal[journal["event"] == "breakeven"].drop_duplicates("id", keep="last").set_index("id") if len(journal) else journal
+    # the lock at the phase's target (16 October) moves a take-profit: the last level it set is the one a target exit left at
+    locked = journal[journal["event"] == "target_lock"].drop_duplicates("id", keep="last").set_index("id") if len(journal) else journal
     rows: List[Dict[str, Any]] = []
     for pid, group in trades.groupby("position_id", sort=False):
         group = group.sort_values("time")
@@ -178,6 +180,8 @@ def reconcile(journal: pd.DataFrame, deals: pd.DataFrame, magic: Optional[int] =
         reason = REASONS.get(int(last_out["reason"]), str(int(last_out["reason"]))) if last_out is not None else ""
         if reason == "stop" and len(moved) and key in moved.index and pd.notna(moved.loc[key].get("stop")):
             exit_ref = float(moved.loc[key]["stop"])     # the stop had moved to break-even: that is the level it left at
+        elif reason == "take_profit" and len(locked) and key in locked.index and pd.notna(locked.loc[key].get("take_profit")):
+            exit_ref = float(locked.loc[key]["take_profit"])
         else:
             exit_ref = p_stop if reason == "stop" else p_tp if reason == "take_profit" else float("nan")
         code = ""

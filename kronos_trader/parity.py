@@ -268,6 +268,7 @@ class LiveSignal:
     position: str = ""
     exit_reason: str = ""
     r: Optional[float] = None
+    locked: bool = False               # the lock at the phase's target moved its take-profit (live only, 16 October)
 
 
 def _text(value) -> str:
@@ -315,7 +316,7 @@ def live_side(journal: pd.DataFrame, symbol: str, start: pd.Timestamp, end: pd.T
             sig = out.get(rid)
         elif ev in ("limit_placed", "limit_cancelled", "limit_gone"):
             sig = out.get(orders.get(rid, ""))
-        elif ev in ("filled", "submitted", "did_not_fill", "closed"):
+        elif ev in ("filled", "submitted", "did_not_fill", "closed", "target_lock", "target_lock_exit"):
             sig = out.get(positions.get(rid, ""))
         else:
             sig = None
@@ -342,6 +343,8 @@ def live_side(journal: pd.DataFrame, symbol: str, start: pd.Timestamp, end: pd.T
             sig.kind, sig.fill, sig.position = "trade", _num(r.get("entry")), rid
         elif ev == "did_not_fill" and not sig.exit_reason:
             sig.kind, sig.outcome = "refused", "the order did not fill"
+        elif ev == "target_lock_exit" or (ev == "target_lock" and note.startswith("locked")):
+            sig.locked = True
         elif ev == "closed":
             sig.kind, sig.exit_reason, sig.r = "trade", reason, _num(r.get("r"))
             if sig.fill is None:
@@ -534,6 +537,8 @@ def compare(symbol: str, live: Dict[str, LiveSignal], signals: Dict[str, Dict[st
                 verdict = "match" if lx == bx else "outcome differs"
                 if verdict != "match" and "open" in (lx, bx):
                     notes.append("one side still holds the trade")
+                if verdict != "match" and L.locked:
+                    notes.append("the lock at the phase's target moved the live take-profit; it is live only")
             elif L.kind == bk:
                 verdict = "match"
             else:

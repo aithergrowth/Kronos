@@ -483,3 +483,34 @@ def test_the_morning_check_says_what_the_lock_does(setup, tmp_path):
     assert any(x.startswith("🔐 Doel-lock aan (4 van 4") and "het doel staat" in x for x in lines)
     runner, *_ = _paper(setup, tmp_path / "c", 10_900.0, 3, lock=False)
     assert not any("Doel-lock" in x for x in runner.briefing_extras(runner.engine.analyze("EURUSD", {}, now=NOW), NOW))
+
+# ------------------------------------------------------------------ the records and the switch
+
+def test_a_locked_take_profit_exit_is_no_exit_slippage():
+    from kronos_trader.forward import reconcile
+    journal = pd.DataFrame([
+        {"time": NOW, "symbol": "EURUSD", "event": "setup", "id": "abcd1234", "entry": 1.1, "stop": 1.0949, "take_profit": 1.12,
+         "rr": 3.9, "note": ""},
+        {"time": NOW, "symbol": "EURUSD", "event": "filled", "id": "501", "entry": 1.1, "stop": 1.0949, "take_profit": 1.12,
+         "risk": 153.0, "note": "setup abcd1234"},
+        {"time": NOW, "symbol": "EURUSD", "event": "target_lock", "id": "501", "take_profit": 1.1035, "note": "locked: ..."}])
+    deals = pd.DataFrame([
+        {"time": NOW, "position_id": 501, "type": 0, "entry": 0, "price": 1.1, "volume": 0.3, "profit": 0.0, "commission": -0.45,
+         "swap": 0.0, "fee": 0.0, "reason": 3, "symbol": "EURUSD", "magic": 1},
+        {"time": NOW + pd.Timedelta(hours=2), "position_id": 501, "type": 1, "entry": 1, "price": 1.1035, "volume": 0.3,
+         "profit": 105.0, "commission": -0.45, "swap": 0.0, "fee": 0.0, "reason": 5, "symbol": "EURUSD", "magic": 1}])
+    row = reconcile(journal, deals).iloc[0]
+    assert row.exit_reason == "take_profit" and row.exit_slip == pytest.approx(0.0, abs=1e-9)
+
+
+def test_parity_names_the_lock_on_a_locked_trade():
+    from kronos_trader.parity import live_side
+    journal = pd.DataFrame([
+        {"time": NOW, "symbol": "EURUSD", "event": "setup", "id": "abcd1234", "direction": "LONG", "entry": 1.1, "stop": 1.0949,
+         "take_profit": 1.12, "rr": 3.9, "note": ""},
+        {"time": NOW, "symbol": "EURUSD", "event": "filled", "id": "501", "entry": 1.1, "note": "setup abcd1234"},
+        {"time": NOW, "symbol": "EURUSD", "event": "target_lock", "id": "501", "take_profit": 1.1035, "note": "locked: own"},
+        {"time": NOW + pd.Timedelta(hours=2), "symbol": "EURUSD", "event": "closed", "id": "501", "reason": "take_profit",
+         "r": 0.69, "note": ""}])
+    sig = live_side(journal, "EURUSD", NOW - pd.Timedelta(days=1), NOW + pd.Timedelta(days=1))["abcd1234"]
+    assert sig.locked and sig.exit_reason == "take_profit"
