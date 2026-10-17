@@ -1,0 +1,54 @@
+code: 9d3bbf827d0f5a82f0743518d4db1211f727ce14 source b969ffcda4c6
+   1m: CandleSeries(EURUSD 1m, n=3570196, 2017-01-02 07:00:00 -> 2026-09-25 00:58:00)
+   5m: CandleSeries(EURUSD 5m, n=716989, 2017-01-02 07:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(EURUSD 15m, n=239040, 2017-01-02 07:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(EURUSD 1H, n=59764, 2017-01-02 07:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(EURUSD 4H, n=15447, 2017-01-02 06:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(EURUSD 1D, n=5000, 2007-06-28 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(EURUSD 1W, n=1006, 2007-06-28 21:00:00 -> 2026-09-27 21:00:00)
+   1M: CandleSeries(EURUSD 1M, n=100, 2018-05-31 21:00:00 -> 2026-08-31 21:00:00)
+news calendar: 2848 events 2017-01-06 10:00:00 -> 2026-10-02 12:30:00 (data/calendar/high_impact.csv)
+  645282/716989 2025-10-08 22:05:00 equity=100,000 trades=0
+  681131/716989 2026-04-03 03:30:00 equity=93,928 trades=9
+  716980/716989 2026-09-25 00:15:00 equity=106,335 trades=27
+Backtest EURUSD  2025-10-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 73412 steps, 641.2s)
+  signals 36  guard-rejected 9  trades 27
+  wins 13  losses 14  break-even 0  win rate 48.1%
+  avg R +0.27  total R +7.2  best +5.7  worst -1.0
+  profit factor 1.49  net P&L +6,335  return +6.34%  max DD 6.57%
+  by_poi_tf:
+    1D: n=1 avgR=-1.00 sumR=-1.0
+    1H: n=20 avgR=+0.56 sumR=+11.2
+    4H: n=6 avgR=-0.50 sumR=-3.0
+  by_confirmation:
+    BS: n=27 avgR=+0.27 sumR=+7.2
+  by_exit:
+    stop: n=14 avgR=-1.00 sumR=-14.0
+    take_profit: n=13 avgR=+1.63 sumR=+21.2
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+        8  max 1 open trade(s) per account
+        1  price moved: R:R below minimum
+  engine rejections (top):
+     35473  POI - no active visit on 1m
+      4789  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=50/5
+      4080  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=50/50,
+      4020  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bullis
+      3262  POI - touched
+      3216  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bearis
+      2712  bullish - 1M+4H+1H aligned but not a valid combination -> no trade
+      2627  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=bull
+  distinct zones behind the rejections (bars above count every candle):
+       244  POI - no active visit on 1m
+        90  POI - touched
+        27  POI - already traded on visit #1 - one trade per visit
+        15  POI - visit #2 - only the first return is traded
+         5  POI - visit #3 - only the first return is traded
+         2  POI - R:R 0.27 below minimum 0.5 (target 4H previous low 1.15420 (72 candles
+         1  POI - R:R 0.15 below minimum 0.5 (target 1H previous low 1.15078 (72 candles
+         1  POI - R:R 0.32 below minimum 0.5 (target 4H previous high 1.16819 (72 candle
+         1  POI - entry 1.19897 lies 65% of the zone's height inside it (max 50%): no ro
+         1  POI - R:R 0.37 below minimum 0.5 (target 4H previous low 1.17418 (72 candles
+         1  POI - entry 1.14836 lies 69% of the zone's height inside it (max 50%): no ro
+         1  POI - R:R 0.13 below minimum 0.5 (target 4H buy-side liquidity 1.17626 (x1))
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_y26_v6_minstop8_eurusd.csv (+ .equity.csv, .provenance.json)

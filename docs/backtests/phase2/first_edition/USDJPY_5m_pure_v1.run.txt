@@ -1,0 +1,77 @@
+code: e24a0d85e1a4ffaf9fd4ad46f03cf47692df8eca source 13689350db47
+   5m: CandleSeries(USDJPY 5m, n=268838, 2023-01-01 22:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(USDJPY 15m, n=89635, 2023-01-01 22:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(USDJPY 1H, n=22411, 2023-01-01 22:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(USDJPY 4H, n=5912, 2023-01-01 22:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(USDJPY 1D, n=5000, 2007-07-01 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(USDJPY 1W, n=1006, 2007-06-25 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(USDJPY 1M, n=231, 2007-07-01 00:00:00 -> 2026-09-01 00:00:00)
+news calendar: 2848 events 2017-01-06 10:00:00 -> 2026-10-02 12:30:00 (data/calendar/high_impact.csv)
+  13441/268838 2023-03-14 09:30:00 equity=99,179 trades=1
+  26882/268838 2023-06-15 08:35:00 equity=96,926 trades=7
+  40323/268838 2023-09-01 06:55:00 equity=89,826 trades=19
+  53764/268838 2023-11-07 00:15:00 equity=94,633 trades=31
+  67205/268838 2024-01-12 08:15:00 equity=96,430 trades=38
+  80646/268838 2024-03-18 23:20:00 equity=94,736 trades=40
+  94087/268838 2024-05-22 17:25:00 equity=94,736 trades=40
+  107528/268838 2024-07-26 09:30:00 equity=92,480 trades=50
+  120969/268838 2024-10-01 06:05:00 equity=91,396 trades=54
+  134410/268838 2024-12-05 16:45:00 equity=94,026 trades=59
+  147851/268838 2025-02-11 23:50:00 equity=109,914 trades=70
+  161292/268838 2025-04-17 17:50:00 equity=110,098 trades=78
+  174733/268838 2025-06-23 10:15:00 equity=108,014 trades=80
+  188174/268838 2025-08-27 02:30:00 equity=107,946 trades=83
+  201615/268838 2025-10-30 17:50:00 equity=106,371 trades=90
+  215056/268838 2026-01-07 01:35:00 equity=103,273 trades=93
+  228497/268838 2026-03-12 16:40:00 equity=102,714 trades=97
+  241938/268838 2026-05-18 11:00:00 equity=103,456 trades=99
+  255379/268838 2026-07-22 07:10:00 equity=102,534 trades=103
+  268820/268838 2026-09-24 23:30:00 equity=103,389 trades=108
+Backtest USDJPY  2023-03-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 257346 steps, 2226.5s)
+  signals 178  guard-rejected 69  trades 109
+  wins 31  losses 76  break-even 2  win rate 28.4%
+  avg R +0.04  total R +3.9  best +8.6  worst -1.7
+  profit factor 1.05  net P&L +3,473  return +3.47%  max DD 13.66%
+  by_poi_tf:
+    1D: n=10 avgR=-0.10 sumR=-1.0
+    1H: n=60 avgR=-0.17 sumR=-10.4
+    1W: n=2 avgR=+0.70 sumR=+1.4
+    4H: n=37 avgR=+0.38 sumR=+14.0
+  by_confirmation:
+    BMS: n=27 avgR=+0.38 sumR=+10.4
+    BOS: n=9 avgR=+0.38 sumR=+3.5
+    BS: n=19 avgR=-0.34 sumR=-6.4
+    first_candle: n=54 avgR=-0.06 sumR=-3.5
+  by_exit:
+    breakeven: n=2 avgR=+0.00 sumR=+0.0
+    end_of_data: n=1 avgR=+1.63 sumR=+1.6
+    stop: n=76 avgR=-1.02 sumR=-77.9
+    take_profit: n=30 avgR=+2.67 sumR=+80.2
+  first guard breach: 2023-08-17 14:25:00  loss 10.04% of the initial balance >= 10.0%
+  guard rejections:
+       65  max 1 open trade(s) per account
+        3  price moved: R:R below minimum
+        1  price moved: wrong side of the stop
+  engine rejections (top):
+      9037  POI - touched
+      8173  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=bullish, 4H=50
+      7970  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=bull
+      7012  fewer than 3 timeframes agree (1M=50/50, 1W=bullish, 1D=bullish, 4H=50
+      6803  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bullish, 4H=50/5
+      6671  fewer than 3 timeframes agree (1M=50/50, 1W=bullish, 1D=50/50, 4H=50/5
+      5963  fewer than 3 timeframes agree (1M=50/50, 1W=bearish, 1D=50/50, 4H=50/5
+      5901  bullish - 1M+4H+1H aligned but not a valid combination -> no trade
+  distinct zones behind the rejections (bars above count every candle):
+       303  POI - touched
+        89  POI - visit #2 - only the first return is traded
+        25  POI - visit #3 - only the first return is traded
+         9  POI - visit #4 - only the first return is traded
+         6  POI - visit #5 - only the first return is traded
+         2  POI - R:R 0.36 below minimum 1.3 (target 1H buy-side liquidity 140.29600 (x1
+         2  POI - R:R 0.03 below minimum 1.3 (target 1H buy-side liquidity 147.38100 (x2
+         2  POI - R:R 0.58 below minimum 1.3 (target 15m buy-side liquidity 147.45500 (x
+         2  POI - R:R 0.48 below minimum 1.3 (target 4H buy-side liquidity 149.76400 (x1
+         2  POI - visit #8 - only the first return is traded
+         2  POI - visit #6 - only the first return is traded
+         2  POI - R:R 1.02 below minimum 1.3 (target 15m buy-side liquidity 157.40200 (x
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/p2_usdjpy_5m_pure_v1.csv (+ .equity.csv, .provenance.json)

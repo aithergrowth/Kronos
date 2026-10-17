@@ -1,0 +1,61 @@
+code: 0042a19e63299a87ae24a6c212b63b162c9d8414 source 0b02c0a91cdc (uncommitted changes)
+   5m: CandleSeries(DXY 5m, n=13170, 2026-07-26 22:00:00 -> 2026-10-02 20:59:59)
+  15m: CandleSeries(DXY 15m, n=4429, 2026-07-26 22:00:00 -> 2026-10-02 20:59:59)
+   1H: CandleSeries(DXY 1H, n=14286, 2024-05-12 22:00:00 -> 2026-10-02 20:59:59)
+   4H: CandleSeries(DXY 4H, n=3643, 2024-05-12 21:00:00 -> 2026-10-02 17:00:00)
+   1D: CandleSeries(DXY 1D, n=5000, 2007-01-03 00:00:00 -> 2026-10-01 23:00:00)
+   1W: CandleSeries(DXY 1W, n=1031, 2007-01-01 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(DXY 1M, n=238, 2007-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  5264/13170 2026-08-21 10:15:00 equity=100,000 trades=0
+  5922/13170 2026-08-25 19:45:00 equity=100,000 trades=0
+  6580/13170 2026-08-28 07:35:00 equity=100,000 trades=0
+  7238/13170 2026-09-01 17:05:00 equity=100,000 trades=0
+  7896/13170 2026-09-04 04:40:00 equity=99,052 trades=1
+  8554/13170 2026-09-09 14:05:00 equity=99,052 trades=1
+  9212/13170 2026-09-14 01:15:00 equity=99,052 trades=1
+  9870/13170 2026-09-16 11:25:00 equity=99,052 trades=1
+  10528/13170 2026-09-20 22:35:00 equity=98,090 trades=2
+  11186/13170 2026-09-23 08:40:00 equity=97,191 trades=3
+  11844/13170 2026-09-25 18:45:00 equity=97,734 trades=4
+  12502/13170 2026-09-30 10:15:00 equity=97,734 trades=4
+Backtest DXY  2026-08-20 00:00:00 -> 2026-10-01 00:00:00  (step 5m, 7776 steps, 68.4s)
+  signals 7  guard-rejected 3  trades 4
+  wins 1  losses 3  break-even 0  win rate 25.0%
+  avg R -0.61  total R -2.4  best +0.6  worst -1.0
+  profit factor 0.19  net P&L -2,266  return -2.27%  max DD 3.03%
+  by_poi_tf:
+    1H: n=2 avgR=-0.21 sumR=-0.4
+    4H: n=2 avgR=-1.00 sumR=-2.0
+  by_confirmation:
+    BS: n=4 avgR=-0.61 sumR=-2.4
+  by_exit:
+    stop: n=3 avgR=-1.00 sumR=-3.0
+    take_profit: n=1 avgR=+0.57 sumR=+0.6
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+        2  max 1 open trade(s) per account
+        1  price moved: R:R below minimum
+  engine rejections (top):
+      3926  POI - no active visit on 5m
+       943  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bearis
+       900  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bullis
+       841  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=50/50,
+       781  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bullish, 4H=bull
+       694  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=bull
+       567  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=50/5
+       444  POI - touched
+  distinct zones behind the rejections (bars above count every candle):
+        55  POI - no active visit on 5m
+        14  POI - touched
+         4  POI - already traded on visit #1 - one trade per visit
+         2  POI - visit #2 - only the first return is traded
+         1  POI - R:R 0.22 below minimum 0.5 (target 1H origin low 98.73700 (31 candles 
+         1  POI - R:R 0.12 below minimum 0.5 (target 15m buy-side liquidity 99.81500 (x1
+         1  POI - visit #3 - only the first return is traded
+         1  POI - R:R 0.15 below minimum 0.5 (target 15m sell-side liquidity 98.70600 (x
+         1  POI - R:R 0.08 below minimum 0.5 (target 15m buy-side liquidity 100.32300 (x
+         1  POI - R:R 0.13 below minimum 0.5 (target 15m buy-side liquidity 100.56400 (x
+         1  POI - R:R 0.13 below minimum 0.5 (target 15m buy-side liquidity 100.35500 (x
+         1  POI - R:R 0.16 below minimum 0.5 (target 15m buy-side liquidity 100.33900 (x
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_dxy_sep.csv (+ .equity.csv, .provenance.json)

@@ -1,0 +1,69 @@
+code: 81729f388edc538ba1ec0dfb4a7af47ee7b2c073 source b814de119162
+   5m: CandleSeries(BTCUSD 5m, n=83106, 2025-12-20 00:00:00 -> 2026-10-04 13:25:00)
+  15m: CandleSeries(BTCUSD 15m, n=47094, 2025-06-01 00:00:00 -> 2026-10-04 13:15:00)
+   1H: CandleSeries(BTCUSD 1H, n=32942, 2023-01-01 00:00:00 -> 2026-10-04 13:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17002, 2019-01-01 00:00:00 -> 2026-10-04 12:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  4155/83106 2026-01-03 10:15:00 equity=100,000 trades=0
+  8310/83106 2026-01-17 20:30:00 equity=100,000 trades=0
+  12465/83106 2026-02-01 06:45:00 equity=99,004 trades=1
+  16620/83106 2026-02-15 17:00:00 equity=97,799 trades=4
+  20775/83106 2026-03-02 03:15:00 equity=100,309 trades=5
+  24930/83106 2026-03-16 13:30:00 equity=98,955 trades=8
+  29085/83106 2026-03-30 23:45:00 equity=102,090 trades=9
+  33240/83106 2026-04-14 10:00:00 equity=101,648 trades=12
+  37395/83106 2026-04-28 20:15:00 equity=103,237 trades=13
+  41550/83106 2026-05-13 06:30:00 equity=102,211 trades=14
+  45705/83106 2026-05-27 16:45:00 equity=102,211 trades=14
+  49860/83106 2026-06-11 03:00:00 equity=115,248 trades=16
+  54015/83106 2026-06-25 13:15:00 equity=121,208 trades=17
+  58170/83106 2026-07-09 23:30:00 equity=126,452 trades=20
+  62325/83106 2026-07-24 09:45:00 equity=126,452 trades=20
+  66480/83106 2026-08-07 20:00:00 equity=121,488 trades=24
+  70635/83106 2026-08-22 06:15:00 equity=120,923 trades=29
+  74790/83106 2026-09-05 16:30:00 equity=119,720 trades=30
+  78945/83106 2026-09-20 02:45:00 equity=119,720 trades=30
+  83100/83106 2026-10-04 13:00:00 equity=128,504 trades=31
+Backtest BTCUSD  2026-01-01 00:00:00 -> 2026-10-04 13:25:00  (step 5m, 79650 steps, 1724.9s)
+  signals 44  guard-rejected 13  trades 31
+  wins 14  losses 17  break-even 0  win rate 45.2%
+  avg R +0.86  total R +26.6  best +11.8  worst -1.0
+  profit factor 2.50  net P&L +28,504  return +28.50%  max DD 5.55%
+  by_poi_tf:
+    1D: n=2 avgR=-1.00 sumR=-2.0
+    1H: n=23 avgR=+1.32 sumR=+30.4
+    4H: n=6 avgR=-0.30 sumR=-1.8
+  by_confirmation:
+    BS: n=31 avgR=+0.86 sumR=+26.6
+  by_exit:
+    stop: n=17 avgR=-1.00 sumR=-17.0
+    take_profit: n=14 avgR=+3.11 sumR=+43.6
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       13  max 1 open trade(s) per account
+  engine rejections (top):
+     34630  POI - no active visit on 5m
+      5856  bearish - 1M+1W+1H aligned but not a valid combination -> no trade
+      4620  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=bu
+      4416  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=50/50, 4H=50
+      4032  POI - touched
+      3539  bearish - 1W+1D+4H aligned but not a valid combination -> no trade
+      3372  fewer than 3 timeframes agree (1M=bearish, 1W=bearish, 1D=bullish, 4H=
+      3288  bearish - 1M+1W+4H aligned but not a valid combination -> no trade
+  distinct zones behind the rejections (bars above count every candle):
+       209  POI - no active visit on 5m
+        94  POI - touched
+        30  POI - already traded on visit #1 - one trade per visit
+        17  POI - visit #2 - only the first return is traded
+         7  POI - visit #3 - only the first return is traded
+         2  POI - visit #5 - only the first return is traded
+         2  POI - R:R 0.44 below minimum 0.5 (target 15m buy-side liquidity 76944.00000 
+         2  POI - visit #4 - only the first return is traded
+         1  POI - R:R 0.23 below minimum 0.5 (target 15m sell-side liquidity 82279.00000
+         1  POI - R:R 0.18 below minimum 0.5 (target 15m sell-side liquidity 70486.00000
+         1  POI - R:R 0.32 below minimum 0.5 (target 15m sell-side liquidity 70486.00000
+         1  POI - R:R 0.09 below minimum 0.5 (target 1H origin low 67870.00000 (31 candl
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_noreq_y26.csv (+ .equity.csv, .provenance.json)

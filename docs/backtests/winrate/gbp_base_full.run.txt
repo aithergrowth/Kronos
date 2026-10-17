@@ -1,0 +1,70 @@
+code: f547250ddbac0714311b46e9fec8046ee30da34a source 06dcd2329b2c
+   5m: CandleSeries(GBPUSD 5m, n=268822, 2023-01-01 23:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(GBPUSD 15m, n=89639, 2023-01-01 23:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(GBPUSD 1H, n=22413, 2023-01-01 23:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(GBPUSD 4H, n=5917, 2023-01-01 22:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(GBPUSD 1D, n=5000, 2007-06-28 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(GBPUSD 1W, n=1006, 2007-06-25 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(GBPUSD 1M, n=232, 2007-06-01 00:00:00 -> 2026-09-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  13441/268822 2023-03-14 09:25:00 equity=100,073 trades=1
+  26882/268822 2023-06-15 10:35:00 equity=101,950 trades=7
+  40323/268822 2023-09-01 12:40:00 equity=101,831 trades=9
+  53764/268822 2023-11-07 05:55:00 equity=100,755 trades=16
+  67205/268822 2024-01-12 15:40:00 equity=99,860 trades=19
+  80646/268822 2024-03-19 07:45:00 equity=98,959 trades=20
+  94087/268822 2024-05-23 02:00:00 equity=99,572 trades=22
+  107528/268822 2024-07-26 18:10:00 equity=98,663 trades=23
+  120969/268822 2024-10-01 10:35:00 equity=99,751 trades=28
+  134410/268822 2024-12-05 07:40:00 equity=100,080 trades=31
+  147851/268822 2025-02-11 16:25:00 equity=100,610 trades=36
+  161292/268822 2025-04-17 10:10:00 equity=100,844 trades=41
+  174733/268822 2025-06-23 02:35:00 equity=104,663 trades=45
+  188174/268822 2025-08-26 18:50:00 equity=104,245 trades=47
+  201615/268822 2025-10-30 10:05:00 equity=103,283 trades=48
+  215056/268822 2026-01-06 20:00:00 equity=104,749 trades=51
+  228497/268822 2026-03-12 11:05:00 equity=106,542 trades=55
+  241938/268822 2026-05-18 12:25:00 equity=105,596 trades=56
+  255379/268822 2026-07-22 08:40:00 equity=108,160 trades=59
+  268820/268822 2026-09-25 00:50:00 equity=107,840 trades=62
+Backtest GBPUSD  2023-03-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 257329 steps, 2183.9s)
+  signals 79  guard-rejected 17  trades 62
+  wins 31  losses 31  break-even 0  win rate 50.0%
+  avg R +0.13  total R +8.2  best +2.5  worst -1.0
+  profit factor 1.26  net P&L +7,840  return +7.84%  max DD 7.18%
+  by_poi_tf:
+    1D: n=1 avgR=-1.00 sumR=-1.0
+    1H: n=50 avgR=+0.14 sumR=+7.0
+    4H: n=11 avgR=+0.20 sumR=+2.2
+  by_confirmation:
+    BS: n=62 avgR=+0.13 sumR=+8.2
+  by_exit:
+    stop: n=31 avgR=-1.00 sumR=-31.0
+    take_profit: n=31 avgR=+1.27 sumR=+39.2
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       14  max 1 open trade(s) per account
+        3  price moved: R:R below minimum
+  engine rejections (top):
+     85568  POI - no active visit on 5m
+     28079  bullish - 1H not aligned (required) -> no trade
+      9336  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+      8773  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=50
+      8748  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=bearish, 4H=bull
+      8290  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=be
+      8190  POI - touched
+      7609  fewer than 3 timeframes agree (1M=50/50, 1W=50/50, 1D=50/50, 4H=bullis
+  distinct zones behind the rejections (bars above count every candle):
+       807  POI - no active visit on 5m
+       304  POI - touched
+        58  POI - already traded on visit #1 - one trade per visit
+        42  POI - visit #2 - only the first return is traded
+         5  POI - visit #3 - only the first return is traded
+         2  POI - R:R 0.20 below minimum 0.5 (target 15m sell-side liquidity 1.23767 (x1
+         2  POI - visit #4 - only the first return is traded
+         1  POI - R:R 0.48 below minimum 0.5 (target 1H sell-side liquidity 1.19668 (x1)
+         1  POI - R:R 0.49 below minimum 0.5 (target 4H origin high 1.21786 (31 candles 
+         1  POI - R:R 0.15 below minimum 0.5 (target 15m buy-side liquidity 1.21837 (x3)
+         1  POI - R:R 0.22 below minimum 0.5 (target 15m buy-side liquidity 1.21837 (x3)
+         1  POI - R:R 0.18 below minimum 0.5 (target 15m buy-side liquidity 1.21690 (x1)
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_gbp_base_full.csv (+ .equity.csv, .provenance.json)

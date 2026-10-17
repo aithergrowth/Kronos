@@ -1,0 +1,71 @@
+code: 7476183947cb80215f4522bde48c6d5e217138ba source 5c4f75d1bbd8
+   1m: CandleSeries(BTCUSD 1m, n=1451115, 2024-01-01 00:00:00 -> 2026-10-04 17:14:00)
+   5m: CandleSeries(BTCUSD 5m, n=290223, 2024-01-01 00:00:00 -> 2026-10-04 17:10:00)
+  15m: CandleSeries(BTCUSD 15m, n=96741, 2024-01-01 00:00:00 -> 2026-10-04 17:00:00)
+   1H: CandleSeries(BTCUSD 1H, n=32946, 2023-01-01 00:00:00 -> 2026-10-04 17:00:00)
+   4H: CandleSeries(BTCUSD 4H, n=17003, 2019-01-01 00:00:00 -> 2026-10-04 16:00:00)
+   1D: CandleSeries(BTCUSD 1D, n=4295, 2015-01-01 00:00:00 -> 2026-10-04 00:00:00)
+   1W: CandleSeries(BTCUSD 1W, n=614, 2014-12-29 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(BTCUSD 1M, n=142, 2015-01-01 00:00:00 -> 2026-10-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  14511/290223 2024-02-20 09:15:00 equity=101,739 trades=2
+  29022/290223 2024-04-10 18:30:00 equity=103,149 trades=10
+  43533/290223 2024-05-31 03:45:00 equity=104,062 trades=16
+  58044/290223 2024-07-20 13:00:00 equity=104,512 trades=24
+  72555/290223 2024-09-08 22:15:00 equity=104,402 trades=28
+  87066/290223 2024-10-29 07:30:00 equity=105,808 trades=41
+  101577/290223 2024-12-18 16:45:00 equity=112,451 trades=53
+  116088/290223 2025-02-07 02:00:00 equity=110,681 trades=60
+  130599/290223 2025-03-29 11:15:00 equity=113,995 trades=65
+  145110/290223 2025-05-18 20:30:00 equity=115,868 trades=72
+  159621/290223 2025-07-08 05:45:00 equity=114,716 trades=73
+  174132/290223 2025-08-27 15:00:00 equity=111,321 trades=76
+  188643/290223 2025-10-17 00:15:00 equity=108,876 trades=85
+  203154/290223 2025-12-06 09:30:00 equity=107,323 trades=88
+  217665/290223 2026-01-25 18:45:00 equity=103,871 trades=93
+  232176/290223 2026-03-17 04:00:00 equity=104,568 trades=100
+  246687/290223 2026-05-06 13:15:00 equity=110,975 trades=107
+  261198/290223 2026-06-25 22:30:00 equity=157,095 trades=111
+  275709/290223 2026-08-15 07:45:00 equity=155,654 trades=120
+  290220/290223 2026-10-04 17:00:00 equity=164,263 trades=124
+Backtest BTCUSD  2024-02-01 00:00:00 -> 2026-10-04 17:10:00  (step 5m, 281295 steps, 6461.4s)
+  signals 156  guard-rejected 32  trades 124
+  wins 62  losses 62  break-even 0  win rate 50.0%
+  avg R +0.44  total R +54.4  best +23.9  worst -1.0
+  profit factor 1.91  net P&L +64,263  return +64.26%  max DD 13.48%
+  by_poi_tf:
+    1D: n=8 avgR=-0.57 sumR=-4.5
+    1H: n=92 avgR=+0.70 sumR=+64.0
+    4H: n=24 avgR=-0.21 sumR=-5.1
+  by_confirmation:
+    BS: n=124 avgR=+0.44 sumR=+54.4
+  by_exit:
+    stop: n=62 avgR=-1.00 sumR=-62.0
+    take_profit: n=62 avgR=+1.88 sumR=+116.4
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       30  max 1 open trade(s) per account
+        2  price moved: R:R below minimum
+  engine rejections (top):
+     32841  POI - no active visit on 1m
+     10501  POI - touched
+     10176  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=50/5
+      9084  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+      8772  bullish - 1M+1W+4H aligned but not a valid combination -> no trade
+      8496  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=be
+      8172  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=bearish, 4H=
+      7920  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=bear
+  distinct zones behind the rejections (bars above count every candle):
+       495  POI - no active visit on 1m
+       305  POI - touched
+       121  POI - already traded on visit #1 - one trade per visit
+        71  POI - zone 25 1H candles old (max 24)
+        62  POI - zone 31 1H candles old (max 24)
+        61  POI - zone 32 1H candles old (max 24)
+        59  POI - zone 29 1H candles old (max 24)
+        58  POI - zone 26 1H candles old (max 24)
+        57  POI - zone 41 1H candles old (max 24)
+        57  POI - zone 33 1H candles old (max 24)
+        57  POI - zone 43 1H candles old (max 24)
+        57  POI - zone 24 1H candles old (max 24)
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_btc_cap2_age24_long.csv (+ .equity.csv, .provenance.json)

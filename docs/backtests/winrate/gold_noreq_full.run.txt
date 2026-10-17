@@ -1,0 +1,72 @@
+code: 47a4919dce64c601f5cd310c8cc7d229bfddfd4f source 0b02c0a91cdc
+   1m: CandleSeries(XAUUSD 1m, n=1277987, 2023-01-02 23:00:00 -> 2026-09-25 00:58:00)
+   5m: CandleSeries(XAUUSD 5m, n=255684, 2023-01-02 23:00:00 -> 2026-09-25 00:55:00)
+  15m: CandleSeries(XAUUSD 15m, n=85235, 2023-01-02 23:00:00 -> 2026-09-25 00:45:00)
+   1H: CandleSeries(XAUUSD 1H, n=21322, 2023-01-02 23:00:00 -> 2026-09-25 00:00:00)
+   4H: CandleSeries(XAUUSD 4H, n=5878, 2023-01-02 22:00:00 -> 2026-09-24 21:00:00)
+   1D: CandleSeries(XAUUSD 1D, n=5000, 2007-06-11 21:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(XAUUSD 1W, n=1008, 2007-06-11 00:00:00 -> 2026-09-28 00:00:00)
+   1M: CandleSeries(XAUUSD 1M, n=232, 2007-06-01 00:00:00 -> 2026-09-01 00:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  12784/255684 2023-03-15 10:55:00 equity=100,000 trades=0
+  25568/255684 2023-06-14 21:45:00 equity=100,894 trades=4
+  38352/255684 2023-08-31 12:05:00 equity=95,848 trades=13
+  51136/255684 2023-11-06 00:05:00 equity=96,568 trades=17
+  63920/255684 2024-01-11 15:10:00 equity=93,699 trades=22
+  76704/255684 2024-03-18 07:40:00 equity=93,062 trades=25
+  89488/255684 2024-05-22 17:00:00 equity=81,495 trades=42
+  102272/255684 2024-07-26 08:50:00 equity=82,904 trades=44
+  115056/255684 2024-09-30 18:40:00 equity=81,489 trades=57
+  127840/255684 2024-12-04 08:45:00 equity=88,943 trades=66
+  140624/255684 2025-02-10 23:00:00 equity=90,705 trades=73
+  153408/255684 2025-04-16 09:50:00 equity=93,543 trades=85
+  166192/255684 2025-06-22 23:20:00 equity=95,172 trades=90
+  178976/255684 2025-08-26 10:45:00 equity=89,954 trades=98
+  191760/255684 2025-10-29 20:35:00 equity=91,880 trades=113
+  204544/255684 2026-01-06 20:15:00 equity=99,233 trades=121
+  217328/255684 2026-03-12 08:40:00 equity=101,737 trades=128
+  230112/255684 2026-05-18 19:00:00 equity=106,960 trades=132
+  242896/255684 2026-07-22 13:50:00 equity=111,577 trades=134
+  255680/255684 2026-09-25 00:40:00 equity=110,430 trades=143
+Backtest XAUUSD  2023-03-01 00:00:00 -> 2026-09-25 00:55:00  (step 5m, 245010 steps, 5291.2s)
+  signals 183  guard-rejected 40  trades 143
+  wins 56  losses 86  break-even 1  win rate 39.2%
+  avg R +0.08  total R +11.9  best +8.5  worst -2.9
+  profit factor 1.13  net P&L +10,430  return +10.43%  max DD 22.95%
+  by_poi_tf:
+    1D: n=4 avgR=-0.01 sumR=-0.1
+    1H: n=102 avgR=+0.12 sumR=+12.3
+    4H: n=37 avgR=-0.01 sumR=-0.4
+  by_confirmation:
+    BS: n=143 avgR=+0.08 sumR=+11.9
+  by_exit:
+    breakeven: n=1 avgR=+0.00 sumR=+0.0
+    stop: n=86 avgR=-1.02 sumR=-87.9
+    take_profit: n=56 avgR=+1.78 sumR=+99.8
+  first guard breach: 2024-04-03 13:20:00  loss 10.53% of the initial balance >= 10.0%
+  guard rejections:
+       34  max 1 open trade(s) per account
+        6  price moved: R:R below minimum
+  engine rejections (top):
+    415429  POI - no active visit on 1m
+     17594  POI - touched
+     11987  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+      9471  bullish - 1M+1W+4H+1H aligned but not a valid combination -> no trade
+      9090  bullish - 1M+1W+4H aligned but not a valid combination -> no trade
+      8808  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=be
+      7869  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=50/5
+      7845  POI - already traded on visit #1 - one trade per visit
+  distinct zones behind the rejections (bars above count every candle):
+       948  POI - no active visit on 1m
+       438  POI - touched
+       141  POI - already traded on visit #1 - one trade per visit
+       117  POI - visit #2 - only the first return is traded
+        45  POI - visit #3 - only the first return is traded
+        13  POI - visit #4 - only the first return is traded
+        11  POI - visit #5 - only the first return is traded
+         4  POI - no opposite liquidity or unmitigated balance block to target
+         3  POI - visit #6 - only the first return is traded
+         2  POI - R:R 0.07 below minimum 0.5 (target 1H sell-side liquidity 1932.41500 (
+         2  POI - R:R 0.30 below minimum 0.5 (target 1H buy-side liquidity 2365.18500 (x
+         2  POI - R:R 0.47 below minimum 0.5 (target 1H buy-side liquidity 2803.14800 (x
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_gold_noreq_full.csv (+ .equity.csv, .provenance.json)

@@ -1,0 +1,72 @@
+code: 7476183947cb80215f4522bde48c6d5e217138ba source 5c4f75d1bbd8
+   5m: CandleSeries(NAS100 5m, n=247381, 2023-01-02 23:00:00 -> 2026-10-01 04:55:00)
+  15m: CandleSeries(NAS100 15m, n=82544, 2023-01-02 23:00:00 -> 2026-10-01 04:45:00)
+  30m: CandleSeries(NAS100 30m, n=41717, 2023-01-02 23:00:00 -> 2026-10-01 04:30:00)
+   1H: CandleSeries(NAS100 1H, n=21303, 2023-01-02 23:00:00 -> 2026-10-01 04:00:00)
+   4H: CandleSeries(NAS100 4H, n=5877, 2023-01-02 22:00:00 -> 2026-10-01 01:00:00)
+   1D: CandleSeries(NAS100 1D, n=1071, 2023-01-02 22:00:00 -> 2026-09-30 21:00:00)
+   1W: CandleSeries(NAS100 1W, n=196, 2023-01-01 22:00:00 -> 2026-09-27 21:00:00)
+   1M: CandleSeries(NAS100 1M, n=46, 2022-12-31 22:00:00 -> 2026-09-30 21:00:00)
+news calendar: 2888 events 2017-01-06 10:00:00 -> 2026-11-04 14:00:00 (data/calendar/high_impact.csv)
+  12369/247381 2023-03-15 07:30:00 equity=100,000 trades=0
+  24738/247381 2023-06-13 14:30:00 equity=106,425 trades=7
+  37107/247381 2023-08-31 03:00:00 equity=109,632 trades=9
+  49476/247381 2023-11-03 13:35:00 equity=109,073 trades=12
+  61845/247381 2024-01-11 10:05:00 equity=108,087 trades=15
+  74214/247381 2024-03-18 01:05:00 equity=108,745 trades=19
+  86583/247381 2024-05-22 13:50:00 equity=107,733 trades=20
+  98952/247381 2024-07-26 18:55:00 equity=106,261 trades=24
+  111321/247381 2024-10-01 11:00:00 equity=106,885 trades=25
+  123690/247381 2024-12-06 02:00:00 equity=103,274 trades=30
+  136059/247381 2025-02-13 01:15:00 equity=107,805 trades=32
+  148428/247381 2025-04-21 14:35:00 equity=109,988 trades=37
+  160797/247381 2025-06-25 10:10:00 equity=108,425 trades=40
+  173166/247381 2025-08-29 05:00:00 equity=111,110 trades=46
+  185535/247381 2025-11-03 15:30:00 equity=107,366 trades=55
+  197904/247381 2026-01-09 20:25:00 equity=106,244 trades=58
+  210273/247381 2026-03-17 13:15:00 equity=109,166 trades=65
+  222642/247381 2026-05-22 00:20:00 equity=115,849 trades=69
+  235011/247381 2026-07-27 18:40:00 equity=119,207 trades=71
+  247380/247381 2026-10-01 04:55:00 equity=113,445 trades=76
+Backtest NAS100  2023-03-01 00:00:00 -> 2026-10-01 04:55:00  (step 5m, 237015 steps, 9291.3s)
+  signals 88  guard-rejected 12  trades 76
+  wins 36  losses 38  break-even 2  win rate 47.4%
+  avg R +0.18  total R +13.6  best +5.6  worst -1.0
+  profit factor 1.34  net P&L +13,445  return +13.45%  max DD 11.40%
+  by_poi_tf:
+    1D: n=2 avgR=-0.50 sumR=-1.0
+    1H: n=62 avgR=+0.19 sumR=+12.1
+    4H: n=12 avgR=+0.21 sumR=+2.5
+  by_confirmation:
+    BS: n=76 avgR=+0.18 sumR=+13.6
+  by_exit:
+    breakeven: n=3 avgR=-0.02 sumR=-0.1
+    stop: n=37 avgR=-1.00 sumR=-37.0
+    take_profit: n=36 avgR=+1.41 sumR=+50.7
+  first guard breach: never (bar-close equity, published limits)
+  guard rejections:
+       11  max 1 open trade(s) per account
+        1  price moved: R:R below minimum
+  engine rejections (top):
+    161839  POI - no active visit on 5m
+     49083  bullish - 1H not aligned (required) -> no trade
+     12080  bullish - 1M+1W+1H aligned but not a valid combination -> no trade
+     10910  POI - touched
+      8808  fewer than 3 timeframes agree (1M=bullish, 1W=50/50, 1D=50/50, 4H=50/5
+      8077  bullish - 1M+1W+4H+1H aligned but not a valid combination -> no trade
+      8010  fewer than 3 timeframes agree (1M=bullish, 1W=bullish, 1D=50/50, 4H=50
+      7536  bullish - 1W against -> no trade
+  distinct zones behind the rejections (bars above count every candle):
+       813  POI - no active visit on 5m
+       348  POI - touched
+        75  POI - already traded on visit #1 - one trade per visit
+        59  POI - visit #2 - only the first return is traded
+         8  POI - visit #3 - only the first return is traded
+         6  POI - visit #4 - only the first return is traded
+         6  POI - no opposite liquidity or unmitigated balance block to target
+         3  POI - visit #5 - only the first return is traded
+         2  POI - R:R 0.07 below minimum 0.5 (target 30m buy-side liquidity 17889.39900 
+         2  POI - R:R 0.28 below minimum 0.5 (target 4H buy-side liquidity 22224.48700 (
+         2  POI - R:R 0.00 below minimum 0.5 (target 4H buy-side liquidity 25700.92500 (
+         2  POI - R:R 0.35 below minimum 0.5 (target 4H buy-side liquidity 30325.24800 (
+trades written to /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_mk_nas100_full.csv (+ .equity.csv, .provenance.json)

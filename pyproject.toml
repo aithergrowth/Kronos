@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/trader"]
+markers = [
+    "slow: long-running or needs the Kronos model weights (run with -m slow)",
+]
+addopts = "-m 'not slow'"

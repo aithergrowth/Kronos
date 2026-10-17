@@ -1,0 +1,638 @@
+{
+  "written": "2026-10-02 10:17:58.449713",
+  "code": {
+    "commit": "2c6edb0961e1a05bf96964840766db26a1b8fffe",
+    "dirty": false,
+    "local_changes": [],
+    "captured": "at start",
+    "taken_at": "2026-10-02 10:03:41.578762",
+    "source_sha256": "69df2285a97689e8bf10bdee7e174b55395f7392a65987598dc9dfecd014ae02",
+    "source_files": {
+      "kronos_trader/__init__.py": "2a57c04c490edf368da1f86ae49238b4d890b2289edb29644ce14a68bbfc56c5",
+      "kronos_trader/__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "kronos_trader/backtest/__init__.py": "c8fa8c282ed3313baf593c690982f165ef947f628cae3006c79e3711fef6d521",
+      "kronos_trader/backtest/charts.py": "0c8f3bae3607dd982a890b17ecacc2ea434cafc3d4f5ff02a5f9aeebb83996af",
+      "kronos_trader/backtest/dossier.py": "00b3ecb44bb2c70083646db6d20f0e514d4aaaa3f643292315985de395aa5c19",
+      "kronos_trader/backtest/provenance.py": "f69e196f7380205f7ba1844f388850a2b1c4f71becd24b491bd3a6d457680024",
+      "kronos_trader/backtest/report.py": "f38794fd51142f8132812004f90b4e4c4206f672bbda834bc101b01d2a41b0ba",
+      "kronos_trader/backtest/runner.py": "db4b13de14a6f7b49961be8550cce540229c7d749a50154c3a12292928c4b82a",
+      "kronos_trader/cli.py": "8910ad81dc7c5209bb1a7009375bedc060f6d069d5a6bc3bfc94e9fc1223dacf",
+      "kronos_trader/config.py": "e6cc2659ab61e805b309ec92be17205934f482a5913e2370e38a64996a81df3f",
+      "kronos_trader/core/__init__.py": "371ae0166a3de1089ef76e60cf0b89eabe888a79b7cc482565c7a605ef56a9e5",
+      "kronos_trader/core/candles.py": "cd8777bc845cd2ed2c2f675069c75f107780c22d1af4c0df7d9138ff036621dd",
+      "kronos_trader/core/timeframe.py": "3115c6ca50054dfb56017246b12df6b858cba9c955edb31a3561f3cba6f4eae1",
+      "kronos_trader/core/types.py": "ad5312a7fe1e51da41bdeec0426a2744bb7e4b2635b1023ed8295eb43f1ac702",
+      "kronos_trader/data/__init__.py": "cb6bc315a3bf29cf9e59312e3eaa65b01013a5b86e5286537306fb1c7d25a406",
+      "kronos_trader/data/calendar.py": "ff4822fd8c3d1c8d0cc790602978dd154469392610a3f74e58d4b4a0efb21c3f",
+      "kronos_trader/data/dukascopy.py": "ac005d21fa1415df56cf970b40c2d7962dc6406dbd611cacf70acfe9a907018d",
+      "kronos_trader/data/histdata.py": "dc16c6e165556183cf0df385467a3665198fe76dbb37ade3521711a63230003b",
+      "kronos_trader/data/oanda.py": "f48aed5460594515bb12ee844f5ae7663826cc63af1809db20bf13e72e9c6f66",
+      "kronos_trader/data/resample.py": "cc190683647f6b0a68373648fba87a02339cf0d679bd18896c34e0c55939a4f5",
+      "kronos_trader/data/tradingview_mcp.py": "874771e8e0ba5bd03eb9b9f469b65dbe0056615c20d7d208a5eeb8b49e3ef2db",
+      "kronos_trader/data/tv_cache.py": "47af3b3d396b92a948fc5c7d3f065766ceb8d70db565fae8f5086677e8213b86",
+      "kronos_trader/examples.py": "80978c60d84de2ea48901bc9e4ea8f5b1dc056b119c076fe310b3c6f8cf288e7",
+      "kronos_trader/execution/__init__.py": "9c0613c36513dca817e62f15e2b5a9969b80a5d96988a603543ed66a4694b079",
+      "kronos_trader/execution/base.py": "a3a298e34e33487d2606c3718af7c8d465d8d825a2c5c91fd3ca95542905f81f",
+      "kronos_trader/execution/ibkr.py": "e416e66cfdf0bcc4cd2f0d87a55ac8010cf294bad682aa82dde043f1b1f24b6a",
+      "kronos_trader/execution/mt5.py": "c4f26dc89e8c7fd67a824f27cb49410f443322c67f8854a367b4818a84a90077",
+      "kronos_trader/execution/paper.py": "b235bfdc021e088aa80ba08e9cd3d84c34930de02472802e39d5ffa55e20f24d",
+      "kronos_trader/execution/risk_guard.py": "bfbdef87acd5933021c5c5df9fa98dcf7a1c5fec9f48f4d00f5bf9a6a5469cf8",
+      "kronos_trader/indicators/__init__.py": "ce8d80c8e985aeaa406b47cc79eeedadf469716994f982a3acf4e0cdd712d9ba",
+      "kronos_trader/indicators/kronos_forecast.py": "2c0323d386d5fc7507de12fc99de9c5aade93f142fd3bfda9bab4ba5f450d021",
+      "kronos_trader/journal.py": "707c5b93e4e5effbf0c484e95af33a158099f5207713fbc64dad1ae0c32193a3",
+      "kronos_trader/live.py": "a26f0eeba60952f88dee369496416edb1280dbc911b78fd1f1198a51198ada86",
+      "kronos_trader/notify/__init__.py": "e5db027796ea54b8dad7f30bf2371be6435f1c0a736415ae2b958ee0272dd522",
+      "kronos_trader/notify/chart.py": "39260e3c7f014f89f1f6ed57a570e691cb172b5276828d26405676dcef313049",
+      "kronos_trader/notify/formatting.py": "84a65b09572951ffd7099825511d4295f7109797f61c0fa18b35e13a81184aa9",
+      "kronos_trader/notify/mt5_overlay.py": "59908cf4fc363b6384cad9132e4b68a8e49b513524cb45999f2cd3ddfab602c5",
+      "kronos_trader/notify/telegram.py": "75f31053a27ea0a9f0a560fbaf804df5923ada55f73ea64a4bd90f8260a50be8",
+      "kronos_trader/strategy/__init__.py": "dfd07dfc41b639bf2af4cbd8f984e86fa3b9e89fb5ca06691503678dbb998158",
+      "kronos_trader/strategy/bias.py": "5fd97375e5cc27f619c447633b822bdee8dd172e17cf5680696fbeec60f54394",
+      "kronos_trader/strategy/confirmation.py": "2b2465324f01f626a2badd73b41f1279f81adb46f46b5184537f11d2f50c6b62",
+      "kronos_trader/strategy/engine.py": "2cb4a7eade7e84c15f1e9f0de8dee794074d13cc33861275898840e17083bf34",
+      "kronos_trader/strategy/exits.py": "cde136c63b9e615d91f97e17566ca60ed90cfcce9231ffe323c99445a5001082",
+      "kronos_trader/strategy/poi.py": "f75c16d470c138f19581acd4a870680ac80606a7518081d64030f8351d3878e8",
+      "kronos_trader/strategy/risk.py": "a7868aa957a973664373034ec336a29cd068a09cac510b1105c9d5ae5b3d95d9",
+      "kronos_trader/strategy/structure.py": "f31871a1c96b93106ddff5b8c7705f9fc081da4b0310ba309036614e8fad32d1"
+    },
+    "changed_since_start": true
+  },
+  "code_at_write": {
+    "commit": "595d3de12413b0c63258f054ff13f3694c36376f",
+    "dirty": false,
+    "local_changes": [],
+    "source_sha256": "69df2285a97689e8bf10bdee7e174b55395f7392a65987598dc9dfecd014ae02"
+  },
+  "command": "/home/user/Kronos/kronos_trader/__main__.py --config config/dorus_live.yaml backtest --symbol EURUSD --data-dir data/histdata_1m --step-tf 5m --start 2025-10-01 --kronos off --quote-basis bid --progress --out /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/wr_v2_y26_eurusd.csv",
+  "versions": {
+    "python": "3.11.15",
+    "pandas": "2.2.2",
+    "numpy": "2.4.6"
+  },
+  "symbol": "EURUSD",
+  "settings": {
+    "account_size": 100000.0,
+    "account_currency": "USD",
+    "symbols": {
+      "EURUSD": {
+        "symbol": "EURUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:EURUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "GBPUSD": {
+        "symbol": "GBPUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.2,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:GBPUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "AUDUSD": {
+        "symbol": "AUDUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:AUDUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "NZDUSD": {
+        "symbol": "NZDUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:NZDUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDCAD": {
+        "symbol": "USDCAD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 7.3,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:USDCAD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDCHF": {
+        "symbol": "USDCHF",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 11.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:USDCHF",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDJPY": {
+        "symbol": "USDJPY",
+        "pip_size": 0.01,
+        "pip_value_per_lot": 6.5,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 3,
+        "tradingview_symbol": "OANDA:USDJPY",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "XAUUSD": {
+        "symbol": "XAUUSD",
+        "pip_size": 0.1,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 2.0,
+        "price_decimals": 2,
+        "tradingview_symbol": "OANDA:XAUUSD",
+        "mt5_symbol": null,
+        "contract_size": 100.0,
+        "ibkr_contract": "cfd:XAUUSD",
+        "oanda_instrument": null
+      },
+      "NAS100": {
+        "symbol": "NAS100",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 1,
+        "tradingview_symbol": "OANDA:NAS100USD",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "cfd:IBUST100",
+        "oanda_instrument": null
+      },
+      "US30": {
+        "symbol": "US30",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 2.0,
+        "price_decimals": 1,
+        "tradingview_symbol": "OANDA:US30USD",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "cfd:IBUS30",
+        "oanda_instrument": null
+      },
+      "BTCUSD": {
+        "symbol": "BTCUSD",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 15.0,
+        "price_decimals": 1,
+        "tradingview_symbol": "BINANCE:BTCUSDT",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "crypto:BTC:PAXOS:USD",
+        "oanda_instrument": null
+      }
+    },
+    "structure": {
+      "swing_left": 2,
+      "swing_right": 2,
+      "lookback": 400,
+      "lookback_by_timeframe": {
+        "1M": 60,
+        "1W": 104,
+        "1D": 250,
+        "4H": 300,
+        "1H": 300
+      },
+      "equal_level_tolerance_pct": 0.0003,
+      "full_body_break": false,
+      "block_body_only": false,
+      "min_gap_fraction": 0.2,
+      "gap_median_window": 100,
+      "poi_mode": "liquidity_to_protection",
+      "poi_break_window": 3,
+      "max_bars_sweep_to_balance": 40,
+      "poi_requires_break": false,
+      "poi_far_edge": "gap_bottom"
+    },
+    "bias": {
+      "liquidity_lookback": 80,
+      "balance_violation": "flip",
+      "min_matching_timeframes": 3,
+      "full_combos": [
+        [
+          "1M",
+          "1W",
+          "1D"
+        ],
+        [
+          "1W",
+          "1D",
+          "4H"
+        ],
+        [
+          "1M",
+          "1D",
+          "1H"
+        ]
+      ],
+      "extra_combos": [
+        [
+          "1M",
+          "1D",
+          "4H"
+        ]
+      ],
+      "extra_combos_enabled": true,
+      "scalp_combo": [
+        "1D",
+        "4H",
+        "1H"
+      ]
+    },
+    "session": {
+      "enabled": true,
+      "timezone": "Europe/Amsterdam",
+      "windows": [
+        [
+          "09:00",
+          "11:00"
+        ],
+        [
+          "13:00",
+          "17:00"
+        ]
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "confirmation": {
+      "allow_balance_shift": true,
+      "allow_first_candle": false,
+      "accept_bos": false,
+      "allow_bms": false,
+      "entry_after_shift": false,
+      "entry_after_shift_max_candles": 3,
+      "bs_threshold": "gap_edge",
+      "opposing_gap_lookback": 60,
+      "search_from_reentry": true,
+      "max_extension_zones": 1.5,
+      "allow_retest": false,
+      "one_trade_per_visit": true,
+      "entry_outside_zone": true,
+      "confirmation_tf_mode": "exact",
+      "min_confirmation_tf": {
+        "1M": "4H",
+        "1W": "4H",
+        "1D": "1H",
+        "4H": "15m",
+        "1H": "5m"
+      },
+      "scalp_poi_timeframes": [
+        "4H",
+        "1H"
+      ],
+      "poi_timeframes": [
+        "1D",
+        "4H",
+        "1H"
+      ]
+    },
+    "risk": {
+      "risk_pct": 1.0,
+      "min_rr": 0.5,
+      "spread_buffer_pips": 1.0,
+      "sl_offset_pips": 0.0,
+      "tp_policy": "impulse_origin",
+      "tp_floor_tf": null,
+      "tp_lookback_candles": 72,
+      "tp_buffer_pips": 0.0,
+      "tp_origin_candles": 30,
+      "min_stop_pips": 8.0,
+      "stop_basis": "confirmation",
+      "stop_protection": "recent_1h",
+      "rr_includes_buffer": true,
+      "max_entry_depth": 0.5,
+      "tp_max_rr": 0.0,
+      "tp_cap_choice": "nearest"
+    },
+    "exits": {
+      "breakeven_r_swing": 2.0,
+      "breakeven_r_intraday": 4.0,
+      "partials": false,
+      "breakeven_offset_pips": 0.0
+    },
+    "kronos": {
+      "mode": "off",
+      "model": "NeoQuasar/Kronos-small",
+      "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+      "device": null,
+      "max_context": 512,
+      "lookback": 400,
+      "horizon": 12,
+      "n_paths": 5,
+      "temperature": 1.0,
+      "top_p": 0.9,
+      "top_k": 0,
+      "neutral_band_pct": 0.1,
+      "min_confidence": 0.6,
+      "forecast_timeframes": [
+        "4H",
+        "1H"
+      ]
+    },
+    "prop_firm": {
+      "max_open_trades": 1,
+      "daily_loss_limit_pct": 4.0,
+      "max_drawdown_pct": 8.0,
+      "drawdown_basis": "peak",
+      "day_timezone": "Europe/Prague",
+      "record_daily_loss_pct": 5.0,
+      "record_max_loss_pct": 10.0,
+      "news_blackout_minutes": 0,
+      "min_minutes_between_trades": 0
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token_env": "TELEGRAM_BOT_TOKEN",
+      "chat_id_env": "TELEGRAM_CHAT_ID",
+      "parse_mode": "HTML"
+    },
+    "tradingview": {
+      "url": "https://mcp.tradingview.com/mcp",
+      "token_env": "TRADINGVIEW_MCP_TOKEN",
+      "default_exchange": "OANDA",
+      "cache_dir": "data/tv_cache"
+    },
+    "ibkr": {
+      "host_env": "IBKR_HOST",
+      "port_env": "IBKR_PORT",
+      "client_id_env": "IBKR_CLIENT_ID",
+      "account_env": "IBKR_ACCOUNT",
+      "default_host": "127.0.0.1",
+      "default_port": 7497,
+      "default_client_id": 17,
+      "what_to_show": "MIDPOINT",
+      "fill_wait_seconds": 2.0,
+      "max_quote_age_seconds": 300.0
+    },
+    "mt5": {
+      "login_env": "MT5_LOGIN",
+      "password_env": "MT5_PASSWORD",
+      "server_env": "MT5_SERVER",
+      "path_env": "MT5_PATH",
+      "offset_env": "MT5_SERVER_OFFSET_HOURS",
+      "magic": 20260930,
+      "deviation_points": 20,
+      "filling": "ORDER_FILLING_IOC"
+    },
+    "news": {
+      "enabled": true,
+      "before_minutes": 30,
+      "after_minutes": 30,
+      "min_importance": 1,
+      "calendar_csv": "data/calendar/high_impact.csv",
+      "forexfactory": true,
+      "refresh_minutes": 60
+    },
+    "live": {
+      "poll_seconds": 60,
+      "require_approval": true,
+      "approval_timeout_minutes": null,
+      "broker_timeframes": [
+        "5m",
+        "15m",
+        "1H",
+        "4H",
+        "1D",
+        "1W",
+        "1M"
+      ],
+      "broker_bar_counts": {
+        "5m": 500,
+        "15m": 500,
+        "1H": 500,
+        "4H": 400,
+        "1D": 300,
+        "1W": 120,
+        "1M": 72
+      },
+      "notify_every_scan": false,
+      "briefing_time": "08:45",
+      "notify_poi_touch": true,
+      "send_charts": true,
+      "charts_dir": "charts",
+      "chart_lookback": 120,
+      "mt5_overlay": true,
+      "journal_path": "journal/trades.csv",
+      "max_data_age_bars": 2,
+      "require_fresh_data": true,
+      "feed_retry_seconds": 600
+    }
+  },
+  "data": {
+    "EURUSD_15min.csv": {
+      "sha256": "5cf162be2193b2ce3f42a88b0d839c7fcb9a6962afa2faed6e08d58254700109",
+      "rows": 239040,
+      "first": "2017-01-02 07:00:00",
+      "last": "2026-09-25 00:45:00"
+    },
+    "EURUSD_1D.csv": {
+      "sha256": "9aa3f6c2b2b807ec1b7028957d203a62cb251f31ac046067b8c950af88eb5732",
+      "rows": 5000,
+      "first": "2007-06-28 21:00:00",
+      "last": "2026-09-30 21:00:00"
+    },
+    "EURUSD_1H.csv": {
+      "sha256": "3c9511eeda5e9377de0886d3eddf6bc8ee7dec487e2cdebbecd9baa5c32df8d6",
+      "rows": 59764,
+      "first": "2017-01-02 07:00:00",
+      "last": "2026-09-25 00:00:00"
+    },
+    "EURUSD_1MO.csv": {
+      "sha256": "8c8b316fa2fe374bd2c8f8b899100c41ef8432109b59d467e21af951b51b0fcc",
+      "rows": 100,
+      "first": "2018-05-31 21:00:00",
+      "last": "2026-08-31 21:00:00"
+    },
+    "EURUSD_1W.csv": {
+      "sha256": "3fb7a7926dd75f28568685200d94eab6ad189c23745fad59e86dfc5f7f6d25ed",
+      "rows": 1006,
+      "first": "2007-06-28 21:00:00",
+      "last": "2026-09-27 21:00:00"
+    },
+    "EURUSD_1min.csv": {
+      "sha256": "8f4ca8227d8deef41cf0c6cce50cc0276b9016be53d4cf5b235eda5d606ca8f1",
+      "rows": 3570196,
+      "first": "2017-01-02 07:00:00",
+      "last": "2026-09-25 00:58:00"
+    },
+    "EURUSD_4H.csv": {
+      "sha256": "17eaddbf591921386ee37affb41a6ed711b3813ece1b7d9d305b7530150145b5",
+      "rows": 15447,
+      "first": "2017-01-02 06:00:00",
+      "last": "2026-09-24 21:00:00"
+    },
+    "EURUSD_5min.csv": {
+      "sha256": "c15dba800d8eff61486b0da1e116da24fa35faf88803b43e60e256e1ffcaefbd",
+      "rows": 716989,
+      "first": "2017-01-02 07:00:00",
+      "last": "2026-09-25 00:55:00"
+    }
+  },
+  "calendar": {
+    "path": "data/calendar/high_impact.csv",
+    "present": true,
+    "sha256": "93218cdd9f839f854eb2383267c500d0e58116e592609f8caafe8ae5c9f18eac",
+    "events": 2848,
+    "first": "2017-01-06 10:00",
+    "last": "2026-10-02 12:30",
+    "currencies": [
+      "EUR",
+      "GBP",
+      "JPY",
+      "USD"
+    ]
+  },
+  "costs": {
+    "quote_basis": "bid",
+    "spread_pips": 1.0,
+    "commission": "none modelled",
+    "slippage": "none modelled",
+    "swap": "none modelled"
+  },
+  "run": {
+    "start": "2025-10-01 00:00:00",
+    "end": "2026-09-25 00:55:00",
+    "step_tf": "5m",
+    "steps": 73412,
+    "signals": 26,
+    "trades": 19,
+    "rejected_by_guard": 7,
+    "guard_reasons": {
+      "price moved: R:R below minimum": 2,
+      "max 1 open trade(s) per account": 5
+    },
+    "zones_by_reason": {
+      "POI - no active visit on 1m": 240,
+      "POI - touched": 87,
+      "POI - visit #2 - only the first return is traded": 15,
+      "POI - already traded on visit #1 - one trade per visit": 19,
+      "POI - R:R 0.15 below minimum 0.5 (target 4H origin low 1.15470 (31 candles u": 1,
+      "POI - R:R 0.27 below minimum 0.5 (target 4H origin low 1.15420 (31 candles u": 1,
+      "POI - visit #3 - only the first return is traded": 5,
+      "POI - R:R 0.03 below minimum 0.5 (target 1H origin low 1.15093 (31 candles u": 1,
+      "POI - R:R 0.32 below minimum 0.5 (target 1H buy-side liquidity 1.16819 (x1))": 1,
+      "POI - R:R 0.09 below minimum 0.5 (target 4H origin high 1.16522 (31 candles ": 1,
+      "POI - entry 1.19897 lies 65% of the zone's height inside it (max 50%): no ro": 1,
+      "POI - R:R 0.37 below minimum 0.5 (target 1H sell-side liquidity 1.17418 (x1)": 1,
+      "POI - R:R 0.10 below minimum 0.5 (target 1H origin low 1.15493 (31 candles u": 1,
+      "POI - entry 1.14836 lies 69% of the zone's height inside it (max 50%): no ro": 1,
+      "POI - R:R 0.02 below minimum 0.5 (target 15m buy-side liquidity 1.16925 (x1)": 1,
+      "POI - R:R 0.21 below minimum 0.5 (target 1H buy-side liquidity 1.17000 (x1))": 1,
+      "POI - R:R 0.01 below minimum 0.5 (target 1H origin high 1.17966 (31 candles ": 1,
+      "POI - R:R 0.38 below minimum 0.5 (target 15m buy-side liquidity 1.18076 (x1)": 1,
+      "POI - R:R 0.15 below minimum 0.5 (target 1H origin high 1.17966 (31 candles ": 1,
+      "POI - R:R 0.13 below minimum 0.5 (target 4H buy-side liquidity 1.17626 (x1))": 1,
+      "POI - R:R 0.02 below minimum 0.5 (target 1D sell-side liquidity 1.14110 (x1)": 1,
+      "POI - R:R 0.04 below minimum 0.5 (target 1D sell-side liquidity 1.14110 (x1)": 1,
+      "POI - R:R 0.16 below minimum 0.5 (target 1H origin low 1.13665 (31 candles u": 1,
+      "POI - visit #4 - only the first return is traded": 1,
+      "POI - R:R 0.16 below minimum 0.5 (target 1D buy-side liquidity 1.14824 (x1))": 1,
+      "POI - entry 1.15318 lies 58% of the zone's height inside it (max 50%): no ro": 1,
+      "POI - R:R 0.00 below minimum 0.5 (target 1D sell-side liquidity 1.15778 (x1)": 1,
+      "POI - R:R 0.02 below minimum 0.5 (target 1D sell-side liquidity 1.15778 (x1)": 1,
+      "POI - R:R 0.03 below minimum 0.5 (target 1H sell-side liquidity 1.15665 (x1)": 1,
+      "POI - R:R 0.29 below minimum 0.5 (target 4H origin low 1.15944 (31 candles u": 1,
+      "POI - R:R 0.29 below minimum 0.5 (target 1H sell-side liquidity 1.15318 (x1)": 1,
+      "POI - R:R 0.06 below minimum 0.5 (target 15m sell-side liquidity 1.14603 (x1": 1,
+      "POI - R:R 0.32 below minimum 0.5 (target 1H origin low 1.14591 (31 candles u": 1,
+      "POI - R:R 0.04 below minimum 0.5 (target 15m sell-side liquidity 1.14224 (x1": 1,
+      "POI - R:R 0.08 below minimum 0.5 (target 15m sell-side liquidity 1.14224 (x1": 1,
+      "POI - R:R 0.27 below minimum 0.5 (target 15m sell-side liquidity 1.14224 (x1": 1,
+      "POI - R:R 0.04 below minimum 0.5 (target 15m sell-side liquidity 1.14202 (x1": 1,
+      "POI - R:R 0.06 below minimum 0.5 (target 15m sell-side liquidity 1.14202 (x1": 1,
+      "POI - R:R 0.23 below minimum 0.5 (target 15m sell-side liquidity 1.14202 (x1": 1,
+      "POI - R:R 0.10 below minimum 0.5 (target 15m sell-side liquidity 1.14068 (x1": 1,
+      "POI - R:R 0.15 below minimum 0.5 (target 15m sell-side liquidity 1.14068 (x1": 1,
+      "POI - R:R 0.36 below minimum 0.5 (target 15m sell-side liquidity 1.14068 (x1": 1,
+      "POI - R:R 0.01 below minimum 0.5 (target 15m sell-side liquidity 1.14044 (x1": 1,
+      "POI - R:R 0.02 below minimum 0.5 (target 15m sell-side liquidity 1.14044 (x1": 1,
+      "POI - R:R 0.03 below minimum 0.5 (target 15m sell-side liquidity 1.14044 (x1": 1,
+      "POI - R:R 0.37 below minimum 0.5 (target 4H sell-side liquidity 1.13744 (x1)": 1,
+      "POI - R:R 0.24 below minimum 0.5 (target 4H sell-side liquidity 1.13744 (x1)": 1,
+      "POI - R:R 0.40 below minimum 0.5 (target 15m sell-side liquidity 1.13616 (x1": 1,
+      "POI - R:R 0.18 below minimum 0.5 (target 1H origin low 1.13686 (31 candles u": 1
+    },
+    "first_breach": null,
+    "guard_rules": {
+      "account_size": 100000.0,
+      "day_timezone": "Europe/Prague",
+      "recorded_against": {
+        "daily_loss_pct_of_initial": 5.0,
+        "max_loss_pct_of_initial_static": 10.0
+      },
+      "halting_limits": {
+        "daily_loss_pct": 4.0,
+        "max_drawdown_pct": 8.0,
+        "drawdown_basis": "peak",
+        "max_open_trades": 1
+      }
+    },
+    "initial_equity": 100000.0,
+    "final_equity": 103754.6799999998,
+    "runtime_seconds": 821.8750534057617
+  }
+}

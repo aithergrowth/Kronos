@@ -1,0 +1,36 @@
+status: incomplete_chart_record
+regression_ready: false
+symbol: BTCUSD
+source: S4 — Verliezende trade; public post and attached mobile chart
+source_url: https://www.skool.com/dorusview/verliezende-trade
+source_author: Dorus Wanders
+chart_author: Dorus Wanders
+notes: Dorus describes this loss as a trade that followed his strategy; the public
+  text does not explain its individual technical conditions.
+confidence:
+  author_assessment: high
+  chart_identity: medium
+  short_direction_inference: low
+observations:
+  displayed_chart_timeframe: 1H
+  visible_axis_labels:
+  - 30 Aug 12:00
+  - 31 Aug 20:00
+  - 2 Sep 04:00
+  - 3 Sep 12:00
+  displayed_quote: 77882.9
+  quote_is_entry_stop_or_target: false
+  markers: Red and blue execution markers are visible, without exact order labels.
+evidence_image: assets/btc_loss_h1.jpg
+missing:
+- year on chart
+- broker/feed
+- chart timezone
+- POI timeframe confirmation
+- exact order prices and times
+- sweep/break annotations
+- complete candle interval
+data_request:
+  symbol: BTCUSD
+  displayed_timeframe: 1H
+  exact_utc_range_established: false

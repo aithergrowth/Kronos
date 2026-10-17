@@ -1,0 +1,33 @@
+# Third edition: Dorus's written list, read with his own 4.5-hour course (video A, "Hoe Start Je Met Traden in 2026")
+# wherever the list is silent or his practice is explicit. Every line names its source; `config/dorus_pure.yaml`
+# (second edition) stays as the frozen reference.
+bias:
+  extra_combos_enabled: true      # M+D+4H is a match in his plan: "de monthly is bullish, de daily is bullish en de 4 uur is bullish. Betekent
+                                  # dus een match" (A 01:43:00); listed again with the other combinations at A 02:03:11-02:03:35 and A 02:14:01-02:14:10
+confirmation:
+  allow_first_candle: false       # the first candle is his entry timing after a shift, not a confirmation on its own (A 01:21:00, D 13:48)
+  allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56); with a close:
+                                  # "Ik vind het wel belangrijk dat we een closure hebben" (A 02:26:10)
+  allow_bms: false                # the plain structure break is, in his reading, a liquidity sweep: "de standaard break of structure ... daar maak ik
+                                  # ook niet zo heel veel gebruik van" (A 01:29:29); "De meeste mensen zien dit als een break of structure. Maar wat is het
+                                  # nou eigenlijk? Het is een liquiditeitssweep" (A 01:33:47); the shift must clear the opposing balance level (A 01:06:16-01:07:20)
+  accept_bos: false               # a continuation break is not in his option list
+  bs_threshold: gap_edge          # "sterk genoeg om boven dit balance level uit te komen" (A 01:31:52, A 02:25:46, A 00:54:55); the stricter reading
+                                  # "boven de candle die dit gat heeft veroorzaakt" (A 01:08:22) is the `protector` variant, kept as an option
+risk:
+  min_rr: 0.5                     # "een aantrekkelijke risk reward ... boven de 0,5" (A 01:45:00-01:45:07, from his 70 % win rate); he places a 0.73R
+                                  # trade (A 01:46:45) and prefers 1R-2R over high R:R (A 01:28:01, A 02:26:41)
+  sl_offset_pips: 0.0             # no buffer: the stop sits on the P itself
+  stop_protection: poi            # the stop goes under the P of the zone itself, "de candle die het gat heeft veroorzaakt": the daily P for a daily zone
+                                  # (A 01:08:49-01:09:03), chosen again over the nearer 1H P at A 01:46:40-01:47:02, "op de protected" (A 02:27:15);
+                                  # the 1H P is the minimum the plan allows (A 01:46:17), not his choice
+  tp_policy: liquidity_nearest    # "ik zet ten alle tijden mijn take profit op liquiditeit" (A 01:50:40); the previous high/low, "het volledige scenario"
+  tp_floor_tf: 1H                 # "we willen uiteindelijk echt de highs en de lows meenemen", not "lokale liquiditeit" (A 01:54:49)
+  spread_buffer_pips: 1.0         # cost model only
+session:
+  enabled: true                   # "ik executeer altijd trades van 9 tot en met 11 en daarna van 1 uur tot en met 5 uur" (A 02:24:07)
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # "nu mogen we niet meer de trade plaatsen, want het is 5 uur" (A 02:30:56); 11-13 is the quiet zone (A 01:26:54)
+news:
+  enabled: true                   # "Je wil niet vlak voor nieuws gaan traden" (A 02:00:28); "ik ga niet 1 minuut voor nieuws traden" (A 01:21:26)
+kronos:
+  mode: "off"

@@ -1,0 +1,68 @@
+# Pilot profile (3 October 2026): the live profile version 3 for a EUR 100 real-money pilot on EURUSD only. 1 % of 100 is 1 EUR, which
+# a 0.01 lot cannot risk on any stop over 10 pips, so the pilot risks 3 % per trade (3 EUR) and leaves gold out; the daily and total
+# loss limits are kept in percent. The pilot tests the process, not the return. Otherwise identical to config/dorus_live.yaml (config/dorus_course.yaml) with reading F of the
+# source-trade suite (docs/dossiers/SOURCE_TRADES_SUITE.md), the reading that reproduces his entries and stops and that
+# gave 2026 on EURUSD 23 trades, 57 %, +11.2R (docs/backtests/winrate/README.md). EURUSD only: the same reading loses on
+# gold, whose target rule is still open. Every line names its source; the prop-firm guard keeps the FTMO margins.
+account_size: 100.0             # the pilot account, in the account currency
+bias:
+  extra_combos_enabled: true      # M+D+4H is a match (A 01:43:00, 02:03:11)
+  full_combos: [[1M, 1W, 1D], [1M, 1D, 1H]]   # version 3 (2 October): the written plan's W+D+4H combination left out: it lost in every run on
+                                              # both markets (version 2 over 2023-2026: EURUSD 35 trades -3.0R, gold 21 trades -10.1R)
+  required_aligned: [1H]          # version 3: the 1H must be among the aligned timeframes (version 2 over 2023-2026: with it EURUSD +6.8R and
+                                  # gold +14.8R, without it -4.5R and -7.0R). Data, not his words; the bias readings per timeframe are unchanged
+  no_trade_against: [1W]          # version 4 (5 October): "Als de higher timeframe voor mij tegenzit, dan ga ik überhaupt niet een trade
+                                  # plaatsen" (A 01:58:37-01:59:24). EURUSD 2023-2026: 58 trades, 55 %, +21.1R, drawdown -5.3R against 73,
+                                  # 49 %, +11.8R, -11.3R (`eu_against_w_full`); chosen on EURUSD, GBPUSD agrees (kept 43, 58 %, +12.7R
+                                  # against 62, +8.2R). The monthly is left out: on EURUSD the monthly-against trades won (14, 71 %)
+confirmation:
+  allow_first_candle: false
+  allow_balance_shift: true       # "Ik plaats meestal trades gebaseerd op een balance shift bij mijn POI" (A 01:30:56)
+  allow_bms: false                # the plain break is a liquidity sweep in his reading (A 01:29:29, 01:33:47)
+  accept_bos: false
+  bs_threshold: gap_edge          # "sterk genoeg om boven dit balance level uit te komen" (A 01:31:52)
+  confirmation_tf_mode: exact     # one entry timeframe per zone timeframe
+  min_confirmation_tf:            # the written table one step up: his 1H-zone entries are 5m shifts (suite readings C, D:
+    1M: 4H                        # 18 Mar 2024 at 12:40 / 1.6 pips, 11 Nov 2025 at 15:10 / 1.5 pips from his entries)
+    1W: 4H
+    1D: 1H
+    4H: 15m
+    1H: 5m
+  entry_outside_zone: true        # the shift's close is often just outside the zone (A 01:18:44; his 11 Nov 2025 and K3 entries)
+  one_trade_per_visit: true       # a stopped zone is not re-entered in the same visit (R6: re-entries won 9 %)
+  poi_timeframes: [1D, 4H, 1H]    # no weekly or monthly zones in the demo: their sweep stop and previous-extreme target do not fit
+                                  # (a weekly zone sat open from June 2025 to September 2026 in the full-period run of this reading)
+risk:
+  risk_pct: 3.0                   # pilot: 3 EUR per trade on a 100 EUR account (see the header)
+  min_rr: 0.5                     # "boven de 0,5" from his 70 % win rate (A 01:44:08-01:45:07)
+  max_entry_depth: 0.5            # entry at most half the zone deep: the stop needs room (A 00:31:22)
+  stop_basis: confirmation        # the stop beyond the sweep extreme since the re-entry: 0.3 and 1.1 pips from his on the EURUSD trades
+  stop_protection: recent_1h
+  sl_offset_pips: 0.0
+  min_stop_pips: 8.0              # his stops are never under 9 pips; stops under 5 pips won 3 % in R6
+  tp_policy: impulse_origin       # version 2 (2 October): "stop loss op de low en take profit bij de vorige high" (A 00:43:39, 01:09:01,
+                                  # 01:20:52, 02:45:57): the low/high the move that created the zone started from, i.e. the previous higher
+                                  # low whose break is the break of market structure (A 00:14:48). Suite reading H: K3a 1.0 point and
+                                  # 18 Mar 2024 3.2 pips from his targets; 11 Nov 2025 8.6 pips nearer than his (the dip after the zone
+                                  # formed, open). Version 1 used previous_extreme over 72 candles before the touch (too far on gold)
+  tp_origin_candles: 30           # zone-timeframe candles up to and including the zone's P candle
+  tp_lookback_candles: 72         # only used by previous_extreme
+  tp_buffer_pips: 0.0
+  tp_max_rr: 0.0                  # no cap: his targets ran 2.0R-3.1R
+  spread_buffer_pips: 1.0
+session:
+  enabled: true
+  windows: [["09:00", "11:00"], ["13:00", "17:00"]]   # "van 9 tot 11 en van 1 uur tot 5 uur" (A 02:24:07)
+  timezone: Europe/Amsterdam
+news:
+  enabled: true                   # no entry right before high-impact news (A 02:00:28, G 11:13)
+exits:
+  breakeven_r_intraday: 4.0       # the written plan: break-even after 4R intraday, 2R swing, no partials
+  breakeven_r_swing: 2.0
+  partials: false
+prop_firm:
+  max_open_trades: 1
+  daily_loss_limit_pct: 4.0       # inside FTMO's 5 % with margin
+  max_drawdown_pct: 8.0           # inside FTMO's 10 % with margin
+kronos:
+  mode: "off"

@@ -1,0 +1,98 @@
+# kronos_trader configuration (copy to config/local.yaml and point KRONOS_TRADER_CONFIG at it).
+# Secrets never go here: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TRADINGVIEW_MCP_TOKEN,
+# MT5_LOGIN / MT5_PASSWORD / MT5_SERVER are read from the environment.
+
+account_size: 100000      # prop-firm account size in account currency
+account_currency: USD
+
+symbols:
+  EURUSD:
+    pip_value_per_lot: 10.0      # VERIFY with the broker
+    typical_spread_pips: 0.9
+    tradingview_symbol: OANDA:EURUSD
+    mt5_symbol: EURUSD
+
+structure:
+  swing_left: 2
+  swing_right: 2
+  lookback: 400                   # lower timeframes
+  lookback_by_timeframe: {1M: 60, 1W: 104, 1D: 250, 4H: 300, 1H: 300}   # "hou het lokaal"
+  full_body_break: false          # a close through the level is the break ("closure")
+  min_gap_fraction: 0.2           # balance level (gap) must be >= 20 % of the median candle range
+  poi_mode: liquidity_to_protection   # X (liquidity the displacement took) -> gap -> P; legacy: sweep_to_gap
+  poi_break_window: 3
+
+bias:
+  liquidity_lookback: 80
+  balance_violation: flip         # flip (continuation when P breaks) | neutral
+  extra_combos_enabled: true      # M+D+4H: stated in the course and the trading-plan video; absent from the plan slide
+
+session:
+  enabled: true
+  timezone: Europe/Amsterdam
+  windows: [["09:00", "17:00"]]   # Max: Dorus works 9 to 5. Variants: [["09:00","11:00"],["13:00","17:00"]] (A) or 08:00-17:00 (C)
+
+confirmation:
+  allow_balance_shift: true       # BS (balance shift), the plan's primary confirmation
+  allow_first_candle: false       # "Eerste bullish of bearish candle": in G 10:49 it is the entry after a shift, not a confirmation on its own
+  accept_bos: true
+  allow_retest: false
+  max_extension_zones: 1.5
+
+risk:
+  risk_pct: 1.0
+  min_rr: 3.0                     # Max's rule; Dorus's accepted trades run 0.7R-1.7R
+  spread_buffer_pips: 1.0
+  sl_offset_pips: 1.0
+  tp_policy: liquidity            # "TP altijd op liquiditeit"; legacy: nearest | liquidity_first | balance_first
+  stop_basis: protector           # "SL altijd op minimale 1H P"; legacy: confirmation
+
+exits:
+  breakeven_r_swing: 2.0
+  breakeven_r_intraday: 4.0
+  partials: false
+
+kronos:
+  mode: advisory                  # advisory = drawn on the charts and named in messages, never a gate; filter = a gate (phase 1: it removed the only winner); off = model not loaded
+  model: NeoQuasar/Kronos-small
+  tokenizer: NeoQuasar/Kronos-Tokenizer-base
+  horizon: 12
+  n_paths: 5
+  forecast_timeframes: [4H, 1H]
+
+prop_firm:
+  max_open_trades: 1
+  daily_loss_limit_pct: 4.0
+  max_drawdown_pct: 8.0
+  news_blackout_minutes: 30
+
+telegram:
+  enabled: false
+
+live:
+  poll_seconds: 60
+  require_approval: true          # Approve / Skip buttons in Telegram before an order is sent
+  approval_timeout_minutes: null  # null = one confirmation-timeframe candle (min 5)
+  broker_timeframes: [5m, 15m, 1H, 4H, 1D, 1W, 1M]   # all from the broker; data/tv_cache is the fallback
+  broker_bar_counts: {5m: 500, 15m: 500, 1H: 500, 4H: 400, 1D: 300, 1W: 120, 1M: 72}
+  max_data_age_bars: 2            # newest candle closed more than 2 candles ago -> stale
+  require_fresh_data: true        # stale data: analyse and manage, open no new setups
+  feed_retry_seconds: 600         # leave a live feed alone this long after it failed on every timeframe
+  briefing_time: "08:45"          # Dorus analyses before the open: bias and POI map to Telegram at this local time
+  notify_poi_touch: true          # heads-up when price enters a POI in the bias direction, before the confirmation
+  send_charts: true               # chart image (candles, zones, setup, Kronos fan) with the briefing, the touch and every setup
+  charts_dir: charts
+  chart_lookback: 120
+  mt5_overlay: true               # with --broker mt5: write the forecast file that mt5/KronosForecast.mq5 draws on the chart
+
+news:
+  enabled: true                   # no new entries around high-impact news of the symbol's currencies (source G 11:08)
+  before_minutes: 30
+  after_minutes: 30
+  min_importance: 1               # 1 = high-impact only
+  calendar_csv: data/calendar/high_impact.csv   # from the TradingView economic calendar (backtests)
+  forexfactory: true              # the live loop refreshes this and next week from ForexFactory hourly
+
+ibkr:
+  default_port: 7497              # paper TWS; 4002 for paper IB Gateway
+  what_to_show: MIDPOINT

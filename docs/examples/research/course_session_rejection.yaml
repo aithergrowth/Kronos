@@ -1,0 +1,25 @@
+status: caption_only_research_lead
+regression_ready: false
+source: A — Hoe Start Je Met Traden in 2026 (Volledige 4-Uur Beginnerscursus), 02:30:39–02:32:10
+source_url: https://www.youtube.com/watch?v=HRPgdK8VhMc&t=9039s
+source_author: Dorus Wanders
+decision: reject
+reason: Entry is outside the stated session at 17:00; the subsequent demonstration
+  is explicitly a rule violation to journal.
+context:
+  instrument_from_spoken_session_setup: gold
+  chart_feed_from_spoken_session_setup: OANDA
+  display_timezone_from_spoken_session_setup: Europe/Amsterdam
+  confirmation_chart_named: 1m
+  direction_discussed: bullish
+  historical_trade_date: null
+  utc_event_time: null
+  metadata_scope: Session setup at A 02:19:00–02:21:07, not independently readable
+    chart metadata.
+confidence: high_for_explicit_rejection_not_assessed_for_chart_values
+missing:
+- verified symbol/feed from chart
+- POI timeframe
+- historical date and UTC event time
+- prices
+- candle export

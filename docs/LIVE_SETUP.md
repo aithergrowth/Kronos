@@ -1,0 +1,520 @@
+# Live setup - IBKR paper, Telegram, the loop, working from your phone
+
+The live loop is `python -m kronos_trader live`. On every poll it pulls candles
+from the broker (every timeframe the rules need, 1M down to 5m; the
+TradingView cache is the fallback), runs the engine, sends setups to Telegram,
+waits for your Approve tap, places a bracket order (market + stop + target),
+moves the stop to break-even per the rules and reports fills and closes with
+P&L.
+
+Install the trader dependencies once:
+
+```shell
+pip install -r requirements-trader.txt
+```
+
+(`requirements.txt` is Kronos itself: torch and the model loader, only needed
+for the forecast indicator.)
+
+## 0. The EURUSD demo with reading F, version 3 (2 October 2026)
+
+The profile `config/dorus_live.yaml` holds the reading that reproduces Dorus's entries and stops and gave 2026 on EURUSD
+23 trades, 57 %, +11.2R (`docs/backtests/winrate/README.md`), in its version 3 (the origin target, the 1H required in the
+bias, no W+D+4H combination: 2026 EURUSD 10 trades, 70 %, +5.9R; 2023-2026 73 trades, 49 %, +11.8R, never through the
+FTMO margins): 5m shifts for 1H zones (15m for 4H, 1H for daily), the
+sweep-extreme stop with an 8-pip minimum, the target on the low/high the zone's move started from (version 2, the
+"vorige high/low" of the course), one trade per zone per visit, entries at most half the zone deep, 1D/4H/1H zones only,
+sessions 09-11 and 13-17 Amsterdam, the news blackout, FTMO margins. EURUSD only; the same reading loses on gold. It needs no 1-minute candles: MT5's own bars (5m and up) are enough.
+
+On the laptop, after sections 1b (MT5 demo) and 2 (Telegram) below:
+
+```shell
+python -m kronos_trader --config config/dorus_live.yaml mt5-test --symbol EURUSD --tf 15m
+python -m kronos_trader --config config/dorus_live.yaml telegram-test
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5             # dry run: every setup to Telegram, no orders
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute   # demo orders, after your Approve tap
+```
+
+Three markets (4 October: EURUSD on the live profile, XAUUSD on `config/dorus_live_gold.yaml` (the bias gate: two of
+1D/4H/1H with the 1H), BTCUSD on `config/dorus_live_btc.yaml` (stop minimum 60 USD, no 1H requirement). GBPUSD is out since 5 October
+(-25.3R over 2017-2026 on the corrected HistData clock). See `docs/backtests/winrate/README.md`, "Frequency". One PowerShell window per market,
+each with the venv active; the guard in each window reads the same account's equity, so the FTMO margins hold
+account-wide while every market keeps at most one open trade:
+
+```shell
+python -m kronos_trader --config config/dorus_live_gold.yaml mt5-test --symbol XAUUSD --tf 15m  # once: the broker's symbol names
+python -m kronos_trader --config config/dorus_live.yaml live --symbol EURUSD --broker mt5 --execute --no-approval
+python -m kronos_trader --config config/dorus_live_gold.yaml live --symbol XAUUSD --broker mt5 --execute --no-approval
+```
+
+**BTC when the broker's crypto price stands still.** On Monday 5 October 2026 the MetaQuotes demo's BTCUSD still showed
+Friday's close (84,316 against 86,229 on the market), so the bot saw only stale data and ignored every setup. The
+`bitstamp` feed takes BTCUSD (and ETHUSD) candles from Bitstamp's public API around the clock, the source the BTC
+backtests ran on; the paper broker fills the orders on those candles and reports fills and closes in Telegram:
+
+```shell
+python -m kronos_trader --config config/dorus_live_btc.yaml live --symbol BTCUSD --broker paper --feed bitstamp --account-size 10000 --execute --no-approval
+```
+
+The paper account is kept across restarts (`journal/paper_BTCUSD.json`: balance, open positions, the last closes);
+the trades go to the journal. On the FTMO account (crypto trades around the clock there) BTC runs on `--broker mt5`.
+
+**All three at once:** `scripts\start_live.bat` (double-click it in Explorer) pulls the latest version and opens the
+EURUSD, XAUUSD and BTCUSD windows with the commands above (GBPUSD out since 5 October: -25.3R over 2017-2026). Every window sends the 08:45 briefing and, at 22:00
+(`live.summary_time`), the day's summary for its market: trades closed, won, R, P&L, setups seen, equity and what is
+still open. Settings that are yours (another terminal path) go in `scripts\live_local.bat`, which git leaves alone.
+
+**FTMO beside the demo:** `scripts\start_ftmo.bat` opens EURUSD, XAUUSD, NAS100 and BTCUSD on the FTMO terminal
+with their own journal (`--journal journal_ftmo/trades.csv`) and `[FTMO]` in front of every Telegram message (`--tag`).
+Your values (the terminal path, the challenge size, the server's names) go in `scripts\ftmo_local.bat`, one `set` line
+each, so an update never clashes with them; `set "FUNDED=1"` there once the account is funded (1.0 % risk, 0.5 % from
+-3 %, flat by Friday 15:45 New York, before US100.cash's Friday close). For the 2-Step since 16 October (option B),
+first `git pull --ff-only` in the Kronos folder (`start_ftmo.bat`'s own pull runs its old text, without the lock) and a
+check that it brought the new profiles: `git grep -F "{4H: 1.25}" config` prints three lines (on the old 4H x2 profiles
+a `RISK` of 1.75 makes 3.5 % 4H trades the guard lets through). Then `set "RISK=1.75"`, `set "PRODUCT=ftmo_2step"`,
+`set "TARGET=10"` (5 in the verification), `set "STOP_AT_TARGET=1"` and
+`set "LOCK_AT_TARGET=1"` (the lock at the target, `docs/CURRENT_STATE.md` "16 October: option B"); a switch is on with
+any value, 0 too, so delete its line to switch it off. With two terminals installed, every manual MT5 command needs the terminal first:
+`$env:MT5_PATH="C:\Program Files\FTMO Global Markets MT5 Terminal\terminal64.exe"` (FTMO's own installer; older ones used `FTMO MetaTrader 5`) in that PowerShell window,
+and the demo's login out of it: `Remove-Item Env:MT5_LOGIN,Env:MT5_PASSWORD,Env:MT5_SERVER -ErrorAction SilentlyContinue`
+(the line `start_ftmo.bat` shows on line 32; the script itself clears them). With the demo's login still set, the
+command used to log the FTMO terminal in to the demo, and the four windows stopped trading until it was logged back by
+hand. Since 15 October the command refuses that when the terminal answers with its own account ("logged in to account
+..., MT5_LOGIN is ...: not switching it"), and it never sends the login to a terminal whose account it cannot read
+(still starting after a minute, or at "authorization failed"); still, clear the variables first. A window that started
+while the terminal showed no account trades the first one it shows and says so once on Telegram ("MT5 toont nu account
+..."): check that number. After its start, and after the link comes back, a window takes its first entry only once it
+has listed the positions twice (a scan later): a terminal that has just started can list none yet.
+
+**FTMO's spreads.** `mt5-spreads` puts the server's spread per market beside the backtest's and the 30 % cap: now
+(`--minutes 10`), or for a past day's session windows from the terminal's tick history (`--day 2026-10-07`), so nobody
+has to sit at the terminal at 10:00 and 14:00. FTMO also charges commission, which the spread leaves out: forex $2.50
+a lot a side, metals 0.0007 % of the volume a side, crypto 0.0325 % a side, indices none (FTMO, July and September
+2025); `ftmo_report.bat` shows what each trade paid.
+
+```powershell
+.\.venv\Scripts\python.exe -m kronos_trader --config config/dorus_live.yaml mt5-spreads --symbols EURUSD,XAUUSD,NAS100=US100.cash,BTCUSD --day 2026-10-07
+```
+
+**One window per market.** A market runs in one window per journal: a second one (the script run again, a market
+started by hand) says `NAS100 runs already in another window ... (process 1234)` and stops before it touches the
+terminal; the scripts close it after 5 seconds. So when a window is missing, run the script again: it starts only
+that one. To restart a market, close its window first. The watchdog names a market without a window on Telegram 5
+minutes after it starts. Which windows run, one line each (every window is two `python.exe` processes, the venv's
+starter and Python itself, so this lists the starters):
+
+```powershell
+$p = Get-CimInstance Win32_Process -Filter "Name='python.exe'"; $p | Where-Object { $_.CommandLine -like '*--tag FTMO*' -and $p.ProcessId -notcontains $_.ParentProcessId } | Select-Object ProcessId, @{n='Window';e={ if ($_.CommandLine -match 'live --symbol (\S+)') { $Matches[1] } else { 'watchdog' } }} | Sort-Object Window
+```
+
+**The account's day at 22:05.** The FTMO watchdog reads the account from the terminal once a day (`--report-at
+22:05`, the same reading as `ftmo_report.bat`) and sends one message: balance and equity against the start, the day's
+trades with R after costs and how far each fill was off the plan, what is open and its risk to the stops, what is left
+of the day and of the total under FTMO's floors, the distance to the target (10 %, or `TARGET` in `ftmo_local.bat`)
+and the trading days. The 22:00 messages of the windows stay: they are per market and from the journal. By hand, with
+the same text: `.\.venv\Scripts\python.exe -m kronos_trader forward-report --journal journal_ftmo/trades.csv
+--account-size 10000 --mt5-names NAS100=US100.cash --telegram --tag FTMO --target-pct 10` (MT5_PATH set and the login
+variables removed first, see above).
+
+**When the whole computer stops.** The watchdog cannot say that its own computer is off, asleep or offline. A free
+check at healthchecks.io can: the watchdog calls its address every 5 minutes, and when the calls stop it sends a
+message to Telegram. Once:
+
+1. Make an account at healthchecks.io. In the project, *Add Check*; *Change Schedule*: period 5 minutes, grace
+   10 minutes.
+2. *Integrations* → *Telegram* → *Add Integration*: it opens a chat with its bot; send `/start` there and confirm.
+3. Copy the check's ping address (`https://hc-ping.com/...`) and add one line to `scripts\ftmo_local.bat`:
+   `set "WATCHDOG_PING_URL=https://hc-ping.com/..."`. It is not a password, but whoever has it can hide an outage, so
+   it stays out of git (`ftmo_local.bat` is not in git).
+4. Close the watchdog window and run `scripts\start_ftmo.bat` again: it starts only the watchdog, which prints
+   `ping: hc-ping.com every 300 s`. The check turns green within 5 minutes.
+
+From then on: the laptop sleeps, loses power or internet, or the watchdog window is closed, and within 15 minutes
+Telegram says the check is down; it says so again when the calls come back.
+
+**The weekly parity check (12 October).** Does the bot trade what the backtest trades? `scripts\parity_week.bat` takes
+the week from the FTMO journal and runs the backtest over the same week on the FTMO terminal's own candles (5m to
+monthly, from the terminal the windows trade on), each market with exactly the settings its window ran: they are
+rebuilt from the window's start record in `journal_ftmo\starts\`, and the report says when they are not identical. A
+setup has the same id on both sides (its zone and its confirmation candle), so every signal of the week gets a verdict:
+
+- **match**: both saw it and did the same with it (a trade with the same exit, a limit that did not fill, a refusal);
+- **outcome differs**: both saw it and the result differs: a live-only rule (the spread cap, the margin, the account's
+  other markets in the guard; the backtest runs one market at a time) or another fill or exit, worth a look;
+- **backtest only**: the window did not signal. Most often it was not running (its next journal row is a restart);
+  otherwise it saw other candles or other zone memory: worth a look;
+- **live only**: the backtest did not signal: worth a look.
+
+It reads only (no order; it may run while the windows trade), writes `journal_ftmo\parity\parity_<Monday>.md` with a
+CSV beside it and the candles it used (`--data-dir` reruns the week on exactly those), and sends the summary to
+Telegram. On a Friday evening it checks the week so far, on a Monday the week before; `--week last` or
+`--week 2026-10-05` picks another. Every Friday at 22:30 by itself (the laptop on and logged in, the terminal running),
+once in PowerShell in the Kronos folder:
+
+```powershell
+schtasks /Create /TN "Kronos parity" /TR "$PWD\scripts\parity_week_auto.bat" /SC WEEKLY /D FRI /ST 22:30
+```
+
+`parity_week_auto.bat` is the same check without the pause at the end, for the Task Scheduler and for Claude Code on
+the laptop ("run scripts\parity_week_auto.bat and explain the newest report in journal_ftmo\parity").
+
+Run the dry run for the first days: the 08:45 briefing (bias per timeframe, decision, zone map), a chart at every zone
+touch and every setup. Switch to `--execute` when the setups look like his. Every executed trade goes into the journal
+(`python -m kronos_trader journal`) and into `docs/dossiers/source_trades.yaml` next to his, so the fast loop
+(`scripts/source_trades.py`) keeps comparing the two.
+
+## 1. IBKR paper account (TWS)
+
+1. Start **Trader Workstation** and log in with the *paper* credentials
+   (IB Gateway works the same way; its paper port is 4002).
+2. File → Global Configuration → API → Settings:
+   - tick *Enable ActiveX and Socket Clients*
+   - untick *Read-Only API*
+   - Socket port **7497**
+   - add `127.0.0.1` to *Trusted IPs* (or leave the prompt on and accept the
+     connection once)
+   - leave *Download open orders on connection* ticked
+3. Optional environment variables: `IBKR_HOST` (default 127.0.0.1),
+   `IBKR_PORT` (default 7497), `IBKR_CLIENT_ID` (default 17), `IBKR_ACCOUNT`
+   (only when the login holds more than one account).
+4. Test the connection; TWS must be running and logged in:
+
+   ```shell
+   python -m kronos_trader ibkr-test --symbol EURUSD --tf 15m
+   ```
+
+   It prints equity, the contract, the price and the last five bars. Send the
+   output back when anything looks wrong: the adapter was written against the
+   `ib_async` API and still has to be exercised against a real TWS session.
+
+Market data: IBKR serves quotes and historical bars to the API only when the
+account has market data permissions. A paper account has them when the live
+account has them and sharing is on: Client Portal, Settings, User Settings,
+Paper Trading Account, share real-time market data subscriptions. Without
+them `ibkr-test` shows `Error 10089` (quotes) and `Error 162 ... No market
+data permissions for IDEALPRO CASH` (bars); orders still work. In that case
+run the loop with candles from OANDA (`--feed oanda`, section 3) and keep the
+orders on IBKR.
+
+Forex trades on IDEALPRO in units (1.0 lot = 100,000). Keep the paper account
+the size of the real one: orders under roughly 25,000 units are odd lots with
+worse fills. Gold and indices go through IBKR CFDs (`ibkr_contract` in the
+symbol spec); check they are enabled for your region.
+
+## 1b. MetaTrader 5 demo: live candles and a paper venue without a live account
+
+Any MT5 demo account gives real-time candles for every timeframe plus a
+paper account that fills orders, and MT5 is what the prop firms run. This is
+the route when IBKR has no market data.
+
+1. Install MetaTrader 5 from metatrader5.com (or the terminal of the broker
+   or prop firm you will use later). On first start it offers a demo account
+   on the MetaQuotes-Demo server; accept, or open one under File, Open an
+   Account. Note the login, the password and the server name.
+2. Keep the terminal running and logged in.
+3. On the laptop:
+
+   ```powershell
+   pip install MetaTrader5
+   setx MT5_LOGIN "12345678"
+   setx MT5_PASSWORD "your-password"
+   setx MT5_SERVER "MetaQuotes-Demo"
+   ```
+
+   Open a new terminal. If the terminal is not found automatically, also set
+   `MT5_PATH` to `C:\Program Files\MetaTrader 5\terminal64.exe`.
+4. `python -m kronos_trader mt5-test --symbol EURUSD --tf 15m` prints the
+   account, the server-time offset to UTC and the last five bars. It also says
+   whether the terminal's **Algo Trading** button is on (toolbar; off after an
+   install) and whether the login may trade (an investor password may not):
+   both are needed before `--execute`, a dry run works without them.
+5. `python -m kronos_trader live --symbol EURUSD --broker mt5` runs the loop
+   with MT5 candles and MT5 paper orders.
+
+Brokers name symbols differently (`EURUSD.r`, `XAUUSD.m`): set
+`mt5_symbol` in the symbol spec. The server-time offset is read from the
+last bar before the weekend gap (the forex week ends Friday 17:00 New York,
+so a server whose week ends at 23:30 is UTC+2/+3 and follows US daylight
+saving) and checked against the latest tick while the week is open; it is
+re-read every hour. Pin it with `MT5_SERVER_OFFSET_HOURS` only when
+`mt5-test` prints a wrong one.
+
+When `mt5-test` fails:
+
+- `No module named MetaTrader5` (or `pandas`): the virtualenv is not active in
+  this window. `cd` into the repo and run `.\.venv\Scripts\Activate.ps1` first.
+- `(-10005, 'IPC timeout')`: the terminal runs as administrator (the installer
+  starts it that way; close it with File, Exit and start it from the normal
+  shortcut), or PowerShell does, or two terminals are running. Each attempt
+  waits 60 seconds before giving up.
+- `(-6, 'Terminal: Authorization failed')`: the terminal itself is not logged
+  in (red connection icon bottom right, the Journal tab says why). Wrong or
+  investor password, or the demo account expired: log in again under File,
+  Login to Trade Account, or open a new demo account under File, Open an
+  Account, and update `MT5_LOGIN` / `MT5_PASSWORD` (new window afterwards). Since 15 October a window never logs
+  such a terminal in by itself (it cannot see which account it is on): log it in by hand once.
+
+## 2. Telegram (10 minutes)
+
+Telegram is what makes the phone workflow possible: setups, the
+Approve / Skip buttons, fills, break-even moves and closes all arrive in the
+bot chat, and `/approve <id>` or `/skip <id>` typed in the chat work too.
+Without it the same messages are printed in the terminal
+(`[telegram dry-run]`), fine for a dry run, useless for approving a trade
+from the sofa.
+
+1. In Telegram open **@BotFather**, send `/newbot`, pick a name, copy the
+   token (`/mybots`, the bot, *API Token* shows it again): digits, a colon
+   and 35 characters, no `bot` prefix.
+2. Start a chat with your new bot and send it any message.
+3. Set the token on the machine that runs the loop and open a new terminal.
+   Windows:
+
+   ```powershell
+   setx TELEGRAM_BOT_TOKEN "123456:ABC..."
+   ```
+
+4. `python -m kronos_trader telegram-test` checks the token (`getMe`) and,
+   with no chat id set yet, prints the ids of the chats that messaged the bot.
+   Set yours the same way (`setx TELEGRAM_CHAT_ID "123456789"`, new terminal).
+5. `python -m kronos_trader telegram-test` again → the bot says "connected".
+   A `404` from Telegram means the token is wrong, `chat not found` the chat
+   id (or the bot was never messaged); the command says which.
+
+Only taps and `/approve` / `/skip` texts coming from that chat are accepted.
+
+## 3. Data
+
+The loop needs live candles for every timeframe the rules use (1M down to
+5m, `live.broker_timeframes`) and takes them from one source, chosen with
+`--feed`:
+
+- `broker` (default with `--broker ibkr` or `mt5`): the broker's own bars.
+  MT5 always has them (section 1b); IBKR needs market data permissions
+  (section 1).
+- `oanda`: a free OANDA practice account. Open one at oanda.com, create a
+  token under *Manage API Access*, then
+
+  ```powershell
+  setx OANDA_TOKEN "your-token"
+  ```
+
+  open a new terminal and test with
+  `python -m kronos_trader feed-test --symbol EURUSD --tf 15m`. Forex, gold
+  and index CFDs are available; BTC is not in the EU.
+- `cache`: the TradingView CSVs in `data/tv_cache/` only (default without a
+  live broker). Filled through the TradingView MCP
+  (`docs/TRADINGVIEW_BRIDGE.md`); only as fresh as the last import, fine for
+  a dry run.
+
+The cache is also the fallback for a timeframe the live source fails to
+deliver, a source that fails for every timeframe is left alone for ten
+minutes (`live.feed_retry_seconds`), and the loop prints where each timeframe
+came from. When the newest candle of a timeframe closed more than two
+candles ago the data is stale: the loop keeps analysing and managing
+positions but opens no new setups and says why
+(`live.max_data_age_bars`, `live.require_fresh_data`).
+
+## 4. Run
+
+```shell
+# 1) dry-run: setups to Telegram (or the terminal) only, no orders
+python -m kronos_trader live --symbol EURUSD --broker ibkr
+
+# same on an MT5 demo account: candles and paper orders from MetaTrader 5
+python -m kronos_trader live --symbol EURUSD --broker mt5
+
+# IBKR orders with candles from OANDA (only where OANDA hands out API tokens)
+python -m kronos_trader live --symbol EURUSD --broker ibkr --feed oanda
+
+# 2) execute with the Approve step (the mode for the challenge)
+python -m kronos_trader live --symbol EURUSD --broker ibkr --execute
+
+# 3) fully automatic (only after weeks of 1 and 2)
+python -m kronos_trader live --symbol EURUSD --broker ibkr --execute --no-approval
+
+# single scan and exit, useful for a quick check
+python -m kronos_trader live --symbol EURUSD --broker ibkr --once
+```
+
+Approval requests expire after one confirmation-timeframe candle (minimum 5
+minutes); an approval that arrives after that is refused. An approved order
+is re-checked against the risk guard and a fresh current price (R:R still
+at least the profile's `risk.min_rr`, 0.5 in the live profiles) before it is
+sent, and not sent at all when no current price can be had. An order counts as filled only once the broker confirms the fill;
+otherwise the loop reports it as submitted and confirms it, or reports that
+it did not fill, on a later poll.
+
+## 5. Working from your phone
+
+The loop runs on the laptop; the phone only needs Telegram. Keep the laptop
+on mains power, awake and logged in to TWS:
+
+1. Power: in an administrator PowerShell
+
+   ```powershell
+   powercfg /change standby-timeout-ac 0
+   powercfg /change hibernate-timeout-ac 0
+   powercfg /change monitor-timeout-ac 10
+   ```
+
+   and Settings → System → Power → "closing the lid" → *Do nothing*.
+2. TWS logs itself out once a day. Global Configuration → Lock and Exit:
+   choose *Auto restart* with a time outside the sessions (for example
+   23:45). It then restarts without a login prompt, except for the full
+   login once a week on Sunday.
+3. Start the loop in a terminal that stays open (mode 1 first, then 2):
+
+   ```shell
+   python -m kronos_trader live --symbol EURUSD --broker mt5
+   ```
+
+   Windows Task Scheduler ("at log on", restart on failure) brings it back
+   after a reboot.
+4. While testing, add `--notify-every-scan` to get one message per poll on
+   the phone; drop it once you trust the loop.
+
+What arrives on the phone in a normal day (the messages are in Dutch since
+14 October, one short message a market):
+
+- ☀️ 08:45 Amsterdam, the morning check: price, the bias per timeframe, the
+  decision in words, the zones the bot can still trade, then the regime
+  (trend or range, the day range against the last year), today's high-impact
+  news with its blackout minutes, the stake after the drawdown ladder and the
+  zone multipliers, the room to the day and total limits, the entry windows,
+  and what has to happen for a trade; with the 1H chart (the previous day's
+  high and low drawn, the entry windows shaded).
+- 🕐 12:55, the midday check: the same before the afternoon window
+  (`live.midday_time`; None switches it off).
+- 🔎 price comes within half a 1H ATR of a zone the bias allows
+  (`live.notify_approach`, `live.approach_atr`): once per zone per day.
+- 👀 price is inside such a zone (`live.notify_poi_touch`), with the chart.
+- ⚠️ a near miss (`live.notify_near_miss`): a balance shift was seen in a
+  zone in play and the engine refused the trade, with the reason in plain
+  words (the R:R under the minimum and the target it found, the stop too
+  small or too wide, the entry too deep in the zone, a climax candle, a
+  second visit, a blackout); once per zone and reason per four hours.
+- 🎯 the setup (and Approve / Skip when `live.require_approval` is on), 💸
+  the fill with the stake note, break-even moves, closes with R and P&L.
+- 📊 22:00, the evening line: closed trades, R, P&L, setups, zones touched,
+  near misses, equity, what is open; on Friday the week as well.
+
+All of it inside the entry windows (09:00-11:00 and 13:00-17:00 Amsterdam on
+the live profiles) and never inside a high-impact news window; outside the
+windows the bot only manages what is open.
+
+Prop-firm limits in the guard are FTMO-style with margin: the firm stops you
+at 5 % daily and 10 % total loss, the guard stops at 4 % a day and 8 % below
+the start (the FTMO windows with `PRODUCT=ftmo_2step`: 4 % a day, 9.5 % below
+the start); two open trades on the account, one per market (EURUSD two since
+13 October); 1.5 % risk on the demo (FTMO: `RISK`, 1.75 since 16 October),
+1.0 % from 3 % under the start and 0.5 % from 6 % (`risk.drawdown_steps`); a
+4H zone on EURUSD, gold and NAS100 at 1.25 times the stake and BTC at a
+quarter (option B, 16 October). A position never ties up more than 45 % of
+equity as margin (the lots are cut to fit).
+
+### The journal
+
+Every setup, approval, skip, expiry, fill, break-even move and close is
+appended to `journal/trades.csv` as it happens (`live.journal_path`). The
+forward test's numbers come from that file alone:
+
+```shell
+python -m kronos_trader journal
+```
+
+prints closed trades, win rate, expectancy per trade, average winner, total R
+and P&L, plus the counts of setups, approvals, skips and expiries, by month.
+
+### Charts and Kronos on the chart
+
+![EURUSD 15m briefing chart with zones and the Kronos fan](images/sample_chart_EURUSD_15m.png)
+
+With a setup the chart adds the position tool: the entry marker on the confirmation
+candle, the risk box to the stop and the reward box to the target, with the R:R.
+
+![EURUSD 1H setup chart with entry, stop, target and the Kronos fan](images/sample_setup_EURUSD_1H.png)
+
+Backtest trades can be drawn the same way, one image per trade with the zone, the X/B/P marks, entry, stop and
+target, so a trade list can be checked by eye instead of replaying each setup:
+
+```
+python -m kronos_trader --config config/dorus_pure.yaml trade-charts --symbol EURUSD --data-dir data/histdata --trades docs/backtests/phase2/EURUSD_5m_pure.csv --out charts/backtest --max 20
+```
+
+`--max 0` draws every trade; the default spreads 20 images over the list.
+
+Every briefing, POI touch and setup comes with a chart image on Telegram:
+the last 120 candles, the zones the bias allows, entry, stop and target when
+there is a setup, and Kronos's sampled paths as a fan to the right of the
+last candle with its mean path and expected band (`live.send_charts`,
+`kronos.mode: advisory`; Kronos never decides, it only shows).
+
+To see the same fan on the MetaTrader chart: copy `mt5/KronosForecast.mq5`
+into the terminal's `MQL5\Indicators` folder (File, Open Data Folder),
+compile it in MetaEditor (F7), drag it onto the chart, and enable the chart
+shift (the arrow icon in the toolbar) so there is room on the right. The
+loop writes `kronos_forecast_<SYMBOL>.csv` to the terminal's common files
+folder whenever it sends a chart (`live.mt5_overlay`), and the indicator
+re-reads it every 30 seconds. TradingView cannot take drawings from outside,
+so the forecast is not shown there.
+
+Secrets stay in environment variables on that machine only; never in the repo
+and never in a third-party agent sandbox. A small VPS is the alternative if
+the laptop cannot stay on.
+
+News: the loop opens no new trade from 30 minutes before to 30 minutes after
+a high-impact event of the symbol's currencies (`news:` in the config). It
+loads `data/calendar/high_impact.csv` and refreshes this and next week from
+the free ForexFactory feed every hour; each setup message names the next
+high-impact event.
+
+## 6. Prop-firm phase
+
+The challenge runs on the firm's platform, not on IBKR. MetaTrader 5 is
+supported through `MT5Broker` (`--broker mt5`, Windows, `MT5_LOGIN`,
+`MT5_PASSWORD`, `MT5_SERVER`). cTrader or MatchTrader adapters are built once
+the firm is chosen.
+
+## The dashboard (14 October)
+
+One page in the browser with what the FTMO windows are doing, read from the
+files they write next to the journal (`journal_ftmo\`) and from `charts\`:
+no terminal, no Telegram, no network, nothing of the windows is changed, so
+it can run while they trade. Start it with
+
+```
+scripts\dashboard.bat
+```
+
+(ACCOUNT and PRODUCT come from `scripts\ftmo_local.bat`, as for the other
+scripts). It builds `journal_ftmo\dashboard\index.html` every minute, serves
+it on <http://127.0.0.1:8765/> (this computer only) and opens the browser
+once; the page reloads itself every minute. Close the window to stop it. By
+hand, from the Kronos folder:
+
+```
+python -m kronos_trader dashboard --journal journal_ftmo/trades.csv --charts charts --out journal_ftmo/dashboard/index.html --every 60 --serve 8765 --account-size 10000 --product ftmo_2step
+```
+
+Without `--every` and `--serve` it builds the page once; the file can be
+opened directly as well.
+
+What it shows, top to bottom: the account size, the product and the code
+commit each window runs (from its newest start record, with a warning when
+the windows differ or one runs local changes); a card per market from its
+heartbeat with the minutes since its last scan, its state and detail, red
+when the last scan is more than 5 minutes ago or did not run through (the
+watchdog's own limit); the open positions and the resting limits as the
+journal knows them (a fill without a later close, a limit without a later
+cancel, gone, expiry or fill); today's and this week's closed trades with R,
+P&L and the running totals (the FTMO day, Europe/Prague); the room under the
+guard's floors from `guard_day_start.json` and `guard_day_high.json`, with
+today's closes from the journal as the estimate of what is left (the
+terminal's equity decides, the 22:05 report has it); the last briefing per
+market with its decision; the last 60 journal events, newest first; the two
+newest chart images per market (copied into `journal_ftmo\dashboard\charts\`
+so the served page finds them); the first 30 lines of the newest parity
+report; and when the page was written. A missing file renders as "no data
+yet", never as an error. Nothing secret is on the page: the start record's
+settings and command stay in the file, and no environment variable is read.

@@ -1,0 +1,1255 @@
+"""MetaTrader 5 broker adapter (Windows only, ``pip install MetaTrader5``).
+
+Most prop firms hand out MT5 accounts, so this is the intended challenge
+path, and any MT5 demo account (the MetaQuotes demo the terminal offers on
+first start, or a broker's) doubles as a real-time candle feed plus paper
+venue when the IBKR paper account has no market data.  The strategy and the
+risk guard decide; this module only translates to ``order_send`` and reads
+positions and deals back.
+
+Server time: MT5 stamps candles and ticks in the broker's server time.  The
+offset to UTC is estimated from the latest tick (rounded to 30 minutes) and
+removed, so the engine's clock and the session windows stay in UTC; pin it
+with ``MT5_SERVER_OFFSET_HOURS`` when the estimate is wrong.
+"""
+from __future__ import annotations
+
+import glob
+import os
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+import pandas as pd
+
+from ..config import MT5Params, Settings
+from ..core.candles import CandleSeries
+from ..core.timeframe import Timeframe
+from ..core.types import Direction
+from .base import Broker, ClosedTrade, LimitOrder, Position
+
+MT5_TIMEFRAMES = {
+    Timeframe.MIN_1: "TIMEFRAME_M1", Timeframe.MIN_5: "TIMEFRAME_M5", Timeframe.MIN_15: "TIMEFRAME_M15",
+    Timeframe.MIN_30: "TIMEFRAME_M30", Timeframe.H_1: "TIMEFRAME_H1", Timeframe.H_4: "TIMEFRAME_H4",
+    Timeframe.D_1: "TIMEFRAME_D1", Timeframe.W_1: "TIMEFRAME_W1", Timeframe.MN_1: "TIMEFRAME_MN1",
+}
+
+
+def utc_now() -> pd.Timestamp:
+    return pd.Timestamp.now(tz="UTC").tz_localize(None)
+
+
+HOUR = pd.Timedelta(1, unit="h")
+INVALID_FILL = 10030        # TRADE_RETCODE_INVALID_FILL: the server does not take this filling mode for the symbol
+INVALID_EXPIRATION = 10022  # TRADE_RETCODE_INVALID_EXPIRATION: the server does not take this order expiry
+TIMEOUT = 10012             # TRADE_RETCODE_TIMEOUT: no answer in time; the server may have taken the request
+NO_CHANGES = 10025          # TRADE_RETCODE_NO_CHANGES: the request asked for the levels the order already has
+NOT_FOUND = -4              # RES_E_NOT_FOUND: newer terminals (build 6244, FTMO, 6 October) answer a filter that matches nothing
+                            # (no position, no pending order, no deal yet) with None and this code instead of an empty tuple
+NY_CLOSE_HOUR = 17          # the forex week ends Friday 17:00 New York; most servers put that instant at midnight
+WEEK_CLOSE_BARS = 3 * 7 * 48  # three weeks of M30 bars: at least two weekend gaps to read the close from
+
+
+def ny_utcoffset(ts_utc: pd.Timestamp) -> pd.Timedelta:
+    """New York's offset to UTC at a UTC instant: -4 h under daylight saving, -5 h otherwise."""
+    return pd.Timedelta(ts_utc.tz_localize("UTC").tz_convert("America/New_York").utcoffset())
+
+
+def forex_week_open(ts_utc: pd.Timestamp) -> bool:
+    """False from Friday 20:00 UTC to Sunday 23:00 UTC: the weekend close with an hour of slack on both sides."""
+    wd, hour = ts_utc.weekday(), ts_utc.hour
+    return not (wd == 5 or (wd == 4 and hour >= 20) or (wd == 6 and hour < 23))
+
+
+def terminal_candidates() -> List[str]:
+    """Where a 64-bit MT5 terminal usually lives on Windows (used when MT5_PATH is not set)."""
+    patterns = [r"C:\Program Files\MetaTrader 5\terminal64.exe", r"C:\Program Files\*\terminal64.exe",
+                os.path.expandvars(r"%LOCALAPPDATA%\Programs\*\terminal64.exe")]
+    found: List[str] = []
+    for pattern in patterns:
+        for hit in sorted(glob.glob(pattern)):
+            if hit not in found:
+                found.append(hit)
+    return found
+
+
+class TerminalRefused(RuntimeError):
+    """The terminal is not used: it is on another account, or its account cannot be read. The message says what to do
+    from the command line; ``short`` is the line a running window shows (its heartbeat, its Telegram)."""
+
+    def __init__(self, text: str, short: str, retry: bool = False):
+        super().__init__(text)
+        self.short = short
+        self.retry = retry          # no account yet (a terminal still logging in): connect() waits and asks again
+
+
+class MT5Broker(Broker):
+    def __init__(self, settings: Optional[Settings] = None, params: Optional[MT5Params] = None,
+                 api=None, connect: bool = True, clock=None):
+        if api is None:
+            try:
+                import MetaTrader5 as api  # type: ignore
+            except ImportError as exc:  # pragma: no cover - platform specific
+                raise RuntimeError("MetaTrader5 package not available (Windows + `pip install MetaTrader5`)") from exc
+        self.mt5 = api
+        self.settings = settings or Settings()
+        self.params = params or self.settings.mt5
+        self.magic = self.params.magic
+        self.deviation = self.params.deviation_points
+        self.clock = clock or utc_now
+        self._positions: Dict[str, Position] = {}
+        self._limits: Dict[str, LimitOrder] = {}          # limit entries this window placed (what the server cannot tell back)
+        self._unlisted: Dict[str, pd.Timestamp] = {}      # filled limits whose position is not listed yet: since when
+        self._closed: List[ClosedTrade] = []
+        self._close_cursor = 0
+        self._offset: Optional[pd.Timedelta] = None
+        self._offset_at: Optional[pd.Timestamp] = None
+        self._filling: Dict[str, int] = {}       # per broker symbol: the filling mode the server accepted
+        # per broker symbol: (the round turn's commission per lot and price unit its last closed position paid, None before
+        # one; when read): the lock at the target counts it on an order (commission_estimate)
+        self._commission_rates: Dict[str, Tuple[Optional[float], pd.Timestamp]] = {}
+        self._reconnect_at = 0.0                  # time.time() of the last re-initialisation attempt
+        self._ny7 = False                         # the server's clock is New York + 7 (found from the week's close)
+        self.account_login: Optional[int] = None
+        self._adopted: Optional[int] = None        # the account connection_ok took on (none when the window connected)
+        self.attaches = 0                         # re-attachments by connection_ok (a restarted terminal): the runner
+                                                  # lists the positions twice again before an entry (fixcheck4)
+        self._sleep = time.sleep                  # the pause between connection attempts (tests replace it)
+        if connect:
+            self.connect()
+
+    # ------------------------------------------------------------ connection
+    def connect(self) -> None:
+        """Attach to the terminal (MT5_PATH, else the running one, else the usual install paths) and log in.
+
+        The account comes from MT5_LOGIN / MT5_PASSWORD / MT5_SERVER when all three are set. They are passed to
+        ``initialize`` only when the terminal has no account (it sits at "authorization failed": password not saved,
+        demo expired) or is on that same login without its server; a terminal on another account is refused, never
+        switched (``_initialize``). Without them the terminal's current account is used.
+        """
+        p = self.params
+        path = os.environ.get(p.path_env)
+        login, password, server = os.environ.get(p.login_env), os.environ.get(p.password_env), os.environ.get(p.server_env)
+        creds: Dict[str, Any] = {"login": int(login), "password": password, "server": server} if login and password and server else {}
+        if path:
+            attempts: List[Optional[str]] = [path]
+        else:
+            found = terminal_candidates()
+            # with credentials, initialize() logs whatever terminal it reaches in to that account: with two terminals
+            # installed (the demo and FTMO) a scan could log the FTMO terminal in to the demo. Only one is unambiguous.
+            if creds and len(found) > 1:
+                raise RuntimeError(f"several MT5 terminals are installed ({'; '.join(found)}): set MT5_PATH to the "
+                                   f"terminal64.exe of the one for login {login}")
+            attempts = [None] + found
+        errors = []
+        connected = False
+        # a terminal that is busy (several windows attaching at once, loading history, updating itself) answers with an
+        # IPC error (-10000 to -10005, e.g. "IPC timeout"): wait and try again, up to four times, before giving up
+        for wait in (0, 10, 20, 40, 60):
+            if wait:
+                print(f"[mt5] the terminal did not answer ({errors[-1]}); trying again in {wait} s")
+                self._sleep(wait)
+            ipc_only = True
+            for candidate in attempts:
+                try:
+                    attached = self._initialize(candidate, creds)
+                except TerminalRefused as exc:
+                    if not exc.retry or wait == 60:
+                        raise
+                    errors.append(f"{candidate or 'running terminal'}: {exc.short}")   # still logging in: wait, ask again
+                    continue
+                if attached:
+                    self.terminal_path = candidate
+                    info = self.mt5.account_info()
+                    # with credentials _initialize saw MT5_LOGIN on the terminal: that is this window's account, whatever
+                    # this read answers (fixcheck4: a None here left a demo window to take on any account later)
+                    self.account_login = (int(creds["login"]) if creds else
+                                          int(getattr(info, "login", 0) or 0) if info is not None else None)
+                    connected = True
+                    break
+                err = self.mt5.last_error()
+                code = err[0] if isinstance(err, (tuple, list)) and err else err
+                ipc_only = ipc_only and isinstance(code, int) and -10010 <= code <= -10000
+                errors.append(f"{candidate or 'running terminal'}: {err}")
+            if connected or not ipc_only:
+                break
+        if not connected:
+            account = f" for login {login} on {server}" if creds else " on the terminal's current account"
+            raise RuntimeError("MT5 initialize failed" + account + ": " + "; ".join(errors) + ". Start the terminal "
+                               "and log in (Journal tab shows why a login fails), run PowerShell and the terminal as "
+                               "the same user (not one of them as administrator), set MT5_PATH to the full path of "
+                               "terminal64.exe, and check MT5_LOGIN / MT5_PASSWORD (the master password, not the "
+                               "investor one) / MT5_SERVER on 'Authorization failed'")
+
+    def _initialize(self, path: Optional[str], creds: Dict[str, Any]) -> bool:
+        """``initialize`` that never switches a terminal's account (15 October stack review, F6). With credentials,
+        ``initialize`` logs whatever terminal it reaches in to that account: a manual command run with the demo login
+        still set would log the FTMO terminal in to the demo, and the four windows would stop trading ("logged in to
+        account X, this window trades Y") until Max logged it back in by hand. So the terminal is attached with the path
+        alone, and the credentials go out only to log it in again to the account it already shows (on MT5_LOGIN but
+        without its trade server). A terminal on another account is refused; one whose account cannot be read (still
+        starting after a minute, "authorization failed") is refused too, never logged in blind (the fix checks of 15
+        October: a cold start slower than the wait, or an IPC timeout, took the demo login). An attach that gets no
+        answer returns False: connect() waits and asks again."""
+        base: Dict[str, Any] = {"path": path} if path else {}
+        if not creds:
+            return bool(self.mt5.initialize(**base))
+        where = f"the MT5 terminal {path or '(the running one)'}"
+        if not self.mt5.initialize(**base):
+            err = self.mt5.last_error()
+            if (err[0] if isinstance(err, (tuple, list)) and err else err) != -6:
+                return False                              # no answer (IPC, not found): connect() waits and asks again
+            raise TerminalRefused(f"MT5 initialize failed for login {creds['login']} on {creds.get('server')}: {where} "
+                                  f"answers {err} (Authorization failed: it shows no account). The credentials are never "
+                                  f"sent to a terminal whose account cannot be read: log it in by hand (File > Login to "
+                                  f"Trade Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER",
+                                  f"MT5 shows no account (authorization failed): log the terminal in to {creds['login']} "
+                                  f"by hand")
+        current = 0
+        for wait in (0,) + (2,) * 30:                     # a terminal that is just starting logs in to its account first
+            if wait:
+                self._sleep(wait)
+            info = self.mt5.account_info()
+            current = int(getattr(info, "login", 0) or 0) if info is not None else 0
+            if current:
+                break
+        if current and current != int(creds["login"]):
+            self.mt5.shutdown()
+            raise TerminalRefused(f"{where} is logged in to account {current}, MT5_LOGIN is {creds['login']}: not "
+                                  f"switching it (that would take it off its own account). Clear MT5_LOGIN, MT5_PASSWORD "
+                                  f"and MT5_SERVER to use account {current}, or set MT5_PATH to the terminal of login "
+                                  f"{creds['login']}",
+                                  f"MT5 is logged in to account {current}, this window trades {creds['login']}: not "
+                                  f"trading")
+        if not current:
+            self.mt5.shutdown()
+            raise TerminalRefused(f"{where} shows no account after a minute: the credentials are never sent to a "
+                                  f"terminal whose account cannot be read. Log it in by hand (File > Login to Trade "
+                                  f"Account) to {creds['login']}, or clear MT5_LOGIN, MT5_PASSWORD and MT5_SERVER",
+                                  f"MT5 shows no account after a minute: log the terminal in to {creds['login']} by hand",
+                                  retry=True)
+        term = self.mt5.terminal_info()
+        if term is None or getattr(term, "connected", True):
+            return True
+        self.mt5.shutdown()                               # on MT5_LOGIN without its server: log in again, the same account
+        return bool(self.mt5.initialize(**base, **creds))
+
+    def disconnect(self) -> None:
+        self.mt5.shutdown()
+
+    # ------------------------------------------------------------ helpers
+    retry_seconds: float = 1.0
+
+    def find_symbols(self, text: str) -> List[str]:
+        """Names of the server's symbols that contain ``text`` (case-insensitive), e.g. BTC -> BTCUSD, BTCEUR."""
+        try:
+            found = self.mt5.symbols_get(f"*{text.upper()}*") or self.mt5.symbols_get() or []
+        except Exception:
+            return []
+        names = [getattr(x, "name", str(x)) for x in found]
+        return sorted(n for n in names if text.upper() in n.upper())
+
+    def spread_history(self, symbol: str, start, end, every: float = 5.0, stale_minutes: float = 5.0) -> List[float]:
+        """The spread (ask - bid, in price) every ``every`` seconds from ``start`` to ``end`` (naive UTC), from the
+        terminal's tick history: what an entry at any moment of that time met, so a busy minute counts no more than a
+        quiet one. A moment whose last quote is older than ``stale_minutes`` (a market closed or stopped) is left out;
+        empty when the server has no ticks for the time."""
+        name = self.mt5_symbol(symbol)
+        self.mt5.symbol_select(name, True)
+        offset = self.server_offset(symbol)
+        lo, hi = pd.Timestamp(start) + offset, pd.Timestamp(end) + offset                 # server time
+        epoch = pd.Timestamp("1970-01-01")
+        first = int((lo - epoch).total_seconds()) - int(stale_minutes * 60)              # the quote standing at the start
+        ticks = self.mt5.copy_ticks_range(name, first, int((hi - epoch).total_seconds()),
+                                          getattr(self.mt5, "COPY_TICKS_INFO", 1))
+        if ticks is None or len(ticks) == 0:
+            return []
+        df = pd.DataFrame(ticks)
+        df = df[(df["bid"] > 0) & (df["ask"] > 0)]
+        if df.empty:
+            return []
+        when = pd.to_datetime(df["time_msc"], unit="ms") if "time_msc" in df.columns else pd.to_datetime(df["time"], unit="s")
+        quotes = pd.DataFrame({"spread": (df["ask"] - df["bid"]).to_numpy(), "at": when.to_numpy()},
+                              index=pd.DatetimeIndex(when.to_numpy())).sort_index()
+        quotes = quotes[~quotes.index.duplicated(keep="last")]
+        grid = pd.date_range(lo, hi, freq=pd.Timedelta(seconds=every))
+        seen = quotes.reindex(quotes.index.union(grid)).ffill().reindex(grid)
+        age = pd.Series(grid, index=grid) - seen["at"]
+        fresh = age.notna() & (age <= pd.Timedelta(minutes=stale_minutes))
+        return seen.loc[fresh, "spread"].astype(float).tolist()
+
+    def symbol_details(self, name: str) -> Dict[str, Any]:
+        """What the terminal says about one symbol: description, digits, contract size, volume limits, trade mode."""
+        info = self.mt5.symbol_info(name)
+        if info is None:
+            return {"name": name, "found": False}
+        keys = ("description", "digits", "point", "trade_contract_size", "volume_min", "volume_step", "volume_max",
+                "trade_mode", "currency_profit", "spread")
+        return {"name": name, "found": True, **{k: getattr(info, k, None) for k in keys}}
+
+    def pip_value(self, symbol: str) -> Optional[float]:
+        """What a move of one pip (the profile's pip size) is worth for 1.0 lot in the account currency, by the server's
+        own numbers (order_calc_profit, else the tick value); None when the server does not say."""
+        mt5 = self.mt5
+        spec = self.settings.symbol(symbol)
+        name = self.mt5_symbol(symbol)
+        mt5.symbol_select(name, True)
+        tick = mt5.symbol_info_tick(name)
+        price = float(getattr(tick, "ask", 0.0) or 0.0) if tick is not None else 0.0
+        calc = getattr(mt5, "order_calc_profit", None)
+        if calc is not None and price > 0:
+            try:
+                value = calc(mt5.ORDER_TYPE_BUY, name, 1.0, price, price + spec.pip_size)
+            except Exception:
+                value = None
+            if value:
+                return abs(float(value))
+        info = mt5.symbol_info(name)
+        tick_value = float(getattr(info, "trade_tick_value", 0.0) or 0.0) if info is not None else 0.0
+        tick_size = float(getattr(info, "trade_tick_size", 0.0) or 0.0) if info is not None else 0.0
+        return tick_value * spec.pip_size / tick_size if tick_value > 0 and tick_size > 0 else None
+
+    def align_spec(self, symbol: str) -> List[str]:
+        """Size with the server's numbers: the value of a pip for 1.0 lot in the account currency and the lot limits
+        replace the profile's, which assume a USD account and the usual contract (a EUR account risked 1.3 % where
+        1.5 % was meant; an index contract of another size would multiply the risk). Returns what changed."""
+        spec = self.settings.symbol(symbol)
+        name = self.mt5_symbol(symbol)
+        self.mt5.symbol_select(name, True)
+        info = self.mt5.symbol_info(name)
+        if info is None:
+            raise RuntimeError(f"MT5 has no symbol '{name}' on this server")
+        changes: List[str] = []
+        value = self.pip_value(symbol)
+        if value:
+            if abs(value - spec.pip_value_per_lot) > 0.02 * spec.pip_value_per_lot:
+                changes.append(f"pip value per lot {spec.pip_value_per_lot:g} -> {value:.4g}")
+            spec.pip_value_per_lot = value
+        for attr, key in (("min_lot", "volume_min"), ("lot_step", "volume_step"), ("max_lot", "volume_max")):
+            v = float(getattr(info, key, 0.0) or 0.0) if info is not None else 0.0
+            if v > 0:
+                if abs(v - getattr(spec, attr)) > 1e-9:
+                    changes.append(f"{attr} {getattr(spec, attr):g} -> {v:g}")
+                setattr(spec, attr, v)
+        return changes
+
+    def pnl_for(self, symbol: str, direction: Direction, entry: float, exit_price: float, lots: float) -> float:
+        """The server's profit (account currency) of ``lots`` from ``entry`` to ``exit_price`` (order_calc_profit), so a
+        stop-out is measured in R like the backtest; the profile's pip value when the server does not say."""
+        mt5 = self.mt5
+        calc = getattr(mt5, "order_calc_profit", None)
+        if calc is not None:
+            kind = mt5.ORDER_TYPE_BUY if direction is Direction.LONG else mt5.ORDER_TYPE_SELL
+            try:
+                value = calc(kind, self.mt5_symbol(symbol), float(lots), float(entry), float(exit_price))
+            except Exception:
+                value = None
+            if value is not None:
+                return float(value)
+        spec = self.settings.symbol(symbol)
+        return direction.sign * (float(exit_price) - float(entry)) / spec.pip_size * spec.pip_value_per_lot * float(lots)
+
+    def account_currency(self) -> str:
+        info = self.mt5.account_info()
+        return str(getattr(info, "currency", "") or "") if info is not None else ""
+
+    def margin_per_lot(self, symbol: str, direction: Direction, price: float) -> Optional[float]:
+        """The margin one lot of ``symbol`` ties up at ``price`` (account currency, order_calc_margin): the server's own
+        leverage for the symbol, e.g. about 1:2 on crypto at FTMO. None when the server does not say."""
+        mt5 = self.mt5
+        calc = getattr(mt5, "order_calc_margin", None)
+        if calc is None:
+            return None
+        kind = mt5.ORDER_TYPE_BUY if direction is Direction.LONG else mt5.ORDER_TYPE_SELL
+        try:
+            value = calc(kind, self.mt5_symbol(symbol), 1.0, float(price))
+        except Exception:
+            return None
+        return float(value) if value is not None and value > 0 else None
+
+    def free_margin(self) -> Optional[float]:
+        info = self.mt5.account_info()
+        value = getattr(info, "margin_free", None) if info is not None else None
+        return float(value) if value is not None else None
+
+    def mt5_symbol(self, symbol: str) -> str:
+        """The server's name: the profile's mt5_symbol, our name upper-cased, or a server name this window does not know
+        (another window's market, e.g. US100.cash) as it is: the terminal may match names case-sensitively."""
+        spec = self.settings.symbols.get(symbol.upper())
+        if spec is not None:
+            return spec.mt5_symbol or symbol.upper()
+        return symbol
+
+    def our_symbol(self, name: str) -> str:
+        for sym, spec in self.settings.symbols.items():
+            if spec.mt5_symbol == name:
+                return sym
+        return name.upper() if name.upper() in self.settings.symbols else name
+
+    def server_offset(self, symbol: Optional[str] = None) -> pd.Timedelta:
+        """Broker server time minus UTC.
+
+        ``MT5_SERVER_OFFSET_HOURS`` pins it. Otherwise it is read from the last bar before the weekend gap (the
+        forex week ends Friday 17:00 New York, see ``offset_from_week_close``) and, while the week is open,
+        checked against the latest tick, which is exact when fresh: the tick wins when the two agree within
+        1.5 hours (a broker that closes a little early), the week-close reading when the tick is stale (a
+        holiday, a weekend) or the bars are missing. Re-read every hour so a daylight-saving switch is followed.
+        """
+        pinned = os.environ.get(self.params.offset_env)
+        if pinned:
+            return pd.Timedelta(float(pinned) * 60, unit="min")
+        now = self.clock()
+        if self._offset is not None and self._offset_at is not None and now - self._offset_at < HOUR:
+            return self._offset
+        name = self.offset_symbol(symbol)
+        week = self.offset_from_week_close(name, now)
+        tick = self.offset_from_tick(name, now) if forex_week_open(now) else None
+        if tick is not None and (week is None or abs(tick - week) <= 1.5 * HOUR):
+            offset = tick
+        elif week is not None:
+            offset = week
+        else:
+            offset = tick if tick is not None else pd.Timedelta(0)
+        self._offset, self._offset_at = offset, now
+        return offset
+
+    def offset_symbol(self, symbol: Optional[str] = None) -> str:
+        """The symbol the offset is read from: EURUSD when it is configured (its week ends on the New York close
+        on every broker), else the symbol asked for, else the first configured one."""
+        if "EURUSD" in self.settings.symbols:
+            return self.mt5_symbol("EURUSD")
+        return self.mt5_symbol(symbol or next(iter(self.settings.symbols)))
+
+    def offset_from_tick(self, name: str, now: pd.Timestamp) -> Optional[pd.Timedelta]:
+        """The latest tick's server stamp against the clock, rounded to half hours; None when that is not a
+        plausible offset (-12 h to +14 h), which means the tick is stale."""
+        tick = self.mt5.symbol_info_tick(name)
+        seconds = int(getattr(tick, "time", 0) or 0) if tick is not None else 0
+        if not seconds:
+            return None
+        raw = (pd.Timestamp(seconds, unit="s") - now).total_seconds()
+        if not -12 * 3600 <= raw <= 14 * 3600:
+            return None
+        return pd.Timedelta(round(raw / 1800.0) * 30, unit="min")
+
+    def offset_from_week_close(self, name: str, now: pd.Timestamp) -> Optional[pd.Timedelta]:
+        """The offset read from the last M30 bar before a weekend gap.
+
+        The forex week ends Friday 17:00 New York, so that bar starts 30 minutes before that instant in UTC and
+        its server stamp minus that start is the offset. A server whose week ends at 23:30 keeps its midnight on
+        the New York close and follows US daylight saving with it: its offset now is New York's plus 7 hours.
+        Gaps that match no Friday within 14 hours (a holiday) are skipped; None without a usable gap.
+        """
+        try:
+            self.mt5.symbol_select(name, True)
+            rates = self.mt5.copy_rates_from_pos(name, self.mt5.TIMEFRAME_M30, 0, WEEK_CLOSE_BARS)
+        except Exception:                                   # pragma: no cover - terminal hiccup, tick fallback
+            return None
+        if rates is None or len(rates) < 2:
+            return None
+        t = np.asarray(rates["time"], dtype="int64")
+        for i in reversed(np.where(np.diff(t) >= 24 * 3600)[0]):
+            last = pd.Timestamp(int(t[i]), unit="s")       # server wall time of the week's last bar
+            best = None
+            for days in (-1, 0, 1):
+                day = (last + pd.Timedelta(days, unit="D")).normalize()
+                if day.weekday() != 4:
+                    continue
+                close_utc = ((day + pd.Timedelta(NY_CLOSE_HOUR, unit="h")).tz_localize("America/New_York")
+                             .tz_convert("UTC").tz_localize(None))
+                offset = last - (close_utc - pd.Timedelta(30, unit="min"))
+                if abs(offset) <= 14 * HOUR and (best is None or abs(offset) < abs(best[0])):
+                    best = (offset, close_utc)
+            if best is None:
+                continue
+            offset, close_utc = best
+            aligned = abs(offset - (ny_utcoffset(close_utc) + 7 * HOUR)) < pd.Timedelta(1, unit="min")
+            self._ny7 = aligned
+            return ny_utcoffset(now) + 7 * HOUR if aligned else offset
+        return None
+
+    def to_utc(self, server_seconds) -> pd.Timestamp:
+        return self.stamps_to_utc(pd.Series([int(server_seconds)])).iloc[0]
+
+    def stamps_to_utc(self, server_seconds: pd.Series, symbol: Optional[str] = None) -> pd.Series:
+        """Server times (seconds) to naive UTC. On a New York + 7 server every stamp is converted with the daylight
+        saving of its own moment, so bars from before a switch keep their hour (with today's offset they moved by an
+        hour, and the zones keyed by their time with them); on any other server with the current offset."""
+        offset = self.server_offset(symbol)
+        stamps = pd.to_datetime(pd.Series(server_seconds).astype("int64").reset_index(drop=True), unit="s")
+        if not self._ny7:
+            return stamps - offset
+        local = pd.DatetimeIndex(stamps - pd.Timedelta(hours=7))
+        utc = pd.Series(local.tz_localize("America/New_York", ambiguous="NaT", nonexistent="NaT")
+                        .tz_convert("UTC").tz_localize(None))
+        return utc.where(utc.notna(), stamps - offset)
+
+    def _position_from_mt5(self, p) -> Position:
+        """A position found on the terminal (after a restart, or another window's): its break-even trigger comes from the
+        zone timeframe in the order comment ("1HPOI BS") and the profile's exits, its risk from the server's price of
+        the stop. Before 5 October it got a trigger of 0R and the first scan after a restart moved its stop to the entry."""
+        from ..strategy.exits import breakeven_trigger_r
+        direction = Direction.LONG if p.type == self.mt5.POSITION_TYPE_BUY else Direction.SHORT
+        sl = float(p.sl or 0.0)
+        entry = float(p.price_open)
+        # the stop it was opened with (its opening order's): at break-even the position's own sl sits on the entry, and a
+        # risk measured from there made every later close a 0R trade in the journal
+        initial = self._original_stop(p.ticket) or sl
+        risk_distance = abs(entry - initial) if initial else 0.0
+        comment = str(getattr(p, "comment", "") or "")
+        poi_tf = None
+        if "POI" in comment:
+            try:
+                poi_tf = Timeframe.parse(comment.split("POI", 1)[0].strip())
+            except Exception:
+                poi_tf = None
+        exits = self.settings.exits
+        breakeven_r = breakeven_trigger_r(poi_tf, exits) if poi_tf is not None else exits.breakeven_r_intraday
+        symbol = self.our_symbol(p.symbol)
+        risk_amount = 0.0
+        if initial and direction.sign * (initial - entry) < 0:
+            try:
+                risk_amount = abs(self.pnl_for(symbol, direction, entry, initial, float(p.volume)))
+            except Exception:
+                risk_amount = 0.0
+        meta: Dict[str, Any] = {"comment": comment, "restored": True}
+        if poi_tf is not None:
+            meta["poi_tf"] = poi_tf.label
+        # a limit fill, whatever the server kept of the comment (fixcheck2 s12); the history keys it by the position's
+        # identifier, which is the opening order's ticket even when the server gave the position another ticket (fixcheck4)
+        opener = self._opening_limit(getattr(p, "identifier", 0) or p.ticket)
+        if opener:
+            meta["limit_id"] = opener
+        return Position(id=str(p.ticket), symbol=symbol, direction=direction, lots=float(p.volume),
+                        entry=entry, stop=sl, take_profit=float(p.tp or 0.0), opened_at=self.to_utc(p.time),
+                        risk_amount=risk_amount, risk_distance=risk_distance, breakeven_r=breakeven_r, initial_stop=initial,
+                        meta=meta)
+
+    def _opening_limit(self, ticket) -> str:
+        """The ticket of the limit order that opened position ``ticket`` ("" for a market order or when unknown)."""
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is None:
+            return ""
+        try:
+            orders = list(get(position=int(ticket)) or [])
+        except Exception:
+            return ""
+        kinds = {getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2), getattr(self.mt5, "ORDER_TYPE_SELL_LIMIT", 3)}
+        for o in orders:
+            if int(getattr(o, "type", -1)) in kinds:
+                return str(getattr(o, "ticket", "") or "")
+        return ""
+
+    def _original_stop(self, ticket) -> Optional[float]:
+        """The stop of the order that opened position ``ticket`` (history_orders_get), None when the terminal cannot say."""
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is None:
+            return None
+        try:
+            orders = list(get(position=int(ticket)) or [])
+        except Exception:
+            return None
+        orders.sort(key=lambda o: (getattr(o, "time_setup_msc", 0) or 0, getattr(o, "time_setup", 0) or 0))
+        for o in orders:
+            sl = float(getattr(o, "sl", 0.0) or 0.0)
+            if sl:
+                return sl
+        return None
+
+    def _finish(self, pos: Position, exit_price: float, reason: str, ts, pnl: float) -> ClosedTrade:
+        self._positions.pop(pos.id, None)
+        trade = ClosedTrade(
+            id=pos.id, symbol=pos.symbol, direction=pos.direction, lots=pos.lots, entry=pos.entry, exit=float(exit_price),
+            stop=pos.stop, take_profit=pos.take_profit, opened_at=pos.opened_at,
+            closed_at=pd.Timestamp(ts) if ts is not None else self.clock(), reason=reason, pnl=float(pnl),
+            r=pos.r_at(float(exit_price)), risk_amount=pos.risk_amount, initial_stop=pos.initial_stop, meta=dict(pos.meta),
+        )
+        self._closed.append(trade)
+        return trade
+
+    def _deal_pnl(self, deals) -> float:
+        return sum(float(d.profit) + float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "swap", 0.0) or 0.0)
+                   for d in deals)
+
+    def _sync_closed(self) -> None:
+        """Tracked positions gone from the terminal: read their closing deal(s) from the history."""
+        open_ids = {str(p.ticket) for p in (self.mt5.positions_get() or [])}
+        for pid, pos in list(self._positions.items()):
+            if pid in open_ids or pos.status == "pending":
+                continue
+            deals = list(self.mt5.history_deals_get(position=int(pid)) or [])
+            outs = [d for d in deals if d.entry == self.mt5.DEAL_ENTRY_OUT]
+            if not outs:
+                continue                                  # closing deal not in the history yet; next poll
+            last = outs[-1]
+            if last.reason == self.mt5.DEAL_REASON_SL:
+                reason = "breakeven" if pos.breakeven_done else "stop"
+            elif last.reason == self.mt5.DEAL_REASON_TP:
+                reason = "take_profit"
+            else:
+                reason = "closed"
+            ins = [d for d in deals if d.entry != self.mt5.DEAL_ENTRY_OUT]        # the entry's commission counts too
+            self._finish(pos, float(last.price), reason, self.to_utc(last.time), self._deal_pnl(outs) + self._deal_pnl(ins))
+
+    def connection_ok(self) -> Tuple[bool, str]:
+        """``(ok, reason)``: the Python link answers and the terminal is connected to its trade server. A broken link (the
+        terminal was closed or restarted: account_info() is None and every call fails) is initialised again, at most
+        once a minute; a terminal without its server connection is only reported (it reconnects by itself)."""
+        try:
+            info = self.mt5.account_info()
+        except Exception:
+            info = None
+        if info is None:
+            now = time.time()
+            if now - self._reconnect_at < 60:
+                return False, "MT5 not reachable (terminal closed or restarting)"
+            self._reconnect_at = now
+            try:
+                self.mt5.shutdown()
+            except Exception:
+                pass
+            try:
+                # the terminal this process started on, nothing else: another terminal on the laptop (FTMO beside the
+                # demo) must never be logged in to this account or traded from this window
+                creds: Dict[str, Any] = {}
+                p = self.params
+                login, password, server = (os.environ.get(p.login_env), os.environ.get(p.password_env),
+                                           os.environ.get(p.server_env))
+                if login and password and server:
+                    creds = {"login": int(login), "password": password, "server": server}
+                if not self._initialize(getattr(self, "terminal_path", None), creds):
+                    return False, f"MT5 not reachable ({self.mt5.last_error()})"
+                self.attaches += 1                        # a re-attached terminal, even when this call says ok
+                info = self.mt5.account_info()
+            except TerminalRefused as exc:                # another account, or none to read: a window says it in a line
+                return False, exc.short                   # (fixcheck3: the command line's advice reached the heartbeat)
+            except RuntimeError as exc:
+                return False, str(exc)
+            except Exception as exc:
+                return False, f"MT5 not reachable ({exc})"
+            if info is None:
+                return False, "MT5 not reachable (terminal closed or restarting)"
+        expected = getattr(self, "account_login", None)
+        got = int(getattr(info, "login", 0) or 0)
+        if not expected and got:
+            # the terminal had no account when the window connected (still logging in): the first one it shows is this
+            # window's, so a later switch is noticed (15 October fix check: the check was blind for such a window)
+            self.account_login = expected = got
+            self._adopted = got
+            print(f"[mt5] the terminal shows account {got} ({getattr(info, 'server', '')}): this window trades it from now on")
+        if expected and got and got != expected:
+            # a taken-on account is refused for good as well: say that it was taken on, and the two ways out (fixcheck3)
+            hint = (f" ({expected} is the first account the terminal showed after this window started: log the terminal "
+                    f"back in to {expected}, or restart the window if {got} is the account to trade)"
+                    if self._adopted == expected else "")
+            return False, f"MT5 is logged in to account {got}, this window trades {expected}: not trading{hint}"
+        term = self.mt5.terminal_info()
+        if term is not None and not getattr(term, "connected", True):
+            return False, "MT5 is not connected to its trade server"
+        return True, "ok"
+
+    def algo_trading_on(self) -> bool:
+        """The terminal's Algo Trading button (MT5 refuses orders from the API while it is off)."""
+        return bool(getattr(self.mt5.terminal_info(), "trade_allowed", False))
+
+    def diagnostics(self) -> Dict[str, Any]:
+        info = self.mt5.account_info()
+        term = self.mt5.terminal_info()
+        algo = bool(getattr(term, "trade_allowed", False))              # the terminal's Algo Trading button
+        account_ok = bool(getattr(info, "trade_allowed", True))          # False on an investor (read-only) login
+        offset = self.server_offset()
+        out: Dict[str, Any] = {"version": self.mt5.version(), "connected": bool(getattr(term, "connected", False)),
+                               "algo_trading": algo, "account_trade_allowed": account_ok,
+                               "trade_allowed": algo and account_ok,
+                               "server_offset": f"{offset.total_seconds() / 3600:+.1f} h"}
+        for key in ("login", "server", "currency", "balance", "equity", "leverage", "trade_mode"):
+            out[key] = getattr(info, key, None)
+        return out
+
+    # ------------------------------------------------------------ Broker API
+    def equity(self) -> float:
+        return float(self.mt5.account_info().equity)
+
+    def balance(self) -> float:
+        return float(self.mt5.account_info().balance)
+
+    def trading_days(self, tz: str = "Europe/Prague") -> Optional[int]:
+        """The days with a trade opened on this account (FTMO's trading days, any magic number, any size), counted on
+        ``tz``'s calendar; None when the terminal does not answer."""
+        dates = self.trading_dates(tz)
+        return None if dates is None else len(dates)
+
+    def trading_dates(self, tz: str = "Europe/Prague") -> Optional[set]:
+        """The dates ``trading_days`` counts; None when the terminal does not answer."""
+        deals = self.mt5.history_deals_get(pd.Timestamp("2000-01-01").to_pydatetime(),
+                                           (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        if deals is None:
+            err = self.mt5.last_error()
+            if not ((err[0] if isinstance(err, (tuple, list)) and err else err) == NOT_FOUND):
+                return None
+            deals = ()
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        entry_in = getattr(self.mt5, "DEAL_ENTRY_IN", 0)
+        times = [int(d.time) for d in deals if getattr(d, "type", None) in trade_types and getattr(d, "entry", entry_in) == entry_in]
+        if not times:
+            return set()
+        utc = self.stamps_to_utc(pd.Series(times)).dropna()     # a stamp in a daylight-saving gap or overlap comes back NaT
+        return set(pd.DatetimeIndex(utc).tz_localize("UTC").tz_convert(tz).date)
+
+    def realized_pnl_since(self, since: pd.Timestamp) -> Optional[float]:
+        """Closed P&L (profit, commission, swap, fee) of the account's trade deals since ``since`` (naive UTC); deposits
+        and other balance operations are left out.  None when the terminal does not answer."""
+        start = pd.Timestamp(since) + self.server_offset() - pd.Timedelta(days=1)      # server time, a day early
+        deals = self.mt5.history_deals_get(start.to_pydatetime(), (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        if deals is None:
+            err = self.mt5.last_error()
+            if not ((err[0] if isinstance(err, (tuple, list)) and err else err) == NOT_FOUND):
+                return None
+            deals = ()                                   # no deal in the range yet (a new account): nothing closed
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        total = 0.0
+        for d in deals:
+            if getattr(d, "type", 0) not in trade_types or self.to_utc(d.time) < pd.Timestamp(since):
+                continue
+            total += self._deal_pnl([d]) + float(getattr(d, "fee", 0.0) or 0.0)
+        return total
+
+    def _listed(self, raw, what: str):
+        """``raw`` from a positions/orders/deals query: itself, an empty tuple when the terminal says nothing matched
+        (NOT_FOUND), else an error - None for any other reason is not "nothing": the guard would count no trade and no risk."""
+        if raw is not None:
+            return raw
+        err = self.mt5.last_error()
+        code = err[0] if isinstance(err, (tuple, list)) and err else err
+        if code == NOT_FOUND:
+            return ()
+        raise RuntimeError(f"MT5 did not list {what}: {err}")
+
+    def open_positions(self, symbol: Optional[str] = None) -> List[Position]:
+        raw = self._listed(self.mt5.positions_get(symbol=self.mt5_symbol(symbol)) if symbol else self.mt5.positions_get(),
+                           "the open positions")
+        out: List[Position] = []
+        for p in raw:
+            if p.magic != self.magic:
+                continue
+            pid = str(p.ticket)
+            pos = self._positions.get(pid)
+            if pos is None:
+                pos = self._positions[pid] = self._position_from_mt5(p)
+            else:
+                pos.stop, pos.take_profit = float(p.sl or 0.0), float(p.tp or 0.0)
+                # the volume too: a part closed by hand in MT5 leaves fewer lots, which the guard's loss at the stop and the
+                # lock at the target price on (16 October review: the lock priced the old lots, half the distance)
+                pos.lots = float(getattr(p, "volume", pos.lots) or pos.lots)
+                if pos.status == "pending":                  # the order has become a position: confirmed
+                    pos.entry, pos.status = float(p.price_open), "filled"
+                    pos.meta.pop("entry_unconfirmed", None)
+            if not pos.breakeven_done and pos.stop and pos.direction.sign * (pos.stop - pos.entry) >= 0:
+                pos.breakeven_done = True                    # the stop already sits at or beyond the entry
+            pos.meta["swap"] = float(getattr(p, "swap", 0.0) or 0.0)   # accrued financing: in FTMO's equity, so in the guard's
+            out.append(pos)                                            # worst case (15 October stack review)
+        self._sync_closed()
+        return out
+
+    def current_price(self, symbol: str) -> float:
+        tick = self.mt5.symbol_info_tick(self.mt5_symbol(symbol))
+        if tick is None or not tick.bid or not tick.ask:
+            raise RuntimeError(f"no price for {symbol}: {self.mt5.last_error()}")
+        return float((tick.bid + tick.ask) / 2.0)
+
+    def fill_price(self, symbol: str, direction: Direction, base: Optional[float] = None) -> float:
+        """The live ask for a long, the live bid for a short (``base`` is ignored: the terminal has the quote)."""
+        tick = self.mt5.symbol_info_tick(self.mt5_symbol(symbol))
+        if tick is None or not tick.bid or not tick.ask:
+            raise RuntimeError(f"no price for {symbol}: {self.mt5.last_error()}")
+        return float(tick.ask if direction is Direction.LONG else tick.bid)
+
+    def place_market_order(self, symbol, direction, lots, stop, take_profit, risk_amount, risk_distance, breakeven_r,
+                           meta=None, price=None, ts=None, price_is_fill=False) -> Position:
+        """Market order with stop and target attached; ``status="filled"`` only on TRADE_RETCODE_DONE with a price."""
+        mt5 = self.mt5
+        name = self.mt5_symbol(symbol)
+        mt5.symbol_select(name, True)
+        tick = mt5.symbol_info_tick(name)
+        if tick is None:
+            raise RuntimeError(f"no tick for {symbol}: {mt5.last_error()}")
+        is_long = direction is Direction.LONG
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": name,
+            "volume": float(lots),
+            "type": mt5.ORDER_TYPE_BUY if is_long else mt5.ORDER_TYPE_SELL,
+            "price": float(tick.ask if is_long else tick.bid),
+            "sl": float(stop),
+            "tp": float(take_profit),
+            "deviation": self.deviation,
+            "magic": self.magic,
+            "comment": str((meta or {}).get("comment", "kronos_trader"))[:31],
+            "type_time": mt5.ORDER_TIME_GTC,
+        }
+        result = self._send_deal(request, name)
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED):
+            raise RuntimeError(f"{symbol} order not accepted: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        confirmed = result.retcode == mt5.TRADE_RETCODE_DONE and float(getattr(result, "price", 0.0) or 0.0) > 0
+        pid = str(result.order)
+        deal = int(getattr(result, "deal", 0) or 0)
+        if deal:
+            found = list(mt5.history_deals_get(ticket=deal) or [])
+            if found and getattr(found[0], "position_id", 0):
+                pid = str(found[0].position_id)
+        entry = float(result.price) if confirmed else float(request["price"])
+        pos = Position(
+            id=pid, symbol=symbol.upper(), direction=direction, lots=float(lots), entry=entry, stop=float(stop),
+            take_profit=float(take_profit), opened_at=pd.Timestamp(ts) if ts is not None else self.clock(),
+            risk_amount=float(risk_amount), risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
+            initial_stop=float(stop), meta=dict(meta or {}), status="filled" if confirmed else "pending",
+        )
+        if not confirmed:
+            pos.meta["entry_unconfirmed"] = True
+        self._positions[pos.id] = pos
+        # the other windows count open trades from positions_get, which can list a new position a moment after the deal:
+        # wait for it (up to 2 s, inside the account lock) so a second window cannot take the last open slot meanwhile
+        for _ in range(10):
+            if not confirmed or any(str(x.ticket) == pid for x in (mt5.positions_get(symbol=name) or [])):
+                break
+            time.sleep(0.2 * self.retry_seconds)
+        return pos
+
+    def filling_modes(self, name: str) -> List[int]:
+        """The filling modes to try for a deal on ``name``, best first: the one the server took last time, the profile's
+        (mt5.filling) when the symbol allows it, the others the symbol allows (``symbol_info.filling_mode``: bit 1 FOK,
+        bit 2 IOC; none set = unknown, both tried), then RETURN. MetaQuotes-Demo refused IOC on EURUSD with 10030."""
+        mt5 = self.mt5
+        fok, ioc, ret = (getattr(mt5, "ORDER_FILLING_FOK", 0), getattr(mt5, "ORDER_FILLING_IOC", 1),
+                         getattr(mt5, "ORDER_FILLING_RETURN", 2))
+        configured = getattr(mt5, self.params.filling, ioc)
+        info = mt5.symbol_info(name)
+        flags = int(getattr(info, "filling_mode", 0) or 0) if info is not None else 0
+        allowed = [mode for bit, mode in ((1, fok), (2, ioc)) if flags & bit] if flags & 3 else [fok, ioc]
+        order = [self._filling.get(name)]
+        if configured in allowed or configured == ret:
+            order.append(configured)
+        order += allowed + [ret, configured]
+        out: List[int] = []
+        for mode in order:
+            if mode is not None and mode not in out:
+                out.append(mode)
+        return out
+
+    def _send_deal(self, request: Dict[str, Any], name: str):
+        """``order_send`` for a deal, on to the next filling mode while the server answers 10030; the accepted mode is
+        kept for the symbol's next deals."""
+        result = None
+        for mode in self.filling_modes(name):
+            result = self.mt5.order_send({**request, "type_filling": mode})
+            if result is None or result.retcode != INVALID_FILL:
+                if result is not None and result.retcode in (self.mt5.TRADE_RETCODE_DONE, self.mt5.TRADE_RETCODE_PLACED):
+                    if self._filling.get(name) != mode:
+                        print(f"  {name}: filling mode {mode} accepted", flush=True)
+                    self._filling[name] = mode
+                return result
+        return result
+
+    # ------------------------------------------------------------ limit entries
+    def place_limit_order(self, symbol, direction, lots, price, stop, take_profit, risk_amount, risk_distance, breakeven_r,
+                          expires_at, meta=None, ts=None) -> LimitOrder:
+        """A buy limit (long) or sell limit (short) at ``price`` with the stop and target attached. The live runner cancels
+        it at ``expires_at`` or when the target trades first; where the symbol takes an expiry time the server also lets it
+        expire 10 minutes later, so a window that is down (a computer asleep) leaves no order resting for days."""
+        mt5 = self.mt5
+        name = self.mt5_symbol(symbol)
+        mt5.symbol_select(name, True)
+        long = direction is Direction.LONG
+        request = {
+            "action": mt5.TRADE_ACTION_PENDING, "symbol": name, "volume": float(lots),
+            "type": mt5.ORDER_TYPE_BUY_LIMIT if long else mt5.ORDER_TYPE_SELL_LIMIT,
+            "price": float(price), "sl": float(stop), "tp": float(take_profit), "deviation": self.deviation, "magic": self.magic,
+            "comment": str((meta or {}).get("comment", "kronos_trader limit"))[:31], "type_time": mt5.ORDER_TIME_GTC,
+        }
+        timed = None
+        try:
+            info = mt5.symbol_info(name)
+            if info is not None and int(getattr(info, "expiration_mode", 0) or 0) & 4:     # SYMBOL_EXPIRATION_SPECIFIED
+                server_end = pd.Timestamp(expires_at) + pd.Timedelta(minutes=10) + self.server_offset(symbol)
+                timed = {**request, "type_time": mt5.ORDER_TIME_SPECIFIED, "expiration": int(server_end.timestamp())}
+        except Exception:
+            timed = None
+        result = None
+        modes = [getattr(mt5, "ORDER_FILLING_RETURN", 2)] + self.filling_modes(name)
+        for base in ([timed] if timed is not None else []) + [request]:
+            for mode in dict.fromkeys(modes):            # pending orders take RETURN on most servers; the others as fallback
+                result = mt5.order_send({**base, "type_filling": mode})
+                if result is None or result.retcode != INVALID_FILL:
+                    break
+            # only an explicit refusal of the expiry time sends the good-till-cancelled copy (the window cancels it). A lost
+            # reply is no refusal: before 15 October a None sent the copy as well, and when the server had taken the first
+            # one two full-size limits rested for one setup, twice the risk the guard had checked (stack review)
+            if result is None or result.retcode != INVALID_EXPIRATION:
+                break
+        ticket = int(getattr(result, "order", 0) or 0) if result is not None else 0
+        if result is None or result.retcode == TIMEOUT:
+            err = mt5.last_error()                                   # the send's own error: the lookup's calls replace it
+            ticket = self._placed_limit_ticket(symbol, request)      # the server may hold it: find it, never send it twice
+            if not ticket:
+                what = (f"no answer from the terminal ({err})" if result is None else      # a 10012 reply's own error
+                        f"the request timed out on the server (retcode {result.retcode} {getattr(result, 'comment', '')})")
+                raise RuntimeError(f"{symbol} limit order: {what} and not found on the server within "
+                                   f"{2 * self.retry_seconds:g} s; not sent again - it may still appear there")
+        elif result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED) or not ticket:
+            raise RuntimeError(f"{symbol} limit order not accepted: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')} {mt5.last_error()}")
+        order = LimitOrder(id=str(ticket), symbol=symbol.upper(), direction=direction, lots=float(lots), price=float(price),
+                           stop=float(stop), take_profit=float(take_profit), risk_amount=float(risk_amount),
+                           risk_distance=float(risk_distance), breakeven_r=float(breakeven_r),
+                           placed_at=pd.Timestamp(ts) if ts is not None else self.clock(), expires_at=pd.Timestamp(expires_at),
+                           meta=dict(meta or {}))
+        self._limits[order.id] = order
+        return order
+
+    def _placed_limit_ticket(self, symbol: str, request: dict, tries: int = 10) -> int:
+        """The ticket of what a lost reply may have left on the server: a resting limit that matches ``request`` (this
+        program's magic, type, price within half a tick, volume as placed, comment) and that this window does not track,
+        or the position such a limit opened at once (MT5 gives it the order's ticket as its identifier). The terminal can
+        list either a moment after the lost reply: asked ``tries`` times, 0.2 s apart. 0 when nothing is found."""
+        mt5 = self.mt5
+        try:
+            info = mt5.symbol_info(request["symbol"])
+        except Exception:
+            info = None
+        point = float(getattr(info, "point", 0.0) or 0.0) or 1e-9
+        tolerance = max(point, float(getattr(info, "trade_tick_size", 0.0) or 0.0)) / 2 + 1e-12
+        volume, comment = float(request["volume"]), str(request.get("comment") or "")
+        side = getattr(mt5, "POSITION_TYPE_BUY", 0) if int(request["type"]) == getattr(mt5, "ORDER_TYPE_BUY_LIMIT", 2) \
+            else getattr(mt5, "POSITION_TYPE_SELL", 1)
+
+        def same_comment(text) -> bool:              # equal, or cut short by the server
+            text = str(text or "")
+            return not comment or text == comment or (len(text) >= 4 and comment.startswith(text))
+
+        def same_exits(x) -> bool:                   # the stop and the target the request carried
+            return all(abs(float(getattr(x, k, 0.0) or 0.0) - float(request[k])) <= tolerance for k in ("sl", "tp"))
+
+        for attempt in range(max(1, int(tries))):
+            try:
+                orders = self._server_limits(symbol)
+            except Exception:
+                orders = []
+            found = [o for o in orders
+                     if str(o.ticket) not in self._limits and int(o.type) == int(request["type"])
+                     and abs(float(o.price_open) - float(request["price"])) <= tolerance
+                     and abs(float(getattr(o, "volume_initial", 0.0) or getattr(o, "volume_current", 0.0)) - volume) < 1e-9
+                     and same_comment(getattr(o, "comment", "")) and same_exits(o)]
+            if found:
+                return int(max(found, key=lambda o: int(getattr(o, "time_setup", 0) or 0)).ticket)
+            try:
+                positions = self._listed(mt5.positions_get(symbol=request["symbol"]), "the open positions")
+            except Exception:
+                positions = ()
+            opened = [p for p in positions
+                      if int(getattr(p, "magic", 0)) == int(self.magic) and str(p.ticket) not in self._positions
+                      and int(p.type) == side and abs(float(p.volume) - volume) < 1e-9
+                      and same_comment(getattr(p, "comment", "")) and same_exits(p)]
+            if opened:
+                p = max(opened, key=lambda p: int(getattr(p, "time", 0) or 0))
+                return int(getattr(p, "identifier", 0) or p.ticket)
+            if attempt + 1 < tries:
+                time.sleep(0.2 * self.retry_seconds)
+        return 0
+
+    def _server_limits(self, symbol: Optional[str] = None) -> list:
+        get = getattr(self.mt5, "orders_get", None)
+        if get is None:
+            return []
+        raw = self._listed(get(symbol=self.mt5_symbol(symbol)) if symbol else get(), "the pending orders")
+        kinds = {getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2), getattr(self.mt5, "ORDER_TYPE_SELL_LIMIT", 3)}
+        return [o for o in raw if int(getattr(o, "magic", 0)) == int(self.magic) and int(getattr(o, "type", -1)) in kinds]
+
+    def limit_orders(self, symbol: Optional[str] = None) -> List[LimitOrder]:
+        """This account's resting limit entries (this program's magic number), with the risk this window recorded or, for
+        one another window placed, the loss at its stop."""
+        out: List[LimitOrder] = []
+        for o in self._server_limits(symbol):
+            known = self._limits.get(str(o.ticket))
+            if known is not None:
+                out.append(known); continue
+            sym = self.our_symbol(str(o.symbol))
+            direction = Direction.LONG if int(o.type) == getattr(self.mt5, "ORDER_TYPE_BUY_LIMIT", 2) else Direction.SHORT
+            price, sl, volume = float(o.price_open), float(o.sl or 0.0), float(getattr(o, "volume_current", 0.0) or getattr(o, "volume_initial", 0.0))
+            risk = 0.0
+            if sl:
+                try:
+                    risk = abs(self.pnl_for(sym, direction, price, sl, volume))
+                except Exception:
+                    risk = 0.0
+            out.append(LimitOrder(id=str(o.ticket), symbol=sym, direction=direction, lots=volume, price=price, stop=sl,
+                                  take_profit=float(o.tp or 0.0), risk_amount=risk, risk_distance=abs(price - sl) if sl else 0.0,
+                                  breakeven_r=self.settings.exits.breakeven_r_intraday, placed_at=self.to_utc(o.time_setup),
+                                  expires_at=pd.Timestamp.max, meta={"comment": str(getattr(o, "comment", ""))}))
+        return out
+
+    def cancel_limit(self, order_id: str) -> None:
+        mt5 = self.mt5
+        result = mt5.order_send({"action": mt5.TRADE_ACTION_REMOVE, "order": int(order_id)})
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED):
+            if not any(str(o.ticket) == str(order_id) for o in self._server_limits()):
+                return                                   # gone already (filled or removed meanwhile): limit_state tells which
+            raise RuntimeError(f"cancel of limit {order_id} failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        self._limits.pop(str(order_id), None)
+
+    def limit_state(self, order_id: str):
+        """pending while the server lists it; filled when a position carries its ticket (MT5 gives the position the
+        ticket of the order that opened it), or the history says it filled (the position may be closed again); else gone."""
+        oid = str(order_id)
+        if any(str(o.ticket) == oid for o in self._server_limits()):
+            return "pending", None
+        # a failed listing is no answer (15 October stack review, A17): read as "no position" it reported a fill that is
+        # still open as "filled and closed again"
+        for p in self._listed(self.mt5.positions_get(), "the open positions"):
+            if str(p.ticket) == oid or str(getattr(p, "identifier", "")) == oid:
+                pos = self._positions.get(str(p.ticket)) or self._position_from_mt5(p)
+                known = self._limits.pop(oid, None)
+                if known is not None and known.risk_amount:
+                    pos.risk_amount, pos.risk_distance = known.risk_amount, known.risk_distance
+                    pos.initial_stop = known.stop
+                    pos.meta.pop("restored", None)       # this window's own order, not a position found after a restart
+                pos.meta.update({"limit_id": oid})
+                self._positions[str(p.ticket)] = pos
+                return "filled", pos
+        get = getattr(self.mt5, "history_orders_get", None)
+        if get is not None:
+            try:
+                hist = list(get(ticket=int(oid)) or [])
+            except Exception:
+                hist = []
+            if hist and int(getattr(hist[-1], "state", -1)) == getattr(self.mt5, "ORDER_STATE_FILLED", 4):
+                pid = str(int(getattr(hist[-1], "position_id", 0) or 0) or oid)
+                # the terminal does not update at once: its history can say FILLED before the position is listed. Closed
+                # again only when a deal closed it; else no answer, the runner asks again next scan (fixcheck3: a fill
+                # read as "closed again" and, after a restart, a false "found" alarm on the next scan)
+                try:
+                    closed = any(d.entry == self.mt5.DEAL_ENTRY_OUT for d in (self.mt5.history_deals_get(position=int(pid)) or ()))
+                except Exception:
+                    closed = False
+                if not closed and self.clock() - self._unlisted.setdefault(oid, self.clock()) < pd.Timedelta(minutes=2):
+                    raise RuntimeError(f"limit {oid} filled, its position {pid} is not listed yet")
+                self._unlisted.pop(oid, None)             # closed, or still unlisted after 2 minutes: read as before
+                # filled and closed again between two scans: tracked from its order so that recent_closes reports the close
+                known = self._limits.pop(oid, None)
+                if known is not None and pid not in self._positions:
+                    entry, opened = known.price, known.placed_at
+                    try:
+                        ins = [d for d in (self.mt5.history_deals_get(position=int(pid)) or [])
+                               if d.entry != self.mt5.DEAL_ENTRY_OUT]
+                        if ins:
+                            entry, opened = float(ins[0].price), self.to_utc(ins[0].time)
+                    except Exception:
+                        pass
+                    pos = Position(id=pid, symbol=known.symbol, direction=known.direction, lots=known.lots, entry=entry,
+                                   stop=known.stop, take_profit=known.take_profit, opened_at=opened, risk_amount=known.risk_amount,
+                                   risk_distance=known.risk_distance, breakeven_r=known.breakeven_r, initial_stop=known.stop,
+                                   meta={**known.meta, "limit_id": oid})
+                    try:                                 # the risk on the actual fill, as a filled market order gets it
+                        from ..strategy.risk import reconcile_risk
+                        reconcile_risk(pos, self, known.risk_amount)
+                    except Exception:
+                        pass
+                    self._positions[pid] = pos
+                return "filled", None
+        self._limits.pop(oid, None)
+        return "gone", None
+
+    def modify_stop(self, position_id: str, stop: float) -> None:
+        mt5 = self.mt5
+        p = next((x for x in mt5.positions_get() or [] if str(x.ticket) == str(position_id)), None)
+        if p is None:
+            raise KeyError(f"position {position_id} not found")
+        request = {"action": mt5.TRADE_ACTION_SLTP, "position": p.ticket, "symbol": p.symbol,
+                   "sl": float(stop), "tp": float(p.tp), "magic": self.magic}
+        result = mt5.order_send(request)
+        if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise RuntimeError(f"modify stop failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
+        tracked = self._positions.get(str(position_id))
+        if tracked is not None:
+            tracked.stop = float(stop)
+
+    def modify_take_profit(self, position_id: str, take_profit: float) -> None:
+        """TRADE_ACTION_SLTP with the position's own stop: a request without its sl would remove the stop."""
+        mt5 = self.mt5
+        p = next((x for x in mt5.positions_get() or [] if str(x.ticket) == str(position_id)), None)
+        if p is None:
+            raise KeyError(f"position {position_id} not found")
+        request = {"action": mt5.TRADE_ACTION_SLTP, "position": p.ticket, "symbol": p.symbol,
+                   "sl": float(p.sl or 0.0), "tp": float(take_profit), "magic": self.magic}
+        result = mt5.order_send(request)
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, NO_CHANGES):
+            raise RuntimeError(f"modify take-profit failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        tracked = self._positions.get(str(position_id))
+        if tracked is not None:
+            tracked.take_profit = float(take_profit)
+
+    def modify_limit_take_profit(self, order_id: str, take_profit: float) -> None:
+        """TRADE_ACTION_MODIFY of a resting limit with its own price, stop, time type and expiry, only the tp new."""
+        mt5 = self.mt5
+        o = next((x for x in self._server_limits() if str(x.ticket) == str(order_id)), None)
+        if o is None:
+            raise KeyError(f"limit {order_id} not found")
+        request = {"action": getattr(mt5, "TRADE_ACTION_MODIFY", 7), "order": int(o.ticket), "symbol": o.symbol,
+                   "price": float(o.price_open), "sl": float(o.sl or 0.0), "tp": float(take_profit),
+                   "type_time": int(getattr(o, "type_time", getattr(mt5, "ORDER_TIME_GTC", 0)) or 0),
+                   "expiration": int(getattr(o, "time_expiration", 0) or 0), "magic": self.magic}
+        result = mt5.order_send(request)
+        if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED, NO_CHANGES):
+            raise RuntimeError(f"modify of limit {order_id} failed: retcode {getattr(result, 'retcode', None)} "
+                               f"{getattr(result, 'comment', '')}")
+        known = self._limits.get(str(order_id))
+        if known is not None:
+            known.take_profit = float(take_profit)
+
+    def price_rules(self, symbol: str) -> Optional[Tuple[float, float, float]]:
+        """The server's tick (trade_tick_size, else the point) and its stops and freeze levels (in points) as prices."""
+        try:
+            info = self.mt5.symbol_info(self.mt5_symbol(symbol))
+        except Exception:
+            return None
+        if info is None:
+            return None
+        point = float(getattr(info, "point", 0.0) or 0.0)
+        tick = float(getattr(info, "trade_tick_size", 0.0) or 0.0) or point
+        if tick <= 0:
+            return None
+        return (tick, float(getattr(info, "trade_stops_level", 0) or 0) * point,
+                float(getattr(info, "trade_freeze_level", 0) or 0) * point)
+
+    def closing_costs(self, position: Position) -> Optional[float]:
+        """The exit deal's commission and the accrued swap when it is negative (``open_positions`` refreshes it). The exit's
+        commission is the entry deal's (read once from the history, per lot, so a position partly closed by hand counts
+        what is left; where the whole round turn is booked on the entry this over-counts a side, the safe way), or the rest
+        of the round turn the market's last closed position paid when that is more (a server that books it on the exit).
+        None while the entry deal is not in the history."""
+        if "entry_commission_per_lot" not in position.meta:
+            try:
+                deals = list(self.mt5.history_deals_get(position=int(position.id)) or [])
+            except Exception:
+                return None
+            ins = [d for d in deals if d.entry != self.mt5.DEAL_ENTRY_OUT]
+            if not ins:
+                return None
+            volume = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in ins) or float(position.lots)
+            paid = sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0) for d in ins)
+            position.meta["entry_commission_per_lot"] = abs(paid) / volume if volume > 0 else 0.0
+        lots = float(position.lots)
+        entry_side = float(position.meta["entry_commission_per_lot"]) * lots
+        round_turn = self.commission_estimate(position.symbol, lots, float(position.entry))
+        exit_side = entry_side if round_turn is None else max(entry_side, round_turn - entry_side)
+        swap = float(position.meta.get("swap", 0.0) or 0.0)
+        return exit_side + max(0.0, -swap)
+
+    def commission_estimate(self, symbol: str, lots: float, price: float) -> Optional[float]:
+        """The round turn's commission of ``lots`` at ``price`` as the market's last closed position on this account paid it:
+        all its deals, so it holds wherever the server books the commission (the entry, the exit or both), per lot and
+        price unit (FTMO's per-lot forex and its %-of-notional metals and crypto alike). None before the market's first
+        close, read again after 15 minutes; a rate found is kept."""
+        name = self.mt5_symbol(symbol)
+        now = self.clock()
+        known = self._commission_rates.get(name)
+        if known is None or (known[0] is None and now - known[1] >= pd.Timedelta(minutes=15)):
+            known = self._commission_rates[name] = (self._commission_rate(name), now)
+        return None if known[0] is None else known[0] * float(lots) * abs(float(price))
+
+    def _commission_rate(self, name: str) -> Optional[float]:
+        try:
+            deals = self.mt5.history_deals_get(pd.Timestamp("2000-01-01").to_pydatetime(),
+                                               (pd.Timestamp.now() + pd.Timedelta(days=2)).to_pydatetime())
+        except Exception:
+            return None
+        out = self.mt5.DEAL_ENTRY_OUT
+        trade_types = {getattr(self.mt5, "DEAL_TYPE_BUY", 0), getattr(self.mt5, "DEAL_TYPE_SELL", 1)}
+        by_position: Dict[int, list] = {}
+        for d in deals or ():
+            if getattr(d, "symbol", None) == name and getattr(d, "type", None) in trade_types:
+                by_position.setdefault(int(d.position_id), []).append(d)
+        best: Optional[Tuple[int, float]] = None
+        for group in by_position.values():
+            ins = [d for d in group if d.entry != out]
+            volume = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in ins)
+            closed = sum(float(getattr(d, "volume", 0.0) or 0.0) for d in group if d.entry == out)
+            notional = sum(float(getattr(d, "volume", 0.0) or 0.0) * abs(float(d.price)) for d in ins)
+            if volume <= 0 or closed < volume - 1e-9 or notional <= 0:
+                continue                                 # still open or partly closed: not a whole round turn
+            paid = -sum(float(getattr(d, "commission", 0.0) or 0.0) + float(getattr(d, "fee", 0.0) or 0.0) for d in group)
+            when = max(int(d.time) for d in group if d.entry == out)
+            if best is None or when > best[0]:
+                best = (when, max(0.0, paid) / notional)
+        return None if best is None else best[1]
+
+    def close_position(self, position_id, reason="manual", price=None, ts=None) -> ClosedTrade:
+        mt5 = self.mt5
+        p = next((x for x in mt5.positions_get() or [] if str(x.ticket) == str(position_id)), None)
+        if p is None:
+            raise KeyError(f"position {position_id} not found")
+        tick = mt5.symbol_info_tick(p.symbol)
+        is_long = p.type == mt5.POSITION_TYPE_BUY
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL, "symbol": p.symbol, "volume": float(p.volume), "position": p.ticket,
+            "type": mt5.ORDER_TYPE_SELL if is_long else mt5.ORDER_TYPE_BUY,
+            "price": float(tick.bid if is_long else tick.ask), "deviation": self.deviation, "magic": self.magic,
+            "comment": str(reason)[:31], "type_time": mt5.ORDER_TIME_GTC,
+        }
+        result = self._send_deal(request, p.symbol)
+        if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise RuntimeError(f"close failed: retcode {getattr(result, 'retcode', None)} {getattr(result, 'comment', '')}")
+        pos = self._positions.get(str(position_id)) or self._position_from_mt5(p)
+        deals: List[Any] = []
+        for attempt in range(3):            # the closing deal can reach the terminal's history a moment after order_send
+            deals = list(mt5.history_deals_get(position=int(p.ticket)) or [])
+            if any(d.entry == mt5.DEAL_ENTRY_OUT for d in deals):
+                break
+            time.sleep(0.3 * self.retry_seconds)
+        if any(d.entry == mt5.DEAL_ENTRY_OUT for d in deals):
+            pnl = self._deal_pnl(deals)                                          # the entry and the close: both commissions
+        else:                                                                     # not in the history yet: the position's
+            pnl = float(getattr(p, "profit", 0.0) or 0.0) + self._deal_pnl(deals)  # profit and the entry's commission
+        # a reply without a price (15 October stack review, A19) booked exit 0: the closing deal's price, else the request's
+        exit_price = float(getattr(result, "price", 0.0) or 0.0)
+        if exit_price <= 0:                 # the reply's own deal, else the newest closing deal, else the request's price
+            own = [d for d in deals if int(getattr(d, "ticket", 0) or 0) == int(getattr(result, "deal", 0) or -1)]
+            outs = own or [d for d in deals if d.entry == mt5.DEAL_ENTRY_OUT and float(getattr(d, "price", 0.0) or 0.0) > 0]
+            outs = [d for d in outs if float(getattr(d, "price", 0.0) or 0.0) > 0]
+            exit_price = float(outs[-1].price) if outs else float(request["price"])
+        return self._finish(pos, exit_price, reason, ts, pnl)
+
+    def recent_closes(self) -> List[ClosedTrade]:
+        self._sync_closed()
+        out = self._closed[self._close_cursor:]
+        self._close_cursor = len(self._closed)
+        return out
+
+    # ------------------------------------------------------------ data
+    def get_candles(self, symbol: str, timeframe: Timeframe, count: int = 500) -> CandleSeries:
+        timeframe = Timeframe.parse(timeframe)
+        mt5 = self.mt5
+        name = self.mt5_symbol(symbol)
+        if mt5.symbol_select(name, True) is False:
+            near = self.find_symbols(symbol[:3])
+            raise RuntimeError(f"MT5 has no symbol {name!r} on this server" + (f"; it has: {', '.join(near[:12])}" if near else "")
+                               + f". Set symbols: {symbol.upper()}: mt5_symbol: <name> in the profile "
+                               f"(`python -m kronos_trader mt5-symbols --search {symbol[:3]}` lists them)")
+        rates = None
+        for attempt in range(3):          # the first request after selecting a symbol can fail while the terminal loads history
+            rates = mt5.copy_rates_from_pos(name, getattr(mt5, MT5_TIMEFRAMES[timeframe]), 0, int(count))
+            if rates is not None and len(rates) > 0:
+                break
+            time.sleep(self.retry_seconds)
+        if rates is None or len(rates) == 0:
+            near = [n for n in self.find_symbols(symbol[:3]) if n != name]
+            raise RuntimeError(f"MT5 returned no bars for {symbol} {timeframe.label} ({name!r}): {mt5.last_error()}"
+                               + (f". Symbols on this server like it: {', '.join(near[:12])}" if near else "")
+                               + f"; check the name in Market Watch (right-click, Symbols) and set mt5_symbol in the profile")
+        df = pd.DataFrame(rates)
+        df["timestamp"] = self.stamps_to_utc(df["time"], symbol).values
+        df = df.rename(columns={"tick_volume": "volume"})
+        return CandleSeries(df[["timestamp", "open", "high", "low", "close", "volume"]].reset_index(drop=True),
+                            timeframe, symbol.upper())

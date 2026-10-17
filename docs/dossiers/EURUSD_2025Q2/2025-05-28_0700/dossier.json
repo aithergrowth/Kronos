@@ -1,0 +1,6302 @@
+{
+  "symbol": "EURUSD",
+  "at": "2025-05-28 07:00:00",
+  "price": 1.13147,
+  "decision": {
+    "direction": "BULLISH",
+    "mode": "full",
+    "reason": "bullish: 1M+1W+1D aligned -> full trade allowed"
+  },
+  "rejections": [],
+  "timeframes": {
+    "5m": {
+      "candles": 400,
+      "last": "2025-05-28 06:55:00",
+      "bias": null,
+      "gaps_geometric": [
+        {
+          "candle3": "2025-05-26 21:50:00",
+          "direction": "bullish",
+          "low": 1.13856,
+          "high": 1.13858,
+          "width": 1.999999999990898e-05,
+          "required": 3.59999999999916e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (3.6e-05)"
+        },
+        {
+          "candle3": "2025-05-26 22:00:00",
+          "direction": "bearish",
+          "low": 1.13837,
+          "high": 1.13858,
+          "width": 0.00020999999999982144,
+          "required": 3.99999999999956e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 22:25:00",
+          "direction": "bullish",
+          "low": 1.13819,
+          "high": 1.13822,
+          "width": 2.999999999997449e-05,
+          "required": 6.20000000000065e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (6.2e-05)"
+        },
+        {
+          "candle3": "2025-05-26 22:40:00",
+          "direction": "bullish",
+          "low": 1.13839,
+          "high": 1.1384,
+          "width": 1.0000000000065512e-05,
+          "required": 6.100000000002215e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (6.1e-05)"
+        },
+        {
+          "candle3": "2025-05-26 23:05:00",
+          "direction": "bullish",
+          "low": 1.13849,
+          "high": 1.1388,
+          "width": 0.00031000000000003247,
+          "required": 6.0000000000037806e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 23:55:00",
+          "direction": "bearish",
+          "low": 1.13908,
+          "high": 1.13912,
+          "width": 3.999999999981796e-05,
+          "required": 5.599999999996719e-05,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (5.6e-05)"
+        },
+        {
+          "candle3": "2025-05-27 00:25:00",
+          "direction": "bearish",
+          "low": 1.13882,
+          "high": 1.13885,
+          "width": 2.999999999997449e-05,
+          "required": 5.00000000000167e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (5e-05)"
+        },
+        {
+          "candle3": "2025-05-27 00:30:00",
+          "direction": "bearish",
+          "low": 1.13881,
+          "high": 1.13882,
+          "width": 9.999999999843467e-06,
+          "required": 4.999999999999449e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (5e-05)"
+        },
+        {
+          "candle3": "2025-05-27 00:55:00",
+          "direction": "bearish",
+          "low": 1.13886,
+          "high": 1.13887,
+          "width": 1.0000000000065512e-05,
+          "required": 4.799999999995919e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (4.8e-05)"
+        },
+        {
+          "candle3": "2025-05-27 01:05:00",
+          "direction": "bullish",
+          "low": 1.13886,
+          "high": 1.13905,
+          "width": 0.00018999999999991246,
+          "required": 4.799999999995919e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 01:10:00",
+          "direction": "bullish",
+          "low": 1.13915,
+          "high": 1.13977,
+          "width": 0.0006199999999998429,
+          "required": 4.899999999996574e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 01:25:00",
+          "direction": "bullish",
+          "low": 1.14,
+          "high": 1.14003,
+          "width": 3.0000000000196536e-05,
+          "required": 5.00000000000167e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (5e-05)"
+        },
+        {
+          "candle3": "2025-05-27 01:55:00",
+          "direction": "bullish",
+          "low": 1.13996,
+          "high": 1.13997,
+          "width": 9.999999999843467e-06,
+          "required": 5.00000000000167e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (5e-05)"
+        },
+        {
+          "candle3": "2025-05-27 02:10:00",
+          "direction": "bullish",
+          "low": 1.14027,
+          "high": 1.14038,
+          "width": 0.0001100000000000545,
+          "required": 5.100000000000105e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 02:40:00",
+          "direction": "bearish",
+          "low": 1.14006,
+          "high": 1.14031,
+          "width": 0.00024999999999986144,
+          "required": 5.100000000000105e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 02:45:00",
+          "direction": "bearish",
+          "low": 1.13964,
+          "high": 1.14005,
+          "width": 0.00041000000000002146,
+          "required": 5.1999999999985394e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 02:50:00",
+          "direction": "bearish",
+          "low": 1.13935,
+          "high": 1.13949,
+          "width": 0.00013999999999980695,
+          "required": 5.2999999999991944e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 03:10:00",
+          "direction": "bullish",
+          "low": 1.13952,
+          "high": 1.13954,
+          "width": 1.999999999990898e-05,
+          "required": 5.3999999999998494e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (5.4e-05)"
+        },
+        {
+          "candle3": "2025-05-27 03:15:00",
+          "direction": "bullish",
+          "low": 1.13961,
+          "high": 1.14001,
+          "width": 0.00039999999999995595,
+          "required": 5.3999999999998494e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 03:50:00",
+          "direction": "bearish",
+          "low": 1.13973,
+          "high": 1.13989,
+          "width": 0.00016000000000016001,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 04:00:00",
+          "direction": "bearish",
+          "low": 1.13943,
+          "high": 1.13949,
+          "width": 5.999999999994898e-05,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 04:15:00",
+          "direction": "bullish",
+          "low": 1.13943,
+          "high": 1.13975,
+          "width": 0.000320000000000098,
+          "required": 5.7999999999980295e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 04:30:00",
+          "direction": "bearish",
+          "low": 1.13969,
+          "high": 1.1398,
+          "width": 0.00010999999999983245,
+          "required": 5.8999999999986845e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 04:40:00",
+          "direction": "bearish",
+          "low": 1.13937,
+          "high": 1.1395,
+          "width": 0.00012999999999996348,
+          "required": 5.8999999999986845e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:05:00",
+          "direction": "bullish",
+          "low": 1.13946,
+          "high": 1.13952,
+          "width": 6.000000000017103e-05,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:25:00",
+          "direction": "bearish",
+          "low": 1.13937,
+          "high": 1.13955,
+          "width": 0.000180000000000069,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:35:00",
+          "direction": "bearish",
+          "low": 1.13892,
+          "high": 1.13917,
+          "width": 0.0002500000000000835,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:45:00",
+          "direction": "bearish",
+          "low": 1.1385,
+          "high": 1.13866,
+          "width": 0.00015999999999993797,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:50:00",
+          "direction": "bearish",
+          "low": 1.13817,
+          "high": 1.13827,
+          "width": 9.999999999998899e-05,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 06:10:00",
+          "direction": "bearish",
+          "low": 1.13742,
+          "high": 1.13748,
+          "width": 5.999999999994898e-05,
+          "required": 5.8999999999986845e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 06:30:00",
+          "direction": "bearish",
+          "low": 1.13724,
+          "high": 1.1374,
+          "width": 0.00015999999999993797,
+          "required": 6.00000000000156e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 06:40:00",
+          "direction": "bullish",
+          "low": 1.13724,
+          "high": 1.13727,
+          "width": 2.999999999997449e-05,
+          "required": 6.099999999997774e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (6.1e-05)"
+        },
+        {
+          "candle3": "2025-05-27 07:00:00",
+          "direction": "bullish",
+          "low": 1.13772,
+          "high": 1.13777,
+          "width": 4.999999999988347e-05,
+          "required": 6.20000000000065e-05,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (6.2e-05)"
+        },
+        {
+          "candle3": "2025-05-27 07:05:00",
+          "direction": "bullish",
+          "low": 1.13784,
+          "high": 1.13815,
+          "width": 0.00031000000000003247,
+          "required": 6.20000000000065e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:15:00",
+          "direction": "bullish",
+          "low": 1.13852,
+          "high": 1.13861,
+          "width": 8.999999999992347e-05,
+          "required": 6.299999999999084e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:45:00",
+          "direction": "bearish",
+          "low": 1.13826,
+          "high": 1.13851,
+          "width": 0.00024999999999986144,
+          "required": 6.59999999999883e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:50:00",
+          "direction": "bearish",
+          "low": 1.13799,
+          "high": 1.1381,
+          "width": 0.00010999999999983245,
+          "required": 6.60000000000105e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:55:00",
+          "direction": "bearish",
+          "low": 1.1372,
+          "high": 1.13761,
+          "width": 0.00041000000000002146,
+          "required": 6.700000000001705e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:00:00",
+          "direction": "bearish",
+          "low": 1.13687,
+          "high": 1.13699,
+          "width": 0.00011999999999989797,
+          "required": 6.700000000001705e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:20:00",
+          "direction": "bearish",
+          "low": 1.1363,
+          "high": 1.13649,
+          "width": 0.00018999999999991246,
+          "required": 7.099999999999884e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:25:00",
+          "direction": "bearish",
+          "low": 1.13568,
+          "high": 1.13629,
+          "width": 0.0006099999999999994,
+          "required": 7.299999999998974e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:30:00",
+          "direction": "bearish",
+          "low": 1.13504,
+          "high": 1.13528,
+          "width": 0.00024000000000001798,
+          "required": 7.39999999999963e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:50:00",
+          "direction": "bearish",
+          "low": 1.13447,
+          "high": 1.13485,
+          "width": 0.0003799999999998249,
+          "required": 7.99999999999912e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 09:05:00",
+          "direction": "bullish",
+          "low": 1.13429,
+          "high": 1.13435,
+          "width": 5.999999999994898e-05,
+          "required": 8.399999999997299e-05,
+          "kept": false,
+          "reason": "width 6e-05 below 20% of the median range before it (8.4e-05)"
+        },
+        {
+          "candle3": "2025-05-27 09:40:00",
+          "direction": "bullish",
+          "low": 1.1349,
+          "high": 1.13508,
+          "width": 0.000180000000000069,
+          "required": 8.699999999999264e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 09:55:00",
+          "direction": "bearish",
+          "low": 1.13497,
+          "high": 1.13526,
+          "width": 0.00028999999999990145,
+          "required": 8.79999999999992e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 10:05:00",
+          "direction": "bullish",
+          "low": 1.13497,
+          "high": 1.13506,
+          "width": 8.999999999992347e-05,
+          "required": 8.79999999999992e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 10:10:00",
+          "direction": "bullish",
+          "low": 1.1353,
+          "high": 1.13531,
+          "width": 1.0000000000065512e-05,
+          "required": 8.79999999999992e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (8.8e-05)"
+        },
+        {
+          "candle3": "2025-05-27 11:50:00",
+          "direction": "bearish",
+          "low": 1.1345,
+          "high": 1.13478,
+          "width": 0.00027999999999983594,
+          "required": 9.099999999999664e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 12:45:00",
+          "direction": "bullish",
+          "low": 1.13491,
+          "high": 1.13503,
+          "width": 0.00011999999999989797,
+          "required": 9.300000000000974e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 13:05:00",
+          "direction": "bullish",
+          "low": 1.1353,
+          "high": 1.13546,
+          "width": 0.00015999999999993797,
+          "required": 9.39999999999941e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 13:25:00",
+          "direction": "bullish",
+          "low": 1.13568,
+          "high": 1.13608,
+          "width": 0.00039999999999995595,
+          "required": 9.500000000000064e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 14:00:00",
+          "direction": "bullish",
+          "low": 1.13645,
+          "high": 1.1365,
+          "width": 5.0000000000105516e-05,
+          "required": 9.60000000000072e-05,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (9.6e-05)"
+        },
+        {
+          "candle3": "2025-05-27 14:05:00",
+          "direction": "bullish",
+          "low": 1.13665,
+          "high": 1.13695,
+          "width": 0.00029999999999996696,
+          "required": 9.699999999999154e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 14:15:00",
+          "direction": "bearish",
+          "low": 1.13676,
+          "high": 1.13695,
+          "width": 0.00018999999999991246,
+          "required": 9.699999999999154e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 14:50:00",
+          "direction": "bearish",
+          "low": 1.13593,
+          "high": 1.13688,
+          "width": 0.0009499999999997844,
+          "required": 0.00010100000000001774,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:25:00",
+          "direction": "bearish",
+          "low": 1.13531,
+          "high": 1.13564,
+          "width": 0.00032999999999994145,
+          "required": 0.00010100000000001774,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:30:00",
+          "direction": "bearish",
+          "low": 1.13501,
+          "high": 1.13519,
+          "width": 0.00017999999999984695,
+          "required": 0.00010100000000001774,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:35:00",
+          "direction": "bearish",
+          "low": 1.1346,
+          "high": 1.13485,
+          "width": 0.00024999999999986144,
+          "required": 9.900000000000464e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:40:00",
+          "direction": "bearish",
+          "low": 1.13424,
+          "high": 1.13455,
+          "width": 0.00031000000000003247,
+          "required": 9.900000000000464e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 16:05:00",
+          "direction": "bearish",
+          "low": 1.13404,
+          "high": 1.13408,
+          "width": 4.0000000000040004e-05,
+          "required": 9.900000000000464e-05,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (9.9e-05)"
+        },
+        {
+          "candle3": "2025-05-27 16:15:00",
+          "direction": "bearish",
+          "low": 1.13367,
+          "high": 1.13369,
+          "width": 2.0000000000131024e-05,
+          "required": 9.699999999999154e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (9.7e-05)"
+        },
+        {
+          "candle3": "2025-05-27 16:35:00",
+          "direction": "bearish",
+          "low": 1.13343,
+          "high": 1.13348,
+          "width": 5.0000000000105516e-05,
+          "required": 9.900000000000464e-05,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (9.9e-05)"
+        },
+        {
+          "candle3": "2025-05-27 16:55:00",
+          "direction": "bearish",
+          "low": 1.13291,
+          "high": 1.13295,
+          "width": 3.999999999981796e-05,
+          "required": 0.0001020000000000021,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (0.000102)"
+        },
+        {
+          "candle3": "2025-05-27 17:00:00",
+          "direction": "bearish",
+          "low": 1.13264,
+          "high": 1.13272,
+          "width": 7.999999999985796e-05,
+          "required": 0.0001020000000000021,
+          "kept": false,
+          "reason": "width 8e-05 below 20% of the median range before it (0.000102)"
+        },
+        {
+          "candle3": "2025-05-27 17:25:00",
+          "direction": "bullish",
+          "low": 1.13293,
+          "high": 1.13306,
+          "width": 0.00012999999999996348,
+          "required": 9.60000000000072e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 17:30:00",
+          "direction": "bullish",
+          "low": 1.13318,
+          "high": 1.13324,
+          "width": 5.999999999994898e-05,
+          "required": 9.60000000000072e-05,
+          "kept": false,
+          "reason": "width 6e-05 below 20% of the median range before it (9.6e-05)"
+        },
+        {
+          "candle3": "2025-05-27 17:55:00",
+          "direction": "bearish",
+          "low": 1.13318,
+          "high": 1.13325,
+          "width": 7.00000000000145e-05,
+          "required": 9.60000000000072e-05,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (9.6e-05)"
+        },
+        {
+          "candle3": "2025-05-27 18:05:00",
+          "direction": "bullish",
+          "low": 1.13318,
+          "high": 1.13328,
+          "width": 9.999999999998899e-05,
+          "required": 9.500000000000064e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 18:10:00",
+          "direction": "bullish",
+          "low": 1.13337,
+          "high": 1.13344,
+          "width": 7.00000000000145e-05,
+          "required": 9.300000000000974e-05,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (9.3e-05)"
+        },
+        {
+          "candle3": "2025-05-27 19:05:00",
+          "direction": "bearish",
+          "low": 1.13317,
+          "high": 1.13324,
+          "width": 7.00000000000145e-05,
+          "required": 8.79999999999992e-05,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (8.8e-05)"
+        },
+        {
+          "candle3": "2025-05-27 19:15:00",
+          "direction": "bullish",
+          "low": 1.13317,
+          "high": 1.1334,
+          "width": 0.00022999999999995246,
+          "required": 8.99999999999901e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 19:55:00",
+          "direction": "bullish",
+          "low": 1.13359,
+          "high": 1.13369,
+          "width": 9.999999999998899e-05,
+          "required": 8.300000000001085e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 20:20:00",
+          "direction": "bearish",
+          "low": 1.13362,
+          "high": 1.13367,
+          "width": 4.999999999988347e-05,
+          "required": 8.20000000000043e-05,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (8.2e-05)"
+        },
+        {
+          "candle3": "2025-05-27 20:35:00",
+          "direction": "bullish",
+          "low": 1.13358,
+          "high": 1.13363,
+          "width": 4.999999999988347e-05,
+          "required": 7.99999999999912e-05,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (8e-05)"
+        },
+        {
+          "candle3": "2025-05-27 20:40:00",
+          "direction": "bullish",
+          "low": 1.13367,
+          "high": 1.13369,
+          "width": 2.0000000000131024e-05,
+          "required": 7.99999999999912e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (8e-05)"
+        },
+        {
+          "candle3": "2025-05-27 20:55:00",
+          "direction": "bearish",
+          "low": 1.13336,
+          "high": 1.13368,
+          "width": 0.000320000000000098,
+          "required": 7.80000000000003e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 21:00:00",
+          "direction": "bearish",
+          "low": 1.13313,
+          "high": 1.13334,
+          "width": 0.00021000000000004349,
+          "required": 7.79999999999781e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 21:35:00",
+          "direction": "bullish",
+          "low": 1.13286,
+          "high": 1.13299,
+          "width": 0.00012999999999996348,
+          "required": 7.60000000000094e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 22:00:00",
+          "direction": "bearish",
+          "low": 1.13276,
+          "high": 1.13289,
+          "width": 0.00012999999999996348,
+          "required": 7.19999999999832e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 22:40:00",
+          "direction": "bullish",
+          "low": 1.13278,
+          "high": 1.13292,
+          "width": 0.000140000000000029,
+          "required": 6.39999999999752e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 23:05:00",
+          "direction": "bullish",
+          "low": 1.13308,
+          "high": 1.13327,
+          "width": 0.00018999999999991246,
+          "required": 6.0999999999999945e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 23:10:00",
+          "direction": "bullish",
+          "low": 1.13327,
+          "high": 1.13345,
+          "width": 0.000180000000000069,
+          "required": 6.0999999999999945e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 23:50:00",
+          "direction": "bullish",
+          "low": 1.13353,
+          "high": 1.13356,
+          "width": 2.999999999997449e-05,
+          "required": 5.2000000000029806e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (5.2e-05)"
+        },
+        {
+          "candle3": "2025-05-28 00:15:00",
+          "direction": "bearish",
+          "low": 1.13343,
+          "high": 1.13344,
+          "width": 1.0000000000065512e-05,
+          "required": 4.699999999999705e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (4.7e-05)"
+        },
+        {
+          "candle3": "2025-05-28 00:30:00",
+          "direction": "bullish",
+          "low": 1.13345,
+          "high": 1.13347,
+          "width": 1.999999999990898e-05,
+          "required": 4.599999999999049e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (4.6e-05)"
+        },
+        {
+          "candle3": "2025-05-28 00:35:00",
+          "direction": "bullish",
+          "low": 1.13347,
+          "high": 1.13354,
+          "width": 7.00000000000145e-05,
+          "required": 4.500000000000615e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 00:40:00",
+          "direction": "bullish",
+          "low": 1.13363,
+          "high": 1.13367,
+          "width": 4.0000000000040004e-05,
+          "required": 4.500000000000615e-05,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (4.5e-05)"
+        },
+        {
+          "candle3": "2025-05-28 01:25:00",
+          "direction": "bullish",
+          "low": 1.13398,
+          "high": 1.13423,
+          "width": 0.0002500000000000835,
+          "required": 4.20000000000087e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 01:30:00",
+          "direction": "bullish",
+          "low": 1.13424,
+          "high": 1.13438,
+          "width": 0.000140000000000029,
+          "required": 4.20000000000087e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 01:55:00",
+          "direction": "bearish",
+          "low": 1.13382,
+          "high": 1.13422,
+          "width": 0.00039999999999995595,
+          "required": 4.0000000000017805e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:05:00",
+          "direction": "bearish",
+          "low": 1.13338,
+          "high": 1.1334,
+          "width": 1.999999999990898e-05,
+          "required": 4.0000000000017805e-05,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (4e-05)"
+        },
+        {
+          "candle3": "2025-05-28 02:10:00",
+          "direction": "bearish",
+          "low": 1.13278,
+          "high": 1.13336,
+          "width": 0.0005800000000000249,
+          "required": 4.1000000000024354e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:20:00",
+          "direction": "bullish",
+          "low": 1.13278,
+          "high": 1.13318,
+          "width": 0.000400000000000178,
+          "required": 4.1000000000024354e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:35:00",
+          "direction": "bearish",
+          "low": 1.13317,
+          "high": 1.1333,
+          "width": 0.00012999999999996348,
+          "required": 4.1000000000024354e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:40:00",
+          "direction": "bearish",
+          "low": 1.13284,
+          "high": 1.13295,
+          "width": 0.00010999999999983245,
+          "required": 4.1000000000024354e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:45:00",
+          "direction": "bearish",
+          "low": 1.13199,
+          "high": 1.13278,
+          "width": 0.0007899999999998464,
+          "required": 4.1000000000024354e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 03:30:00",
+          "direction": "bullish",
+          "low": 1.13191,
+          "high": 1.13211,
+          "width": 0.00019999999999997797,
+          "required": 4.500000000000615e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 03:40:00",
+          "direction": "bearish",
+          "low": 1.1314,
+          "high": 1.13211,
+          "width": 0.0007099999999999884,
+          "required": 4.500000000000615e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 03:55:00",
+          "direction": "bearish",
+          "low": 1.13055,
+          "high": 1.13081,
+          "width": 0.000260000000000149,
+          "required": 4.80000000000036e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 04:20:00",
+          "direction": "bearish",
+          "low": 1.13053,
+          "high": 1.13058,
+          "width": 4.999999999988347e-05,
+          "required": 4.80000000000036e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 04:25:00",
+          "direction": "bearish",
+          "low": 1.13025,
+          "high": 1.1305,
+          "width": 0.0002500000000000835,
+          "required": 4.8999999999987943e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 04:40:00",
+          "direction": "bullish",
+          "low": 1.13035,
+          "high": 1.1306,
+          "width": 0.0002500000000000835,
+          "required": 4.9999999999972294e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 04:45:00",
+          "direction": "bullish",
+          "low": 1.13065,
+          "high": 1.13081,
+          "width": 0.00016000000000016001,
+          "required": 4.9999999999972294e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 05:10:00",
+          "direction": "bearish",
+          "low": 1.13057,
+          "high": 1.1307,
+          "width": 0.00012999999999996348,
+          "required": 5.300000000001415e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 06:05:00",
+          "direction": "bearish",
+          "low": 1.13045,
+          "high": 1.13048,
+          "width": 2.999999999997449e-05,
+          "required": 5.3999999999998494e-05,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (5.4e-05)"
+        },
+        {
+          "candle3": "2025-05-28 06:20:00",
+          "direction": "bearish",
+          "low": 1.12998,
+          "high": 1.13018,
+          "width": 0.00019999999999997797,
+          "required": 5.3999999999998494e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 06:45:00",
+          "direction": "bullish",
+          "low": 1.12982,
+          "high": 1.12983,
+          "width": 9.999999999843467e-06,
+          "required": 5.500000000000505e-05,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (5.5e-05)"
+        },
+        {
+          "candle3": "2025-05-28 06:50:00",
+          "direction": "bullish",
+          "low": 1.12988,
+          "high": 1.13047,
+          "width": 0.0005900000000000905,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 06:55:00",
+          "direction": "bullish",
+          "low": 1.13051,
+          "high": 1.13076,
+          "width": 0.0002500000000000835,
+          "required": 5.60000000000116e-05,
+          "kept": true,
+          "reason": ""
+        }
+      ],
+      "gaps_kept": 76,
+      "swings": [
+        {
+          "time": "2025-05-28 03:10:00",
+          "price": 1.13241,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 03:20:00",
+          "price": 1.13161,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 03:35:00",
+          "price": 1.13256,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 03:55:00",
+          "price": 1.13005,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 04:10:00",
+          "price": 1.13083,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 04:25:00",
+          "price": 1.13004,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 04:45:00",
+          "price": 1.13129,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 05:05:00",
+          "price": 1.13029,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 05:25:00",
+          "price": 1.13025,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 05:45:00",
+          "price": 1.13081,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 06:20:00",
+          "price": 1.12956,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 06:35:00",
+          "price": 1.12953,
+          "kind": "low"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2025-05-28 01:00:00",
+          "level": 1.13386,
+          "extreme": 1.134,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-28 02:45:00",
+          "level": 1.13173,
+          "extreme": 1.13172,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 03:30:00",
+          "level": 1.13241,
+          "extreme": 1.1325,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-28 04:25:00",
+          "level": 1.13005,
+          "extreme": 1.13004,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 06:35:00",
+          "level": 1.12956,
+          "extreme": 1.12953,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 06:50:00",
+          "level": 1.13081,
+          "extreme": 1.13083,
+          "implied": "BEARISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2025-05-28 02:05:00",
+          "level": 1.13311,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-28 02:50:00",
+          "level": 1.13173,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 03:35:00",
+          "level": 1.13144,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 04:40:00",
+          "level": 1.13083,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-28 06:15:00",
+          "level": 1.13004,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-28 06:55:00",
+          "level": 1.13081,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        }
+      ],
+      "zones": []
+    },
+    "15m": {
+      "candles": 400,
+      "last": "2025-05-28 06:45:00",
+      "bias": null,
+      "gaps_geometric": [
+        {
+          "candle3": "2025-05-22 04:45:00",
+          "direction": "bearish",
+          "low": 1.1335,
+          "high": 1.1336,
+          "width": 9.999999999998899e-05,
+          "required": 0.0001399999999999846,
+          "kept": false,
+          "reason": "width 0.0001 below 20% of the median range before it (0.00014)"
+        },
+        {
+          "candle3": "2025-05-22 05:00:00",
+          "direction": "bearish",
+          "low": 1.13332,
+          "high": 1.13336,
+          "width": 3.999999999981796e-05,
+          "required": 0.00013900000000000023,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (0.000139)"
+        },
+        {
+          "candle3": "2025-05-22 07:00:00",
+          "direction": "bullish",
+          "low": 1.13304,
+          "high": 1.13316,
+          "width": 0.00011999999999989797,
+          "required": 0.00012700000000001043,
+          "kept": false,
+          "reason": "width 0.00012 below 20% of the median range before it (0.000127)"
+        },
+        {
+          "candle3": "2025-05-22 07:45:00",
+          "direction": "bearish",
+          "low": 1.13286,
+          "high": 1.13299,
+          "width": 0.00012999999999996348,
+          "required": 0.0001380000000000159,
+          "kept": false,
+          "reason": "width 0.00013 below 20% of the median range before it (0.000138)"
+        },
+        {
+          "candle3": "2025-05-22 09:15:00",
+          "direction": "bullish",
+          "low": 1.13221,
+          "high": 1.13226,
+          "width": 5.0000000000105516e-05,
+          "required": 0.0001440000000000108,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (0.000144)"
+        },
+        {
+          "candle3": "2025-05-22 09:45:00",
+          "direction": "bearish",
+          "low": 1.1312,
+          "high": 1.13226,
+          "width": 0.001060000000000061,
+          "required": 0.00014599999999997948,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 10:00:00",
+          "direction": "bearish",
+          "low": 1.13024,
+          "high": 1.13084,
+          "width": 0.000600000000000156,
+          "required": 0.00015399999999998748,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 12:15:00",
+          "direction": "bullish",
+          "low": 1.12973,
+          "high": 1.13007,
+          "width": 0.00034000000000000696,
+          "required": 0.00016199999999999548,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 12:30:00",
+          "direction": "bullish",
+          "low": 1.13026,
+          "high": 1.13049,
+          "width": 0.00022999999999995246,
+          "required": 0.0001620000000000177,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 13:45:00",
+          "direction": "bearish",
+          "low": 1.12953,
+          "high": 1.13051,
+          "width": 0.0009799999999999809,
+          "required": 0.0001620000000000399,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 16:00:00",
+          "direction": "bearish",
+          "low": 1.12819,
+          "high": 1.1283,
+          "width": 0.0001100000000000545,
+          "required": 0.00019899999999999364,
+          "kept": false,
+          "reason": "width 0.00011 below 20% of the median range before it (0.000199)"
+        },
+        {
+          "candle3": "2025-05-22 18:00:00",
+          "direction": "bearish",
+          "low": 1.12707,
+          "high": 1.12783,
+          "width": 0.0007600000000000939,
+          "required": 0.00019800000000000929,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 18:30:00",
+          "direction": "bearish",
+          "low": 1.12619,
+          "high": 1.12651,
+          "width": 0.00031999999999987594,
+          "required": 0.00019800000000000929,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 19:00:00",
+          "direction": "bullish",
+          "low": 1.12619,
+          "high": 1.12672,
+          "width": 0.0005299999999999194,
+          "required": 0.00019799999999998709,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 20:00:00",
+          "direction": "bullish",
+          "low": 1.12755,
+          "high": 1.1278,
+          "width": 0.00024999999999986144,
+          "required": 0.00019099999999998564,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 22:00:00",
+          "direction": "bearish",
+          "low": 1.12796,
+          "high": 1.12797,
+          "width": 9.999999999843467e-06,
+          "required": 0.0001620000000000177,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (0.000162)"
+        },
+        {
+          "candle3": "2025-05-22 23:15:00",
+          "direction": "bullish",
+          "low": 1.12798,
+          "high": 1.12833,
+          "width": 0.0003500000000000725,
+          "required": 0.0001599999999999824,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 00:00:00",
+          "direction": "bullish",
+          "low": 1.12842,
+          "high": 1.12857,
+          "width": 0.0001500000000000945,
+          "required": 0.0001580000000000137,
+          "kept": false,
+          "reason": "width 0.00015 below 20% of the median range before it (0.000158)"
+        },
+        {
+          "candle3": "2025-05-23 00:30:00",
+          "direction": "bearish",
+          "low": 1.12841,
+          "high": 1.12857,
+          "width": 0.00016000000000016001,
+          "required": 0.00015300000000002535,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 01:15:00",
+          "direction": "bullish",
+          "low": 1.1284,
+          "high": 1.12862,
+          "width": 0.00021999999999988695,
+          "required": 0.000148000000000037,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 01:30:00",
+          "direction": "bullish",
+          "low": 1.12862,
+          "high": 1.12909,
+          "width": 0.00046999999999997044,
+          "required": 0.00014700000000003046,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 01:45:00",
+          "direction": "bullish",
+          "low": 1.1293,
+          "high": 1.12935,
+          "width": 5.0000000000105516e-05,
+          "required": 0.0001460000000000239,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (0.000146)"
+        },
+        {
+          "candle3": "2025-05-23 02:45:00",
+          "direction": "bullish",
+          "low": 1.13026,
+          "high": 1.13103,
+          "width": 0.0007699999999999374,
+          "required": 0.0001460000000000239,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 05:45:00",
+          "direction": "bullish",
+          "low": 1.13145,
+          "high": 1.13165,
+          "width": 0.00019999999999997797,
+          "required": 0.00014600000000000168,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 07:30:00",
+          "direction": "bearish",
+          "low": 1.13161,
+          "high": 1.13201,
+          "width": 0.00039999999999995595,
+          "required": 0.00014900000000002135,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 08:15:00",
+          "direction": "bullish",
+          "low": 1.13179,
+          "high": 1.13246,
+          "width": 0.0006699999999999484,
+          "required": 0.00014900000000002135,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 08:30:00",
+          "direction": "bullish",
+          "low": 1.13257,
+          "high": 1.13276,
+          "width": 0.00018999999999991246,
+          "required": 0.00014900000000002135,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 10:15:00",
+          "direction": "bullish",
+          "low": 1.13431,
+          "high": 1.13438,
+          "width": 7.00000000000145e-05,
+          "required": 0.00014900000000002135,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (0.000149)"
+        },
+        {
+          "candle3": "2025-05-23 13:00:00",
+          "direction": "bearish",
+          "low": 1.13287,
+          "high": 1.13326,
+          "width": 0.00038999999999989043,
+          "required": 0.0001480000000000148,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 13:45:00",
+          "direction": "bullish",
+          "low": 1.13271,
+          "high": 1.13311,
+          "width": 0.00039999999999995595,
+          "required": 0.0001480000000000148,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 16:45:00",
+          "direction": "bullish",
+          "low": 1.1344,
+          "high": 1.13463,
+          "width": 0.00022999999999995246,
+          "required": 0.0001480000000000148,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 17:45:00",
+          "direction": "bullish",
+          "low": 1.13525,
+          "high": 1.13545,
+          "width": 0.00019999999999997797,
+          "required": 0.0001460000000000239,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 18:45:00",
+          "direction": "bullish",
+          "low": 1.1357,
+          "high": 1.13604,
+          "width": 0.00034000000000000696,
+          "required": 0.00014299999999998204,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 19:45:00",
+          "direction": "bearish",
+          "low": 1.13608,
+          "high": 1.1361,
+          "width": 2.0000000000131024e-05,
+          "required": 0.00014600000000000168,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (0.000146)"
+        },
+        {
+          "candle3": "2025-05-26 00:45:00",
+          "direction": "bearish",
+          "low": 1.13748,
+          "high": 1.1376,
+          "width": 0.00011999999999989797,
+          "required": 0.00015899999999999804,
+          "kept": false,
+          "reason": "width 0.00012 below 20% of the median range before it (0.000159)"
+        },
+        {
+          "candle3": "2025-05-26 01:15:00",
+          "direction": "bullish",
+          "low": 1.13748,
+          "high": 1.13757,
+          "width": 8.999999999992347e-05,
+          "required": 0.0001599999999999824,
+          "kept": false,
+          "reason": "width 9e-05 below 20% of the median range before it (0.00016)"
+        },
+        {
+          "candle3": "2025-05-26 01:30:00",
+          "direction": "bullish",
+          "low": 1.13841,
+          "high": 1.13891,
+          "width": 0.000500000000000167,
+          "required": 0.00016099999999998895,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 03:00:00",
+          "direction": "bullish",
+          "low": 1.13991,
+          "high": 1.14079,
+          "width": 0.0008799999999999919,
+          "required": 0.0001679999999999904,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 07:00:00",
+          "direction": "bullish",
+          "low": 1.14057,
+          "high": 1.14077,
+          "width": 0.00019999999999997797,
+          "required": 0.0001679999999999904,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 08:15:00",
+          "direction": "bearish",
+          "low": 1.14009,
+          "high": 1.14081,
+          "width": 0.0007200000000000539,
+          "required": 0.0001679999999999904,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 10:00:00",
+          "direction": "bearish",
+          "low": 1.1385,
+          "high": 1.13862,
+          "width": 0.00011999999999989797,
+          "required": 0.0001679999999999904,
+          "kept": false,
+          "reason": "width 0.00012 below 20% of the median range before it (0.000168)"
+        },
+        {
+          "candle3": "2025-05-26 12:30:00",
+          "direction": "bearish",
+          "low": 1.13797,
+          "high": 1.138,
+          "width": 2.999999999997449e-05,
+          "required": 0.0001580000000000137,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (0.000158)"
+        },
+        {
+          "candle3": "2025-05-26 13:30:00",
+          "direction": "bearish",
+          "low": 1.13767,
+          "high": 1.13769,
+          "width": 2.0000000000131024e-05,
+          "required": 0.0001580000000000137,
+          "kept": false,
+          "reason": "width 2e-05 below 20% of the median range before it (0.000158)"
+        },
+        {
+          "candle3": "2025-05-26 18:30:00",
+          "direction": "bearish",
+          "low": 1.13812,
+          "high": 1.13815,
+          "width": 2.999999999997449e-05,
+          "required": 0.00012500000000001955,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (0.000125)"
+        },
+        {
+          "candle3": "2025-05-26 21:00:00",
+          "direction": "bullish",
+          "low": 1.1383,
+          "high": 1.13838,
+          "width": 7.999999999985796e-05,
+          "required": 0.00011999999999998679,
+          "kept": false,
+          "reason": "width 8e-05 below 20% of the median range before it (0.00012)"
+        },
+        {
+          "candle3": "2025-05-26 22:00:00",
+          "direction": "bearish",
+          "low": 1.13839,
+          "high": 1.1384,
+          "width": 1.0000000000065512e-05,
+          "required": 0.00011700000000001154,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (0.000117)"
+        },
+        {
+          "candle3": "2025-05-26 23:15:00",
+          "direction": "bullish",
+          "low": 1.13849,
+          "high": 1.13915,
+          "width": 0.000660000000000105,
+          "required": 0.0001140000000000141,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 01:15:00",
+          "direction": "bullish",
+          "low": 1.13913,
+          "high": 1.1397,
+          "width": 0.0005699999999999594,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 02:15:00",
+          "direction": "bullish",
+          "low": 1.14028,
+          "high": 1.14035,
+          "width": 7.00000000000145e-05,
+          "required": 0.00010799999999999699,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (0.000108)"
+        },
+        {
+          "candle3": "2025-05-27 02:45:00",
+          "direction": "bearish",
+          "low": 1.13964,
+          "high": 1.14035,
+          "width": 0.0007099999999999884,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 03:15:00",
+          "direction": "bullish",
+          "low": 1.13964,
+          "high": 1.13983,
+          "width": 0.00018999999999991246,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 04:45:00",
+          "direction": "bearish",
+          "low": 1.13946,
+          "high": 1.13958,
+          "width": 0.00012000000000012001,
+          "required": 0.00010700000000001264,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 05:45:00",
+          "direction": "bearish",
+          "low": 1.1385,
+          "high": 1.13917,
+          "width": 0.0006699999999999484,
+          "required": 0.00010700000000001264,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 06:00:00",
+          "direction": "bearish",
+          "low": 1.1379,
+          "high": 1.13827,
+          "width": 0.00036999999999998145,
+          "required": 0.00010700000000001264,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:15:00",
+          "direction": "bullish",
+          "low": 1.13784,
+          "high": 1.13861,
+          "width": 0.0007699999999999374,
+          "required": 0.00010700000000001264,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 07:45:00",
+          "direction": "bearish",
+          "low": 1.13826,
+          "high": 1.13861,
+          "width": 0.00034999999999985043,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:00:00",
+          "direction": "bearish",
+          "low": 1.13709,
+          "high": 1.1381,
+          "width": 0.0010099999999999554,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 08:30:00",
+          "direction": "bearish",
+          "low": 1.13541,
+          "high": 1.13641,
+          "width": 0.0009999999999998899,
+          "required": 0.00010799999999999699,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 13:30:00",
+          "direction": "bullish",
+          "low": 1.13574,
+          "high": 1.13605,
+          "width": 0.00031000000000003247,
+          "required": 0.00011300000000000754,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:00:00",
+          "direction": "bearish",
+          "low": 1.13588,
+          "high": 1.13646,
+          "width": 0.0005800000000000249,
+          "required": 0.00011600000000000499,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 15:45:00",
+          "direction": "bearish",
+          "low": 1.13464,
+          "high": 1.13485,
+          "width": 0.00020999999999982144,
+          "required": 0.00011900000000000245,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 17:30:00",
+          "direction": "bullish",
+          "low": 1.13286,
+          "high": 1.13293,
+          "width": 7.00000000000145e-05,
+          "required": 0.0001239999999999908,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (0.000124)"
+        },
+        {
+          "candle3": "2025-05-27 21:00:00",
+          "direction": "bearish",
+          "low": 1.13313,
+          "high": 1.13344,
+          "width": 0.00031000000000003247,
+          "required": 0.00013100000000001443,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 21:15:00",
+          "direction": "bearish",
+          "low": 1.13288,
+          "high": 1.13298,
+          "width": 9.999999999998899e-05,
+          "required": 0.00013100000000001443,
+          "kept": false,
+          "reason": "width 0.0001 below 20% of the median range before it (0.000131)"
+        },
+        {
+          "candle3": "2025-05-27 23:15:00",
+          "direction": "bullish",
+          "low": 1.13313,
+          "high": 1.13346,
+          "width": 0.00032999999999994145,
+          "required": 0.0001340000000000119,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 01:15:00",
+          "direction": "bullish",
+          "low": 1.13378,
+          "high": 1.13388,
+          "width": 9.999999999998899e-05,
+          "required": 0.00013100000000001443,
+          "kept": false,
+          "reason": "width 0.0001 below 20% of the median range before it (0.000131)"
+        },
+        {
+          "candle3": "2025-05-28 01:30:00",
+          "direction": "bullish",
+          "low": 1.134,
+          "high": 1.13421,
+          "width": 0.00021000000000004349,
+          "required": 0.00013100000000001443,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:00:00",
+          "direction": "bearish",
+          "low": 1.13363,
+          "high": 1.13421,
+          "width": 0.0005800000000000249,
+          "required": 0.0001340000000000119,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 02:45:00",
+          "direction": "bearish",
+          "low": 1.13199,
+          "high": 1.13254,
+          "width": 0.0005500000000000504,
+          "required": 0.00014499999999997292,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 03:45:00",
+          "direction": "bearish",
+          "low": 1.13145,
+          "high": 1.13161,
+          "width": 0.00015999999999993797,
+          "required": 0.00014499999999997292,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 06:15:00",
+          "direction": "bearish",
+          "low": 1.13026,
+          "high": 1.13048,
+          "width": 0.00021999999999988695,
+          "required": 0.00014199999999997548,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 06:30:00",
+          "direction": "bearish",
+          "low": 1.12996,
+          "high": 1.13015,
+          "width": 0.00018999999999991246,
+          "required": 0.00014199999999999768,
+          "kept": true,
+          "reason": ""
+        }
+      ],
+      "gaps_kept": 49,
+      "swings": [
+        {
+          "time": "2025-05-27 19:45:00",
+          "price": 1.13386,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 21:30:00",
+          "price": 1.13325,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 22:00:00",
+          "price": 1.13242,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-27 23:45:00",
+          "price": 1.13367,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 00:15:00",
+          "price": 1.13311,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 01:30:00",
+          "price": 1.13454,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 02:00:00",
+          "price": 1.13173,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 03:30:00",
+          "price": 1.13256,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 04:15:00",
+          "price": 1.13004,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 04:45:00",
+          "price": 1.13129,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-28 05:15:00",
+          "price": 1.13025,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 05:45:00",
+          "price": 1.13081,
+          "kind": "high"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2025-05-27 06:00:00",
+          "level": 1.13688,
+          "extreme": 1.13687,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-27 15:30:00",
+          "level": 1.13405,
+          "extreme": 1.1338,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-27 19:30:00",
+          "level": 1.13367,
+          "extreme": 1.13368,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-28 02:00:00",
+          "level": 1.1323,
+          "extreme": 1.13173,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 03:30:00",
+          "level": 1.13106,
+          "extreme": 1.13073,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 06:15:00",
+          "level": 1.12973,
+          "extreme": 1.12956,
+          "implied": "BULLISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2025-05-28 02:30:00",
+          "level": 1.1323,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 02:45:00",
+          "level": 1.13173,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 03:30:00",
+          "level": 1.13131,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 03:45:00",
+          "level": 1.13106,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 06:00:00",
+          "level": 1.13025,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 06:45:00",
+          "level": 1.13081,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        }
+      ],
+      "zones": []
+    },
+    "1H": {
+      "candles": 300,
+      "last": "2025-05-28 06:00:00",
+      "bias": {
+        "bias": "NEUTRAL",
+        "liquidity": "BULLISH",
+        "balance": "BEARISH",
+        "notes": [
+          "liquidity: sell_side swept @ 1.12973 (0 candles ago) -> bullish",
+          "balance: last balance level bearish gap 1.13256-1.13340 (unmitigated) -> bearish",
+          "conflicting / incomplete -> 50/50"
+        ]
+      },
+      "gaps_geometric": [
+        {
+          "candle3": "2025-05-11 22:00:00",
+          "direction": "bearish",
+          "low": 1.12242,
+          "high": 1.12484,
+          "width": 0.0024200000000000887,
+          "required": 0.00023199999999996558,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-11 23:00:00",
+          "direction": "bearish",
+          "low": 1.12312,
+          "high": 1.12456,
+          "width": 0.0014400000000001079,
+          "required": 0.0002339999999999787,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-12 09:00:00",
+          "direction": "bearish",
+          "low": 1.11452,
+          "high": 1.1216,
+          "width": 0.007079999999999975,
+          "required": 0.00027599999999998736,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-12 18:00:00",
+          "direction": "bearish",
+          "low": 1.10883,
+          "high": 1.11003,
+          "width": 0.0012000000000000899,
+          "required": 0.00045799999999998067,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-13 01:00:00",
+          "direction": "bullish",
+          "low": 1.10944,
+          "high": 1.10948,
+          "width": 4.0000000000040004e-05,
+          "required": 0.00035700000000002955,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (0.000357)"
+        },
+        {
+          "candle3": "2025-05-13 14:00:00",
+          "direction": "bullish",
+          "low": 1.1112,
+          "high": 1.11272,
+          "width": 0.0015199999999999658,
+          "required": 0.0003000000000000114,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-13 16:00:00",
+          "direction": "bullish",
+          "low": 1.11484,
+          "high": 1.11567,
+          "width": 0.0008299999999998864,
+          "required": 0.0003200000000000092,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-13 17:00:00",
+          "direction": "bullish",
+          "low": 1.11641,
+          "high": 1.11645,
+          "width": 4.0000000000040004e-05,
+          "required": 0.0003220000000000223,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (0.000322)"
+        },
+        {
+          "candle3": "2025-05-13 20:00:00",
+          "direction": "bullish",
+          "low": 1.11796,
+          "high": 1.11825,
+          "width": 0.00028999999999990145,
+          "required": 0.0003200000000000092,
+          "kept": false,
+          "reason": "width 0.00029 below 20% of the median range before it (0.00032)"
+        },
+        {
+          "candle3": "2025-05-14 09:00:00",
+          "direction": "bullish",
+          "low": 1.11984,
+          "high": 1.12125,
+          "width": 0.0014100000000001334,
+          "required": 0.00028300000000001105,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-14 10:00:00",
+          "direction": "bullish",
+          "low": 1.12164,
+          "high": 1.12309,
+          "width": 0.0014499999999999513,
+          "required": 0.00028600000000000847,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-14 18:00:00",
+          "direction": "bearish",
+          "low": 1.11968,
+          "high": 1.11973,
+          "width": 4.999999999988347e-05,
+          "required": 0.0003200000000000092,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (0.00032)"
+        },
+        {
+          "candle3": "2025-05-14 20:00:00",
+          "direction": "bearish",
+          "low": 1.1178,
+          "high": 1.11813,
+          "width": 0.0003300000000001635,
+          "required": 0.0003200000000000092,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-14 23:00:00",
+          "direction": "bullish",
+          "low": 1.11749,
+          "high": 1.11762,
+          "width": 0.00012999999999996348,
+          "required": 0.0003049999999999997,
+          "kept": false,
+          "reason": "width 0.00013 below 20% of the median range before it (0.000305)"
+        },
+        {
+          "candle3": "2025-05-15 00:00:00",
+          "direction": "bullish",
+          "low": 1.11773,
+          "high": 1.11802,
+          "width": 0.0002900000000001235,
+          "required": 0.0003000000000000114,
+          "kept": false,
+          "reason": "width 0.00029 below 20% of the median range before it (0.0003)"
+        },
+        {
+          "candle3": "2025-05-15 02:00:00",
+          "direction": "bullish",
+          "low": 1.1188,
+          "high": 1.11905,
+          "width": 0.0002500000000000835,
+          "required": 0.0003000000000000114,
+          "kept": false,
+          "reason": "width 0.00025 below 20% of the median range before it (0.0003)"
+        },
+        {
+          "candle3": "2025-05-15 21:00:00",
+          "direction": "bullish",
+          "low": 1.11794,
+          "high": 1.11819,
+          "width": 0.0002500000000000835,
+          "required": 0.0003049999999999997,
+          "kept": false,
+          "reason": "width 0.00025 below 20% of the median range before it (0.000305)"
+        },
+        {
+          "candle3": "2025-05-16 00:00:00",
+          "direction": "bullish",
+          "low": 1.1189,
+          "high": 1.11893,
+          "width": 2.999999999997449e-05,
+          "required": 0.0002939999999999943,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (0.000294)"
+        },
+        {
+          "candle3": "2025-05-16 02:00:00",
+          "direction": "bullish",
+          "low": 1.11937,
+          "high": 1.11981,
+          "width": 0.00043999999999999595,
+          "required": 0.0003049999999999997,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-16 07:00:00",
+          "direction": "bullish",
+          "low": 1.12041,
+          "high": 1.12071,
+          "width": 0.000300000000000189,
+          "required": 0.00028699999999999283,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-16 16:00:00",
+          "direction": "bearish",
+          "low": 1.11585,
+          "high": 1.11879,
+          "width": 0.0029399999999999427,
+          "required": 0.0002800000000000136,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-16 17:00:00",
+          "direction": "bearish",
+          "low": 1.11476,
+          "high": 1.11514,
+          "width": 0.00038000000000004697,
+          "required": 0.0002800000000000136,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-16 20:00:00",
+          "direction": "bullish",
+          "low": 1.11475,
+          "high": 1.11476,
+          "width": 1.0000000000065512e-05,
+          "required": 0.0002709999999999768,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (0.000271)"
+        },
+        {
+          "candle3": "2025-05-18 22:00:00",
+          "direction": "bullish",
+          "low": 1.11584,
+          "high": 1.11713,
+          "width": 0.0012900000000000134,
+          "required": 0.0002610000000000001,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-18 23:00:00",
+          "direction": "bullish",
+          "low": 1.11657,
+          "high": 1.11711,
+          "width": 0.0005399999999999849,
+          "required": 0.00025400000000002086,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 08:00:00",
+          "direction": "bullish",
+          "low": 1.11881,
+          "high": 1.12055,
+          "width": 0.0017399999999998528,
+          "required": 0.00027399999999999647,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 09:00:00",
+          "direction": "bullish",
+          "low": 1.12123,
+          "high": 1.12357,
+          "width": 0.0023400000000000087,
+          "required": 0.00027399999999999647,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 10:00:00",
+          "direction": "bullish",
+          "low": 1.12448,
+          "high": 1.12548,
+          "width": 0.001000000000000112,
+          "required": 0.0002800000000000136,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 11:00:00",
+          "direction": "bullish",
+          "low": 1.12591,
+          "high": 1.12683,
+          "width": 0.0009200000000000319,
+          "required": 0.00028699999999999283,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 17:00:00",
+          "direction": "bearish",
+          "low": 1.12397,
+          "high": 1.12413,
+          "width": 0.00016000000000016001,
+          "required": 0.0003220000000000001,
+          "kept": false,
+          "reason": "width 0.00016 below 20% of the median range before it (0.000322)"
+        },
+        {
+          "candle3": "2025-05-19 21:00:00",
+          "direction": "bullish",
+          "low": 1.12366,
+          "high": 1.12388,
+          "width": 0.00021999999999988695,
+          "required": 0.00028699999999999283,
+          "kept": false,
+          "reason": "width 0.00022 below 20% of the median range before it (0.000287)"
+        },
+        {
+          "candle3": "2025-05-20 01:00:00",
+          "direction": "bearish",
+          "low": 1.12322,
+          "high": 1.12349,
+          "width": 0.00026999999999999247,
+          "required": 0.0002800000000000136,
+          "kept": false,
+          "reason": "width 0.00027 below 20% of the median range before it (0.00028)"
+        },
+        {
+          "candle3": "2025-05-20 07:00:00",
+          "direction": "bullish",
+          "low": 1.12504,
+          "high": 1.12505,
+          "width": 1.0000000000065512e-05,
+          "required": 0.0003139999999999921,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (0.000314)"
+        },
+        {
+          "candle3": "2025-05-20 19:00:00",
+          "direction": "bullish",
+          "low": 1.12577,
+          "high": 1.12711,
+          "width": 0.0013400000000001189,
+          "required": 0.0003139999999999921,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-21 01:00:00",
+          "direction": "bullish",
+          "low": 1.1287,
+          "high": 1.12875,
+          "width": 4.999999999988347e-05,
+          "required": 0.00027399999999999647,
+          "kept": false,
+          "reason": "width 5e-05 below 20% of the median range before it (0.000274)"
+        },
+        {
+          "candle3": "2025-05-21 04:00:00",
+          "direction": "bullish",
+          "low": 1.13026,
+          "high": 1.13187,
+          "width": 0.0016099999999998893,
+          "required": 0.00029100000000001905,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 08:00:00",
+          "direction": "bearish",
+          "low": 1.13246,
+          "high": 1.13249,
+          "width": 2.999999999997449e-05,
+          "required": 0.00032900000000000155,
+          "kept": false,
+          "reason": "width 3e-05 below 20% of the median range before it (0.000329)"
+        },
+        {
+          "candle3": "2025-05-22 11:00:00",
+          "direction": "bearish",
+          "low": 1.12996,
+          "high": 1.13013,
+          "width": 0.00017000000000000348,
+          "required": 0.0003320000000000212,
+          "kept": false,
+          "reason": "width 0.00017 below 20% of the median range before it (0.000332)"
+        },
+        {
+          "candle3": "2025-05-22 20:00:00",
+          "direction": "bullish",
+          "low": 1.12707,
+          "high": 1.12777,
+          "width": 0.0006999999999999229,
+          "required": 0.0003369999999999873,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 02:00:00",
+          "direction": "bullish",
+          "low": 1.12888,
+          "high": 1.12951,
+          "width": 0.0006299999999999084,
+          "required": 0.0003320000000000212,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 03:00:00",
+          "direction": "bullish",
+          "low": 1.13002,
+          "high": 1.1308,
+          "width": 0.0007800000000000029,
+          "required": 0.00033500000000001866,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-23 09:00:00",
+          "direction": "bullish",
+          "low": 1.13266,
+          "high": 1.13327,
+          "width": 0.0006099999999999994,
+          "required": 0.0003320000000000212,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 00:00:00",
+          "direction": "bullish",
+          "low": 1.13679,
+          "high": 1.13696,
+          "width": 0.00017000000000000348,
+          "required": 0.00032900000000000155,
+          "kept": false,
+          "reason": "width 0.00017 below 20% of the median range before it (0.000329)"
+        },
+        {
+          "candle3": "2025-05-26 02:00:00",
+          "direction": "bullish",
+          "low": 1.13816,
+          "high": 1.13878,
+          "width": 0.0006199999999998429,
+          "required": 0.00033199999999999896,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 03:00:00",
+          "direction": "bullish",
+          "low": 1.13977,
+          "high": 1.14079,
+          "width": 0.0010200000000000209,
+          "required": 0.0003320000000000212,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 09:00:00",
+          "direction": "bearish",
+          "low": 1.13952,
+          "high": 1.14077,
+          "width": 0.0012499999999999734,
+          "required": 0.00033199999999999896,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 10:00:00",
+          "direction": "bearish",
+          "low": 1.13856,
+          "high": 1.13883,
+          "width": 0.00026999999999999247,
+          "required": 0.00033199999999999896,
+          "kept": false,
+          "reason": "width 0.00027 below 20% of the median range before it (0.000332)"
+        },
+        {
+          "candle3": "2025-05-26 21:00:00",
+          "direction": "bullish",
+          "low": 1.1383,
+          "high": 1.13838,
+          "width": 7.999999999985796e-05,
+          "required": 0.00029700000000001394,
+          "kept": false,
+          "reason": "width 8e-05 below 20% of the median range before it (0.000297)"
+        },
+        {
+          "candle3": "2025-05-27 00:00:00",
+          "direction": "bullish",
+          "low": 1.13849,
+          "high": 1.13868,
+          "width": 0.00018999999999991246,
+          "required": 0.0002850000000000241,
+          "kept": false,
+          "reason": "width 0.00019 below 20% of the median range before it (0.000285)"
+        },
+        {
+          "candle3": "2025-05-27 06:00:00",
+          "direction": "bearish",
+          "low": 1.1379,
+          "high": 1.139,
+          "width": 0.001100000000000101,
+          "required": 0.00030600000000002847,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 09:00:00",
+          "direction": "bearish",
+          "low": 1.13576,
+          "high": 1.13639,
+          "width": 0.0006299999999999084,
+          "required": 0.00030100000000001794,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 14:00:00",
+          "direction": "bullish",
+          "low": 1.13542,
+          "high": 1.13554,
+          "width": 0.00011999999999989797,
+          "required": 0.00029700000000001394,
+          "kept": false,
+          "reason": "width 0.00012 below 20% of the median range before it (0.000297)"
+        },
+        {
+          "candle3": "2025-05-27 16:00:00",
+          "direction": "bearish",
+          "low": 1.13412,
+          "high": 1.13554,
+          "width": 0.0014199999999999768,
+          "required": 0.00029700000000001394,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 17:00:00",
+          "direction": "bearish",
+          "low": 1.13352,
+          "high": 1.1338,
+          "width": 0.00027999999999983594,
+          "required": 0.00029700000000001394,
+          "kept": false,
+          "reason": "width 0.00028 below 20% of the median range before it (0.000297)"
+        },
+        {
+          "candle3": "2025-05-28 03:00:00",
+          "direction": "bearish",
+          "low": 1.13256,
+          "high": 1.1334,
+          "width": 0.0008399999999999519,
+          "required": 0.00026199999999998447,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-28 04:00:00",
+          "direction": "bearish",
+          "low": 1.13129,
+          "high": 1.1315,
+          "width": 0.00021000000000004349,
+          "required": 0.00026199999999998447,
+          "kept": false,
+          "reason": "width 0.00021 below 20% of the median range before it (0.000262)"
+        }
+      ],
+      "gaps_kept": 32,
+      "swings": [
+        {
+          "time": "2025-05-26 12:00:00",
+          "price": 1.13868,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-26 13:00:00",
+          "price": 1.13688,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-26 16:00:00",
+          "price": 1.13854,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-26 17:00:00",
+          "price": 1.13757,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-26 22:00:00",
+          "price": 1.13786,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-27 02:00:00",
+          "price": 1.14071,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 08:00:00",
+          "price": 1.1337,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-27 14:00:00",
+          "price": 1.13753,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 16:00:00",
+          "price": 1.1323,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-27 19:00:00",
+          "price": 1.13386,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 22:00:00",
+          "price": 1.13242,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-28 01:00:00",
+          "price": 1.13454,
+          "kind": "high"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2025-05-25 23:00:00",
+          "level": 1.13754,
+          "extreme": 1.13793,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-26 21:00:00",
+          "level": 1.13868,
+          "extreme": 1.13881,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-27 06:00:00",
+          "level": 1.13688,
+          "extreme": 1.13667,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-27 06:00:00",
+          "level": 1.13757,
+          "extreme": 1.13667,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-28 01:00:00",
+          "level": 1.13386,
+          "extreme": 1.13454,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-28 06:00:00",
+          "level": 1.12973,
+          "extreme": 1.12953,
+          "implied": "BULLISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2025-05-26 01:00:00",
+          "level": 1.13754,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-26 23:00:00",
+          "level": 1.13868,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-27 07:00:00",
+          "level": 1.13757,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-27 16:00:00",
+          "level": 1.1337,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 02:00:00",
+          "level": 1.1323,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-28 03:00:00",
+          "level": 1.13077,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        }
+      ],
+      "zones": [
+        {
+          "direction": "BEARISH",
+          "low": 1.11452,
+          "high": 1.1219,
+          "x": 1.119,
+          "b": [
+            1.11452,
+            1.1216
+          ],
+          "p": 1.1219,
+          "formed": "2025-05-12 09:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.11064,
+          "high": 1.11272,
+          "x": 1.11242,
+          "b": [
+            1.1112,
+            1.11272
+          ],
+          "p": 1.11064,
+          "formed": "2025-05-13 14:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.11814,
+          "high": 1.12125,
+          "x": 1.12006,
+          "b": [
+            1.11984,
+            1.12125
+          ],
+          "p": 1.11814,
+          "formed": "2025-05-14 09:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12125,
+          "high": 1.12355,
+          "x": 1.12355,
+          "b": [
+            1.12164,
+            1.12309
+          ],
+          "p": 1.12125,
+          "formed": "2025-05-14 10:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.1178,
+          "high": 1.11899,
+          "x": 1.11798,
+          "b": [
+            1.1178,
+            1.11813
+          ],
+          "p": 1.11899,
+          "formed": "2025-05-14 20:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12009,
+          "high": 1.12086,
+          "x": 1.12086,
+          "b": [
+            1.12041,
+            1.12071
+          ],
+          "p": 1.12009,
+          "formed": "2025-05-16 07:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.11585,
+          "high": 1.12021,
+          "x": 1.11878,
+          "b": [
+            1.11585,
+            1.11879
+          ],
+          "p": 1.12021,
+          "formed": "2025-05-16 16:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.11816,
+          "high": 1.12055,
+          "x": 1.11988,
+          "b": [
+            1.11881,
+            1.12055
+          ],
+          "p": 1.11816,
+          "formed": "2025-05-19 08:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12055,
+          "high": 1.12357,
+          "x": 1.12195,
+          "b": [
+            1.12123,
+            1.12357
+          ],
+          "p": 1.12055,
+          "formed": "2025-05-19 09:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12357,
+          "high": 1.12655,
+          "x": 1.12655,
+          "b": [
+            1.12448,
+            1.12548
+          ],
+          "p": 1.12357,
+          "formed": "2025-05-19 10:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12547,
+          "high": 1.12778,
+          "x": 1.12778,
+          "b": [
+            1.12577,
+            1.12711
+          ],
+          "p": 1.12547,
+          "formed": "2025-05-20 20:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12672,
+          "high": 1.12856,
+          "x": 1.12856,
+          "b": [
+            1.12707,
+            1.12777
+          ],
+          "p": 1.12672,
+          "formed": "2025-05-22 23:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12787,
+          "high": 1.13148,
+          "x": 1.13148,
+          "b": [
+            1.12888,
+            1.12951
+          ],
+          "p": 1.12787,
+          "formed": "2025-05-23 05:00:00",
+          "status": "active",
+          "visit": {
+            "visits": 1,
+            "inside": true,
+            "touch": "2025-05-28 03:00:00"
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.13094,
+          "high": 1.13448,
+          "x": 1.13448,
+          "b": [
+            1.13266,
+            1.13327
+          ],
+          "p": 1.13094,
+          "formed": "2025-05-23 10:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.13743,
+          "high": 1.13878,
+          "x": 1.13754,
+          "b": [
+            1.13816,
+            1.13878
+          ],
+          "p": 1.13743,
+          "formed": "2025-05-26 02:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.13757,
+          "high": 1.13977,
+          "x": 1.13757,
+          "b": [
+            1.1379,
+            1.139
+          ],
+          "p": 1.13977,
+          "formed": "2025-05-27 07:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.1337,
+          "high": 1.13612,
+          "x": 1.1337,
+          "b": [
+            1.13412,
+            1.13554
+          ],
+          "p": 1.13612,
+          "formed": "2025-05-27 16:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 1,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.1323,
+          "high": 1.13387,
+          "x": 1.1323,
+          "b": [
+            1.13256,
+            1.1334
+          ],
+          "p": 1.13387,
+          "formed": "2025-05-28 03:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        }
+      ]
+    },
+    "4H": {
+      "candles": 300,
+      "last": "2025-05-28 01:00:00",
+      "bias": {
+        "bias": "BEARISH",
+        "liquidity": "BEARISH",
+        "balance": "BEARISH",
+        "notes": [
+          "liquidity: BOS closed through 1.13230 (0 candles ago) -> bearish",
+          "balance: last balance level bearish gap 1.13578-1.13878 (mitigated) -> bearish",
+          "aligned -> bearish"
+        ]
+      },
+      "gaps_geometric": [
+        {
+          "candle3": "2025-03-24 17:00:00",
+          "direction": "bearish",
+          "low": 1.0813,
+          "high": 1.08215,
+          "width": 0.0008500000000000174,
+          "required": 0.0005659999999999777,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-25 21:00:00",
+          "direction": "bearish",
+          "low": 1.0794,
+          "high": 1.0797,
+          "width": 0.000300000000000189,
+          "required": 0.0005749999999999922,
+          "kept": false,
+          "reason": "width 0.0003 below 20% of the median range before it (0.000575)"
+        },
+        {
+          "candle3": "2025-03-26 21:00:00",
+          "direction": "bearish",
+          "low": 1.07574,
+          "high": 1.07673,
+          "width": 0.0009900000000000464,
+          "required": 0.0005589999999999984,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-28 17:00:00",
+          "direction": "bullish",
+          "low": 1.07918,
+          "high": 1.0812,
+          "width": 0.0020199999999999108,
+          "required": 0.0005560000000000009,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-02 17:00:00",
+          "direction": "bullish",
+          "low": 1.08081,
+          "high": 1.08467,
+          "width": 0.0038599999999999746,
+          "required": 0.0005479999999999929,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-03 01:00:00",
+          "direction": "bullish",
+          "low": 1.08675,
+          "high": 1.08795,
+          "width": 0.0011999999999998678,
+          "required": 0.0005479999999999929,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-03 09:00:00",
+          "direction": "bullish",
+          "low": 1.09244,
+          "high": 1.09702,
+          "width": 0.0045800000000000285,
+          "required": 0.0005560000000000009,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-03 13:00:00",
+          "direction": "bullish",
+          "low": 1.099,
+          "high": 1.10409,
+          "width": 0.005090000000000039,
+          "required": 0.0005589999999999984,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-08 05:00:00",
+          "direction": "bullish",
+          "low": 1.09203,
+          "high": 1.09211,
+          "width": 7.999999999985796e-05,
+          "required": 0.0006099999999999994,
+          "kept": false,
+          "reason": "width 8e-05 below 20% of the median range before it (0.00061)"
+        },
+        {
+          "candle3": "2025-04-09 05:00:00",
+          "direction": "bullish",
+          "low": 1.09849,
+          "high": 1.10091,
+          "width": 0.0024200000000000887,
+          "required": 0.0006620000000000293,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-09 21:00:00",
+          "direction": "bearish",
+          "low": 1.09626,
+          "high": 1.10258,
+          "width": 0.006319999999999881,
+          "required": 0.0006759999999999878,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-10 09:00:00",
+          "direction": "bullish",
+          "low": 1.09891,
+          "high": 1.10159,
+          "width": 0.0026800000000000157,
+          "required": 0.0006860000000000089,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-10 13:00:00",
+          "direction": "bullish",
+          "low": 1.10306,
+          "high": 1.10677,
+          "width": 0.003710000000000102,
+          "required": 0.0006900000000000351,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-10 17:00:00",
+          "direction": "bullish",
+          "low": 1.10883,
+          "high": 1.11584,
+          "width": 0.007009999999999961,
+          "required": 0.0007100000000000106,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-11 01:00:00",
+          "direction": "bullish",
+          "low": 1.12414,
+          "high": 1.1251,
+          "width": 0.0009600000000000719,
+          "required": 0.0007390000000000008,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-14 17:00:00",
+          "direction": "bearish",
+          "low": 1.13704,
+          "high": 1.13714,
+          "width": 9.999999999998899e-05,
+          "required": 0.0007910000000000084,
+          "kept": false,
+          "reason": "width 0.0001 below 20% of the median range before it (0.000791)"
+        },
+        {
+          "candle3": "2025-04-15 17:00:00",
+          "direction": "bearish",
+          "low": 1.12918,
+          "high": 1.13139,
+          "width": 0.0022099999999998232,
+          "required": 0.0008649999999999825,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-16 01:00:00",
+          "direction": "bullish",
+          "low": 1.12918,
+          "high": 1.12925,
+          "width": 7.00000000000145e-05,
+          "required": 0.0008490000000000109,
+          "kept": false,
+          "reason": "width 7e-05 below 20% of the median range before it (0.000849)"
+        },
+        {
+          "candle3": "2025-04-16 05:00:00",
+          "direction": "bullish",
+          "low": 1.1299,
+          "high": 1.13326,
+          "width": 0.0033600000000000296,
+          "required": 0.0008649999999999825,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-17 05:00:00",
+          "direction": "bearish",
+          "low": 1.13788,
+          "high": 1.13816,
+          "width": 0.000280000000000058,
+          "required": 0.0009149999999999991,
+          "kept": false,
+          "reason": "width 0.00028 below 20% of the median range before it (0.000915)"
+        },
+        {
+          "candle3": "2025-04-18 13:00:00",
+          "direction": "bullish",
+          "low": 1.13763,
+          "high": 1.13769,
+          "width": 6.000000000017103e-05,
+          "required": 0.000922999999999985,
+          "kept": false,
+          "reason": "width 6e-05 below 20% of the median range before it (0.000923)"
+        },
+        {
+          "candle3": "2025-04-18 17:00:00",
+          "direction": "bullish",
+          "low": 1.13826,
+          "high": 1.13868,
+          "width": 0.0004199999999998649,
+          "required": 0.000922999999999985,
+          "kept": false,
+          "reason": "width 0.00042 below 20% of the median range before it (0.000923)"
+        },
+        {
+          "candle3": "2025-04-21 01:00:00",
+          "direction": "bullish",
+          "low": 1.1394,
+          "high": 1.14488,
+          "width": 0.005479999999999929,
+          "required": 0.0009359999999999813,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-21 05:00:00",
+          "direction": "bullish",
+          "low": 1.14582,
+          "high": 1.14987,
+          "width": 0.004049999999999887,
+          "required": 0.0009589999999999988,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-22 17:00:00",
+          "direction": "bearish",
+          "low": 1.14686,
+          "high": 1.14837,
+          "width": 0.0015099999999999003,
+          "required": 0.0010139999999999817,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-22 21:00:00",
+          "direction": "bearish",
+          "low": 1.14298,
+          "high": 1.14558,
+          "width": 0.0025999999999999357,
+          "required": 0.0010139999999999817,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-23 01:00:00",
+          "direction": "bearish",
+          "low": 1.14152,
+          "high": 1.14196,
+          "width": 0.00043999999999999595,
+          "required": 0.0010170000000000012,
+          "kept": false,
+          "reason": "width 0.00044 below 20% of the median range before it (0.001017)"
+        },
+        {
+          "candle3": "2025-04-23 17:00:00",
+          "direction": "bearish",
+          "low": 1.13656,
+          "high": 1.13796,
+          "width": 0.0014000000000000679,
+          "required": 0.0011800000000000256,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-24 09:00:00",
+          "direction": "bullish",
+          "low": 1.13574,
+          "high": 1.1363,
+          "width": 0.000560000000000116,
+          "required": 0.0011800000000000256,
+          "kept": false,
+          "reason": "width 0.00056 below 20% of the median range before it (0.00118)"
+        },
+        {
+          "candle3": "2025-04-25 05:00:00",
+          "direction": "bearish",
+          "low": 1.1368,
+          "high": 1.13703,
+          "width": 0.00022999999999995246,
+          "required": 0.001045000000000007,
+          "kept": false,
+          "reason": "width 0.00023 below 20% of the median range before it (0.001045)"
+        },
+        {
+          "candle3": "2025-04-28 17:00:00",
+          "direction": "bullish",
+          "low": 1.13602,
+          "high": 1.13849,
+          "width": 0.0024699999999999722,
+          "required": 0.0010000000000000009,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-01 05:00:00",
+          "direction": "bearish",
+          "low": 1.1314,
+          "high": 1.1317,
+          "width": 0.00029999999999996696,
+          "required": 0.0008500000000000174,
+          "kept": false,
+          "reason": "width 0.0003 below 20% of the median range before it (0.00085)"
+        },
+        {
+          "candle3": "2025-05-01 17:00:00",
+          "direction": "bearish",
+          "low": 1.12933,
+          "high": 1.13097,
+          "width": 0.0016400000000000858,
+          "required": 0.0008199999999999986,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-02 05:00:00",
+          "direction": "bullish",
+          "low": 1.12988,
+          "high": 1.13009,
+          "width": 0.00021000000000004349,
+          "required": 0.0008030000000000204,
+          "kept": false,
+          "reason": "width 0.00021 below 20% of the median range before it (0.000803)"
+        },
+        {
+          "candle3": "2025-05-02 09:00:00",
+          "direction": "bullish",
+          "low": 1.13153,
+          "high": 1.13159,
+          "width": 6.000000000017103e-05,
+          "required": 0.0008030000000000204,
+          "kept": false,
+          "reason": "width 6e-05 below 20% of the median range before it (0.000803)"
+        },
+        {
+          "candle3": "2025-05-05 01:00:00",
+          "direction": "bullish",
+          "low": 1.1305,
+          "high": 1.1314,
+          "width": 0.0008999999999999009,
+          "required": 0.0007879999999999666,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-07 21:00:00",
+          "direction": "bearish",
+          "low": 1.13141,
+          "high": 1.13413,
+          "width": 0.0027200000000000557,
+          "required": 0.0007420000000000204,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-08 17:00:00",
+          "direction": "bearish",
+          "low": 1.12495,
+          "high": 1.1275,
+          "width": 0.0025500000000000522,
+          "required": 0.0007360000000000034,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-08 21:00:00",
+          "direction": "bearish",
+          "low": 1.12328,
+          "high": 1.12343,
+          "width": 0.00014999999999987246,
+          "required": 0.0007360000000000034,
+          "kept": false,
+          "reason": "width 0.00015 below 20% of the median range before it (0.000736)"
+        },
+        {
+          "candle3": "2025-05-09 09:00:00",
+          "direction": "bullish",
+          "low": 1.12332,
+          "high": 1.1242,
+          "width": 0.0008799999999999919,
+          "required": 0.0007340000000000124,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-11 21:00:00",
+          "direction": "bearish",
+          "low": 1.12363,
+          "high": 1.12484,
+          "width": 0.0012100000000001554,
+          "required": 0.0007340000000000124,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-12 01:00:00",
+          "direction": "bearish",
+          "low": 1.12426,
+          "high": 1.12456,
+          "width": 0.00029999999999996696,
+          "required": 0.0007380000000000164,
+          "kept": false,
+          "reason": "width 0.0003 below 20% of the median range before it (0.000738)"
+        },
+        {
+          "candle3": "2025-05-12 09:00:00",
+          "direction": "bearish",
+          "low": 1.11452,
+          "high": 1.12223,
+          "width": 0.007710000000000106,
+          "required": 0.0007420000000000204,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-12 21:00:00",
+          "direction": "bearish",
+          "low": 1.10999,
+          "high": 1.11003,
+          "width": 4.0000000000040004e-05,
+          "required": 0.0007479999999999931,
+          "kept": false,
+          "reason": "width 4e-05 below 20% of the median range before it (0.000748)"
+        },
+        {
+          "candle3": "2025-05-13 05:00:00",
+          "direction": "bullish",
+          "low": 1.10999,
+          "high": 1.11012,
+          "width": 0.00012999999999996348,
+          "required": 0.0007449999999999957,
+          "kept": false,
+          "reason": "width 0.00013 below 20% of the median range before it (0.000745)"
+        },
+        {
+          "candle3": "2025-05-13 17:00:00",
+          "direction": "bullish",
+          "low": 1.11175,
+          "high": 1.11645,
+          "width": 0.0046999999999999265,
+          "required": 0.0007380000000000164,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-13 21:00:00",
+          "direction": "bullish",
+          "low": 1.11776,
+          "high": 1.11813,
+          "width": 0.00036999999999998145,
+          "required": 0.0007340000000000124,
+          "kept": false,
+          "reason": "width 0.00037 below 20% of the median range before it (0.000734)"
+        },
+        {
+          "candle3": "2025-05-14 09:00:00",
+          "direction": "bullish",
+          "low": 1.11976,
+          "high": 1.12125,
+          "width": 0.0014899999999999913,
+          "required": 0.0007319999999999994,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-14 21:00:00",
+          "direction": "bearish",
+          "low": 1.1188,
+          "high": 1.11973,
+          "width": 0.0009299999999998754,
+          "required": 0.0007380000000000164,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-16 05:00:00",
+          "direction": "bullish",
+          "low": 1.11937,
+          "high": 1.11961,
+          "width": 0.00024000000000001798,
+          "required": 0.0006970000000000143,
+          "kept": false,
+          "reason": "width 0.00024 below 20% of the median range before it (0.000697)"
+        },
+        {
+          "candle3": "2025-05-16 17:00:00",
+          "direction": "bearish",
+          "low": 1.11584,
+          "high": 1.11878,
+          "width": 0.0029400000000001647,
+          "required": 0.0006870000000000154,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-18 21:00:00",
+          "direction": "bullish",
+          "low": 1.11584,
+          "high": 1.11711,
+          "width": 0.0012700000000001044,
+          "required": 0.0006849999999999801,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-19 01:00:00",
+          "direction": "bullish",
+          "low": 1.11657,
+          "high": 1.11721,
+          "width": 0.0006399999999999739,
+          "required": 0.0006849999999999801,
+          "kept": false,
+          "reason": "width 0.00064 below 20% of the median range before it (0.000685)"
+        },
+        {
+          "candle3": "2025-05-19 09:00:00",
+          "direction": "bullish",
+          "low": 1.11988,
+          "high": 1.12357,
+          "width": 0.003689999999999971,
+          "required": 0.0006820000000000049,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-20 21:00:00",
+          "direction": "bullish",
+          "low": 1.12697,
+          "high": 1.12782,
+          "width": 0.0008500000000000174,
+          "required": 0.0006859999999999866,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-21 01:00:00",
+          "direction": "bullish",
+          "low": 1.12825,
+          "high": 1.12866,
+          "width": 0.00041000000000002146,
+          "required": 0.0006849999999999801,
+          "kept": false,
+          "reason": "width 0.00041 below 20% of the median range before it (0.000685)"
+        },
+        {
+          "candle3": "2025-05-21 05:00:00",
+          "direction": "bullish",
+          "low": 1.129,
+          "high": 1.1314,
+          "width": 0.0023999999999999577,
+          "required": 0.0006859999999999866,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-22 17:00:00",
+          "direction": "bearish",
+          "low": 1.12878,
+          "high": 1.12902,
+          "width": 0.00024000000000001798,
+          "required": 0.0006970000000000143,
+          "kept": false,
+          "reason": "width 0.00024 below 20% of the median range before it (0.000697)"
+        },
+        {
+          "candle3": "2025-05-23 05:00:00",
+          "direction": "bullish",
+          "low": 1.12888,
+          "high": 1.13077,
+          "width": 0.0018899999999999473,
+          "required": 0.0006870000000000154,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-26 01:00:00",
+          "direction": "bullish",
+          "low": 1.13681,
+          "high": 1.13743,
+          "width": 0.0006199999999998429,
+          "required": 0.0007149999999999991,
+          "kept": false,
+          "reason": "width 0.00062 below 20% of the median range before it (0.000715)"
+        },
+        {
+          "candle3": "2025-05-26 05:00:00",
+          "direction": "bullish",
+          "low": 1.13816,
+          "high": 1.13883,
+          "width": 0.0006699999999999484,
+          "required": 0.0007149999999999991,
+          "kept": false,
+          "reason": "width 0.00067 below 20% of the median range before it (0.000715)"
+        },
+        {
+          "candle3": "2025-05-26 13:00:00",
+          "direction": "bearish",
+          "low": 1.13854,
+          "high": 1.13883,
+          "width": 0.00028999999999990145,
+          "required": 0.0006870000000000154,
+          "kept": false,
+          "reason": "width 0.00029 below 20% of the median range before it (0.000687)"
+        },
+        {
+          "candle3": "2025-05-27 01:00:00",
+          "direction": "bullish",
+          "low": 1.13853,
+          "high": 1.13878,
+          "width": 0.00024999999999986144,
+          "required": 0.0006849999999999801,
+          "kept": false,
+          "reason": "width 0.00025 below 20% of the median range before it (0.000685)"
+        },
+        {
+          "candle3": "2025-05-27 09:00:00",
+          "direction": "bearish",
+          "low": 1.13578,
+          "high": 1.13878,
+          "width": 0.0029999999999998916,
+          "required": 0.0006849999999999801,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-27 17:00:00",
+          "direction": "bearish",
+          "low": 1.13386,
+          "high": 1.13387,
+          "width": 9.999999999843467e-06,
+          "required": 0.0006820000000000049,
+          "kept": false,
+          "reason": "width 1e-05 below 20% of the median range before it (0.000682)"
+        }
+      ],
+      "gaps_kept": 38,
+      "swings": [
+        {
+          "time": "2025-05-19 09:00:00",
+          "price": 1.12879,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-20 01:00:00",
+          "price": 1.12178,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-20 05:00:00",
+          "price": 1.12778,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-20 13:00:00",
+          "price": 1.12235,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-21 17:00:00",
+          "price": 1.13628,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-22 17:00:00",
+          "price": 1.12558,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-23 09:00:00",
+          "price": 1.13754,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-23 13:00:00",
+          "price": 1.12973,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-26 01:00:00",
+          "price": 1.14185,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-26 13:00:00",
+          "price": 1.13688,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-27 01:00:00",
+          "price": 1.14071,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-27 13:00:00",
+          "price": 1.1323,
+          "kind": "low"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2025-05-06 01:00:00",
+          "level": 1.12905,
+          "extreme": 1.12797,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-06 13:00:00",
+          "level": 1.13646,
+          "extreme": 1.13694,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-08 05:00:00",
+          "level": 1.12797,
+          "extreme": 1.12701,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-05-23 09:00:00",
+          "level": 1.13628,
+          "extreme": 1.13754,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-25 21:00:00",
+          "level": 1.13808,
+          "extreme": 1.13816,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-25 21:00:00",
+          "level": 1.13754,
+          "extreme": 1.13816,
+          "implied": "BEARISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2025-05-20 21:00:00",
+          "level": 1.12879,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-21 01:00:00",
+          "level": 1.12928,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-23 17:00:00",
+          "level": 1.13628,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-26 01:00:00",
+          "level": 1.13754,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-27 05:00:00",
+          "level": 1.13688,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-28 01:00:00",
+          "level": 1.1323,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        }
+      ],
+      "zones": [
+        {
+          "direction": "BEARISH",
+          "low": 1.0797,
+          "high": 1.08303,
+          "x": 1.0797,
+          "b": [
+            1.0813,
+            1.08215
+          ],
+          "p": 1.08303,
+          "formed": "2025-03-24 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.07574,
+          "high": 1.07891,
+          "x": 1.07767,
+          "b": [
+            1.07574,
+            1.07673
+          ],
+          "p": 1.07891,
+          "formed": "2025-03-26 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.07847,
+          "high": 1.0821,
+          "x": 1.0821,
+          "b": [
+            1.07918,
+            1.0812
+          ],
+          "p": 1.07847,
+          "formed": "2025-03-28 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.07961,
+          "high": 1.08467,
+          "x": 1.08299,
+          "b": [
+            1.08081,
+            1.08467
+          ],
+          "p": 1.07961,
+          "formed": "2025-04-02 17:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.09709,
+          "high": 1.10091,
+          "x": 1.09916,
+          "b": [
+            1.09849,
+            1.10091
+          ],
+          "p": 1.09709,
+          "formed": "2025-04-09 05:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.09624,
+          "high": 1.10498,
+          "x": 1.10498,
+          "b": [
+            1.09891,
+            1.10159
+          ],
+          "p": 1.09624,
+          "formed": "2025-04-10 09:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.10677,
+          "high": 1.11584,
+          "x": 1.10948,
+          "b": [
+            1.10883,
+            1.11584
+          ],
+          "p": 1.10677,
+          "formed": "2025-04-10 17:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.12918,
+          "high": 1.13413,
+          "x": 1.12956,
+          "b": [
+            1.12918,
+            1.13139
+          ],
+          "p": 1.13413,
+          "formed": "2025-04-15 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12925,
+          "high": 1.13789,
+          "x": 1.13789,
+          "b": [
+            1.1299,
+            1.13326
+          ],
+          "p": 1.12925,
+          "formed": "2025-04-16 05:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.13925,
+          "high": 1.14488,
+          "x": 1.13972,
+          "b": [
+            1.1394,
+            1.14488
+          ],
+          "p": 1.13925,
+          "formed": "2025-04-21 01:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.14488,
+          "high": 1.14987,
+          "x": 1.14736,
+          "b": [
+            1.14582,
+            1.14987
+          ],
+          "p": 1.14488,
+          "formed": "2025-04-21 05:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.14686,
+          "high": 1.1492,
+          "x": 1.14815,
+          "b": [
+            1.14686,
+            1.14837
+          ],
+          "p": 1.1492,
+          "formed": "2025-04-22 17:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.13578,
+          "high": 1.14686,
+          "x": 1.13578,
+          "b": [
+            1.14298,
+            1.14558
+          ],
+          "p": 1.14686,
+          "formed": "2025-04-22 21:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 1,
+            "inside": true,
+            "touch": "2025-05-26 21:40:00"
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.13349,
+          "high": 1.14195,
+          "x": 1.13349,
+          "b": [
+            1.13656,
+            1.13796
+          ],
+          "p": 1.14195,
+          "formed": "2025-04-23 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.13393,
+          "high": 1.13885,
+          "x": 1.13885,
+          "b": [
+            1.13602,
+            1.13849
+          ],
+          "p": 1.13393,
+          "formed": "2025-04-28 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.12933,
+          "high": 1.13388,
+          "x": 1.13077,
+          "b": [
+            1.12933,
+            1.13097
+          ],
+          "p": 1.13388,
+          "formed": "2025-05-01 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.13141,
+          "high": 1.1365,
+          "x": 1.13248,
+          "b": [
+            1.13141,
+            1.13413
+          ],
+          "p": 1.1365,
+          "formed": "2025-05-07 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.12495,
+          "high": 1.13202,
+          "x": 1.12797,
+          "b": [
+            1.12495,
+            1.1275
+          ],
+          "p": 1.13202,
+          "formed": "2025-05-08 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.11964,
+          "high": 1.12574,
+          "x": 1.11964,
+          "b": [
+            1.12363,
+            1.12484
+          ],
+          "p": 1.12574,
+          "formed": "2025-05-12 05:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.11798,
+          "high": 1.1213,
+          "x": 1.11798,
+          "b": [
+            1.1188,
+            1.11973
+          ],
+          "p": 1.1213,
+          "formed": "2025-05-14 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.11584,
+          "high": 1.12058,
+          "x": 1.117,
+          "b": [
+            1.11584,
+            1.11878
+          ],
+          "p": 1.12058,
+          "formed": "2025-05-16 17:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.11446,
+          "high": 1.12195,
+          "x": 1.12195,
+          "b": [
+            1.11584,
+            1.11711
+          ],
+          "p": 1.11446,
+          "formed": "2025-05-19 05:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.1245,
+          "high": 1.12782,
+          "x": 1.12778,
+          "b": [
+            1.12697,
+            1.12782
+          ],
+          "p": 1.1245,
+          "formed": "2025-05-20 21:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12866,
+          "high": 1.1314,
+          "x": 1.12928,
+          "b": [
+            1.129,
+            1.1314
+          ],
+          "p": 1.12866,
+          "formed": "2025-05-21 05:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.12787,
+          "high": 1.13628,
+          "x": 1.13628,
+          "b": [
+            1.12888,
+            1.13077
+          ],
+          "p": 1.12787,
+          "formed": "2025-05-23 17:00:00",
+          "status": "active",
+          "visit": {
+            "visits": 1,
+            "inside": true,
+            "touch": "2025-05-27 08:20:00"
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.13578,
+          "high": 1.13977,
+          "x": 1.13688,
+          "b": [
+            1.13578,
+            1.13878
+          ],
+          "p": 1.13977,
+          "formed": "2025-05-27 09:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 1,
+            "inside": false,
+            "touch": null
+          }
+        }
+      ]
+    },
+    "1D": {
+      "candles": 250,
+      "last": "2025-05-26 21:00:00",
+      "bias": {
+        "bias": "BULLISH",
+        "liquidity": "BULLISH",
+        "balance": "BULLISH",
+        "notes": [
+          "liquidity: BOS closed through 1.13813 (1 candles ago) -> bullish",
+          "balance: last balance level bullish gap 1.13450-1.13624 (mitigated) -> bullish",
+          "aligned -> bullish"
+        ]
+      },
+      "gaps_geometric": [
+        {
+          "candle3": "2024-06-20 21:00:00",
+          "direction": "bearish",
+          "low": 1.07207,
+          "high": 1.07248,
+          "width": 0.00041000000000002146,
+          "required": 0.0010800000000000143,
+          "kept": false,
+          "reason": "width 0.00041 below 20% of the median range before it (0.00108)"
+        },
+        {
+          "candle3": "2024-07-03 21:00:00",
+          "direction": "bullish",
+          "low": 1.07472,
+          "high": 1.07837,
+          "width": 0.003650000000000153,
+          "required": 0.0010580000000000257,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-07-11 21:00:00",
+          "direction": "bullish",
+          "low": 1.08308,
+          "high": 1.08617,
+          "width": 0.003090000000000037,
+          "required": 0.0010270000000000001,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-07-23 21:00:00",
+          "direction": "bearish",
+          "low": 1.08666,
+          "high": 1.08732,
+          "width": 0.000660000000000105,
+          "required": 0.000994000000000006,
+          "kept": false,
+          "reason": "width 0.00066 below 20% of the median range before it (0.000994)"
+        },
+        {
+          "candle3": "2024-07-29 21:00:00",
+          "direction": "bearish",
+          "low": 1.08358,
+          "high": 1.08422,
+          "width": 0.0006399999999999739,
+          "required": 0.0009909999999999865,
+          "kept": false,
+          "reason": "width 0.00064 below 20% of the median range before it (0.000991)"
+        },
+        {
+          "candle3": "2024-08-04 21:00:00",
+          "direction": "bullish",
+          "low": 1.08354,
+          "high": 1.08926,
+          "width": 0.005719999999999947,
+          "required": 0.0009909999999999865,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-08-13 21:00:00",
+          "direction": "bullish",
+          "low": 1.09394,
+          "high": 1.0983,
+          "width": 0.0043600000000001415,
+          "required": 0.0009939999999999838,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-08-18 21:00:00",
+          "direction": "bullish",
+          "low": 1.10158,
+          "high": 1.10228,
+          "width": 0.0006999999999999229,
+          "required": 0.001010000000000022,
+          "kept": false,
+          "reason": "width 0.0007 below 20% of the median range before it (0.00101)"
+        },
+        {
+          "candle3": "2024-08-19 21:00:00",
+          "direction": "bullish",
+          "low": 1.10298,
+          "high": 1.10718,
+          "width": 0.0041999999999999815,
+          "required": 0.0010260000000000158,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-08-20 21:00:00",
+          "direction": "bullish",
+          "low": 1.10866,
+          "high": 1.10991,
+          "width": 0.0012499999999999734,
+          "required": 0.0010270000000000001,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-08-28 21:00:00",
+          "direction": "bearish",
+          "low": 1.114,
+          "high": 1.115,
+          "width": 0.0009999999999998899,
+          "required": 0.0010350000000000305,
+          "kept": false,
+          "reason": "width 0.001 below 20% of the median range before it (0.001035)"
+        },
+        {
+          "candle3": "2024-08-29 21:00:00",
+          "direction": "bearish",
+          "low": 1.1095,
+          "high": 1.1105,
+          "width": 0.001000000000000112,
+          "required": 0.0010400000000000188,
+          "kept": false,
+          "reason": "width 0.001 below 20% of the median range before it (0.00104)"
+        },
+        {
+          "candle3": "2024-09-04 21:00:00",
+          "direction": "bullish",
+          "low": 1.1073,
+          "high": 1.10748,
+          "width": 0.000180000000000069,
+          "required": 0.001030000000000042,
+          "kept": false,
+          "reason": "width 0.00018 below 20% of the median range before it (0.00103)"
+        },
+        {
+          "candle3": "2024-09-09 21:00:00",
+          "direction": "bearish",
+          "low": 1.10496,
+          "high": 1.10657,
+          "width": 0.0016100000000001113,
+          "required": 0.0010350000000000305,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-09-12 21:00:00",
+          "direction": "bullish",
+          "low": 1.10549,
+          "high": 1.10704,
+          "width": 0.0015499999999999403,
+          "required": 0.0010400000000000188,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-09-15 21:00:00",
+          "direction": "bullish",
+          "low": 1.10751,
+          "high": 1.10757,
+          "width": 5.999999999994898e-05,
+          "required": 0.0010350000000000305,
+          "kept": false,
+          "reason": "width 6e-05 below 20% of the median range before it (0.001035)"
+        },
+        {
+          "candle3": "2024-09-16 21:00:00",
+          "direction": "bullish",
+          "low": 1.1102,
+          "high": 1.11107,
+          "width": 0.0008699999999999264,
+          "required": 0.0010400000000000188,
+          "kept": false,
+          "reason": "width 0.00087 below 20% of the median range before it (0.00104)"
+        },
+        {
+          "candle3": "2024-10-01 21:00:00",
+          "direction": "bearish",
+          "low": 1.10829,
+          "high": 1.11137,
+          "width": 0.0030799999999999716,
+          "required": 0.0010680000000000023,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-10-06 21:00:00",
+          "direction": "bearish",
+          "low": 1.0987,
+          "high": 1.10084,
+          "width": 0.0021400000000000308,
+          "required": 0.0010599999999999722,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-10-09 21:00:00",
+          "direction": "bearish",
+          "low": 1.09552,
+          "high": 1.0961,
+          "width": 0.0005800000000000249,
+          "required": 0.0010580000000000034,
+          "kept": false,
+          "reason": "width 0.00058 below 20% of the median range before it (0.001058)"
+        },
+        {
+          "candle3": "2024-10-14 21:00:00",
+          "direction": "bearish",
+          "low": 1.09168,
+          "high": 1.09261,
+          "width": 0.0009300000000000974,
+          "required": 0.0010580000000000034,
+          "kept": false,
+          "reason": "width 0.00093 below 20% of the median range before it (0.001058)"
+        },
+        {
+          "candle3": "2024-10-16 21:00:00",
+          "direction": "bearish",
+          "low": 1.08742,
+          "high": 1.08819,
+          "width": 0.0007699999999999374,
+          "required": 0.0010400000000000188,
+          "kept": false,
+          "reason": "width 0.00077 below 20% of the median range before it (0.00104)"
+        },
+        {
+          "candle3": "2024-10-22 21:00:00",
+          "direction": "bearish",
+          "low": 1.08068,
+          "high": 1.0811,
+          "width": 0.0004199999999998649,
+          "required": 0.0010400000000000188,
+          "kept": false,
+          "reason": "width 0.00042 below 20% of the median range before it (0.00104)"
+        },
+        {
+          "candle3": "2024-10-30 21:00:00",
+          "direction": "bullish",
+          "low": 1.08264,
+          "high": 1.08441,
+          "width": 0.0017700000000000493,
+          "required": 0.0010290000000000132,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-06 22:00:00",
+          "direction": "bearish",
+          "low": 1.08248,
+          "high": 1.08726,
+          "width": 0.004779999999999784,
+          "required": 0.0010350000000000305,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-11 22:00:00",
+          "direction": "bearish",
+          "low": 1.06632,
+          "high": 1.06868,
+          "width": 0.0023600000000001398,
+          "required": 0.0010580000000000034,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-13 22:00:00",
+          "direction": "bearish",
+          "low": 1.05825,
+          "high": 1.0595,
+          "width": 0.0012500000000001954,
+          "required": 0.0010589999999999877,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-21 22:00:00",
+          "direction": "bearish",
+          "low": 1.04981,
+          "high": 1.05068,
+          "width": 0.0008700000000001484,
+          "required": 0.0011460000000000027,
+          "kept": false,
+          "reason": "width 0.00087 below 20% of the median range before it (0.001146)"
+        },
+        {
+          "candle3": "2024-12-02 22:00:00",
+          "direction": "bearish",
+          "low": 1.05351,
+          "high": 1.05414,
+          "width": 0.0006300000000001305,
+          "required": 0.0011830000000000009,
+          "kept": false,
+          "reason": "width 0.00063 below 20% of the median range before it (0.001183)"
+        },
+        {
+          "candle3": "2024-12-18 22:00:00",
+          "direction": "bearish",
+          "low": 1.04224,
+          "high": 1.04792,
+          "width": 0.005679999999999907,
+          "required": 0.0012710000000000221,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-02 22:00:00",
+          "direction": "bearish",
+          "low": 1.031,
+          "high": 1.03439,
+          "width": 0.003390000000000004,
+          "required": 0.0012740000000000197,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-06 22:00:00",
+          "direction": "bullish",
+          "low": 1.031,
+          "high": 1.03396,
+          "width": 0.0029600000000000737,
+          "required": 0.0012710000000000221,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-08 22:00:00",
+          "direction": "bearish",
+          "low": 1.03216,
+          "high": 1.03396,
+          "width": 0.0018000000000000238,
+          "required": 0.0012760000000000328,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-12 22:00:00",
+          "direction": "bearish",
+          "low": 1.02501,
+          "high": 1.02836,
+          "width": 0.003349999999999964,
+          "required": 0.0012760000000000328,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-14 22:00:00",
+          "direction": "bullish",
+          "low": 1.02501,
+          "high": 1.02583,
+          "width": 0.0008200000000000429,
+          "required": 0.0012760000000000328,
+          "kept": false,
+          "reason": "width 0.00082 below 20% of the median range before it (0.001276)"
+        },
+        {
+          "candle3": "2025-01-20 22:00:00",
+          "direction": "bullish",
+          "low": 1.03308,
+          "high": 1.03417,
+          "width": 0.0010900000000000354,
+          "required": 0.001295000000000024,
+          "kept": false,
+          "reason": "width 0.00109 below 20% of the median range before it (0.001295)"
+        },
+        {
+          "candle3": "2025-01-26 22:00:00",
+          "direction": "bullish",
+          "low": 1.0438,
+          "high": 1.04539,
+          "width": 0.0015899999999999803,
+          "required": 0.0013539999999999663,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-01-28 22:00:00",
+          "direction": "bearish",
+          "low": 1.04438,
+          "high": 1.04539,
+          "width": 0.0010099999999999554,
+          "required": 0.0013779999999999903,
+          "kept": false,
+          "reason": "width 0.00101 below 20% of the median range before it (0.001378)"
+        },
+        {
+          "candle3": "2025-02-02 22:00:00",
+          "direction": "bearish",
+          "low": 1.03502,
+          "high": 1.03862,
+          "width": 0.0036000000000000476,
+          "required": 0.001399000000000017,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-02-04 22:00:00",
+          "direction": "bullish",
+          "low": 1.03502,
+          "high": 1.03696,
+          "width": 0.0019400000000000528,
+          "required": 0.0014299999999999758,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-02-09 22:00:00",
+          "direction": "bearish",
+          "low": 1.03366,
+          "high": 1.03526,
+          "width": 0.0016000000000000458,
+          "required": 0.0014409999999999814,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-02-13 22:00:00",
+          "direction": "bullish",
+          "low": 1.04299,
+          "high": 1.04471,
+          "width": 0.0017199999999999438,
+          "required": 0.0014409999999999814,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-02-18 22:00:00",
+          "direction": "bearish",
+          "low": 1.04615,
+          "high": 1.04672,
+          "width": 0.0005700000000001815,
+          "required": 0.0014120000000000133,
+          "kept": false,
+          "reason": "width 0.00057 below 20% of the median range before it (0.001412)"
+        },
+        {
+          "candle3": "2025-02-27 22:00:00",
+          "direction": "bearish",
+          "low": 1.042,
+          "high": 1.0475,
+          "width": 0.00550000000000006,
+          "required": 0.0014120000000000133,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-03 22:00:00",
+          "direction": "bullish",
+          "low": 1.042,
+          "high": 1.0471,
+          "width": 0.005099999999999882,
+          "required": 0.0014299999999999758,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-04 22:00:00",
+          "direction": "bullish",
+          "low": 1.0504,
+          "high": 1.0602,
+          "width": 0.009800000000000031,
+          "required": 0.0014409999999999814,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-05 22:00:00",
+          "direction": "bullish",
+          "low": 1.06278,
+          "high": 1.07658,
+          "width": 0.013800000000000034,
+          "required": 0.0014579999999999817,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-11 21:00:00",
+          "direction": "bullish",
+          "low": 1.08747,
+          "high": 1.08757,
+          "width": 9.999999999998899e-05,
+          "required": 0.001505000000000001,
+          "kept": false,
+          "reason": "width 0.0001 below 20% of the median range before it (0.001505)"
+        },
+        {
+          "candle3": "2025-04-10 21:00:00",
+          "direction": "bullish",
+          "low": 1.10952,
+          "high": 1.11902,
+          "width": 0.009499999999999842,
+          "required": 0.0016040000000000277,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-13 21:00:00",
+          "direction": "bullish",
+          "low": 1.12418,
+          "high": 1.1296,
+          "width": 0.00541999999999998,
+          "required": 0.0016040000000000277,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-21 21:00:00",
+          "direction": "bullish",
+          "low": 1.13978,
+          "high": 1.14175,
+          "width": 0.0019700000000000273,
+          "required": 0.0015960000000000197,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-23 21:00:00",
+          "direction": "bearish",
+          "low": 1.13982,
+          "high": 1.14175,
+          "width": 0.0019299999999999873,
+          "required": 0.0016040000000000277,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-30 21:00:00",
+          "direction": "bearish",
+          "low": 1.13412,
+          "high": 1.13704,
+          "width": 0.0029200000000000337,
+          "required": 0.0016080000000000317,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-05-12 21:00:00",
+          "direction": "bearish",
+          "low": 1.11949,
+          "high": 1.11967,
+          "width": 0.00017999999999984695,
+          "required": 0.001666000000000012,
+          "kept": false,
+          "reason": "width 0.00018 below 20% of the median range before it (0.001666)"
+        },
+        {
+          "candle3": "2025-05-25 21:00:00",
+          "direction": "bullish",
+          "low": 1.1345,
+          "high": 1.13624,
+          "width": 0.0017399999999998528,
+          "required": 0.0017049999999999789,
+          "kept": true,
+          "reason": ""
+        }
+      ],
+      "gaps_kept": 34,
+      "swings": [
+        {
+          "time": "2025-03-17 21:00:00",
+          "price": 1.09548,
+          "kind": "high"
+        },
+        {
+          "time": "2025-03-26 21:00:00",
+          "price": 1.0733,
+          "kind": "low"
+        },
+        {
+          "time": "2025-04-02 21:00:00",
+          "price": 1.11464,
+          "kind": "high"
+        },
+        {
+          "time": "2025-04-10 21:00:00",
+          "price": 1.14739,
+          "kind": "high"
+        },
+        {
+          "time": "2025-04-20 21:00:00",
+          "price": 1.15734,
+          "kind": "high"
+        },
+        {
+          "time": "2025-04-22 21:00:00",
+          "price": 1.1308,
+          "kind": "low"
+        },
+        {
+          "time": "2025-04-27 21:00:00",
+          "price": 1.1425,
+          "kind": "high"
+        },
+        {
+          "time": "2025-04-30 21:00:00",
+          "price": 1.12658,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-05 21:00:00",
+          "price": 1.13813,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-11 21:00:00",
+          "price": 1.10654,
+          "kind": "low"
+        },
+        {
+          "time": "2025-05-13 21:00:00",
+          "price": 1.1266,
+          "kind": "high"
+        },
+        {
+          "time": "2025-05-15 21:00:00",
+          "price": 1.11311,
+          "kind": "low"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2025-03-10 21:00:00",
+          "level": 1.09374,
+          "extreme": 1.09472,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-03-17 21:00:00",
+          "level": 1.09472,
+          "extreme": 1.09548,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-03-19 21:00:00",
+          "level": 1.08226,
+          "extreme": 1.08146,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-04-09 21:00:00",
+          "level": 1.12142,
+          "extreme": 1.12418,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-04-09 21:00:00",
+          "level": 1.1209,
+          "extreme": 1.12418,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2025-05-18 21:00:00",
+          "level": 1.1266,
+          "extreme": 1.12884,
+          "implied": "BEARISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2025-04-10 21:00:00",
+          "level": 1.1209,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-04-20 21:00:00",
+          "level": 1.14739,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-04-30 21:00:00",
+          "level": 1.1308,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-07 21:00:00",
+          "level": 1.12658,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-05-19 21:00:00",
+          "level": 1.1266,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-05-25 21:00:00",
+          "level": 1.13813,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        }
+      ],
+      "zones": [
+        {
+          "direction": "BULLISH",
+          "low": 1.07364,
+          "high": 1.07837,
+          "x": 1.07614,
+          "b": [
+            1.07472,
+            1.07837
+          ],
+          "p": 1.07364,
+          "formed": "2024-07-03 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.0828,
+          "high": 1.08617,
+          "x": 1.0845,
+          "b": [
+            1.08308,
+            1.08617
+          ],
+          "p": 1.0828,
+          "formed": "2024-07-11 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.07818,
+          "high": 1.09482,
+          "x": 1.09482,
+          "b": [
+            1.08354,
+            1.08926
+          ],
+          "p": 1.07818,
+          "formed": "2024-08-04 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.09138,
+          "high": 1.10089,
+          "x": 1.10089,
+          "b": [
+            1.09394,
+            1.0983
+          ],
+          "p": 1.09138,
+          "formed": "2024-08-13 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.10228,
+          "high": 1.10718,
+          "x": 1.10474,
+          "b": [
+            1.10298,
+            1.10718
+          ],
+          "p": 1.10228,
+          "formed": "2024-08-19 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.10264,
+          "high": 1.10911,
+          "x": 1.10264,
+          "b": [
+            1.10496,
+            1.10657
+          ],
+          "p": 1.10911,
+          "formed": "2024-09-09 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.10686,
+          "high": 1.11442,
+          "x": 1.10686,
+          "b": [
+            1.10829,
+            1.11137
+          ],
+          "p": 1.11442,
+          "formed": "2024-10-01 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.0987,
+          "high": 1.10396,
+          "x": 1.1002,
+          "b": [
+            1.0987,
+            1.10084
+          ],
+          "p": 1.10396,
+          "formed": "2024-10-06 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.0808,
+          "high": 1.08441,
+          "x": 1.08394,
+          "b": [
+            1.08264,
+            1.08441
+          ],
+          "p": 1.0808,
+          "formed": "2024-10-30 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.0769,
+          "high": 1.09374,
+          "x": 1.0769,
+          "b": [
+            1.08248,
+            1.08726
+          ],
+          "p": 1.09374,
+          "formed": "2024-11-06 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.06632,
+          "high": 1.0728,
+          "x": 1.06826,
+          "b": [
+            1.06632,
+            1.06868
+          ],
+          "p": 1.0728,
+          "formed": "2024-11-11 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.04224,
+          "high": 1.05129,
+          "x": 1.04532,
+          "b": [
+            1.04224,
+            1.04792
+          ],
+          "p": 1.05129,
+          "formed": "2024-12-18 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.031,
+          "high": 1.03759,
+          "x": 1.0343,
+          "b": [
+            1.031,
+            1.03439
+          ],
+          "p": 1.03759,
+          "formed": "2025-01-02 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.04116,
+          "high": 1.04539,
+          "x": 1.0437,
+          "b": [
+            1.0438,
+            1.04539
+          ],
+          "p": 1.04116,
+          "formed": "2025-01-26 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.03732,
+          "high": 1.04471,
+          "x": 1.04432,
+          "b": [
+            1.04299,
+            1.04471
+          ],
+          "p": 1.03732,
+          "formed": "2025-02-13 22:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.04009,
+          "high": 1.04926,
+          "x": 1.04009,
+          "b": [
+            1.042,
+            1.0475
+          ],
+          "p": 1.04926,
+          "formed": "2025-02-27 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.03886,
+          "high": 1.0529,
+          "x": 1.0529,
+          "b": [
+            1.042,
+            1.0471
+          ],
+          "p": 1.03886,
+          "formed": "2025-03-03 22:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.0602,
+          "high": 1.07658,
+          "x": 1.063,
+          "b": [
+            1.06278,
+            1.07658
+          ],
+          "p": 1.0602,
+          "formed": "2025-03-05 22:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.09432,
+          "high": 1.11902,
+          "x": 1.11464,
+          "b": [
+            1.10952,
+            1.11902
+          ],
+          "p": 1.09432,
+          "formed": "2025-04-10 21:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.11902,
+          "high": 1.1296,
+          "x": 1.1209,
+          "b": [
+            1.12418,
+            1.1296
+          ],
+          "p": 1.11902,
+          "formed": "2025-04-13 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.13958,
+          "high": 1.14739,
+          "x": 1.14739,
+          "b": [
+            1.13978,
+            1.14175
+          ],
+          "p": 1.13958,
+          "formed": "2025-04-21 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.1308,
+          "high": 1.13998,
+          "x": 1.1308,
+          "b": [
+            1.13412,
+            1.13704
+          ],
+          "p": 1.13998,
+          "formed": "2025-04-30 21:00:00",
+          "status": "active",
+          "visit": {
+            "visits": 1,
+            "inside": true,
+            "touch": "2025-05-26 21:40:00"
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.1279,
+          "high": 1.13813,
+          "x": 1.13813,
+          "b": [
+            1.1345,
+            1.13624
+          ],
+          "p": 1.1279,
+          "formed": "2025-05-25 21:00:00",
+          "status": "active",
+          "visit": {
+            "visits": 1,
+            "inside": true,
+            "touch": "2025-05-26 22:00:00"
+          }
+        }
+      ]
+    },
+    "1W": {
+      "candles": 104,
+      "last": "2025-05-18 21:00:00",
+      "bias": {
+        "bias": "BULLISH",
+        "liquidity": "BULLISH",
+        "balance": "BULLISH",
+        "notes": [
+          "liquidity: BOS closed through 1.12142 (6 candles ago) -> bullish",
+          "balance: last balance level bullish gap 1.11464-1.12640 (mitigated) -> bullish",
+          "aligned -> bullish"
+        ]
+      },
+      "gaps_geometric": [
+        {
+          "candle3": "2023-06-18 21:00:00",
+          "direction": "bullish",
+          "low": 1.07872,
+          "high": 1.08444,
+          "width": 0.005720000000000169,
+          "required": 0.0028760000000000122,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2023-07-16 21:00:00",
+          "direction": "bullish",
+          "low": 1.09733,
+          "high": 1.11078,
+          "width": 0.013450000000000184,
+          "required": 0.0028760000000000122,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2023-07-30 21:00:00",
+          "direction": "bearish",
+          "low": 1.10459,
+          "high": 1.11078,
+          "width": 0.00619000000000014,
+          "required": 0.0033519999999999774,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2023-09-10 21:00:00",
+          "direction": "bearish",
+          "low": 1.07694,
+          "high": 1.07721,
+          "width": 0.00026999999999999247,
+          "required": 0.0028760000000000122,
+          "kept": false,
+          "reason": "width 0.00027 below 20% of the median range before it (0.002876)"
+        },
+        {
+          "candle3": "2023-10-01 21:00:00",
+          "direction": "bearish",
+          "low": 1.06002,
+          "high": 1.0615,
+          "width": 0.0014800000000001479,
+          "required": 0.002850000000000019,
+          "kept": false,
+          "reason": "width 0.00148 below 20% of the median range before it (0.00285)"
+        },
+        {
+          "candle3": "2023-11-19 22:00:00",
+          "direction": "bullish",
+          "low": 1.07564,
+          "high": 1.08524,
+          "width": 0.009600000000000053,
+          "required": 0.002890000000000015,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-01-07 22:00:00",
+          "direction": "bearish",
+          "low": 1.09996,
+          "high": 1.10079,
+          "width": 0.0008299999999998864,
+          "required": 0.0029999999999999805,
+          "kept": false,
+          "reason": "width 0.00083 below 20% of the median range before it (0.003)"
+        },
+        {
+          "candle3": "2024-02-04 22:00:00",
+          "direction": "bearish",
+          "low": 1.07955,
+          "high": 1.08129,
+          "width": 0.0017400000000000748,
+          "required": 0.0028830000000000136,
+          "kept": false,
+          "reason": "width 0.00174 below 20% of the median range before it (0.002883)"
+        },
+        {
+          "candle3": "2024-03-10 21:00:00",
+          "direction": "bullish",
+          "low": 1.0866,
+          "high": 1.0873,
+          "width": 0.0006999999999999229,
+          "required": 0.0028240000000000266,
+          "kept": false,
+          "reason": "width 0.0007 below 20% of the median range before it (0.002824)"
+        },
+        {
+          "candle3": "2024-03-24 21:00:00",
+          "direction": "bearish",
+          "low": 1.08644,
+          "high": 1.0873,
+          "width": 0.0008599999999998609,
+          "required": 0.002818000000000032,
+          "kept": false,
+          "reason": "width 0.00086 below 20% of the median range before it (0.002818)"
+        },
+        {
+          "candle3": "2024-04-14 21:00:00",
+          "direction": "bearish",
+          "low": 1.06901,
+          "high": 1.07245,
+          "width": 0.0034399999999998876,
+          "required": 0.002821000000000029,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-05-19 21:00:00",
+          "direction": "bullish",
+          "low": 1.07909,
+          "high": 1.08048,
+          "width": 0.0013900000000000023,
+          "required": 0.002793999999999963,
+          "kept": false,
+          "reason": "width 0.00139 below 20% of the median range before it (0.002794)"
+        },
+        {
+          "candle3": "2024-06-16 21:00:00",
+          "direction": "bearish",
+          "low": 1.07614,
+          "high": 1.07993,
+          "width": 0.00378999999999996,
+          "required": 0.002749999999999986,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-07-07 21:00:00",
+          "direction": "bullish",
+          "low": 1.07465,
+          "high": 1.08044,
+          "width": 0.005789999999999962,
+          "required": 0.002698999999999985,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-07-14 21:00:00",
+          "direction": "bullish",
+          "low": 1.08426,
+          "high": 1.08716,
+          "width": 0.0028999999999999027,
+          "required": 0.0026739999999999767,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-08-18 21:00:00",
+          "direction": "bullish",
+          "low": 1.10089,
+          "high": 1.10228,
+          "width": 0.0013900000000000023,
+          "required": 0.0026629999999999935,
+          "kept": false,
+          "reason": "width 0.00139 below 20% of the median range before it (0.002663)"
+        },
+        {
+          "candle3": "2024-10-06 21:00:00",
+          "direction": "bearish",
+          "low": 1.09973,
+          "high": 1.10832,
+          "width": 0.008589999999999876,
+          "required": 0.0026520000000000103,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-10-13 21:00:00",
+          "direction": "bearish",
+          "low": 1.09367,
+          "high": 1.09514,
+          "width": 0.0014700000000000824,
+          "required": 0.0026430000000000177,
+          "kept": false,
+          "reason": "width 0.00147 below 20% of the median range before it (0.002643)"
+        },
+        {
+          "candle3": "2024-10-20 21:00:00",
+          "direction": "bearish",
+          "low": 1.08718,
+          "high": 1.09001,
+          "width": 0.002829999999999888,
+          "required": 0.002634000000000025,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-10 22:00:00",
+          "direction": "bearish",
+          "low": 1.0728,
+          "high": 1.0769,
+          "width": 0.0040999999999999925,
+          "required": 0.0026430000000000177,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-11-17 22:00:00",
+          "direction": "bearish",
+          "low": 1.06098,
+          "high": 1.06826,
+          "width": 0.007279999999999953,
+          "required": 0.0026520000000000103,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2024-12-22 22:00:00",
+          "direction": "bearish",
+          "low": 1.04462,
+          "high": 1.04532,
+          "width": 0.0006999999999999229,
+          "required": 0.00273000000000001,
+          "kept": false,
+          "reason": "width 0.0007 below 20% of the median range before it (0.00273)"
+        },
+        {
+          "candle3": "2025-03-09 21:00:00",
+          "direction": "bullish",
+          "low": 1.0529,
+          "high": 1.0805,
+          "width": 0.02760000000000007,
+          "required": 0.002793999999999963,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-04-06 21:00:00",
+          "direction": "bullish",
+          "low": 1.08583,
+          "high": 1.08814,
+          "width": 0.0023100000000000342,
+          "required": 0.002818000000000032,
+          "kept": false,
+          "reason": "width 0.00231 below 20% of the median range before it (0.002818)"
+        },
+        {
+          "candle3": "2025-04-13 21:00:00",
+          "direction": "bullish",
+          "low": 1.11464,
+          "high": 1.1264,
+          "width": 0.011759999999999993,
+          "required": 0.002821000000000007,
+          "kept": true,
+          "reason": ""
+        }
+      ],
+      "gaps_kept": 14,
+      "swings": [
+        {
+          "time": "2024-07-28 21:00:00",
+          "price": 1.07774,
+          "kind": "low"
+        },
+        {
+          "time": "2024-08-25 21:00:00",
+          "price": 1.12017,
+          "kind": "high"
+        },
+        {
+          "time": "2024-09-08 21:00:00",
+          "price": 1.1002,
+          "kind": "low"
+        },
+        {
+          "time": "2024-09-22 21:00:00",
+          "price": 1.12142,
+          "kind": "high"
+        },
+        {
+          "time": "2024-11-03 22:00:00",
+          "price": 1.09374,
+          "kind": "high"
+        },
+        {
+          "time": "2024-11-17 22:00:00",
+          "price": 1.03319,
+          "kind": "low"
+        },
+        {
+          "time": "2024-12-01 22:00:00",
+          "price": 1.063,
+          "kind": "high"
+        },
+        {
+          "time": "2025-01-12 22:00:00",
+          "price": 1.01779,
+          "kind": "low"
+        },
+        {
+          "time": "2025-01-26 22:00:00",
+          "price": 1.05333,
+          "kind": "high"
+        },
+        {
+          "time": "2025-02-02 22:00:00",
+          "price": 1.02105,
+          "kind": "low"
+        },
+        {
+          "time": "2025-03-23 21:00:00",
+          "price": 1.0733,
+          "kind": "low"
+        },
+        {
+          "time": "2025-04-20 21:00:00",
+          "price": 1.15734,
+          "kind": "high"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2024-07-14 21:00:00",
+          "level": 1.0916,
+          "extreme": 1.09482,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-08-04 21:00:00",
+          "level": 1.09813,
+          "extreme": 1.10089,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-08-04 21:00:00",
+          "level": 1.09482,
+          "extreme": 1.10089,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-09-22 21:00:00",
+          "level": 1.12017,
+          "extreme": 1.12142,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-10-20 21:00:00",
+          "level": 1.07774,
+          "extreme": 1.07612,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-03-09 21:00:00",
+          "level": 1.09374,
+          "extreme": 1.09472,
+          "implied": "BEARISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2024-11-10 22:00:00",
+          "level": 1.0666,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2024-11-17 22:00:00",
+          "level": 1.04485,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2024-12-29 22:00:00",
+          "level": 1.03319,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-03-02 22:00:00",
+          "level": 1.05333,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2025-03-30 21:00:00",
+          "level": 1.09374,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-04-06 21:00:00",
+          "level": 1.12142,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        }
+      ],
+      "zones": [
+        {
+          "direction": "BULLISH",
+          "low": 1.07331,
+          "high": 1.1012,
+          "x": 1.1012,
+          "b": [
+            1.07872,
+            1.08444
+          ],
+          "p": 1.07331,
+          "formed": "2023-07-09 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.08336,
+          "high": 1.11498,
+          "x": 1.08336,
+          "b": [
+            1.10459,
+            1.11078
+          ],
+          "p": 1.11498,
+          "formed": "2023-08-20 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.06901,
+          "high": 1.08851,
+          "x": 1.0695,
+          "b": [
+            1.06901,
+            1.07245
+          ],
+          "p": 1.08851,
+          "formed": "2024-04-14 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.071,
+          "high": 1.08951,
+          "x": 1.08951,
+          "b": [
+            1.07465,
+            1.08044
+          ],
+          "p": 1.071,
+          "formed": "2024-07-07 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.09973,
+          "high": 1.1209,
+          "x": 1.1002,
+          "b": [
+            1.09973,
+            1.10832
+          ],
+          "p": 1.1209,
+          "formed": "2024-10-06 21:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.07774,
+          "high": 1.09367,
+          "x": 1.07774,
+          "b": [
+            1.08718,
+            1.09001
+          ],
+          "p": 1.09367,
+          "formed": "2024-11-03 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.06098,
+          "high": 1.0728,
+          "x": 1.0666,
+          "b": [
+            1.06098,
+            1.06826
+          ],
+          "p": 1.0728,
+          "formed": "2024-11-17 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.03886,
+          "high": 1.0805,
+          "x": 1.05333,
+          "b": [
+            1.0529,
+            1.0805
+          ],
+          "p": 1.03886,
+          "formed": "2025-03-09 21:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.08814,
+          "high": 1.1264,
+          "x": 1.12142,
+          "b": [
+            1.11464,
+            1.1264
+          ],
+          "p": 1.08814,
+          "formed": "2025-04-13 21:00:00",
+          "status": "tested",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        }
+      ]
+    },
+    "1M": {
+      "candles": 60,
+      "last": "2025-03-31 21:00:00",
+      "bias": {
+        "bias": "BULLISH",
+        "liquidity": "BULLISH",
+        "balance": "BULLISH",
+        "notes": [
+          "liquidity: BMS closed through 1.12142 (0 candles ago) -> bullish",
+          "balance: last balance level bullish gap 1.05290-1.07783 (unmitigated) -> bullish",
+          "aligned -> bullish"
+        ]
+      },
+      "gaps_geometric": [
+        {
+          "candle3": "2020-06-30 21:00:00",
+          "direction": "bullish",
+          "low": 1.11454,
+          "high": 1.11848,
+          "width": 0.0039399999999998325,
+          "required": 0.0070060000000000235,
+          "kept": false,
+          "reason": "width 0.00394 below 20% of the median range before it (0.007006)"
+        },
+        {
+          "candle3": "2020-08-02 21:00:00",
+          "direction": "bullish",
+          "low": 1.14222,
+          "high": 1.16959,
+          "width": 0.027369999999999894,
+          "required": 0.007576000000000027,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2020-11-30 22:00:00",
+          "direction": "bullish",
+          "low": 1.18808,
+          "high": 1.19249,
+          "width": 0.004410000000000025,
+          "required": 0.007576000000000027,
+          "kept": false,
+          "reason": "width 0.00441 below 20% of the median range before it (0.007576)"
+        },
+        {
+          "candle3": "2020-12-31 22:00:00",
+          "direction": "bullish",
+          "low": 1.20033,
+          "high": 1.20536,
+          "width": 0.00503000000000009,
+          "required": 0.007641000000000009,
+          "kept": false,
+          "reason": "width 0.00503 below 20% of the median range before it (0.007641)"
+        },
+        {
+          "candle3": "2021-06-30 21:00:00",
+          "direction": "bearish",
+          "low": 1.19088,
+          "high": 1.1986,
+          "width": 0.007720000000000171,
+          "required": 0.007641000000000009,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2021-11-30 22:00:00",
+          "direction": "bearish",
+          "low": 1.13864,
+          "high": 1.15244,
+          "width": 0.013799999999999812,
+          "required": 0.006931999999999983,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2022-03-31 21:00:00",
+          "direction": "bearish",
+          "low": 1.10764,
+          "high": 1.11064,
+          "width": 0.0030000000000001137,
+          "required": 0.007226,
+          "kept": false,
+          "reason": "width 0.003 below 20% of the median range before it (0.007226)"
+        },
+        {
+          "candle3": "2022-05-01 21:00:00",
+          "direction": "bearish",
+          "low": 1.0787,
+          "high": 1.0806,
+          "width": 0.0019000000000000128,
+          "required": 0.0074010000000000135,
+          "kept": false,
+          "reason": "width 0.0019 below 20% of the median range before it (0.007401)"
+        },
+        {
+          "candle3": "2022-11-30 22:00:00",
+          "direction": "bullish",
+          "low": 1.00938,
+          "high": 1.03933,
+          "width": 0.029950000000000143,
+          "required": 0.00798000000000001,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2023-10-01 21:00:00",
+          "direction": "bearish",
+          "low": 1.06946,
+          "high": 1.07658,
+          "width": 0.007120000000000015,
+          "required": 0.00798000000000001,
+          "kept": false,
+          "reason": "width 0.00712 below 20% of the median range before it (0.00798)"
+        },
+        {
+          "candle3": "2023-11-30 22:00:00",
+          "direction": "bullish",
+          "low": 1.06946,
+          "high": 1.07237,
+          "width": 0.002909999999999968,
+          "required": 0.00798000000000001,
+          "kept": false,
+          "reason": "width 0.00291 below 20% of the median range before it (0.00798)"
+        },
+        {
+          "candle3": "2024-09-01 21:00:00",
+          "direction": "bullish",
+          "low": 1.09482,
+          "high": 1.1002,
+          "width": 0.005380000000000162,
+          "required": 0.0077389999999999855,
+          "kept": false,
+          "reason": "width 0.00538 below 20% of the median range before it (0.007739)"
+        },
+        {
+          "candle3": "2024-10-31 21:00:00",
+          "direction": "bearish",
+          "low": 1.09374,
+          "high": 1.1002,
+          "width": 0.006460000000000132,
+          "required": 0.007682999999999995,
+          "kept": false,
+          "reason": "width 0.00646 below 20% of the median range before it (0.007683)"
+        },
+        {
+          "candle3": "2024-12-01 22:00:00",
+          "direction": "bearish",
+          "low": 1.063,
+          "high": 1.07612,
+          "width": 0.01312000000000002,
+          "required": 0.007705999999999991,
+          "kept": true,
+          "reason": ""
+        },
+        {
+          "candle3": "2025-03-31 21:00:00",
+          "direction": "bullish",
+          "low": 1.0529,
+          "high": 1.07783,
+          "width": 0.02493000000000012,
+          "required": 0.00766,
+          "kept": true,
+          "reason": ""
+        }
+      ],
+      "gaps_kept": 6,
+      "swings": [
+        {
+          "time": "2021-02-28 22:00:00",
+          "price": 1.17042,
+          "kind": "low"
+        },
+        {
+          "time": "2021-05-02 21:00:00",
+          "price": 1.22664,
+          "kind": "high"
+        },
+        {
+          "time": "2021-08-31 21:00:00",
+          "price": 1.19092,
+          "kind": "high"
+        },
+        {
+          "time": "2022-01-31 22:00:00",
+          "price": 1.1495,
+          "kind": "high"
+        },
+        {
+          "time": "2022-08-31 21:00:00",
+          "price": 0.9536,
+          "kind": "low"
+        },
+        {
+          "time": "2023-04-02 21:00:00",
+          "price": 1.10956,
+          "kind": "high"
+        },
+        {
+          "time": "2023-07-02 21:00:00",
+          "price": 1.12757,
+          "kind": "high"
+        },
+        {
+          "time": "2023-10-01 21:00:00",
+          "price": 1.04485,
+          "kind": "low"
+        },
+        {
+          "time": "2023-11-30 22:00:00",
+          "price": 1.11396,
+          "kind": "high"
+        },
+        {
+          "time": "2024-03-31 21:00:00",
+          "price": 1.06011,
+          "kind": "low"
+        },
+        {
+          "time": "2024-09-01 21:00:00",
+          "price": 1.12142,
+          "kind": "high"
+        },
+        {
+          "time": "2024-12-31 22:00:00",
+          "price": 1.01779,
+          "kind": "low"
+        }
+      ],
+      "sweeps": [
+        {
+          "time": "2021-08-01 21:00:00",
+          "level": 1.17042,
+          "extreme": 1.1664,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2023-07-02 21:00:00",
+          "level": 1.10956,
+          "extreme": 1.12757,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-07-31 21:00:00",
+          "level": 1.11396,
+          "extreme": 1.12017,
+          "implied": "BEARISH"
+        },
+        {
+          "time": "2024-10-31 21:00:00",
+          "level": 1.04485,
+          "extreme": 1.03319,
+          "implied": "BULLISH"
+        },
+        {
+          "time": "2025-03-31 21:00:00",
+          "level": 1.1495,
+          "extreme": 1.15734,
+          "implied": "BEARISH"
+        }
+      ],
+      "breaks": [
+        {
+          "time": "2020-11-30 22:00:00",
+          "level": 1.20114,
+          "direction": "BULLISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2021-08-31 21:00:00",
+          "level": 1.17042,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2024-09-01 21:00:00",
+          "level": 1.10956,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2024-10-31 21:00:00",
+          "level": 1.06011,
+          "direction": "BEARISH",
+          "kind": "BMS"
+        },
+        {
+          "time": "2024-12-01 22:00:00",
+          "level": 1.04485,
+          "direction": "BEARISH",
+          "kind": "BOS"
+        },
+        {
+          "time": "2025-03-31 21:00:00",
+          "level": 1.12142,
+          "direction": "BULLISH",
+          "kind": "BMS"
+        }
+      ],
+      "zones": [
+        {
+          "direction": "BEARISH",
+          "low": 1.17042,
+          "high": 1.22545,
+          "x": 1.17042,
+          "b": [
+            1.19088,
+            1.1986
+          ],
+          "p": 1.22545,
+          "formed": "2021-08-31 21:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        },
+        {
+          "direction": "BEARISH",
+          "low": 1.06011,
+          "high": 1.09374,
+          "x": 1.06011,
+          "b": [
+            1.063,
+            1.07612
+          ],
+          "p": 1.09374,
+          "formed": "2024-12-01 22:00:00",
+          "status": "invalidated",
+          "visit": null
+        },
+        {
+          "direction": "BULLISH",
+          "low": 1.03886,
+          "high": 1.12142,
+          "x": 1.12142,
+          "b": [
+            1.0529,
+            1.07783
+          ],
+          "p": 1.03886,
+          "formed": "2025-03-31 21:00:00",
+          "status": "fresh",
+          "visit": {
+            "visits": 0,
+            "inside": false,
+            "touch": null
+          }
+        }
+      ]
+    }
+  },
+  "setup": {
+    "direction": "LONG",
+    "poi_tf": "1D",
+    "poi": [
+      1.1279,
+      1.13813
+    ],
+    "confirmation": "BMS",
+    "confirmation_tf": "15m",
+    "confirmed_at": "2025-05-28 06:45:00",
+    "entry": 1.13147,
+    "stop": 1.1279,
+    "take_profit": 1.13454,
+    "rr": 0.8365122615803998,
+    "tp_source": "1H buy-side liquidity 1.13454 (x1)",
+    "touched_at": "2025-05-26 22:00:00",
+    "visit": 1
+  }
+}

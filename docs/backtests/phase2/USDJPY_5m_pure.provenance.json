@@ -1,0 +1,598 @@
+{
+  "written": "2026-10-01 16:23:05.973194",
+  "code": {
+    "commit": "aef7c656d903b2c915bea9598505e10f5bfd395b",
+    "dirty": false,
+    "local_changes": []
+  },
+  "command": "/home/user/Kronos/kronos_trader/__main__.py --config /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/eval_pure.yaml backtest --symbol USDJPY --data-dir data/histdata --step-tf 5m --start 2023-03-01 --kronos off --quote-basis bid --progress --out /tmp/claude-0/-home-user-Kronos/957948be-b952-557c-9d67-3d08ec248496/scratchpad/p2_usdjpy_5m_pure.csv",
+  "versions": {
+    "python": "3.11.15",
+    "pandas": "2.2.2",
+    "numpy": "2.4.6"
+  },
+  "symbol": "USDJPY",
+  "settings": {
+    "account_size": 100000.0,
+    "account_currency": "USD",
+    "symbols": {
+      "EURUSD": {
+        "symbol": "EURUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:EURUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "GBPUSD": {
+        "symbol": "GBPUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.2,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:GBPUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "AUDUSD": {
+        "symbol": "AUDUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:AUDUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "NZDUSD": {
+        "symbol": "NZDUSD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:NZDUSD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDCAD": {
+        "symbol": "USDCAD",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 7.3,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:USDCAD",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDCHF": {
+        "symbol": "USDCHF",
+        "pip_size": 0.0001,
+        "pip_value_per_lot": 11.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 5,
+        "tradingview_symbol": "OANDA:USDCHF",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "USDJPY": {
+        "symbol": "USDJPY",
+        "pip_size": 0.01,
+        "pip_value_per_lot": 6.5,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.0,
+        "price_decimals": 3,
+        "tradingview_symbol": "OANDA:USDJPY",
+        "mt5_symbol": null,
+        "contract_size": 100000.0,
+        "ibkr_contract": null,
+        "oanda_instrument": null
+      },
+      "XAUUSD": {
+        "symbol": "XAUUSD",
+        "pip_size": 0.1,
+        "pip_value_per_lot": 10.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 2.0,
+        "price_decimals": 2,
+        "tradingview_symbol": "OANDA:XAUUSD",
+        "mt5_symbol": null,
+        "contract_size": 100.0,
+        "ibkr_contract": "cfd:XAUUSD",
+        "oanda_instrument": null
+      },
+      "NAS100": {
+        "symbol": "NAS100",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 1.5,
+        "price_decimals": 1,
+        "tradingview_symbol": "OANDA:NAS100USD",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "cfd:IBUST100",
+        "oanda_instrument": null
+      },
+      "US30": {
+        "symbol": "US30",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 2.0,
+        "price_decimals": 1,
+        "tradingview_symbol": "OANDA:US30USD",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "cfd:IBUS30",
+        "oanda_instrument": null
+      },
+      "BTCUSD": {
+        "symbol": "BTCUSD",
+        "pip_size": 1.0,
+        "pip_value_per_lot": 1.0,
+        "lot_step": 0.01,
+        "min_lot": 0.01,
+        "max_lot": 100.0,
+        "typical_spread_pips": 15.0,
+        "price_decimals": 1,
+        "tradingview_symbol": "BINANCE:BTCUSDT",
+        "mt5_symbol": null,
+        "contract_size": 1.0,
+        "ibkr_contract": "crypto:BTC:PAXOS:USD",
+        "oanda_instrument": null
+      }
+    },
+    "structure": {
+      "swing_left": 2,
+      "swing_right": 2,
+      "lookback": 400,
+      "lookback_by_timeframe": {
+        "1M": 60,
+        "1W": 104,
+        "1D": 250,
+        "4H": 300,
+        "1H": 300
+      },
+      "equal_level_tolerance_pct": 0.0003,
+      "full_body_break": false,
+      "block_body_only": false,
+      "min_gap_fraction": 0.2,
+      "gap_median_window": 100,
+      "poi_mode": "liquidity_to_protection",
+      "poi_break_window": 3,
+      "max_bars_sweep_to_balance": 40,
+      "poi_requires_break": false,
+      "poi_far_edge": "gap_bottom"
+    },
+    "bias": {
+      "liquidity_lookback": 80,
+      "balance_violation": "flip",
+      "min_matching_timeframes": 3,
+      "full_combos": [
+        [
+          "1M",
+          "1W",
+          "1D"
+        ],
+        [
+          "1W",
+          "1D",
+          "4H"
+        ],
+        [
+          "1M",
+          "1D",
+          "1H"
+        ]
+      ],
+      "extra_combos": [
+        [
+          "1M",
+          "1D",
+          "4H"
+        ]
+      ],
+      "extra_combos_enabled": false,
+      "scalp_combo": [
+        "1D",
+        "4H",
+        "1H"
+      ]
+    },
+    "session": {
+      "enabled": true,
+      "timezone": "Europe/Amsterdam",
+      "windows": [
+        [
+          "09:00",
+          "11:00"
+        ],
+        [
+          "13:00",
+          "17:00"
+        ]
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "confirmation": {
+      "allow_balance_shift": true,
+      "allow_first_candle": false,
+      "accept_bos": false,
+      "bs_threshold": "gap_edge",
+      "opposing_gap_lookback": 60,
+      "max_extension_zones": 1.5,
+      "allow_retest": false,
+      "min_confirmation_tf": {
+        "1M": "4H",
+        "1W": "1H",
+        "1D": "15m",
+        "4H": "5m",
+        "1H": "1m"
+      },
+      "scalp_poi_timeframes": [
+        "4H",
+        "1H"
+      ]
+    },
+    "risk": {
+      "risk_pct": 1.0,
+      "min_rr": 0.7,
+      "spread_buffer_pips": 1.0,
+      "sl_offset_pips": 0.0,
+      "tp_policy": "liquidity_nearest",
+      "tp_floor_tf": "1H",
+      "stop_basis": "protector",
+      "rr_includes_buffer": true
+    },
+    "exits": {
+      "breakeven_r_swing": 2.0,
+      "breakeven_r_intraday": 4.0,
+      "partials": false,
+      "breakeven_offset_pips": 0.0
+    },
+    "kronos": {
+      "mode": "off",
+      "model": "NeoQuasar/Kronos-small",
+      "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+      "device": null,
+      "max_context": 512,
+      "lookback": 400,
+      "horizon": 12,
+      "n_paths": 5,
+      "temperature": 1.0,
+      "top_p": 0.9,
+      "top_k": 0,
+      "neutral_band_pct": 0.1,
+      "min_confidence": 0.6,
+      "forecast_timeframes": [
+        "4H",
+        "1H"
+      ]
+    },
+    "prop_firm": {
+      "max_open_trades": 1,
+      "daily_loss_limit_pct": 1000.0,
+      "max_drawdown_pct": 1000.0,
+      "drawdown_basis": "peak",
+      "day_timezone": "Europe/Prague",
+      "record_daily_loss_pct": 5.0,
+      "record_max_loss_pct": 10.0,
+      "news_blackout_minutes": 0,
+      "min_minutes_between_trades": 0
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token_env": "TELEGRAM_BOT_TOKEN",
+      "chat_id_env": "TELEGRAM_CHAT_ID",
+      "parse_mode": "HTML"
+    },
+    "tradingview": {
+      "url": "https://mcp.tradingview.com/mcp",
+      "token_env": "TRADINGVIEW_MCP_TOKEN",
+      "default_exchange": "OANDA",
+      "cache_dir": "data/tv_cache"
+    },
+    "ibkr": {
+      "host_env": "IBKR_HOST",
+      "port_env": "IBKR_PORT",
+      "client_id_env": "IBKR_CLIENT_ID",
+      "account_env": "IBKR_ACCOUNT",
+      "default_host": "127.0.0.1",
+      "default_port": 7497,
+      "default_client_id": 17,
+      "what_to_show": "MIDPOINT",
+      "fill_wait_seconds": 2.0,
+      "max_quote_age_seconds": 300.0
+    },
+    "mt5": {
+      "login_env": "MT5_LOGIN",
+      "password_env": "MT5_PASSWORD",
+      "server_env": "MT5_SERVER",
+      "path_env": "MT5_PATH",
+      "offset_env": "MT5_SERVER_OFFSET_HOURS",
+      "magic": 20260930,
+      "deviation_points": 20,
+      "filling": "ORDER_FILLING_IOC"
+    },
+    "news": {
+      "enabled": true,
+      "before_minutes": 30,
+      "after_minutes": 30,
+      "min_importance": 1,
+      "calendar_csv": "data/calendar/high_impact.csv",
+      "forexfactory": true,
+      "refresh_minutes": 60
+    },
+    "live": {
+      "poll_seconds": 60,
+      "require_approval": true,
+      "approval_timeout_minutes": null,
+      "broker_timeframes": [
+        "5m",
+        "15m",
+        "1H",
+        "4H",
+        "1D",
+        "1W",
+        "1M"
+      ],
+      "broker_bar_counts": {
+        "5m": 500,
+        "15m": 500,
+        "1H": 500,
+        "4H": 400,
+        "1D": 300,
+        "1W": 120,
+        "1M": 72
+      },
+      "notify_every_scan": false,
+      "briefing_time": "08:45",
+      "notify_poi_touch": true,
+      "send_charts": true,
+      "charts_dir": "charts",
+      "chart_lookback": 120,
+      "mt5_overlay": true,
+      "journal_path": "journal/trades.csv",
+      "max_data_age_bars": 2,
+      "require_fresh_data": true,
+      "feed_retry_seconds": 600
+    }
+  },
+  "data": {
+    "USDJPY_15min.csv": {
+      "sha256": "d0a7d2e5033cf133135ee4a0d18b8b60336f6103a8fef253134508245d5a4143",
+      "rows": 89635,
+      "first": "2023-01-01 22:00:00",
+      "last": "2026-09-25 00:45:00"
+    },
+    "USDJPY_1D.csv": {
+      "sha256": "a6265c0e760f55a5a9b29acf35f7d14127a3d471fb099897678716b3af28d566",
+      "rows": 5000,
+      "first": "2007-07-01 21:00:00",
+      "last": "2026-09-30 21:00:00"
+    },
+    "USDJPY_1H.csv": {
+      "sha256": "037fa93426d6965dfc0d5349d2dcf07bd8f2ce3cbf31bc8bbadf9656d2f2d61f",
+      "rows": 22411,
+      "first": "2023-01-01 22:00:00",
+      "last": "2026-09-25 00:00:00"
+    },
+    "USDJPY_1MO.csv": {
+      "sha256": "3586e727c51470370f3a1af4ded1bd7b227fb9e7bf4b56801c77c5334af7327b",
+      "rows": 231,
+      "first": "2007-07-01",
+      "last": "2026-09-01"
+    },
+    "USDJPY_1W.csv": {
+      "sha256": "7af4256bb19ed1adfa82ba5bba9e9539c684938d9b71f3ee3f873f6e3c9cc8e3",
+      "rows": 1006,
+      "first": "2007-06-25",
+      "last": "2026-09-28"
+    },
+    "USDJPY_4H.csv": {
+      "sha256": "b45485f5b01f4402b593c155e88076c6dc3948e56f3f6ddae8434560603a5d87",
+      "rows": 5912,
+      "first": "2023-01-01 22:00:00",
+      "last": "2026-09-24 21:00:00"
+    },
+    "USDJPY_5min.csv": {
+      "sha256": "4c076bde17be7b55fd1213d45860f651120675bd0df24d0624d3d78a08901e23",
+      "rows": 268838,
+      "first": "2023-01-01 22:00:00",
+      "last": "2026-09-25 00:55:00"
+    }
+  },
+  "calendar": {
+    "path": "data/calendar/high_impact.csv",
+    "present": true,
+    "sha256": "93218cdd9f839f854eb2383267c500d0e58116e592609f8caafe8ae5c9f18eac",
+    "events": 2848,
+    "first": "2017-01-06 10:00",
+    "last": "2026-10-02 12:30",
+    "currencies": [
+      "EUR",
+      "GBP",
+      "JPY",
+      "USD"
+    ]
+  },
+  "costs": {
+    "quote_basis": "bid",
+    "spread_pips": 1.0,
+    "commission": "none modelled",
+    "slippage": "none modelled",
+    "swap": "none modelled"
+  },
+  "run": {
+    "start": "2023-03-01 00:00:00",
+    "end": "2026-09-25 00:55:00",
+    "step_tf": "5m",
+    "steps": 257346,
+    "signals": 124,
+    "trades": 87,
+    "rejected_by_guard": 37,
+    "guard_reasons": {
+      "max 1 open trade(s) per account": 33,
+      "price moved: wrong side of the stop": 2,
+      "price moved: R:R below minimum": 2
+    },
+    "zones_by_reason": {
+      "POI - touched": 294,
+      "POI - visit #2 - only the first return is traded": 85,
+      "POI - R:R 0.16 below minimum 0.7 (target 1D buy-side liquidity 137.91500 (x1": 1,
+      "POI - R:R 0.36 below minimum 0.7 (target 1H buy-side liquidity 140.29600 (x1": 1,
+      "POI - R:R 0.68 below minimum 0.7 (target 1H buy-side liquidity 143.86600 (x1": 1,
+      "POI - R:R 0.31 below minimum 0.7 (target 1H buy-side liquidity 144.69100 (x1": 1,
+      "POI - R:R 0.26 below minimum 0.7 (target 1H buy-side liquidity 144.69100 (x1": 1,
+      "POI - R:R 0.32 below minimum 0.7 (target 1H buy-side liquidity 144.90200 (x1": 1,
+      "POI - R:R 0.63 below minimum 0.7 (target 4H buy-side liquidity 145.06700 (x1": 1,
+      "POI - R:R 0.57 below minimum 0.7 (target 1H buy-side liquidity 144.67500 (x1": 1,
+      "POI - R:R 0.47 below minimum 0.7 (target 1H buy-side liquidity 144.67500 (x1": 1,
+      "POI - visit #4 - only the first return is traded": 8,
+      "POI - visit #5 - only the first return is traded": 6,
+      "POI - visit #3 - only the first return is traded": 25,
+      "POI - R:R 0.26 below minimum 0.7 (target 1H sell-side liquidity 138.36400 (x": 1,
+      "POI - R:R 0.57 below minimum 0.7 (target 1D buy-side liquidity 145.07300 (x1": 1,
+      "POI - R:R 0.04 below minimum 0.7 (target 1H buy-side liquidity 145.73900 (x1": 1,
+      "POI - R:R 0.19 below minimum 0.7 (target 1H buy-side liquidity 147.38100 (x2": 1,
+      "POI - R:R 0.03 below minimum 0.7 (target 1H buy-side liquidity 147.38100 (x2": 2,
+      "POI - R:R 0.35 below minimum 0.7 (target 1H buy-side liquidity 147.45500 (x1": 1,
+      "POI - R:R 0.04 below minimum 0.7 (target 1H buy-side liquidity 146.98300 (x2": 1,
+      "POI - R:R 0.05 below minimum 0.7 (target 1H buy-side liquidity 147.50600 (x1": 1,
+      "POI - R:R 0.62 below minimum 0.7 (target 1H buy-side liquidity 149.55900 (x1": 1,
+      "POI - R:R 0.60 below minimum 0.7 (target 1H buy-side liquidity 149.55900 (x1": 1,
+      "POI - R:R 0.16 below minimum 0.7 (target 1H buy-side liquidity 149.22300 (x1": 1,
+      "POI - R:R 0.66 below minimum 0.7 (target 1H buy-side liquidity 149.22300 (x1": 1,
+      "POI - R:R 0.22 below minimum 0.7 (target 1H buy-side liquidity 149.77600 (x1": 1,
+      "POI - R:R 0.11 below minimum 0.7 (target 1H buy-side liquidity 149.63100 (x1": 1,
+      "POI - R:R 0.31 below minimum 0.7 (target 1H buy-side liquidity 149.63100 (x1": 1,
+      "POI - R:R 0.48 below minimum 0.7 (target 4H buy-side liquidity 149.76400 (x1": 1,
+      "POI - R:R 0.44 below minimum 0.7 (target 1H buy-side liquidity 149.99200 (x4": 1,
+      "POI - R:R 0.42 below minimum 0.7 (target 1H buy-side liquidity 149.99200 (x4": 1,
+      "POI - R:R 0.24 below minimum 0.7 (target 1H buy-side liquidity 149.73300 (x1": 1,
+      "POI - R:R 0.13 below minimum 0.7 (target 1H buy-side liquidity 149.73300 (x1": 1,
+      "POI - R:R 0.68 below minimum 0.7 (target 4H buy-side liquidity 151.90700 (x1": 1,
+      "POI - R:R 0.31 below minimum 0.7 (target 1H buy-side liquidity 149.15300 (x1": 1,
+      "POI - R:R 0.21 below minimum 0.7 (target 1H buy-side liquidity 149.15300 (x1": 1,
+      "POI - R:R 0.42 below minimum 0.7 (target 1D sell-side liquidity 141.62600 (x": 1,
+      "POI - R:R 0.09 below minimum 0.7 (target 1D sell-side liquidity 141.62600 (x": 1,
+      "POI - visit #8 - only the first return is traded": 2,
+      "POI - visit #6 - only the first return is traded": 2,
+      "POI - R:R 0.38 below minimum 0.7 (target 1H buy-side liquidity 161.13000 (x1": 1,
+      "POI - R:R 0.16 below minimum 0.7 (target 1H sell-side liquidity 157.70000 (x": 1,
+      "POI - R:R 0.22 below minimum 0.7 (target 1H sell-side liquidity 157.70000 (x": 2,
+      "POI - R:R 0.14 below minimum 0.7 (target 1H sell-side liquidity 157.70000 (x": 1,
+      "POI - R:R 0.31 below minimum 0.7 (target 1H sell-side liquidity 157.70000 (x": 1,
+      "POI - R:R 0.18 below minimum 0.7 (target 1H sell-side liquidity 157.74900 (x": 1,
+      "POI - R:R 0.24 below minimum 0.7 (target 1H sell-side liquidity 157.74900 (x": 1,
+      "POI - R:R 0.28 below minimum 0.7 (target 1H sell-side liquidity 144.98200 (x": 1,
+      "POI - R:R 0.68 below minimum 0.7 (target 1H sell-side liquidity 144.98200 (x": 1,
+      "POI - R:R 0.22 below minimum 0.7 (target 1H buy-side liquidity 153.87900 (x1": 1,
+      "POI - R:R 0.19 below minimum 0.7 (target 4H buy-side liquidity 157.92400 (x1": 1,
+      "POI - R:R 0.38 below minimum 0.7 (target 1H buy-side liquidity 157.94800 (x2": 1,
+      "POI - R:R 0.39 below minimum 0.7 (target 1H buy-side liquidity 157.94800 (x2": 1,
+      "POI - R:R 0.39 below minimum 0.7 (target 1H buy-side liquidity 158.08300 (x1": 1,
+      "POI - R:R 0.53 below minimum 0.7 (target 1H buy-side liquidity 157.35200 (x1": 1,
+      "POI - R:R 0.43 below minimum 0.7 (target 1H buy-side liquidity 157.35200 (x1": 1,
+      "POI - R:R 0.66 below minimum 0.7 (target 1H buy-side liquidity 157.35200 (x1": 1,
+      "POI - R:R 0.52 below minimum 0.7 (target 1H buy-side liquidity 157.21000 (x1": 1,
+      "POI - R:R 0.27 below minimum 0.7 (target 1H buy-side liquidity 157.45700 (x1": 1,
+      "POI - R:R 0.16 below minimum 0.7 (target 1H buy-side liquidity 157.84900 (x3": 1,
+      "POI - R:R 0.17 below minimum 0.7 (target 1H buy-side liquidity 157.84900 (x3": 1,
+      "POI - R:R 0.25 below minimum 0.7 (target 1H buy-side liquidity 149.53200 (x1": 1,
+      "POI - R:R 0.49 below minimum 0.7 (target 1H sell-side liquidity 146.98400 (x": 2,
+      "POI - R:R 0.19 below minimum 0.7 (target 1H sell-side liquidity 146.98400 (x": 1,
+      "POI - R:R 0.10 below minimum 0.7 (target 1H sell-side liquidity 146.98400 (x": 1,
+      "POI - R:R 0.05 below minimum 0.7 (target 1H sell-side liquidity 146.98400 (x": 1,
+      "POI - R:R 0.56 below minimum 0.7 (target 1H sell-side liquidity 146.75800 (x": 1,
+      "POI - R:R 0.05 below minimum 0.7 (target 1H sell-side liquidity 146.83900 (x": 1,
+      "POI - R:R 0.55 below minimum 0.7 (target 1H buy-side liquidity 154.44400 (x1": 1,
+      "POI - R:R 0.27 below minimum 0.7 (target 4H buy-side liquidity 155.37900 (x1": 1,
+      "POI - R:R 0.48 below minimum 0.7 (target 4H buy-side liquidity 155.37900 (x1": 1,
+      "POI - R:R 0.11 below minimum 0.7 (target 1H buy-side liquidity 156.76300 (x1": 1,
+      "POI - R:R 0.04 below minimum 0.7 (target 1H buy-side liquidity 156.06200 (x1": 1,
+      "POI - R:R 0.45 below minimum 0.7 (target 1H buy-side liquidity 158.73100 (x1": 1,
+      "POI - R:R 0.41 below minimum 0.7 (target 1H sell-side liquidity 152.56200 (x": 1,
+      "POI - R:R 0.59 below minimum 0.7 (target 1H sell-side liquidity 152.69700 (x": 1,
+      "POI - R:R 0.66 below minimum 0.7 (target 1H buy-side liquidity 159.38200 (x1": 1,
+      "POI - R:R 0.49 below minimum 0.7 (target 1H buy-side liquidity 159.38200 (x1": 1,
+      "POI - R:R 0.15 below minimum 0.7 (target 1H buy-side liquidity 159.38200 (x1": 1,
+      "POI - R:R 0.54 below minimum 0.7 (target 1H buy-side liquidity 159.38200 (x1": 1,
+      "POI - R:R 0.40 below minimum 0.7 (target 1H buy-side liquidity 159.38200 (x1": 1,
+      "POI - R:R 0.39 below minimum 0.7 (target 1H buy-side liquidity 159.49400 (x1": 1,
+      "POI - R:R 0.15 below minimum 0.7 (target 4H buy-side liquidity 159.49400 (x1": 1,
+      "POI - R:R 0.69 below minimum 0.7 (target 1H buy-side liquidity 159.97000 (x2": 1,
+      "POI - R:R 0.21 below minimum 0.7 (target 1H sell-side liquidity 156.01900 (x": 1,
+      "POI - R:R 0.17 below minimum 0.7 (target 1H sell-side liquidity 156.01900 (x": 1,
+      "POI - R:R 0.69 below minimum 0.7 (target 1H buy-side liquidity 162.42300 (x1": 1,
+      "POI - R:R 0.69 below minimum 0.7 (target 4H buy-side liquidity 162.59700 (x1": 1,
+      "POI - R:R 0.53 below minimum 0.7 (target 4H buy-side liquidity 162.59700 (x1": 1,
+      "POI - R:R 0.51 below minimum 0.7 (target 1H sell-side liquidity 154.05700 (x": 1,
+      "POI - R:R 0.01 below minimum 0.7 (target 4H buy-side liquidity 158.40000 (x1": 1
+    },
+    "first_breach": null,
+    "guard_rules": {
+      "account_size": 100000.0,
+      "day_timezone": "Europe/Prague",
+      "recorded_against": {
+        "daily_loss_pct_of_initial": 5.0,
+        "max_loss_pct_of_initial_static": 10.0
+      },
+      "halting_limits": {
+        "daily_loss_pct": 1000.0,
+        "max_drawdown_pct": 1000.0,
+        "drawdown_basis": "peak",
+        "max_open_trades": 1
+      }
+    },
+    "initial_equity": 100000.0,
+    "final_equity": 112691.39950000211,
+    "runtime_seconds": 6469.171684265137
+  }
+}
